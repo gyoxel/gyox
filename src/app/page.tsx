@@ -21,8 +21,8 @@ export default async function HomePage({
   searchParams: Promise<{ month?: string }>;
 }) {
   const sp = await searchParams;
-  const settings = getSettings();
-  const expenses = getAllExpenses();
+  const settings = await getSettings();
+  const expenses = await getAllExpenses();
   const viewMonth = monthFromSearchParams(sp.month, defaultViewMonth());
 
   const summary = getMonthSummary(expenses, viewMonth, settings.salary);

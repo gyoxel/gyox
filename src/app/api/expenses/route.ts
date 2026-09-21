@@ -3,7 +3,7 @@ import { createExpense, getAllExpenses } from "@/lib/repository";
 import { expenseInputSchema } from "@/lib/validation";
 
 export async function GET() {
-  return NextResponse.json(getAllExpenses());
+  return NextResponse.json(await getAllExpenses());
 }
 
 export async function POST(req: NextRequest) {
@@ -12,6 +12,6 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const expense = createExpense(parsed.data);
+  const expense = await createExpense(parsed.data);
   return NextResponse.json(expense, { status: 201 });
 }

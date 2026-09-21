@@ -8,9 +8,9 @@ import { CreditCard } from "@/components/credit-card";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-export default function CreditsPage() {
-  const settings = getSettings();
-  const credits = getAllExpenses().filter((e) => e.type === "credit");
+export default async function CreditsPage() {
+  const settings = await getSettings();
+  const credits = (await getAllExpenses()).filter((e) => e.type === "credit");
 
   return (
     <>

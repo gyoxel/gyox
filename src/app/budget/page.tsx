@@ -24,8 +24,8 @@ function Row({ label, value, currency, strong }: { label: string; value: number;
 
 export default async function BudgetPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const sp = await searchParams;
-  const settings = getSettings();
-  const expenses = getAllExpenses();
+  const settings = await getSettings();
+  const expenses = await getAllExpenses();
   const viewMonth = monthFromSearchParams(sp.month, defaultViewMonth());
   const summary = getMonthSummary(expenses, viewMonth, settings.salary);
 

@@ -8,14 +8,14 @@ interface Params {
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const { id } = await params;
-  const expense = getExpenseById(id);
+  const expense = await getExpenseById(id);
   if (!expense) return NextResponse.json({ error: "Dépense introuvable." }, { status: 404 });
   return NextResponse.json(expense);
 }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   const { id } = await params;
-  const existing = getExpenseById(id);
+  const existing = await getExpenseById(id);
   if (!existing) return NextResponse.json({ error: "Dépense introuvable." }, { status: 404 });
 
   const body = await req.json();
@@ -30,13 +30,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: fullParsed.error.flatten() }, { status: 400 });
   }
 
-  const updated = updateExpense(id, fullParsed.data);
+  const updated = await updateExpense(id, fullParsed.data);
   return NextResponse.json(updated);
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const { id } = await params;
-  const ok = deleteExpense(id);
+  const ok = await deleteExpense(id);
   if (!ok) return NextResponse.json({ error: "Dépense introuvable." }, { status: 404 });
   return NextResponse.json({ ok: true });
 }

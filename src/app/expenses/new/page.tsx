@@ -4,8 +4,8 @@ import { ExpenseForm } from "@/components/expense-form";
 
 export const dynamic = "force-dynamic";
 
-export default function NewExpensePage() {
-  const allExpenses = getAllExpenses();
+export default async function NewExpensePage() {
+  const allExpenses = await getAllExpenses();
   return (
     <>
       <PageHeader title="Ajouter une dépense" backHref="/" />

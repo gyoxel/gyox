@@ -8,16 +8,17 @@ import { DeleteExpenseButton } from "@/components/delete-expense-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatMoney } from "@/lib/utils";
 import { TYPE_LABELS_FR } from "@/lib/category";
+import type { Expense } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function ExpenseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const expense = getExpenseById(id);
+  const expense = await getExpenseById(id);
   if (!expense) notFound();
 
-  const settings = getSettings();
-  const allExpenses = getAllExpenses();
+  const settings = await getSettings();
+  const allExpenses = await getAllExpenses();
 
   return (
     <>
@@ -73,7 +74,7 @@ function CreditInfo({ expense, currency }: { expense: Parameters<typeof getCredi
   );
 }
 
-function LinkedInfo({ expenseId, allExpenses }: { expenseId: string; allExpenses: ReturnType<typeof getAllExpenses> }) {
+function LinkedInfo({ expenseId, allExpenses }: { expenseId: string; allExpenses: Expense[] }) {
   const expense = allExpenses.find((e) => e.id === expenseId);
   if (!expense) return null;
   const byId = new Map(allExpenses.map((e) => [e.id, e]));

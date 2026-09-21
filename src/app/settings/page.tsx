@@ -4,8 +4,8 @@ import { SettingsForm } from "@/components/settings-form";
 
 export const dynamic = "force-dynamic";
 
-export default function SettingsPage() {
-  const settings = getSettings();
+export default async function SettingsPage() {
+  const settings = await getSettings();
   return (
     <>
       <PageHeader title="Réglages" />

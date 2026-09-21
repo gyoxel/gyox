@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   }
 
   const now = new Date().toISOString();
-  importData({
+  await importData({
     ...parsed.data,
     expenses: parsed.data.expenses.map((e) => ({
       ...e,

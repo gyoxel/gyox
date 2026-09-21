@@ -1,4 +1,4 @@
-import { getAllExpenses, getSettings } from "@/lib/repository";
+import { getAllExpenses } from "@/lib/repository";
 import { defaultViewMonth, monthLabelFr, monthsBetween } from "@/lib/date";
 import { getEffectiveEndMonth } from "@/lib/engine";
 
@@ -8,9 +8,8 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-export default function TimelinePage() {
-  getSettings();
-  const expenses = getAllExpenses().filter((e) => e.active);
+export default async function TimelinePage() {
+  const expenses = (await getAllExpenses()).filter((e) => e.active);
   const byId = new Map(expenses.map((e) => [e.id, e]));
   const baseMonth = defaultViewMonth();
 

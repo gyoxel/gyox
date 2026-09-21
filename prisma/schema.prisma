@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Fields mirror src/lib/types.ts exactly. Dates are kept as "YYYY-MM-DD"
+// strings (not native DateTime) because the calculation engine
+// (src/lib/engine.ts, src/lib/date.ts) parses them as plain month/day
+// integers and never needs timezone-aware timestamps.
+model Expense {
+  id                  String   @id @default(uuid())
+  name                String
+  amount              Float
+  type                String
+  frequency           String
+  startDate           String
+  endDate             String?
+  active              Boolean  @default(true)
+  color               String
+  notes               String?
+  creditInitialAmount Float?
+  linkedExpenseId     String?
+  createdAt           String
+  updatedAt           String
+
+  @@map("expenses")
+}
+
+// Singleton row (id is always 1).
+model Settings {
+  id            Int    @id @default(1)
+  salary        Float
+  currency      String
+  savingsTarget Float
+  startMonth    String
+  theme         String @default("system")
+
+  @@map("settings")
+}
