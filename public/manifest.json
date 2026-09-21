@@ -1,0 +1,19 @@
+{
+  "name": "Budget & Crédits",
+  "short_name": "Budget",
+  "description": "Suivi personnel du salaire, des dépenses, des crédits et de l'épargne.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#ffffff",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
