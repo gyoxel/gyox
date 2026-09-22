@@ -2,15 +2,24 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronLeft, ChevronRight, PartyPopper } from "lucide-react";
+import Link from "next/link";
+import { Check, ChevronLeft, ChevronRight, Plus, PartyPopper } from "lucide-react";
 import { addMonths, monthKey as toMonthKey, monthLabelFr, type MonthId } from "@/lib/date";
-import { getCreditRealState, getMonthLedgerItems } from "@/lib/engine";
+import { getCreditRealState, getExpenseDisplayColor, getMonthLedgerItems, type DisplayColor } from "@/lib/engine";
 import type { Expense, Payment } from "@/lib/types";
 import { formatMoney, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 const SWIPE_THRESHOLD_PX = 40;
+
+const COLOR_RANK: Record<DisplayColor, number> = { red: 0, yellow: 1, blue: 2 };
+
+const BORDER_CLASS: Record<DisplayColor, string> = {
+  red: "border-l-rose-400",
+  yellow: "border-l-amber-400",
+  blue: "border-l-sky-400",
+};
 
 let optimisticIdCounter = 0;
 function nextOptimisticId(): string {
@@ -45,13 +54,14 @@ export function DueNowList({
     setLocalPayments(payments);
   }
 
-  const items = useMemo(
-    () =>
-      getMonthLedgerItems(expenses, localPayments, viewMonth, currentMonth)
-        .sort((a, b) => b.amount - a.amount)
-        .sort((a, b) => Number(a.paid) - Number(b.paid)),
-    [expenses, localPayments, viewMonth, currentMonth],
-  );
+  const items = useMemo(() => {
+    const byId = new Map(expenses.map((e) => [e.id, e]));
+    return getMonthLedgerItems(expenses, localPayments, viewMonth, currentMonth)
+      .map((item) => ({ ...item, color: getExpenseDisplayColor(item.expense, byId) }))
+      .sort((a, b) => b.amount - a.amount)
+      .sort((a, b) => COLOR_RANK[a.color] - COLOR_RANK[b.color])
+      .sort((a, b) => Number(a.paid) - Number(b.paid));
+  }, [expenses, localPayments, viewMonth, currentMonth]);
 
   function goMonth(next: MonthId) {
     setViewMonth(next);
@@ -130,22 +140,31 @@ export function DueNowList({
         </Button>
       </div>
 
-      {items.length === 0 ? (
-        <Card className="border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/20">
-          <CardContent className="flex items-center justify-center gap-2 py-5 text-sm font-medium text-emerald-700 dark:text-emerald-300">
-            <PartyPopper className="h-4 w-4" />
-            Rien à payer pour le moment
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {items.map(({ expense, amount, paid }) => {
+      <div className="flex flex-col gap-2">
+        <Link
+          href="/expenses/new"
+          className="flex items-center justify-center gap-2 rounded-xl border border-l-4 border-rose-200 border-l-rose-500 bg-rose-50/60 px-3.5 py-3 text-sm font-semibold text-rose-600 shadow-sm transition-colors hover:bg-rose-50 dark:border-rose-900 dark:border-l-rose-500 dark:bg-rose-950/20 dark:text-rose-400"
+        >
+          <Plus className="h-4 w-4" />
+          Ajouter une dépense
+        </Link>
+
+        {items.length === 0 ? (
+          <Card className="border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/20">
+            <CardContent className="flex items-center justify-center gap-2 py-5 text-sm font-medium text-emerald-700 dark:text-emerald-300">
+              <PartyPopper className="h-4 w-4" />
+              Rien à payer pour le moment
+            </CardContent>
+          </Card>
+        ) : (
+          items.map(({ expense, amount, paid, color }) => {
             const isPending = pendingIds.has(expense.id);
             return (
               <div
                 key={expense.id}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl border border-l-4 border-slate-200 border-l-rose-400 bg-white px-3.5 py-3 shadow-sm transition-opacity dark:border-slate-800 dark:bg-slate-900",
+                  "flex items-center gap-3 rounded-xl border border-l-4 border-slate-200 bg-white px-3.5 py-3 shadow-sm transition-opacity dark:border-slate-800 dark:bg-slate-900",
+                  BORDER_CLASS[color],
                   paid && "border-l-slate-300 opacity-50 dark:border-l-slate-700",
                 )}
               >
@@ -181,9 +200,9 @@ export function DueNowList({
                 </button>
               </div>
             );
-          })}
-        </div>
-      )}
+          })
+        )}
+      </div>
     </div>
   );
 }

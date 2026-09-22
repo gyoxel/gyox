@@ -1,7 +1,16 @@
 // Pure calculation engine. No DB access here — everything is derived from
 // the expense list + settings so that changing any input automatically
 // recalculates every dependent number. Nothing is ever hardcoded per-month.
-import { type MonthId, addMonths, compareMonths, monthKey, monthLabelFr, monthOfDateStr, parseMonthKey } from "./date";
+import {
+  type MonthId,
+  addMonths,
+  compareMonths,
+  monthKey,
+  monthLabelFr,
+  monthOfDateStr,
+  monthsBetween,
+  parseMonthKey,
+} from "./date";
 import type { CreditRealState, Expense, MonthSummary, MonthlyOccurrence, Payment, PaymentStatus } from "./types";
 
 interface CreditScheduleEntry {
@@ -77,6 +86,29 @@ export function getEffectiveEndMonth(
   }
   if (expense.endDate) return monthOfDateStr(expense.endDate);
   return null;
+}
+
+export type DisplayColor = "red" | "yellow" | "blue";
+
+/**
+ * The color an expense should be shown in, independent of the manually
+ * picked `color` category field: permanent expenses are always red (they
+ * lead every list); credits are always blue (they're added one installment
+ * at a time, never repeating); a temporary expense is yellow when it spans
+ * more than 2 calendar months, blue when it's 2 months or shorter (or a
+ * one-time expense, which is inherently a single month).
+ */
+export function getExpenseDisplayColor(expense: Expense, byId: Map<string, Expense>): DisplayColor {
+  if (expense.type === "permanent") return "red";
+  if (expense.type === "credit") return "blue";
+
+  if (expense.frequency === "one-time") return "blue";
+
+  const start = monthOfDateStr(expense.startDate);
+  const end = getEffectiveEndMonth(expense, byId);
+  if (!end) return "yellow"; // no end in sight — treat as long-running
+  const durationMonths = monthsBetween(start, end) + 1;
+  return durationMonths > 2 ? "yellow" : "blue";
 }
 
 export function getOccurrenceForMonth(
@@ -407,6 +439,19 @@ export function getMonthLedgerItems(
     if (expense.type === "credit") {
       const creditStart = monthOfDateStr(expense.startDate);
       if (compareMonths(viewMonth, creditStart) < 0) continue; // hasn't started as of this month
+
+      // A payment actually settled against this exact month always stays
+      // visible here (struck through) — checked first, before any
+      // completed/projection logic, so it can never vanish: neither when
+      // the credit has since been paid off entirely (which otherwise hides
+      // it everywhere) nor when browsing back to a future month whose
+      // installment was already paid ahead (which otherwise falls outside
+      // the forward projection's range and disappears).
+      const settled = findPayment(payments, expense.id, monthKey(viewMonth));
+      if (settled) {
+        items.push({ expense, amount: settled.amountPaid, paid: true });
+        continue;
+      }
 
       if (isFuture) {
         // A future month must reflect where the payoff schedule will
