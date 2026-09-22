@@ -341,14 +341,23 @@ export interface LedgerItem {
  * accumulate: every past occurrence that was never paid keeps adding to
  * what's due, until settled (rule: "le montant reste dû jusqu'à ce que je
  * le paie").
+ *
+ * `currentMonth` is the real calendar month "today" falls in. When
+ * `viewMonth` is browsed into the future, arrears are only ever summed up
+ * through `currentMonth` (accumulating unpaid months that haven't happened
+ * yet makes no sense) and the future month itself shows only its own
+ * single occurrence — the "fixed" or "programmed" amount that would fall
+ * due that month, per rule 6.
  */
 export function getMonthLedgerItems(
   expenses: Expense[],
   payments: Payment[],
   viewMonth: MonthId,
+  currentMonth: MonthId,
 ): LedgerItem[] {
   const byId = new Map(expenses.map((e) => [e.id, e]));
   const items: LedgerItem[] = [];
+  const isFuture = compareMonths(viewMonth, currentMonth) > 0;
 
   for (const expense of expenses) {
     if (!expense.active) continue;
@@ -372,6 +381,23 @@ export function getMonthLedgerItems(
 
     const start = monthOfDateStr(expense.startDate);
     if (compareMonths(viewMonth, start) < 0) continue;
+
+    if (isFuture) {
+      // Future month: show only its own occurrence (fixed/programmed for
+      // that specific month), never the backlog accumulated through today —
+      // that backlog already surfaces when browsing to today's/past months.
+      const occ = getOccurrenceForMonth(expense, viewMonth, byId);
+      if (!occ) continue;
+      const payment = findPayment(payments, expense.id, monthKey(viewMonth));
+      const paidAmount = payment?.amountPaid ?? 0;
+      const remaining = round2(occ.amount - paidAmount);
+      if (remaining > 0.005) {
+        items.push({ expense, amount: remaining, paid: false });
+      } else {
+        items.push({ expense, amount: occ.amount, paid: true });
+      }
+      continue;
+    }
 
     const owed = getUnpaidMonths(expense, payments, viewMonth, byId).reduce(
       (s, u) => s + (u.amountDue - u.amountPaid),

@@ -1,11 +1,10 @@
 import { getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
-import { monthFromSearchParams, monthKey, todayMonth } from "@/lib/date";
-import { getMonthLedgerItems, getPaidThisMonth } from "@/lib/engine";
+import { todayMonth } from "@/lib/date";
+import { getPaidThisMonth } from "@/lib/engine";
 import { PageHeader } from "@/components/page-header";
 import { CountdownNextSalary } from "@/components/countdown-next-salary";
 import { DueNowList } from "@/components/due-now-list";
 import { MaskedAmount } from "@/components/masked-amount";
-import { MonthSwitcher } from "@/components/month-switcher";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatMoney } from "@/lib/utils";
 
@@ -18,27 +17,15 @@ function todayShortDate(): string {
   return `${day}/${month}/${now.getFullYear()}`;
 }
 
-export default async function HomePage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
-  const sp = await searchParams;
+export default async function HomePage() {
   const settings = await getSettings();
   const expenses = await getAllExpenses();
   const payments = await getAllPayments();
   const currentMonth = todayMonth();
-  const dueMonth = monthFromSearchParams(sp.month, currentMonth);
 
   const paidThisMonth = getPaidThisMonth(expenses, payments, currentMonth);
   const available = Math.max(0, settings.salary - paidThisMonth);
   const percentUsed = settings.salary > 0 ? Math.min(100, Math.round((paidThisMonth / settings.salary) * 100)) : 0;
-
-  const dueNow = getMonthLedgerItems(expenses, payments, dueMonth)
-    .sort((a, b) => b.amount - a.amount)
-    .map((item) => ({
-      id: item.expense.id,
-      name: item.expense.name,
-      amountDue: item.amount,
-      type: item.expense.type,
-      paid: item.paid,
-    }));
 
   return (
     <>
@@ -55,6 +42,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             </p>
           </CardContent>
         </Card>
+
+        <CountdownNextSalary />
 
         <Card>
           <CardContent className="pt-4">
@@ -81,14 +70,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           </CardContent>
         </Card>
 
-        <CountdownNextSalary />
-
         <section className="flex flex-col gap-2.5">
           <div className="flex items-center justify-between px-1">
-            <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400">🔴 À payer</h2>
+            <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400">🔴 Dépenses</h2>
           </div>
-          <MonthSwitcher month={dueMonth} basePath="/" />
-          <DueNowList items={dueNow} currency={settings.currency} monthKey={monthKey(dueMonth)} />
+          <DueNowList expenses={expenses} payments={payments} currentMonth={currentMonth} currency={settings.currency} />
         </section>
       </main>
     </>
