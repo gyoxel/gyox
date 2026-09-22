@@ -251,6 +251,48 @@ export function getCreditRealState(
   };
 }
 
+/**
+ * Projects which installment (if any) a credit would owe in a specific
+ * FUTURE month, assuming every installment between today and then gets
+ * paid on time from here on. Anchored on today's real remaining balance
+ * and pace (so any real arrears already baked in up to today still delay
+ * things by exactly as many months as missed) — never on the naive
+ * theoretical schedule from the credit's original start date, and never
+ * repeating today's single pending amount forever. Returns null once the
+ * balance would already be fully paid off by `viewMonth`.
+ */
+function projectCreditInstallment(
+  expense: Expense,
+  payments: Payment[],
+  viewMonth: MonthId,
+  currentMonth: MonthId,
+): number | null {
+  const today = getCreditRealState(expense, payments, currentMonth);
+  if (today.status === "completed") return null;
+
+  const monthlyAmount = expense.amount > 0 ? expense.amount : 0;
+  if (monthlyAmount <= 0) return null;
+
+  let remaining = today.remaining;
+  let m: MonthId =
+    today.status === "not-started"
+      ? monthOfDateStr(expense.startDate)
+      : today.isOverdue
+        ? currentMonth
+        : (today.dueMonth ?? currentMonth);
+
+  let guard = 0;
+  while (remaining > 0.005 && guard < SAFETY_MONTHS_CAP) {
+    const payment = Math.min(monthlyAmount, remaining);
+    if (compareMonths(m, viewMonth) === 0) return round2(payment);
+    if (compareMonths(m, viewMonth) > 0) return null; // shouldn't happen, guards against infinite loop misuse
+    remaining = round2(remaining - payment);
+    m = addMonths(m, 1);
+    guard++;
+  }
+  return null; // fully paid off before reaching viewMonth
+}
+
 function findPayment(
   payments: Payment[],
   expenseId: string,
@@ -365,6 +407,20 @@ export function getMonthLedgerItems(
     if (expense.type === "credit") {
       const creditStart = monthOfDateStr(expense.startDate);
       if (compareMonths(viewMonth, creditStart) < 0) continue; // hasn't started as of this month
+
+      if (isFuture) {
+        // A future month must reflect where the payoff schedule will
+        // actually be by then — not today's single pending installment
+        // repeated forever. Project forward from today's real remaining
+        // balance so the credit correctly stops appearing once it would
+        // be paid off (rule: e.g. a 1200 DH credit at 500/month shows
+        // 500, 500, 200, then nothing — never a 4th month).
+        const projected = projectCreditInstallment(expense, payments, viewMonth, currentMonth);
+        if (!projected) continue;
+        items.push({ expense, amount: projected, paid: false });
+        continue;
+      }
+
       const state = getCreditRealState(expense, payments, viewMonth);
       if (state.status === "completed") continue;
       // Due only once the viewed month has actually reached the pending
