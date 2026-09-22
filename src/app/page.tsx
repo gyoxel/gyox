@@ -57,7 +57,11 @@ export default async function HomePage({
   return (
     <>
       <PageHeader
-        title="Budget & Crédits"
+        title={
+          <span className="bg-gradient-to-r from-amber-600 via-yellow-400 to-amber-600 bg-clip-text font-bold tracking-wide text-transparent dark:from-amber-400 dark:via-yellow-300 dark:to-amber-400">
+            GX Salaire
+          </span>
+        }
         action={
           <Button asChild size="sm">
             <Link href="/expenses/new">

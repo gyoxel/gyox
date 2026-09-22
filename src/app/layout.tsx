@@ -16,13 +16,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Budget & Crédits",
+  title: "GX Salaire",
   description: "Suivi personnel du salaire, des dépenses, des crédits et de l'épargne.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Budget",
+    title: "GX Salaire",
   },
 };
 

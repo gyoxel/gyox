@@ -1,6 +1,6 @@
 {
-  "name": "Budget & Crédits",
-  "short_name": "Budget",
+  "name": "GX Salaire",
+  "short_name": "GX Salaire",
   "description": "Suivi personnel du salaire, des dépenses, des crédits et de l'épargne.",
   "start_url": "/",
   "scope": "/",

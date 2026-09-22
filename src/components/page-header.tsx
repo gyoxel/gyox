@@ -7,7 +7,7 @@ export function PageHeader({
   backHref,
   action,
 }: {
-  title: string;
+  title: ReactNode;
   backHref?: string;
   action?: ReactNode;
 }) {
