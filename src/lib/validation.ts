@@ -36,6 +36,11 @@ export const baseExpenseSchema = z.object({
     .nullable()
     .optional()
     .transform((v) => (v && v.trim() !== "" ? v : null)),
+  icon: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((v) => (v && v.trim() !== "" ? v.trim() : null)),
 });
 
 // Accepts a partial payload for PATCH requests; merge with the existing

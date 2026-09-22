@@ -1,4 +1,4 @@
-import type { ColorCategory } from "./types";
+import type { ColorCategory, Expense } from "./types";
 
 export const CATEGORY_META: Record<
   ColorCategory,
@@ -37,3 +37,13 @@ export const FREQUENCY_LABELS_FR: Record<string, string> = {
   monthly: "Mensuel",
   "one-time": "Une seule fois",
 };
+
+const FALLBACK_ICON_BY_TYPE: Record<string, string> = {
+  credit: "💳",
+  permanent: "🏠",
+  temporary: "📌",
+};
+
+export function expenseIcon(expense: Pick<Expense, "icon" | "type">): string {
+  return expense.icon || FALLBACK_ICON_BY_TYPE[expense.type] || "💰";
+}

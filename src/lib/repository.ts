@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { prisma } from "./prisma";
-import type { Expense, ExpenseInput, Settings } from "./types";
+import type { Expense, ExpenseInput, Payment, Settings } from "./types";
 
 function mapExpense(row: {
   id: string;
@@ -15,6 +15,7 @@ function mapExpense(row: {
   notes: string | null;
   creditInitialAmount: number | null;
   linkedExpenseId: string | null;
+  icon: string | null;
   createdAt: string;
   updatedAt: string;
 }): Expense {
@@ -31,6 +32,7 @@ function mapExpense(row: {
     notes: row.notes,
     creditInitialAmount: row.creditInitialAmount,
     linkedExpenseId: row.linkedExpenseId,
+    icon: row.icon,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -63,6 +65,7 @@ export async function createExpense(input: ExpenseInput): Promise<Expense> {
       notes: input.notes ?? null,
       creditInitialAmount: input.creditInitialAmount ?? null,
       linkedExpenseId: input.linkedExpenseId ?? null,
+      icon: input.icon ?? null,
       createdAt: now,
       updatedAt: now,
     },
@@ -91,6 +94,7 @@ export async function updateExpense(
       notes: merged.notes ?? null,
       creditInitialAmount: merged.creditInitialAmount ?? null,
       linkedExpenseId: merged.linkedExpenseId ?? null,
+      icon: merged.icon ?? null,
       updatedAt: new Date().toISOString(),
     },
   });
@@ -170,10 +174,116 @@ export async function importData(data: BackupData): Promise<void> {
         notes: e.notes ?? null,
         creditInitialAmount: e.creditInitialAmount ?? null,
         linkedExpenseId: e.linkedExpenseId ?? null,
+        icon: e.icon ?? null,
         createdAt: e.createdAt ?? new Date().toISOString(),
         updatedAt: e.updatedAt ?? new Date().toISOString(),
       })),
     }),
     prisma.settings.update({ where: { id: 1 }, data: data.settings }),
   ]);
+}
+
+function mapPayment(row: {
+  id: string;
+  expenseId: string;
+  monthKey: string | null;
+  slotIndex: number | null;
+  amountDue: number;
+  amountPaid: number;
+  paidAt: string;
+  createdAt: string;
+}): Payment {
+  return {
+    id: row.id,
+    expenseId: row.expenseId,
+    monthKey: row.monthKey,
+    slotIndex: row.slotIndex,
+    amountDue: row.amountDue,
+    amountPaid: row.amountPaid,
+    paidAt: row.paidAt,
+    createdAt: row.createdAt,
+  };
+}
+
+export async function getAllPayments(): Promise<Payment[]> {
+  const rows = await prisma.payment.findMany();
+  return rows.map(mapPayment);
+}
+
+export async function getPaymentsForExpense(expenseId: string): Promise<Payment[]> {
+  const rows = await prisma.payment.findMany({ where: { expenseId }, orderBy: { createdAt: "asc" } });
+  return rows.map(mapPayment);
+}
+
+/** Non-credit expenses: one payment row per due month, upserted by month. */
+export async function markMonthPaid(
+  expenseId: string,
+  monthKeyValue: string,
+  amountDue: number,
+  amountPaid: number,
+): Promise<Payment> {
+  const now = new Date().toISOString();
+  const row = await prisma.payment.upsert({
+    where: { expenseId_monthKey: { expenseId, monthKey: monthKeyValue } },
+    update: { amountDue, amountPaid, paidAt: now },
+    create: {
+      id: randomUUID(),
+      expenseId,
+      monthKey: monthKeyValue,
+      slotIndex: null,
+      amountDue,
+      amountPaid,
+      paidAt: now,
+      createdAt: now,
+    },
+  });
+  return mapPayment(row);
+}
+
+export async function markMonthUnpaid(expenseId: string, monthKeyValue: string): Promise<boolean> {
+  try {
+    await prisma.payment.delete({ where: { expenseId_monthKey: { expenseId, monthKey: monthKeyValue } } });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Credits: each confirmed installment is a new row, numbered sequentially.
+ * Never updates a prior slot — history is append-only, so a later mensualité
+ * change can never rewrite what was already paid.
+ */
+export async function markCreditSlotPaid(
+  expenseId: string,
+  amountDue: number,
+  amountPaid: number,
+  recordedInMonthKey: string,
+): Promise<Payment> {
+  const now = new Date().toISOString();
+  const existingCount = await prisma.payment.count({ where: { expenseId, slotIndex: { not: null } } });
+  const row = await prisma.payment.create({
+    data: {
+      id: randomUUID(),
+      expenseId,
+      monthKey: recordedInMonthKey,
+      slotIndex: existingCount + 1,
+      amountDue,
+      amountPaid,
+      paidAt: now,
+      createdAt: now,
+    },
+  });
+  return mapPayment(row);
+}
+
+/** Undo: removes the most recently confirmed installment (highest slot). */
+export async function undoLastCreditSlot(expenseId: string): Promise<boolean> {
+  const last = await prisma.payment.findFirst({
+    where: { expenseId, slotIndex: { not: null } },
+    orderBy: { slotIndex: "desc" },
+  });
+  if (!last) return false;
+  await prisma.payment.delete({ where: { id: last.id } });
+  return true;
 }

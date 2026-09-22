@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { getAllExpenses, getSettings } from "@/lib/repository";
+import { getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
 
 export const dynamic = "force-dynamic";
 import { PageHeader } from "@/components/page-header";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 
 export default async function CreditsPage() {
   const settings = await getSettings();
+  const payments = await getAllPayments();
   const credits = (await getAllExpenses()).filter((e) => e.type === "credit");
 
   return (
@@ -31,7 +32,7 @@ export default async function CreditsPage() {
             <CardContent className="py-8 text-center text-sm text-slate-500">Aucun crédit en cours.</CardContent>
           </Card>
         ) : (
-          credits.map((c) => <CreditCard key={c.id} expense={c} currency={settings.currency} />)
+          credits.map((c) => <CreditCard key={c.id} expense={c} payments={payments} currency={settings.currency} />)
         )}
       </main>
     </>

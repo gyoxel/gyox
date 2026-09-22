@@ -24,10 +24,43 @@ model Expense {
   notes               String?
   creditInitialAmount Float?
   linkedExpenseId     String?
+  /** Optional custom emoji shown in lists (e.g. "🚗"). Falls back to a
+   *  generic icon derived from `color` when not set. */
+  icon                String?
   createdAt           String
   updatedAt           String
 
+  payments Payment[]
+
   @@map("expenses")
+}
+
+// Records an *actual* confirmed payment. Absence of a row means "not paid" —
+// unpaid months/slots are never stored, only derived by the engine, so
+// marking something paid can never retroactively rewrite prior history.
+//
+// Two addressing modes, exactly one populated depending on the expense type:
+// - Non-credit (permanent/temporary): `monthKey` ("YYYY-MM") identifies which
+//   month's occurrence this payment settles. One row per due month.
+// - Credit: `slotIndex` (1-based) identifies which sequential installment
+//   this is — NOT tied to a calendar month, because a missed installment
+//   pushes every later one (and the credit's end date) forward by one month
+//   instead of stacking onto the next month's due amount.
+model Payment {
+  id         String  @id @default(uuid())
+  expenseId  String
+  monthKey   String?
+  slotIndex  Int?
+  amountDue  Float
+  amountPaid Float
+  paidAt     String
+  createdAt  String
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+
+  @@unique([expenseId, monthKey])
+  @@unique([expenseId, slotIndex])
+  @@map("payments")
 }
 
 // Singleton row (id is always 1).

@@ -1,14 +1,14 @@
 import { notFound } from "next/navigation";
-import { getAllExpenses, getExpenseById, getSettings } from "@/lib/repository";
-import { getCreditProgress, getEffectiveEndMonth } from "@/lib/engine";
-import { monthLabelFr, todayMonth } from "@/lib/date";
+import { getAllExpenses, getAllPayments, getExpenseById, getSettings } from "@/lib/repository";
+import { getCreditRealState, getEffectiveEndMonth } from "@/lib/engine";
+import { defaultViewMonth, monthLabelFr } from "@/lib/date";
 import { PageHeader } from "@/components/page-header";
 import { ExpenseForm } from "@/components/expense-form";
 import { DeleteExpenseButton } from "@/components/delete-expense-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatMoney } from "@/lib/utils";
 import { TYPE_LABELS_FR } from "@/lib/category";
-import type { Expense } from "@/lib/types";
+import type { Expense, Payment } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -19,13 +19,14 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
 
   const settings = await getSettings();
   const allExpenses = await getAllExpenses();
+  const payments = await getAllPayments();
 
   return (
     <>
       <PageHeader title={expense.name} backHref="/" action={<DeleteExpenseButton id={expense.id} name={expense.name} />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         {expense.type === "credit" && (
-          <CreditInfo expense={expense} currency={settings.currency} />
+          <CreditInfo expense={expense} payments={payments} currency={settings.currency} />
         )}
         {expense.type !== "credit" && expense.frequency === "monthly" && (
           <LinkedInfo expenseId={expense.id} allExpenses={allExpenses} />
@@ -44,29 +45,29 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
   );
 }
 
-function CreditInfo({ expense, currency }: { expense: Parameters<typeof getCreditProgress>[0]; currency: string }) {
-  const progress = getCreditProgress(expense, todayMonth());
+function CreditInfo({ expense, payments, currency }: { expense: Expense; payments: Payment[]; currency: string }) {
+  const state = getCreditRealState(expense, payments, defaultViewMonth());
   return (
     <Card className="border-sky-200 bg-sky-50/50 dark:border-sky-900 dark:bg-sky-950/20">
       <CardContent className="grid grid-cols-2 gap-3 pt-4 text-sm">
         <div>
           <p className="text-xs text-slate-500">Payé</p>
-          <p className="font-semibold text-slate-900 dark:text-white">{formatMoney(progress.paid, currency)}</p>
+          <p className="font-semibold text-slate-900 dark:text-white">{formatMoney(state.paidTotal, currency)}</p>
         </div>
         <div className="text-right">
           <p className="text-xs text-slate-500">Restant</p>
-          <p className="font-semibold text-slate-900 dark:text-white">{formatMoney(progress.remaining, currency)}</p>
+          <p className="font-semibold text-slate-900 dark:text-white">{formatMoney(state.remaining, currency)}</p>
         </div>
         <div>
-          <p className="text-xs text-slate-500">Prochain paiement</p>
+          <p className="text-xs text-slate-500">En attente</p>
           <p className="font-medium text-slate-800 dark:text-slate-200">
-            {progress.nextPaymentMonth ? monthLabelFr(progress.nextPaymentMonth) : "—"}
+            {state.pendingAmount > 0 ? formatMoney(state.pendingAmount, currency) : "—"}
           </p>
         </div>
         <div className="text-right">
           <p className="text-xs text-slate-500">Fin prévue</p>
           <p className="font-medium text-slate-800 dark:text-slate-200">
-            {progress.endMonth ? monthLabelFr(progress.endMonth) : "—"}
+            {state.projectedEndMonth ? monthLabelFr(state.projectedEndMonth) : "—"}
           </p>
         </div>
       </CardContent>

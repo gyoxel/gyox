@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import type { MonthlyOccurrence } from "@/lib/types";
-import { CATEGORY_META } from "@/lib/category";
+import { CATEGORY_META, expenseIcon } from "@/lib/category";
 import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -16,7 +16,7 @@ export function ExpenseListItem({ occurrence, currency }: { occurrence: MonthlyO
       )}
     >
       <div className="flex items-center gap-2.5 min-w-0">
-        <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", meta.dot)} />
+        <span className="text-lg leading-none">{expenseIcon(occurrence.expense)}</span>
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{occurrence.expense.name}</p>
           {occurrence.isFinalCreditPayment && (

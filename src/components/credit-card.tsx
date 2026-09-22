@@ -1,24 +1,24 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import type { Expense } from "@/lib/types";
-import { getCreditProgress } from "@/lib/engine";
-import { monthLabelFr, todayMonth } from "@/lib/date";
+import type { Expense, Payment } from "@/lib/types";
+import { getCreditRealState } from "@/lib/engine";
+import { defaultViewMonth, monthLabelFr } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 
-const STATUS_LABEL: Record<string, { label: string; variant: "neutral" | "blue" | "green" }> = {
+const STATUS_LABEL: Record<string, { label: string; variant: "neutral" | "blue" | "green" | "red" }> = {
   "not-started": { label: "À venir", variant: "neutral" },
   "in-progress": { label: "En cours", variant: "blue" },
   completed: { label: "Terminé", variant: "green" },
 };
 
-export function CreditCard({ expense, currency }: { expense: Expense; currency: string }) {
-  const progress = getCreditProgress(expense, todayMonth());
+export function CreditCard({ expense, payments, currency }: { expense: Expense; payments: Payment[]; currency: string }) {
+  const state = getCreditRealState(expense, payments, defaultViewMonth());
   const initial = expense.creditInitialAmount ?? 0;
-  const percent = initial > 0 ? Math.min(100, Math.round((progress.paid / initial) * 100)) : 0;
-  const status = STATUS_LABEL[progress.status];
+  const percent = initial > 0 ? Math.min(100, Math.round((state.paidTotal / initial) * 100)) : 0;
+  const status = STATUS_LABEL[state.status];
 
   return (
     <Link href={`/expenses/${expense.id}`}>
@@ -27,6 +27,7 @@ export function CreditCard({ expense, currency }: { expense: Expense; currency: 
           <div className="flex items-center justify-between">
             <h3 className="text-base font-semibold text-slate-900 dark:text-white">{expense.name}</h3>
             <div className="flex items-center gap-1.5">
+              {state.isOverdue && state.pendingAmount > 0 && <Badge variant="red">En retard</Badge>}
               <Badge variant={status.variant}>{status.label}</Badge>
               <ChevronRight className="h-4 w-4 text-slate-300" />
             </div>
@@ -36,7 +37,7 @@ export function CreditCard({ expense, currency }: { expense: Expense; currency: 
             <div>
               <p className="text-xs text-slate-500 dark:text-slate-400">Restant</p>
               <p className="text-lg font-bold text-slate-900 dark:text-white">
-                {formatMoney(progress.remaining, currency)}
+                {formatMoney(state.remaining, currency)}
               </p>
             </div>
             <div className="text-right">
@@ -50,7 +51,7 @@ export function CreditCard({ expense, currency }: { expense: Expense; currency: 
           <div>
             <div className="mb-1 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
               <span>
-                {formatMoney(progress.paid, currency)} / {formatMoney(initial, currency)}
+                {formatMoney(state.paidTotal, currency)} / {formatMoney(initial, currency)}
               </span>
               <span>{percent}%</span>
             </div>
@@ -59,17 +60,15 @@ export function CreditCard({ expense, currency }: { expense: Expense; currency: 
 
           <div className="flex items-center justify-between text-sm">
             <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Prochain paiement</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">En attente</p>
               <p className="font-medium text-slate-800 dark:text-slate-200">
-                {progress.nextPaymentMonth
-                  ? `${monthLabelFr(progress.nextPaymentMonth)} · ${formatMoney(progress.nextPaymentAmount, currency)}`
-                  : "—"}
+                {state.pendingAmount > 0 ? formatMoney(state.pendingAmount, currency) : "—"}
               </p>
             </div>
             <div className="text-right">
               <p className="text-xs text-slate-500 dark:text-slate-400">Fin prévue</p>
               <p className="font-medium text-slate-800 dark:text-slate-200">
-                {progress.endMonth ? monthLabelFr(progress.endMonth) : "—"}
+                {state.projectedEndMonth ? monthLabelFr(state.projectedEndMonth) : "—"}
               </p>
             </div>
           </div>

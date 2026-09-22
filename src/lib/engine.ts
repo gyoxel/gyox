@@ -8,9 +8,10 @@ import {
   monthKey,
   monthLabelFr,
   monthOfDateStr,
+  monthsBetween,
   parseMonthKey,
 } from "./date";
-import type { CreditProgress, Expense, MonthSummary, MonthlyOccurrence } from "./types";
+import type { CreditRealState, Expense, MonthSummary, MonthlyOccurrence, Payment, PaymentStatus } from "./types";
 
 interface CreditScheduleEntry {
   monthKey: string;
@@ -164,60 +165,211 @@ export function getForecast(
   return out;
 }
 
-/**
- * Progress of a credit as of the *real* current month: how much has been
- * paid so far, what's left, and when the next payment is due. This
- * advances automatically as real time passes, with no manual bookkeeping.
- */
-export function getCreditProgress(expense: Expense, currentMonth: MonthId): CreditProgress {
-  const schedule = computeCreditSchedule(expense);
-  const initial = expense.creditInitialAmount ?? 0;
 
-  if (schedule.length === 0) {
+// ---------------------------------------------------------------------------
+// Real payment tracking. Everything above this line is the theoretical
+// schedule (assumes every payment happens exactly on time) and is left
+// untouched — it still drives Budget's monthly totals and forecasts.
+// Below is the *actual* picture, built from confirmed Payment rows.
+// ---------------------------------------------------------------------------
+
+const MAX_ARREARS_SCAN_MONTHS = 600; // 50 years, safety cap for the scan loop
+
+/**
+ * Real-time state of a credit: how much has actually been paid (not
+ * assumed from elapsed calendar time), what's really left, and whether the
+ * next installment is overdue. A missed installment never stacks onto the
+ * next month's due amount — it simply pushes every later installment (and
+ * the projected end date) back by one month, which falls out naturally here
+ * because `remaining` only decreases on a confirmed payment.
+ */
+export function getCreditRealState(
+  expense: Expense,
+  payments: Payment[],
+  currentMonth: MonthId,
+): CreditRealState {
+  const initial = expense.creditInitialAmount ?? 0;
+  const creditPayments = payments.filter((p) => p.expenseId === expense.id && p.slotIndex != null);
+  const paidTotal = round2(creditPayments.reduce((s, p) => s + p.amountPaid, 0));
+  const remaining = Math.max(0, round2(initial - paidTotal));
+  const paidSlots = creditPayments.length;
+  const start = monthOfDateStr(expense.startDate);
+
+  if (remaining <= 0) {
     return {
-      paid: 0,
-      remaining: initial,
-      status: "not-started",
-      nextPaymentMonth: null,
-      nextPaymentAmount: 0,
-      endMonth: null,
-      totalMonths: 0,
+      paidTotal,
+      remaining: 0,
+      paidSlots,
+      pendingAmount: 0,
+      isOverdue: false,
+      status: "completed",
+      projectedEndMonth: paidSlots > 0 ? addMonths(start, paidSlots - 1) : currentMonth,
     };
   }
 
-  let paid = 0;
-  let remaining = initial;
-  let nextPaymentMonth: MonthId | null = null;
-  let nextPaymentAmount = 0;
-  let status: CreditProgress["status"] = "not-started";
+  if (compareMonths(currentMonth, start) < 0) {
+    return {
+      paidTotal: 0,
+      remaining: initial,
+      paidSlots: 0,
+      pendingAmount: 0,
+      isOverdue: false,
+      status: "not-started",
+      projectedEndMonth: null,
+    };
+  }
 
-  for (const entry of schedule) {
-    const mk = parseMonthKey(entry.monthKey);
-    if (compareMonths(mk, currentMonth) < 0) {
-      paid = round2(paid + entry.payment);
-      remaining = entry.remainingAfter;
-      status = "in-progress";
-    } else if (!nextPaymentMonth) {
-      nextPaymentMonth = mk;
-      nextPaymentAmount = entry.payment;
+  const monthsElapsed = monthsBetween(start, currentMonth) + 1;
+  const monthlyAmount = expense.amount > 0 ? expense.amount : 0;
+  const pendingAmount = monthlyAmount > 0 ? Math.min(monthlyAmount, remaining) : 0;
+  const isOverdue = paidSlots < monthsElapsed;
+  const remainingSlotsNeeded = monthlyAmount > 0 ? Math.ceil(remaining / monthlyAmount) : 0;
+  const projectedEndMonth =
+    remainingSlotsNeeded > 0
+      ? isOverdue
+        ? addMonths(currentMonth, remainingSlotsNeeded - 1)
+        : addMonths(currentMonth, remainingSlotsNeeded)
+      : currentMonth;
+
+  return {
+    paidTotal,
+    remaining,
+    paidSlots,
+    pendingAmount,
+    isOverdue,
+    status: "in-progress",
+    projectedEndMonth,
+  };
+}
+
+function findPayment(
+  payments: Payment[],
+  expenseId: string,
+  monthKeyValue: string,
+): Payment | undefined {
+  return payments.find((p) => p.expenseId === expenseId && p.monthKey === monthKeyValue);
+}
+
+/**
+ * Real payment status of one non-credit occurrence for one specific month
+ * (used by the Budget page, which shows per-month truth without merging
+ * arrears into later months — that merging is a Dashboard-only concept).
+ */
+export function getMonthPaymentStatus(
+  expense: Expense,
+  m: MonthId,
+  payments: Payment[],
+  currentMonth: MonthId,
+): PaymentStatus {
+  const key = monthKey(m);
+  if (expense.type === "credit") {
+    const paidThisMonth = payments.some(
+      (p) => p.expenseId === expense.id && p.slotIndex != null && p.monthKey === key,
+    );
+    if (paidThisMonth) return "paid";
+    return compareMonths(m, currentMonth) <= 0 ? "unpaid" : "not-yet-due";
+  }
+  const payment = findPayment(payments, expense.id, key);
+  if (payment && payment.amountPaid >= payment.amountDue) return "paid";
+  return compareMonths(m, currentMonth) <= 0 ? "unpaid" : "not-yet-due";
+}
+
+export interface DueNowItem {
+  expense: Expense;
+  amountDue: number;
+  isOverdue: boolean;
+}
+
+export interface UnpaidMonth {
+  monthKey: string;
+  month: MonthId;
+  amountDue: number;
+  amountPaid: number;
+}
+
+/**
+ * Every past-or-current occurrence month of a non-credit expense that isn't
+ * fully settled yet, oldest first — the "le montant reste dû jusqu'à ce
+ * qu'il soit payé" ledger. Not applicable to credits (they never stack; use
+ * getCreditRealState instead).
+ */
+export function getUnpaidMonths(
+  expense: Expense,
+  payments: Payment[],
+  uptoMonth: MonthId,
+  byId: Map<string, Expense>,
+): UnpaidMonth[] {
+  if (expense.type === "credit") return [];
+
+  const start = monthOfDateStr(expense.startDate);
+  if (compareMonths(uptoMonth, start) < 0) return [];
+
+  const unpaid: UnpaidMonth[] = [];
+  let m = start;
+  let guard = 0;
+  while (compareMonths(m, uptoMonth) <= 0 && guard < MAX_ARREARS_SCAN_MONTHS) {
+    const occ = getOccurrenceForMonth(expense, m, byId);
+    if (occ) {
+      const payment = findPayment(payments, expense.id, monthKey(m));
+      const paid = payment?.amountPaid ?? 0;
+      if (occ.amount - paid > 0.005) {
+        unpaid.push({ monthKey: monthKey(m), month: m, amountDue: occ.amount, amountPaid: paid });
+      }
+    }
+    m = addMonths(m, 1);
+    guard++;
+  }
+  return unpaid;
+}
+
+/**
+ * Dashboard's "à payer maintenant": one aggregated line per expense that
+ * currently owes money. Credits never stack (see getCreditRealState) — only
+ * one installment can ever be pending. Non-credit expenses accumulate: every
+ * past occurrence that was never paid keeps adding to what's due now, until
+ * settled (rule: "le montant reste dû jusqu'à ce que je le paie").
+ */
+export function getDueNowItems(
+  expenses: Expense[],
+  payments: Payment[],
+  currentMonth: MonthId,
+): DueNowItem[] {
+  const byId = new Map(expenses.map((e) => [e.id, e]));
+  const items: DueNowItem[] = [];
+
+  for (const expense of expenses) {
+    if (!expense.active) continue;
+
+    if (expense.type === "credit") {
+      const state = getCreditRealState(expense, payments, currentMonth);
+      if (state.pendingAmount > 0 && state.isOverdue) {
+        items.push({ expense, amountDue: state.pendingAmount, isOverdue: true });
+      }
+      continue;
+    }
+
+    const owed = getUnpaidMonths(expense, payments, currentMonth, byId).reduce(
+      (s, u) => s + (u.amountDue - u.amountPaid),
+      0,
+    );
+    if (owed > 0.005) {
+      items.push({ expense, amountDue: round2(owed), isOverdue: true });
     }
   }
 
-  const endMonth = parseMonthKey(schedule[schedule.length - 1].monthKey);
-  if (compareMonths(currentMonth, endMonth) > 0) {
-    status = "completed";
-    remaining = 0;
-    nextPaymentMonth = null;
-    nextPaymentAmount = 0;
-  }
+  return items;
+}
 
-  return {
-    paid,
-    remaining,
-    status,
-    nextPaymentMonth,
-    nextPaymentAmount,
-    endMonth,
-    totalMonths: schedule.length,
-  };
+/**
+ * Total actually paid *this* real-time month across every expense — the
+ * only thing the Dashboard's salary progress bar should ever subtract. A
+ * planned-but-unpaid expense never reduces "disponible".
+ */
+export function getPaidThisMonth(expenses: Expense[], payments: Payment[], currentMonth: MonthId): number {
+  const key = monthKey(currentMonth);
+  const activeIds = new Set(expenses.filter((e) => e.active).map((e) => e.id));
+  const total = payments
+    .filter((p) => activeIds.has(p.expenseId) && p.monthKey === key)
+    .reduce((s, p) => s + p.amountPaid, 0);
+  return round2(total);
 }

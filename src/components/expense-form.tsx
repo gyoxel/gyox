@@ -28,6 +28,7 @@ interface FormState {
   color: ColorCategory;
   notes: string;
   creditInitialAmount: string;
+  icon: string;
   active: boolean;
 }
 
@@ -45,6 +46,7 @@ function buildInitialState(expense?: Expense): FormState {
       color: "yellow",
       notes: "",
       creditInitialAmount: "",
+      icon: "",
       active: true,
     };
   }
@@ -60,6 +62,7 @@ function buildInitialState(expense?: Expense): FormState {
     color: expense.color,
     notes: expense.notes ?? "",
     creditInitialAmount: expense.creditInitialAmount != null ? String(expense.creditInitialAmount) : "",
+    icon: expense.icon ?? "",
     active: expense.active,
   };
 }
@@ -105,6 +108,7 @@ export function ExpenseForm({ expense, allExpenses }: { expense?: Expense; allEx
       color: state.color,
       notes: state.notes || null,
       creditInitialAmount: state.type === "credit" ? Number(state.creditInitialAmount) : null,
+      icon: state.icon || null,
       active: state.active,
     };
 
@@ -136,9 +140,22 @@ export function ExpenseForm({ expense, allExpenses }: { expense?: Expense; allEx
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="name">Nom</Label>
-        <Input id="name" value={state.name} onChange={(e) => update("name", e.target.value)} required placeholder="Ex: Loyer" />
+      <div className="flex gap-3">
+        <div className="flex w-20 flex-col gap-1.5">
+          <Label htmlFor="icon">Icône</Label>
+          <Input
+            id="icon"
+            value={state.icon}
+            onChange={(e) => update("icon", e.target.value)}
+            placeholder="💳"
+            maxLength={4}
+            className="text-center text-lg"
+          />
+        </div>
+        <div className="flex flex-1 flex-col gap-1.5">
+          <Label htmlFor="name">Nom</Label>
+          <Input id="name" value={state.name} onChange={(e) => update("name", e.target.value)} required placeholder="Ex: Loyer" />
+        </div>
       </div>
 
       <div className="flex flex-col gap-1.5">

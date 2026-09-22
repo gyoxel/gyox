@@ -23,6 +23,9 @@ export interface Expense {
   creditInitialAmount: number | null;
   /** When set, this expense's end date follows the linked expense's (usually a credit). */
   linkedExpenseId: string | null;
+  /** Optional custom emoji shown in lists. Falls back to a generic icon
+   *  derived from `color` (see CATEGORY_META) when not set. */
+  icon: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -45,6 +48,43 @@ export interface MonthlyOccurrence {
   remainingAfter?: number | null;
 }
 
+/** An actual confirmed payment. Absence of a row means "not paid". */
+export interface Payment {
+  id: string;
+  expenseId: string;
+  /** "YYYY-MM": which month's occurrence this settles (non-credit only). */
+  monthKey: string | null;
+  /** 1-based installment number (credit only) — not tied to a calendar month. */
+  slotIndex: number | null;
+  amountDue: number;
+  amountPaid: number;
+  paidAt: string;
+  createdAt: string;
+}
+
+export type PaymentStatus = "paid" | "unpaid" | "not-yet-due";
+
+/** Real-time (payment-aware) state of a credit, as opposed to the old
+ *  theoretical schedule (which assumed every payment happens on time). */
+export interface CreditRealState {
+  /** Total actually paid so far (sum of confirmed Payment rows). */
+  paidTotal: number;
+  /** creditInitialAmount - paidTotal, never negative. */
+  remaining: number;
+  /** Number of installments actually confirmed paid. */
+  paidSlots: number;
+  /** The next unpaid installment's amount, or 0 if nothing pending (finished
+   *  or not yet started). */
+  pendingAmount: number;
+  /** True when the pending installment is already behind the calendar
+   *  (should have been paid in an earlier month). */
+  isOverdue: boolean;
+  status: CreditStatus;
+  /** Recalculated end month, pushed back by exactly the number of missed
+   *  installments so far. */
+  projectedEndMonth: MonthId | null;
+}
+
 export interface MonthSummary {
   month: MonthId;
   monthKey: string;
@@ -58,12 +98,3 @@ export interface MonthSummary {
   remaining: number;
 }
 
-export interface CreditProgress {
-  paid: number;
-  remaining: number;
-  status: CreditStatus;
-  nextPaymentMonth: MonthId | null;
-  nextPaymentAmount: number;
-  endMonth: MonthId | null;
-  totalMonths: number;
-}
