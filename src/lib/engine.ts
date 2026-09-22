@@ -93,15 +93,16 @@ export type DisplayColor = "red" | "yellow" | "blue";
 /**
  * The color an expense should be shown in, independent of the manually
  * picked `color` category field: permanent expenses are always red (they
- * lead every list); credits are always blue (they're added one installment
- * at a time, never repeating); a temporary expense is yellow when it spans
- * more than 2 calendar months, blue when it's 2 months or shorter (or a
- * one-time expense, which is inherently a single month).
+ * lead every list, and never "repeat toward an end" — they just continue).
+ * Everything else is colored by how long it recurs: yellow when it spans
+ * more than 2 calendar months, blue when it's 2 months or shorter — a
+ * one-time expense (inherently a single month) or a credit that pays off
+ * within 2 months included. A credit's span comes from its payoff schedule
+ * (getEffectiveEndMonth already resolves that), so a quick credit reads
+ * blue and a long one reads yellow, exactly like a temporary expense would.
  */
 export function getExpenseDisplayColor(expense: Expense, byId: Map<string, Expense>): DisplayColor {
   if (expense.type === "permanent") return "red";
-  if (expense.type === "credit") return "blue";
-
   if (expense.frequency === "one-time") return "blue";
 
   const start = monthOfDateStr(expense.startDate);
