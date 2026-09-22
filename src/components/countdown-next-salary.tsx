@@ -1,29 +1,12 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-
-const MONTHS_FR = [
-  "janvier",
-  "février",
-  "mars",
-  "avril",
-  "mai",
-  "juin",
-  "juillet",
-  "août",
-  "septembre",
-  "octobre",
-  "novembre",
-  "décembre",
-];
 
 interface Remaining {
   days: number;
   hours: number;
   minutes: number;
   seconds: number;
-  label: string;
 }
 
 function subscribe(callback: () => void) {
@@ -40,7 +23,6 @@ function computeRemaining(): Remaining {
     hours: Math.floor((diff / 3_600_000) % 24),
     minutes: Math.floor((diff / 60_000) % 60),
     seconds: Math.floor((diff / 1_000) % 60),
-    label: `1er ${MONTHS_FR[target.getMonth()]} ${target.getFullYear()}`,
   };
 }
 
@@ -64,7 +46,12 @@ function getSnapshot(): Remaining {
   return cachedRemaining;
 }
 
-const SERVER_SNAPSHOT: Remaining = { days: 0, hours: 0, minutes: 0, seconds: 0, label: " " };
+// The server and the client's pre-hydration pass would each compute their
+// own "now", almost never landing on the same second — a text mismatch
+// React would flag as a hydration error. A fixed placeholder for both of
+// those passes avoids that; useSyncExternalStore then re-renders with the
+// real value immediately after hydration, with no visible flash.
+const SERVER_SNAPSHOT: Remaining = { days: 0, hours: 0, minutes: 0, seconds: 0 };
 
 function getServerSnapshot(): Remaining {
   return SERVER_SNAPSHOT;
@@ -72,8 +59,8 @@ function getServerSnapshot(): Remaining {
 
 function Unit({ value, label }: { value: number; label: string }) {
   return (
-    <div className="rounded-xl bg-slate-900 py-2 text-center text-white dark:bg-slate-800">
-      <div className="text-lg font-bold tabular-nums">{String(value).padStart(2, "0")}</div>
+    <div className="rounded-2xl bg-slate-900/80 py-3 text-center text-white shadow-inner dark:bg-black/40">
+      <div className="text-2xl font-bold tabular-nums">{String(value).padStart(2, "0")}</div>
       <div className="text-[10px] uppercase tracking-wide text-slate-300">{label}</div>
     </div>
   );
@@ -83,17 +70,13 @@ export function CountdownNextSalary() {
   const remaining = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   return (
-    <Card>
-      <CardContent className="pt-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Prochain salaire</p>
-        <p className="mb-3 text-sm font-medium text-slate-700 dark:text-slate-300">{remaining.label}</p>
-        <div className="grid grid-cols-4 gap-2">
-          <Unit value={remaining.days} label="jours" />
-          <Unit value={remaining.hours} label="heures" />
-          <Unit value={remaining.minutes} label="min" />
-          <Unit value={remaining.seconds} label="sec" />
-        </div>
-      </CardContent>
-    </Card>
+    <div className="rounded-2xl border border-white/50 bg-white/30 p-4 shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
+      <div className="grid grid-cols-4 gap-2">
+        <Unit value={remaining.days} label="jours" />
+        <Unit value={remaining.hours} label="heures" />
+        <Unit value={remaining.minutes} label="min" />
+        <Unit value={remaining.seconds} label="sec" />
+      </div>
+    </div>
   );
 }

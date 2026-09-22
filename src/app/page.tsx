@@ -2,13 +2,20 @@ import { getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
 import { defaultViewMonth } from "@/lib/date";
 import { getDueNowItems, getPaidThisMonth } from "@/lib/engine";
 import { PageHeader } from "@/components/page-header";
-import { LiveClock } from "@/components/live-clock";
 import { CountdownNextSalary } from "@/components/countdown-next-salary";
 import { DueNowList } from "@/components/due-now-list";
+import { MaskedAmount } from "@/components/masked-amount";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatMoney } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
+
+function todayShortDate(): string {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  return `${day}/${month}/${now.getFullYear()}`;
+}
 
 export default async function HomePage() {
   const settings = await getSettings();
@@ -26,21 +33,23 @@ export default async function HomePage() {
 
   return (
     <>
-      <PageHeader title="GX Salaire" />
+      <PageHeader title="GX Salaire" action={<span className="text-xs text-slate-400">{todayShortDate()}</span>} />
 
       <main className="flex flex-col gap-4 px-4 py-5">
-        <LiveClock />
-
-        <CountdownNextSalary />
+        <Card className="border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/20">
+          <CardContent className="pt-4 text-center">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+              🟢 Disponible maintenant
+            </p>
+            <p className="mt-1 flex items-center justify-center text-3xl font-bold text-emerald-700 dark:text-emerald-400">
+              <MaskedAmount value={formatMoney(available, settings.currency)} />
+            </p>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500 dark:text-slate-400">Salaire</span>
-              <span className="text-lg font-semibold text-slate-900 dark:text-white">
-                {formatMoney(settings.salary, settings.currency)}
-              </span>
-            </div>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Salaire</p>
 
             <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
               <div
@@ -63,16 +72,7 @@ export default async function HomePage() {
           </CardContent>
         </Card>
 
-        <Card className="border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/20">
-          <CardContent className="pt-4 text-center">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
-              🟢 Disponible maintenant
-            </p>
-            <p className="mt-1 text-3xl font-bold text-emerald-700 dark:text-emerald-400">
-              {formatMoney(available, settings.currency)}
-            </p>
-          </CardContent>
-        </Card>
+        <CountdownNextSalary />
 
         <section className="flex flex-col gap-2.5">
           <h2 className="px-1 text-sm font-semibold text-slate-500 dark:text-slate-400">🔴 À payer</h2>
