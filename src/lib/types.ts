@@ -83,6 +83,12 @@ export interface CreditRealState {
   /** Recalculated end month, pushed back by exactly the number of missed
    *  installments so far. */
   projectedEndMonth: MonthId | null;
+  /** The calendar month the pending installment naturally falls in, had
+   *  every prior one been paid exactly on schedule. Null once completed or
+   *  not yet started. A given month only actually owes this installment
+   *  once it reaches (or passes) dueMonth — a payment made ahead of
+   *  schedule must not make earlier months look due too. */
+  dueMonth: MonthId | null;
 }
 
 export interface MonthSummary {

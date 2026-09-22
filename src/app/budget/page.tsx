@@ -9,6 +9,7 @@ import {
   monthKey,
   monthLabelFr,
   monthLabelShortFr,
+  todayMonth,
 } from "@/lib/date";
 import { getCreditRealState, getForecast, getMonthPaymentStatus, getMonthSummary, getUnpaidMonths } from "@/lib/engine";
 import { MonthSwitcher } from "@/components/month-switcher";
@@ -41,11 +42,10 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
   const expenses = await getAllExpenses();
   const payments = await getAllPayments();
   const viewMonth = monthFromSearchParams(sp.month, defaultViewMonth());
-  const currentOperatingMonth = defaultViewMonth();
+  const currentOperatingMonth = todayMonth();
   const summary = getMonthSummary(expenses, viewMonth, settings.salary);
-  const forecast = getForecast(expenses, settings.salary, currentOperatingMonth, FORECAST_MONTHS);
+  const forecast = getForecast(expenses, settings.salary, defaultViewMonth(), FORECAST_MONTHS);
 
-  const savingsAchieved = summary.remaining >= settings.savingsTarget;
   const viewMonthKey = monthKey(viewMonth);
 
   const items: AccordionItemData[] = summary.occurrences.map((occ) => {
@@ -126,17 +126,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
 
   return (
     <>
-      <PageHeader
-        title="Budget"
-        action={
-          <Button asChild size="sm">
-            <Link href="/expenses/new">
-              <Plus className="h-4 w-4" />
-              Ajouter
-            </Link>
-          </Button>
-        }
-      />
+      <PageHeader title="Budget" />
       <main className="flex flex-col gap-5 px-4 py-5">
         <MonthSwitcher month={viewMonth} basePath="/budget" />
 
@@ -156,18 +146,6 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
                 {formatMoney(summary.remaining, settings.currency)}
               </span>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className={savingsAchieved ? "border-emerald-200 dark:border-emerald-900" : "border-amber-200 dark:border-amber-900"}>
-          <CardContent className="pt-4">
-            <Row label="Objectif d'épargne" value={settings.savingsTarget} currency={settings.currency} />
-            <Row
-              label={savingsAchieved ? "Épargne potentielle atteinte" : "Il manque"}
-              value={savingsAchieved ? summary.remaining - settings.savingsTarget : settings.savingsTarget - summary.remaining}
-              currency={settings.currency}
-              strong
-            />
           </CardContent>
         </Card>
 
@@ -197,6 +175,12 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
               ))}
             </div>
           )}
+          <Button asChild className="mt-1">
+            <Link href="/expenses/new">
+              <Plus className="h-4 w-4" />
+              Ajouter une dépense
+            </Link>
+          </Button>
         </section>
 
         {transition && (

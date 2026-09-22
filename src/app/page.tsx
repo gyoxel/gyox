@@ -1,10 +1,11 @@
 import { getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
-import { defaultViewMonth } from "@/lib/date";
-import { getDueNowItems, getPaidThisMonth } from "@/lib/engine";
+import { monthFromSearchParams, monthKey, todayMonth } from "@/lib/date";
+import { getMonthLedgerItems, getPaidThisMonth } from "@/lib/engine";
 import { PageHeader } from "@/components/page-header";
 import { CountdownNextSalary } from "@/components/countdown-next-salary";
 import { DueNowList } from "@/components/due-now-list";
 import { MaskedAmount } from "@/components/masked-amount";
+import { MonthSwitcher } from "@/components/month-switcher";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatMoney } from "@/lib/utils";
 
@@ -17,19 +18,27 @@ function todayShortDate(): string {
   return `${day}/${month}/${now.getFullYear()}`;
 }
 
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
+  const sp = await searchParams;
   const settings = await getSettings();
   const expenses = await getAllExpenses();
   const payments = await getAllPayments();
-  const currentMonth = defaultViewMonth();
+  const currentMonth = todayMonth();
+  const dueMonth = monthFromSearchParams(sp.month, currentMonth);
 
   const paidThisMonth = getPaidThisMonth(expenses, payments, currentMonth);
   const available = Math.max(0, settings.salary - paidThisMonth);
   const percentUsed = settings.salary > 0 ? Math.min(100, Math.round((paidThisMonth / settings.salary) * 100)) : 0;
 
-  const dueNow = getDueNowItems(expenses, payments, currentMonth)
-    .sort((a, b) => b.amountDue - a.amountDue)
-    .map((item) => ({ id: item.expense.id, name: item.expense.name, amountDue: item.amountDue }));
+  const dueNow = getMonthLedgerItems(expenses, payments, dueMonth)
+    .sort((a, b) => b.amount - a.amount)
+    .map((item) => ({
+      id: item.expense.id,
+      name: item.expense.name,
+      amountDue: item.amount,
+      type: item.expense.type,
+      paid: item.paid,
+    }));
 
   return (
     <>
@@ -75,8 +84,11 @@ export default async function HomePage() {
         <CountdownNextSalary />
 
         <section className="flex flex-col gap-2.5">
-          <h2 className="px-1 text-sm font-semibold text-slate-500 dark:text-slate-400">🔴 À payer</h2>
-          <DueNowList items={dueNow} currency={settings.currency} />
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400">🔴 À payer</h2>
+          </div>
+          <MonthSwitcher month={dueMonth} basePath="/" />
+          <DueNowList items={dueNow} currency={settings.currency} monthKey={monthKey(dueMonth)} />
         </section>
       </main>
     </>

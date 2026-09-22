@@ -1,16 +1,7 @@
 // Pure calculation engine. No DB access here — everything is derived from
 // the expense list + settings so that changing any input automatically
 // recalculates every dependent number. Nothing is ever hardcoded per-month.
-import {
-  type MonthId,
-  addMonths,
-  compareMonths,
-  monthKey,
-  monthLabelFr,
-  monthOfDateStr,
-  monthsBetween,
-  parseMonthKey,
-} from "./date";
+import { type MonthId, addMonths, compareMonths, monthKey, monthLabelFr, monthOfDateStr, parseMonthKey } from "./date";
 import type { CreditRealState, Expense, MonthSummary, MonthlyOccurrence, Payment, PaymentStatus } from "./types";
 
 interface CreditScheduleEntry {
@@ -195,7 +186,15 @@ export function getCreditRealState(
   const paidSlots = creditPayments.length;
   const start = monthOfDateStr(expense.startDate);
 
-  if (remaining <= 0) {
+  if (remaining <= 0 && paidSlots > 0) {
+    // The real completion month is whichever real month the last
+    // confirmed installment actually landed in (stored on the payment
+    // itself), not a schedule guess — accurate whether it finished early,
+    // late, or exactly on the theoretical pace.
+    const lastPaymentMonth = creditPayments.reduce<string | null>(
+      (max, p) => (p.monthKey && (!max || p.monthKey > max) ? p.monthKey : max),
+      null,
+    );
     return {
       paidTotal,
       remaining: 0,
@@ -203,11 +202,17 @@ export function getCreditRealState(
       pendingAmount: 0,
       isOverdue: false,
       status: "completed",
-      projectedEndMonth: paidSlots > 0 ? addMonths(start, paidSlots - 1) : currentMonth,
+      projectedEndMonth: lastPaymentMonth ? parseMonthKey(lastPaymentMonth) : addMonths(start, paidSlots - 1),
+      dueMonth: null,
     };
   }
 
-  if (compareMonths(currentMonth, start) < 0) {
+  // Nothing paid yet and the credit's own start date hasn't arrived —
+  // genuinely hasn't begun. (If something HAS been paid — an advance
+  // payment made before the start month, e.g. via the Dashboard's month
+  // carousel — this falls through to the general case below instead of
+  // discarding that real payment.)
+  if (paidSlots === 0 && compareMonths(currentMonth, start) < 0) {
     return {
       paidTotal: 0,
       remaining: initial,
@@ -216,20 +221,23 @@ export function getCreditRealState(
       isOverdue: false,
       status: "not-started",
       projectedEndMonth: null,
+      dueMonth: null,
     };
   }
 
-  const monthsElapsed = monthsBetween(start, currentMonth) + 1;
+  // The calendar month the next installment would naturally fall in, had
+  // every prior one been paid exactly on schedule from `start`.
+  const scheduleMonth = addMonths(start, paidSlots);
+  // Behind schedule only if we're evaluating a month that's already past
+  // where the next installment was due; evaluating a month before that
+  // (e.g. paying ahead) is never "overdue".
+  const isOverdue = compareMonths(currentMonth, scheduleMonth) > 0;
+  const effectiveMonth = isOverdue ? currentMonth : scheduleMonth;
   const monthlyAmount = expense.amount > 0 ? expense.amount : 0;
   const pendingAmount = monthlyAmount > 0 ? Math.min(monthlyAmount, remaining) : 0;
-  const isOverdue = paidSlots < monthsElapsed;
   const remainingSlotsNeeded = monthlyAmount > 0 ? Math.ceil(remaining / monthlyAmount) : 0;
   const projectedEndMonth =
-    remainingSlotsNeeded > 0
-      ? isOverdue
-        ? addMonths(currentMonth, remainingSlotsNeeded - 1)
-        : addMonths(currentMonth, remainingSlotsNeeded)
-      : currentMonth;
+    remainingSlotsNeeded > 0 ? addMonths(effectiveMonth, remainingSlotsNeeded - 1) : effectiveMonth;
 
   return {
     paidTotal,
@@ -239,6 +247,7 @@ export function getCreditRealState(
     isOverdue,
     status: "in-progress",
     projectedEndMonth,
+    dueMonth: scheduleMonth,
   };
 }
 
@@ -272,12 +281,6 @@ export function getMonthPaymentStatus(
   const payment = findPayment(payments, expense.id, key);
   if (payment && payment.amountPaid >= payment.amountDue) return "paid";
   return compareMonths(m, currentMonth) <= 0 ? "unpaid" : "not-yet-due";
-}
-
-export interface DueNowItem {
-  expense: Expense;
-  amountDue: number;
-  isOverdue: boolean;
 }
 
 export interface UnpaidMonth {
@@ -322,38 +325,66 @@ export function getUnpaidMonths(
   return unpaid;
 }
 
+export interface LedgerItem {
+  expense: Expense;
+  amount: number;
+  paid: boolean;
+}
+
 /**
- * Dashboard's "à payer maintenant": one aggregated line per expense that
- * currently owes money. Credits never stack (see getCreditRealState) — only
- * one installment can ever be pending. Non-credit expenses accumulate: every
- * past occurrence that was never paid keeps adding to what's due now, until
- * settled (rule: "le montant reste dû jusqu'à ce que je le paie").
+ * Dashboard's "à payer" list for a given month: one row per expense
+ * relevant to that month, whether settled or not — a paid item is kept
+ * (so the UI can show it struck through) rather than silently dropped, so
+ * the checklist looks the same after a reload as it does right after
+ * checking something off. Credits never stack (see getCreditRealState) —
+ * only one installment can ever be pending at a time. Non-credit expenses
+ * accumulate: every past occurrence that was never paid keeps adding to
+ * what's due, until settled (rule: "le montant reste dû jusqu'à ce que je
+ * le paie").
  */
-export function getDueNowItems(
+export function getMonthLedgerItems(
   expenses: Expense[],
   payments: Payment[],
-  currentMonth: MonthId,
-): DueNowItem[] {
+  viewMonth: MonthId,
+): LedgerItem[] {
   const byId = new Map(expenses.map((e) => [e.id, e]));
-  const items: DueNowItem[] = [];
+  const items: LedgerItem[] = [];
 
   for (const expense of expenses) {
     if (!expense.active) continue;
 
     if (expense.type === "credit") {
-      const state = getCreditRealState(expense, payments, currentMonth);
-      if (state.pendingAmount > 0 && state.isOverdue) {
-        items.push({ expense, amountDue: state.pendingAmount, isOverdue: true });
+      const creditStart = monthOfDateStr(expense.startDate);
+      if (compareMonths(viewMonth, creditStart) < 0) continue; // hasn't started as of this month
+      const state = getCreditRealState(expense, payments, viewMonth);
+      if (state.status === "completed") continue;
+      // Due only once the viewed month has actually reached the pending
+      // installment's natural month — a payment made ahead of schedule
+      // must not make an earlier month look like it's still owed.
+      const isDueByNow = state.pendingAmount > 0 && state.dueMonth != null && compareMonths(viewMonth, state.dueMonth) >= 0;
+      if (isDueByNow) {
+        items.push({ expense, amount: state.pendingAmount, paid: false });
+      } else {
+        items.push({ expense, amount: expense.amount, paid: true });
       }
       continue;
     }
 
-    const owed = getUnpaidMonths(expense, payments, currentMonth, byId).reduce(
+    const start = monthOfDateStr(expense.startDate);
+    if (compareMonths(viewMonth, start) < 0) continue;
+
+    const owed = getUnpaidMonths(expense, payments, viewMonth, byId).reduce(
       (s, u) => s + (u.amountDue - u.amountPaid),
       0,
     );
     if (owed > 0.005) {
-      items.push({ expense, amountDue: round2(owed), isOverdue: true });
+      items.push({ expense, amount: round2(owed), paid: false });
+      continue;
+    }
+
+    const occ = getOccurrenceForMonth(expense, viewMonth, byId);
+    if (occ) {
+      items.push({ expense, amount: occ.amount, paid: true });
     }
   }
 

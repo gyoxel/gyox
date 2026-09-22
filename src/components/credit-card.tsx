@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import type { Expense, Payment } from "@/lib/types";
 import { getCreditRealState } from "@/lib/engine";
-import { defaultViewMonth, monthLabelFr } from "@/lib/date";
+import { monthLabelFr, todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -15,7 +15,7 @@ const STATUS_LABEL: Record<string, { label: string; variant: "neutral" | "blue" 
 };
 
 export function CreditCard({ expense, payments, currency }: { expense: Expense; payments: Payment[]; currency: string }) {
-  const state = getCreditRealState(expense, payments, defaultViewMonth());
+  const state = getCreditRealState(expense, payments, todayMonth());
   const initial = expense.creditInitialAmount ?? 0;
   const percent = initial > 0 ? Math.min(100, Math.round((state.paidTotal / initial) * 100)) : 0;
   const status = STATUS_LABEL[state.status];

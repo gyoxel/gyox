@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Check, ChevronDown, Pencil, Undo2 } from "lucide-react";
+import { ChevronDown, Pencil } from "lucide-react";
 import type { PaymentStatus } from "@/lib/types";
 import { expenseIcon } from "@/lib/category";
 import { formatMoney, cn } from "@/lib/utils";
@@ -41,27 +40,7 @@ export interface AccordionItemData {
 
 export function ExpenseAccordionItem({ item, currency }: { item: AccordionItemData; currency: string }) {
   const [open, setOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const router = useRouter();
   const status = STATUS_META[item.status];
-
-  function markPaid() {
-    startTransition(async () => {
-      await fetch(`/api/expenses/${item.expenseId}/payments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ monthKey: item.monthKey }),
-      });
-      router.refresh();
-    });
-  }
-
-  function undoPaid() {
-    startTransition(async () => {
-      await fetch(`/api/expenses/${item.expenseId}/payments?monthKey=${item.monthKey}`, { method: "DELETE" });
-      router.refresh();
-    });
-  }
 
   const percent =
     item.credit && item.credit.initialAmount > 0
@@ -94,7 +73,7 @@ export function ExpenseAccordionItem({ item, currency }: { item: AccordionItemDa
 
       {open && (
         <div className="border-t border-slate-100 px-3.5 py-3 dark:border-slate-800">
-          {item.credit ? (
+          {item.credit && (
             <div className="flex flex-col gap-3">
               <div>
                 <div className="mb-1 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
@@ -132,40 +111,10 @@ export function ExpenseAccordionItem({ item, currency }: { item: AccordionItemDa
                   </p>
                 </div>
               </div>
-
-              <div className="flex gap-2">
-                {item.credit.pendingAmount > 0 && (
-                  <Button type="button" size="sm" className="flex-1" onClick={markPaid} disabled={isPending}>
-                    <Check className="h-4 w-4" />
-                    Payer {formatMoney(item.credit.pendingAmount, currency)}
-                  </Button>
-                )}
-                {item.credit.paidTotal > 0 && (
-                  <Button type="button" variant="outline" size="sm" onClick={undoPaid} disabled={isPending}>
-                    <Undo2 className="h-4 w-4" />
-                    Annuler
-                  </Button>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              {item.status !== "paid" && (
-                <Button type="button" size="sm" className="flex-1" onClick={markPaid} disabled={isPending}>
-                  <Check className="h-4 w-4" />
-                  Marquer payé
-                </Button>
-              )}
-              {item.status === "paid" && (
-                <Button type="button" variant="outline" size="sm" onClick={undoPaid} disabled={isPending}>
-                  <Undo2 className="h-4 w-4" />
-                  Annuler
-                </Button>
-              )}
             </div>
           )}
 
-          <div className="mt-3 flex gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+          <div className={cn("flex gap-2", item.credit && "mt-3 border-t border-slate-100 pt-3 dark:border-slate-800")}>
             <Button asChild variant="outline" size="sm" className="flex-1">
               <Link href={`/expenses/${item.expenseId}`}>
                 <Pencil className="h-4 w-4" />

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { defaultViewMonth, monthKey as toMonthKey, parseMonthKey } from "@/lib/date";
+import { monthKey as toMonthKey, parseMonthKey, todayMonth } from "@/lib/date";
 import { getCreditRealState, getOccurrenceForMonth, getUnpaidMonths } from "@/lib/engine";
 import {
   getAllExpenses,
@@ -17,10 +17,13 @@ interface Params {
 
 /**
  * Marks the next due amount paid.
- * Body: { monthKey?: string } — for non-credit expenses, which month to
- * settle; omitted, it settles the oldest unpaid month (Dashboard's quick
- * action). Ignored for credits, which always settle the single pending
- * installment.
+ * Body: { monthKey?: string } —
+ * - Non-credit: which month to settle; omitted, settles the oldest unpaid
+ *   month (the Dashboard's quick action).
+ * - Credit: which month to evaluate "is anything pending" against —
+ *   passing a future month (e.g. from the Dashboard's month carousel)
+ *   lets a not-yet-started installment be paid in advance; omitted
+ *   defaults to the real current month.
  */
 export async function POST(req: NextRequest, { params }: Params) {
   const { id } = await params;
@@ -28,11 +31,11 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!expense) return NextResponse.json({ error: "Dépense introuvable." }, { status: 404 });
 
   const body = await req.json().catch(() => ({}) as { monthKey?: string });
-  const currentMonth = defaultViewMonth();
   const payments = await getAllPayments();
 
   if (expense.type === "credit") {
-    const state = getCreditRealState(expense, payments, currentMonth);
+    const evalMonth = body.monthKey ? parseMonthKey(body.monthKey) : todayMonth();
+    const state = getCreditRealState(expense, payments, evalMonth);
     if (state.pendingAmount <= 0) {
       return NextResponse.json({ error: "Aucune mensualité en attente pour ce crédit." }, { status: 400 });
     }
@@ -40,11 +43,12 @@ export async function POST(req: NextRequest, { params }: Params) {
       expense.id,
       state.pendingAmount,
       state.pendingAmount,
-      toMonthKey(currentMonth),
+      toMonthKey(evalMonth),
     );
     return NextResponse.json(payment, { status: 201 });
   }
 
+  const currentMonth = todayMonth();
   const allExpenses = await getAllExpenses();
   const byId = new Map(allExpenses.map((e) => [e.id, e]));
   const unpaid = getUnpaidMonths(expense, payments, currentMonth, byId);
@@ -91,7 +95,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     return NextResponse.json({ ok: true });
   }
 
-  const monthKeyValue = req.nextUrl.searchParams.get("monthKey") ?? toMonthKey(defaultViewMonth());
+  const monthKeyValue = req.nextUrl.searchParams.get("monthKey") ?? toMonthKey(todayMonth());
   const ok = await markMonthUnpaid(expense.id, monthKeyValue);
   if (!ok) return NextResponse.json({ error: "Aucun paiement à annuler pour ce mois." }, { status: 400 });
   return NextResponse.json({ ok: true });

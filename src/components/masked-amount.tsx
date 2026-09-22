@@ -9,7 +9,7 @@ export function MaskedAmount({ value, className, buttonClassName }: { value: str
 
   return (
     <span className="inline-flex items-center gap-2">
-      <span className={cn(className, !revealed && "tracking-widest")}>{revealed ? value : "★★★★ DH"}</span>
+      <span className={cn(className, !revealed && "tracking-widest")}>{revealed ? value : "**** DH"}</span>
       <button
         type="button"
         onClick={() => setRevealed((v) => !v)}

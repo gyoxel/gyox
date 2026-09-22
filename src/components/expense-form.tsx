@@ -2,8 +2,10 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Check, Clock } from "lucide-react";
 import type { ColorCategory, Expense, ExpenseType, Frequency } from "@/lib/types";
 import { todayDateStr } from "@/lib/date";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,12 +69,37 @@ function buildInitialState(expense?: Expense): FormState {
   };
 }
 
-export function ExpenseForm({ expense, allExpenses }: { expense?: Expense; allExpenses: Expense[] }) {
+export function ExpenseForm({
+  expense,
+  allExpenses,
+  initialPaidStatus,
+  showPaidToggle = true,
+}: {
+  expense?: Expense;
+  allExpenses: Expense[];
+  initialPaidStatus?: boolean;
+  showPaidToggle?: boolean;
+}) {
   const router = useRouter();
   const isEdit = !!expense;
   const [state, setState] = useState<FormState>(() => buildInitialState(expense));
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [paidNow, setPaidNow] = useState(initialPaidStatus ?? false);
+  const [isTogglingPaid, setIsTogglingPaid] = useState(false);
+
+  function setPaidStatus(paid: boolean) {
+    if (!expense || paid === paidNow) return;
+    setPaidNow(paid);
+    setIsTogglingPaid(true);
+    const request = paid
+      ? fetch(`/api/expenses/${expense.id}/payments`, { method: "POST" })
+      : fetch(`/api/expenses/${expense.id}/payments`, { method: "DELETE" });
+    request.finally(() => {
+      setIsTogglingPaid(false);
+      router.refresh();
+    });
+  }
 
   const linkableExpenses = useMemo(
     () => allExpenses.filter((e) => e.id !== expense?.id && (e.type === "credit" || e.linkedExpenseId == null)),
@@ -291,6 +318,42 @@ export function ExpenseForm({ expense, allExpenses }: { expense?: Expense; allEx
         <input type="checkbox" checked={state.active} onChange={(e) => update("active", e.target.checked)} />
         Actif (pris en compte dans les calculs)
       </label>
+
+      {isEdit && showPaidToggle && (
+        <div className="flex flex-col gap-1.5">
+          <Label>Statut de paiement (ce mois-ci)</Label>
+          <div className="flex overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+            <button
+              type="button"
+              onClick={() => setPaidStatus(true)}
+              disabled={isTogglingPaid}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50",
+                paidNow
+                  ? "bg-emerald-500 text-white"
+                  : "bg-white text-slate-500 dark:bg-slate-900 dark:text-slate-400",
+              )}
+            >
+              <Check className="h-4 w-4" />
+              Payé
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaidStatus(false)}
+              disabled={isTogglingPaid}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50",
+                !paidNow
+                  ? "bg-rose-500 text-white"
+                  : "bg-white text-slate-500 dark:bg-slate-900 dark:text-slate-400",
+              )}
+            >
+              <Clock className="h-4 w-4" />
+              Pas encore
+            </button>
+          </div>
+        </div>
+      )}
 
       {error && <p className="text-sm text-rose-600">{error}</p>}
 

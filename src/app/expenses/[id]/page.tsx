@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getAllExpenses, getAllPayments, getExpenseById, getSettings } from "@/lib/repository";
-import { getCreditRealState, getEffectiveEndMonth } from "@/lib/engine";
-import { defaultViewMonth, monthLabelFr } from "@/lib/date";
+import { getCreditRealState, getEffectiveEndMonth, getMonthPaymentStatus } from "@/lib/engine";
+import { compareMonths, monthLabelFr, monthOfDateStr, todayMonth } from "@/lib/date";
 import { PageHeader } from "@/components/page-header";
 import { ExpenseForm } from "@/components/expense-form";
 import { DeleteExpenseButton } from "@/components/delete-expense-button";
@@ -20,6 +20,18 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
   const settings = await getSettings();
   const allExpenses = await getAllExpenses();
   const payments = await getAllPayments();
+  const currentMonth = todayMonth();
+
+  let isPaidNow: boolean;
+  let hasCurrentPeriod: boolean;
+  if (expense.type === "credit") {
+    const state = getCreditRealState(expense, payments, currentMonth);
+    hasCurrentPeriod = state.status !== "not-started";
+    isPaidNow = state.pendingAmount <= 0 && hasCurrentPeriod;
+  } else {
+    hasCurrentPeriod = compareMonths(currentMonth, monthOfDateStr(expense.startDate)) >= 0;
+    isPaidNow = hasCurrentPeriod && getMonthPaymentStatus(expense, currentMonth, payments, currentMonth) === "paid";
+  }
 
   return (
     <>
@@ -37,7 +49,12 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
             <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
               {TYPE_LABELS_FR[expense.type]}
             </p>
-            <ExpenseForm expense={expense} allExpenses={allExpenses} />
+            <ExpenseForm
+              expense={expense}
+              allExpenses={allExpenses}
+              initialPaidStatus={isPaidNow}
+              showPaidToggle={hasCurrentPeriod}
+            />
           </CardContent>
         </Card>
       </main>
@@ -46,7 +63,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
 }
 
 function CreditInfo({ expense, payments, currency }: { expense: Expense; payments: Payment[]; currency: string }) {
-  const state = getCreditRealState(expense, payments, defaultViewMonth());
+  const state = getCreditRealState(expense, payments, todayMonth());
   return (
     <Card className="border-sky-200 bg-sky-50/50 dark:border-sky-900 dark:bg-sky-950/20">
       <CardContent className="grid grid-cols-2 gap-3 pt-4 text-sm">
