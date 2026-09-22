@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Check, ChevronLeft, ChevronRight, Plus, PartyPopper } from "lucide-react";
@@ -27,6 +28,18 @@ function nextOptimisticId(): string {
   return `optimistic-${optimisticIdCounter}`;
 }
 
+/** Runs a state update inside a View Transition when the browser supports
+ *  it, so a row sliding to the bottom (once paid) animates smoothly instead
+ *  of jumping there instantly. Falls back to a plain update otherwise. */
+function animateReorder(update: () => void) {
+  const doc = typeof document !== "undefined" ? (document as Document & { startViewTransition?: (cb: () => void) => void }) : null;
+  if (doc?.startViewTransition) {
+    doc.startViewTransition(() => flushSync(update));
+  } else {
+    update();
+  }
+}
+
 export function DueNowList({
   expenses,
   payments,
@@ -40,19 +53,18 @@ export function DueNowList({
 }) {
   const router = useRouter();
   const [viewMonth, setViewMonth] = useState<MonthId>(currentMonth);
+  // Seeded once from the initial server payload; every change after that
+  // flows only through toggle()'s own optimistic add/remove/replace, never
+  // from a later `payments` prop. Re-syncing from a fresh router.refresh()
+  // snapshot here used to race: a slow refresh triggered by an earlier
+  // toggle could land after a second, faster toggle and silently overwrite
+  // it, making an item that was just checked off flip back to unpaid a
+  // moment later. Local state is now the single source of truth for this
+  // list; router.refresh() is still called to keep the Salaire/Disponible
+  // figures elsewhere on the page in sync.
   const [localPayments, setLocalPayments] = useState<Payment[]>(payments);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const touchStartX = useRef<number | null>(null);
-
-  // Reconciles with fresh server data (after a background router.refresh())
-  // once no toggle is in flight, so optimistic edits are never clobbered.
-  // (Adjusting state during render, per React's guidance, instead of an
-  // effect — avoids an extra commit just to re-sync a prop.)
-  const [prevPayments, setPrevPayments] = useState(payments);
-  if (payments !== prevPayments && pendingIds.size === 0) {
-    setPrevPayments(payments);
-    setLocalPayments(payments);
-  }
 
   const items = useMemo(() => {
     const byId = new Map(expenses.map((e) => [e.id, e]));
@@ -85,7 +97,7 @@ export function DueNowList({
 
     if (wasPaid) {
       const removedSnapshot = localPayments;
-      setLocalPayments((prev) => removeOptimisticPayment(prev, expense, viewMonth));
+      animateReorder(() => setLocalPayments((prev) => removeOptimisticPayment(prev, expense, viewMonth)));
       const url =
         expense.type === "credit"
           ? `/api/expenses/${expense.id}/payments`
@@ -103,7 +115,7 @@ export function DueNowList({
     }
 
     const optimistic = buildOptimisticPayment(expense, viewMonth, localPayments);
-    setLocalPayments((prev) => [...prev, optimistic]);
+    animateReorder(() => setLocalPayments((prev) => [...prev, optimistic]));
     fetch(`/api/expenses/${expense.id}/payments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -162,6 +174,7 @@ export function DueNowList({
             return (
               <div
                 key={expense.id}
+                style={{ viewTransitionName: `expense-row-${expense.id}` }}
                 className={cn(
                   "flex items-center gap-3 rounded-xl border border-l-4 border-slate-200 bg-white px-3.5 py-3 shadow-sm transition-opacity dark:border-slate-800 dark:bg-slate-900",
                   BORDER_CLASS[color],
