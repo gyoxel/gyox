@@ -58,7 +58,7 @@ export default async function HomePage({
     <>
       <PageHeader
         title={
-          <span className="bg-gradient-to-r from-amber-600 via-yellow-400 to-amber-600 bg-clip-text font-bold tracking-wide text-transparent dark:from-amber-400 dark:via-yellow-300 dark:to-amber-400">
+          <span className="bg-gradient-to-b from-yellow-200 via-amber-500 to-yellow-700 bg-clip-text text-2xl font-extrabold tracking-wide text-transparent drop-shadow-[0_1px_1px_rgba(120,72,0,0.35)] dark:from-yellow-100 dark:via-amber-400 dark:to-yellow-600">
             GX Salaire
           </span>
         }
