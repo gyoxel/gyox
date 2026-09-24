@@ -1,41 +1,127 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarRange, Home, LineChart, Settings, Wallet } from "lucide-react";
+import { CalendarRange, CreditCard, Home, LineChart, Plus, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const ITEMS = [
+const LEFT_ITEMS = [
   { href: "/", label: "Accueil", icon: Home },
-  { href: "/credits", label: "Crédits", icon: Wallet },
-  { href: "/budget", label: "Budget", icon: CalendarRange },
-  { href: "/timeline", label: "Timeline", icon: LineChart },
-  { href: "/settings", label: "Réglages", icon: Settings },
+  { href: "/budget", label: "Dépenses", icon: CalendarRange },
 ];
+
+const RIGHT_ITEMS = [
+  { href: "/credits", label: "Crédits", icon: Wallet },
+  { href: "/timeline", label: "Timeline", icon: LineChart },
+];
+
+const ACTIONS = [
+  { href: "/settings#salary", label: "Revenu", icon: TrendingUp, className: "bg-emerald-500 text-white shadow-emerald-500/30" },
+  { href: "/expenses/new", label: "Dépense", icon: TrendingDown, className: "bg-rose-500 text-white shadow-rose-500/30" },
+  { href: "/expenses/new?type=credit", label: "Crédit", icon: CreditCard, className: "bg-sky-500 text-white shadow-sky-500/30" },
+];
+
+function NavLink({ href, label, icon: Icon, active }: { href: string; label: string; icon: typeof Home; active: boolean }) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition-colors",
+        active ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-slate-500",
+      )}
+    >
+      <Icon className={cn("h-5 w-5", active && "stroke-[2.4]")} />
+      {label}
+    </Link>
+  );
+}
 
 export function BottomNav() {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  const [openedAt, setOpenedAt] = useState(pathname);
+
+  // Close the menu whenever the route changes (e.g. after picking an action).
+  if (open && pathname !== openedAt) setOpen(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+
+  function toggle() {
+    setOpenedAt(pathname);
+    setOpen((v) => !v);
+  }
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur pb-[env(safe-area-inset-bottom)] dark:border-slate-800 dark:bg-slate-950/95">
-      <div className="mx-auto flex max-w-lg items-stretch justify-between px-1">
-        {ITEMS.map(({ href, label, icon: Icon }) => {
-          const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+    <>
+      <div
+        aria-hidden
+        onClick={() => setOpen(false)}
+        className={cn(
+          "fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-[2px] transition-opacity duration-300",
+          open ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
+      />
+
+      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-50 flex flex-col items-center gap-3">
+        {ACTIONS.map(({ href, label, icon: Icon, className }, i) => {
+          // Stagger: nearest to the + button appears first, closes last.
+          const order = ACTIONS.length - 1 - i;
           return (
             <Link
-              key={href}
+              key={label}
               href={href}
+              onClick={() => setOpen(false)}
+              tabIndex={open ? 0 : -1}
+              style={{ transitionDelay: `${(open ? order : i) * 45}ms` }}
               className={cn(
-                "flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition-colors",
-                active ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-slate-500",
+                "flex w-44 items-center gap-3 rounded-2xl py-2.5 pl-2.5 pr-4 text-sm font-semibold shadow-lg transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
+                className,
+                open ? "pointer-events-auto translate-y-0 scale-100 opacity-100" : "translate-y-6 scale-75 opacity-0",
               )}
             >
-              <Icon className={cn("h-5 w-5", active && "stroke-[2.4]")} />
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/20">
+                <Icon className="h-4 w-4" />
+              </span>
               {label}
             </Link>
           );
         })}
       </div>
-    </nav>
+
+      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+        <div className="mx-auto flex max-w-lg items-stretch justify-between px-1">
+          {LEFT_ITEMS.map((item) => (
+            <NavLink key={item.href} {...item} active={isActive(item.href)} />
+          ))}
+
+          <div className="flex flex-1 items-start justify-center">
+            <button
+              type="button"
+              onClick={toggle}
+              aria-expanded={open}
+              aria-label={open ? "Fermer le menu d'ajout" : "Ajouter"}
+              className={cn(
+                "-mt-5 flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg shadow-slate-900/25 ring-4 ring-slate-50 transition-all duration-300 active:scale-95 dark:bg-white dark:text-slate-900 dark:ring-slate-950",
+                open && "bg-rose-500 dark:bg-rose-500 dark:text-white",
+              )}
+            >
+              <Plus className={cn("h-7 w-7 transition-transform duration-300", open && "rotate-[135deg]")} />
+            </button>
+          </div>
+
+          {RIGHT_ITEMS.map((item) => (
+            <NavLink key={item.href} {...item} active={isActive(item.href)} />
+          ))}
+        </div>
+      </nav>
+    </>
   );
 }

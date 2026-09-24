@@ -126,7 +126,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
 
   return (
     <>
-      <PageHeader title="Budget" />
+      <PageHeader title="Dépenses" />
       <main className="flex flex-col gap-5 px-4 py-5">
         <MonthSwitcher month={viewMonth} basePath="/budget" />
 

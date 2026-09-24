@@ -34,18 +34,18 @@ interface FormState {
   active: boolean;
 }
 
-function buildInitialState(expense?: Expense): FormState {
+function buildInitialState(expense?: Expense, initialType: ExpenseType = "temporary"): FormState {
   if (!expense) {
     return {
       name: "",
       amount: "",
-      type: "temporary",
+      type: initialType,
       frequency: "monthly",
       startDate: todayDateStr(),
       endMode: "none",
       endDate: "",
       linkedExpenseId: "",
-      color: "yellow",
+      color: DEFAULT_COLOR_FOR_TYPE[initialType],
       notes: "",
       creditInitialAmount: "",
       icon: "",
@@ -74,15 +74,17 @@ export function ExpenseForm({
   allExpenses,
   initialPaidStatus,
   showPaidToggle = true,
+  initialType,
 }: {
   expense?: Expense;
   allExpenses: Expense[];
   initialPaidStatus?: boolean;
   showPaidToggle?: boolean;
+  initialType?: ExpenseType;
 }) {
   const router = useRouter();
   const isEdit = !!expense;
-  const [state, setState] = useState<FormState>(() => buildInitialState(expense));
+  const [state, setState] = useState<FormState>(() => buildInitialState(expense, initialType));
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [paidNow, setPaidNow] = useState(initialPaidStatus ?? false);
