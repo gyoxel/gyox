@@ -151,7 +151,7 @@ export function BottomNav() {
               onClick={toggle}
               aria-expanded={open}
               aria-label={open ? "Fermer le menu d'ajout" : "Ajouter"}
-              className="-mt-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-b from-[#00c3ab] to-[#007261] text-white shadow-[0_6px_22px_rgba(0,195,171,0.45)] ring-[6px] ring-white transition-transform duration-300 active:scale-95 dark:ring-slate-900"
+              className="-mt-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-b from-[#00c3ab] to-[#007261] text-white ring-[6px] ring-white transition-[transform,box-shadow] duration-200 active:scale-95 active:shadow-[0_4px_16px_rgba(0,195,171,0.28)] dark:ring-slate-900"
             >
               <Plus className={cn("h-8 w-8 transition-transform duration-300", open && "rotate-[135deg]")} strokeWidth={2.25} />
             </button>
