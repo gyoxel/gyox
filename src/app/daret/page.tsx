@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { getAllDarets, getAllPayments, getSettings } from "@/lib/repository";
 import { getDaretState } from "@/lib/daret";
+import { getExpenseDisplayColor } from "@/lib/engine";
 import { monthKey, todayMonth } from "@/lib/date";
 import { PageHeader } from "@/components/page-header";
 import { DaretCard } from "@/components/daret-card";
@@ -58,6 +59,7 @@ export default async function DaretPage() {
                 currency={settings.currency}
                 currentMonthKey={monthKey(current)}
                 daysToTurn={state.turnStatus === "upcoming" ? daysUntil(state.turn.year, state.turn.month) : null}
+                color={getExpenseDisplayColor(daret.expense, new Map([[daret.expense.id, daret.expense]]))}
               />
             );
           })

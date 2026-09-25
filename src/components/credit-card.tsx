@@ -7,6 +7,8 @@ import { formatMoney } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { ColorDot } from "@/components/color-dot";
+import type { DisplayColor } from "@/lib/engine";
 
 const STATUS_LABEL: Record<string, { label: string; variant: "neutral" | "blue" | "green" | "red" }> = {
   "not-started": { label: "À venir", variant: "neutral" },
@@ -14,7 +16,17 @@ const STATUS_LABEL: Record<string, { label: string; variant: "neutral" | "blue" 
   completed: { label: "Terminé", variant: "green" },
 };
 
-export function CreditCard({ expense, payments, currency }: { expense: Expense; payments: Payment[]; currency: string }) {
+export function CreditCard({
+  expense,
+  payments,
+  currency,
+  color,
+}: {
+  expense: Expense;
+  payments: Payment[];
+  currency: string;
+  color: DisplayColor;
+}) {
   const state = getCreditRealState(expense, payments, todayMonth());
   const initial = expense.creditInitialAmount ?? 0;
   const percent = initial > 0 ? Math.min(100, Math.round((state.paidTotal / initial) * 100)) : 0;
@@ -25,7 +37,10 @@ export function CreditCard({ expense, payments, currency }: { expense: Expense; 
       <Card className="transition-colors active:bg-slate-50 dark:active:bg-slate-800">
         <CardContent className="flex flex-col gap-3 pt-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-semibold text-slate-900 dark:text-white">{expense.name}</h3>
+            <h3 className="flex min-w-0 items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+              <ColorDot color={color} />
+              <span className="truncate">{expense.name}</span>
+            </h3>
             <div className="flex items-center gap-1.5">
               {state.isOverdue && state.pendingAmount > 0 && <Badge variant="red">En retard</Badge>}
               <Badge variant={status.variant}>{status.label}</Badge>

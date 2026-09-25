@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { ColorDot } from "@/components/color-dot";
+import type { DisplayColor } from "@/lib/engine";
 import {
   Dialog,
   DialogContent,
@@ -26,8 +28,10 @@ export function DaretCard({
   currency,
   currentMonthKey,
   daysToTurn,
+  color,
 }: {
   daret: DaretWithExpense;
+  color: DisplayColor;
   state: DaretState;
   currency: string;
   currentMonthKey: string;
@@ -90,6 +94,7 @@ export function DaretCard({
       <CardContent className="flex flex-col gap-3 pt-4">
         <div className="flex items-center justify-between gap-2">
           <h3 className="flex min-w-0 items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+            <ColorDot color={color} />
             <span className="text-lg leading-none">{daret.expense.icon ?? "🤝"}</span>
             <span className="truncate">{daret.expense.name}</span>
           </h3>

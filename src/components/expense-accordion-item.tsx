@@ -9,6 +9,8 @@ import { formatMoney, cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { DeleteExpenseButton } from "@/components/delete-expense-button";
+import { ColorDot } from "@/components/color-dot";
+import type { DisplayColor } from "@/lib/engine";
 
 const STATUS_META: Record<PaymentStatus, { label: string; className: string }> = {
   paid: { label: "Payé", className: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" },
@@ -21,6 +23,7 @@ export interface AccordionItemData {
   name: string;
   icon: string | null;
   type: "permanent" | "temporary" | "credit";
+  color: DisplayColor;
   amount: number;
   monthKey: string;
   status: PaymentStatus;
@@ -55,6 +58,7 @@ export function ExpenseAccordionItem({ item, currency }: { item: AccordionItemDa
         className="flex w-full items-center justify-between gap-3 px-3.5 py-3 text-left active:bg-slate-50 dark:active:bg-slate-800"
       >
         <div className="flex min-w-0 items-center gap-2.5">
+          <ColorDot color={item.color} />
           <span className="text-lg leading-none">{expenseIcon({ icon: item.icon, type: item.type })}</span>
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{item.name}</p>

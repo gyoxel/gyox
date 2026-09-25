@@ -3,8 +3,8 @@ import { addMonths, compareMonths, monthKey, monthLabelFr, monthOfDateStr, month
 import { getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, type DisplayColor } from "@/lib/engine";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { ColorDot } from "@/components/color-dot";
 
-const DOT: Record<DisplayColor, string> = { red: "bg-rose-400", yellow: "bg-amber-400", blue: "bg-sky-400" };
 const BAR: Record<DisplayColor, string> = { red: "bg-rose-400", yellow: "bg-amber-400", blue: "bg-sky-400" };
 
 interface Row {
@@ -71,7 +71,7 @@ export function TimelineSection({ expenses, payments }: { expenses: Expense[]; p
             <div key={expense.id} className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between gap-2 text-sm">
                 <span className="flex min-w-0 items-center gap-2 font-medium text-slate-800 dark:text-slate-200">
-                  <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", DOT[color])} />
+                  <ColorDot color={color} />
                   <span className="truncate">{expense.name}</span>
                 </span>
                 <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">

@@ -11,7 +11,14 @@ import {
   monthLabelShortFr,
   todayMonth,
 } from "@/lib/date";
-import { getCreditRealState, getForecast, getMonthPaymentStatus, getMonthSummary, getUnpaidMonths } from "@/lib/engine";
+import {
+  getCreditRealState,
+  getExpenseDisplayColor,
+  getForecast,
+  getMonthPaymentStatus,
+  getMonthSummary,
+  getUnpaidMonths,
+} from "@/lib/engine";
 import { MonthSwitcher } from "@/components/month-switcher";
 import { ExpenseAccordionItem, type AccordionItemData } from "@/components/expense-accordion-item";
 import { PageHeader } from "@/components/page-header";
@@ -47,6 +54,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
   const forecast = getForecast(expenses, settings.salary, defaultViewMonth(), FORECAST_MONTHS);
 
   const viewMonthKey = monthKey(viewMonth);
+  const byId = new Map(expenses.map((e) => [e.id, e]));
 
   const items: AccordionItemData[] = summary.occurrences.map((occ) => {
     const expense = occ.expense;
@@ -59,6 +67,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
         name: expense.name,
         icon: expense.icon,
         type: expense.type,
+        color: getExpenseDisplayColor(expense, byId),
         amount: occ.amount,
         monthKey: viewMonthKey,
         status,
@@ -81,6 +90,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
       name: expense.name,
       icon: expense.icon,
       type: expense.type,
+      color: getExpenseDisplayColor(expense, byId),
       amount: occ.amount,
       monthKey: viewMonthKey,
       status,
@@ -93,7 +103,6 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
   // dû jusqu'à ce qu'il soit payé", distinct from a new month's own due
   // amount. This is where that history lives (the Dashboard only shows the
   // combined total, per spec).
-  const byId = new Map(expenses.map((e) => [e.id, e]));
   const carriedItems: AccordionItemData[] = expenses
     .filter((e) => e.active && e.type !== "credit")
     .flatMap((expense) =>
@@ -102,6 +111,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
         name: `${expense.name} (reporté depuis ${monthLabelShortFr(u.month)})`,
         icon: expense.icon,
         type: expense.type,
+        color: getExpenseDisplayColor(expense, byId),
         amount: Math.round((u.amountDue - u.amountPaid) * 100) / 100,
         monthKey: u.monthKey,
         status: "unpaid" as const,

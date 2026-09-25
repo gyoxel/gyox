@@ -11,6 +11,7 @@ import type { Expense, Payment } from "@/lib/types";
 import { formatMoney, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ColorDot } from "@/components/color-dot";
 
 const SWIPE_THRESHOLD_PX = 40;
 
@@ -181,6 +182,7 @@ export function DueNowList({
                   paid && "border-l-slate-300 opacity-50 dark:border-l-slate-700",
                 )}
               >
+                <ColorDot color={color} className={cn(paid && "opacity-60")} />
                 <p
                   className={cn(
                     "min-w-0 flex-1 truncate text-sm font-medium text-slate-900 dark:text-slate-100",
