@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import type { Expense, Payment } from "@/lib/types";
-import { getCreditRealState } from "@/lib/engine";
+import { getCreditEndMonth, getCreditRealState } from "@/lib/engine";
 import { monthLabelFr, todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,6 +31,8 @@ export function CreditCard({
   const initial = expense.creditInitialAmount ?? 0;
   const percent = initial > 0 ? Math.min(100, Math.round((state.paidTotal / initial) * 100)) : 0;
   const status = STATUS_LABEL[state.status];
+  // Real projected end once started; the planned schedule end before that.
+  const endMonth = state.projectedEndMonth ?? getCreditEndMonth(expense);
 
   return (
     <Link href={`/expenses/${expense.id}`}>
@@ -74,18 +76,8 @@ export function CreditCard({
           </div>
 
           <div className="flex items-center justify-between text-sm">
-            <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">En attente</p>
-              <p className="font-medium text-slate-800 dark:text-slate-200">
-                {state.pendingAmount > 0 ? formatMoney(state.pendingAmount, currency) : "—"}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-slate-500 dark:text-slate-400">Fin prévue</p>
-              <p className="font-medium text-slate-800 dark:text-slate-200">
-                {state.projectedEndMonth ? monthLabelFr(state.projectedEndMonth) : "—"}
-              </p>
-            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Fin prévue</p>
+            <p className="font-medium text-slate-800 dark:text-slate-200">{endMonth ? monthLabelFr(endMonth) : "—"}</p>
           </div>
         </CardContent>
       </Card>
