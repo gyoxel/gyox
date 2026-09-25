@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useRefreshData } from "@/lib/use-refresh-data";
 import { Check, Clock } from "lucide-react";
 import type { ColorCategory, Expense, ExpenseType, Frequency } from "@/lib/types";
 import { todayDateStr } from "@/lib/date";
@@ -86,6 +87,7 @@ export function ExpenseForm({
   initialType?: ExpenseType;
 }) {
   const router = useRouter();
+  const refreshData = useRefreshData();
   const isEdit = !!expense;
   const [state, setState] = useState<FormState>(() => buildInitialState(expense, initialType));
   const [error, setError] = useState<string | null>(null);
@@ -100,9 +102,9 @@ export function ExpenseForm({
     const request = paid
       ? fetch(`/api/expenses/${expense.id}/payments`, { method: "POST" })
       : fetch(`/api/expenses/${expense.id}/payments`, { method: "DELETE" });
-    request.finally(() => {
+    request.finally(async () => {
       setIsTogglingPaid(false);
-      router.refresh();
+      await refreshData();
     });
   }
 
@@ -164,8 +166,8 @@ export function ExpenseForm({
       }
 
       const saved = await res.json();
+      await refreshData();
       router.push(`/expenses/${saved.id}`);
-      router.refresh();
     });
   }
 

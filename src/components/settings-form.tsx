@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRefreshData } from "@/lib/use-refresh-data";
 import { Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 import type { Settings } from "@/lib/types";
@@ -12,7 +12,7 @@ import { Select } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 
 export function SettingsForm({ settings }: { settings: Settings }) {
-  const router = useRouter();
+  const refreshData = useRefreshData();
   const [salary, setSalary] = useState(String(settings.salary));
   const [savingsTarget, setSavingsTarget] = useState(String(settings.savingsTarget));
   const [startMonth, setStartMonth] = useState(settings.startMonth);
@@ -41,7 +41,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
         return;
       }
       toast.success("Réglages enregistrés. Tous les calculs sont mis à jour.");
-      router.refresh();
+      await refreshData();
     });
   }
 
@@ -59,7 +59,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
         return;
       }
       toast.success("Données importées avec succès.");
-      router.refresh();
+      await refreshData();
     } catch {
       toast.error("Le fichier sélectionné n'est pas un JSON valide.");
     }

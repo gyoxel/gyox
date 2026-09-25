@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { DATA_CHANGED_EVENT } from "@/lib/use-refresh-data";
 import { ArrowDownToLine, ArrowUpFromLine, CalendarRange, HandCoins, Home, Plus, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -66,6 +67,7 @@ function NavLink({
   return (
     <Link
       href={href}
+      prefetch
       onClick={() => !active && onNavigate(href)}
       className={cn(
         "flex flex-1 touch-manipulation select-none flex-col items-center gap-1 pb-2.5 pt-3 text-[11px] font-medium transition-colors duration-150 active:opacity-70",
@@ -84,8 +86,29 @@ function NavLink({
   );
 }
 
+// Everything reachable from the bar, kept fully prefetched so it opens
+// instantly (re-prefetched after every data change, which purges the cache).
+const PREFETCH_HREFS = [
+  ...[...LEFT_ITEMS, ...RIGHT_ITEMS].map((i) => i.href),
+  "/settings",
+  "/expenses/new",
+  "/expenses/new?type=credit",
+  "/daret/new",
+];
+
 export function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    // On load the bar's own <Link prefetch>es cover their routes; only
+    // /daret/new has no link here. After a data change the whole client
+    // cache is purged, so everything is re-prefetched.
+    router.prefetch("/daret/new");
+    const prefetchAll = () => PREFETCH_HREFS.forEach((href) => router.prefetch(href));
+    window.addEventListener(DATA_CHANGED_EVENT, prefetchAll);
+    return () => window.removeEventListener(DATA_CHANGED_EVENT, prefetchAll);
+  }, [router]);
   const [open, setOpen] = useState(false);
   const [openedAt, setOpenedAt] = useState(pathname);
 
@@ -151,6 +174,7 @@ export function BottomNav() {
                 <Link
                   key={label}
                   href={href}
+                  prefetch
                   onClick={() => setOpen(false)}
                   tabIndex={open ? 0 : -1}
                   aria-hidden={!open}

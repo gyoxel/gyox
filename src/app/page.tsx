@@ -18,9 +18,7 @@ function todayShortDate(): string {
 }
 
 export default async function HomePage() {
-  const settings = await getSettings();
-  const expenses = await getAllExpenses();
-  const payments = await getAllPayments();
+  const [settings, expenses, payments] = await Promise.all([getSettings(), getAllExpenses(), getAllPayments()]);
   const currentMonth = todayMonth();
 
   const paidThisMonth = getPaidThisMonth(expenses, payments, currentMonth);

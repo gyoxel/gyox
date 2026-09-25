@@ -1,4 +1,4 @@
-const CACHE_NAME = "budget-shell-v1";
+const CACHE_NAME = "budget-shell-v2";
 const SHELL_ASSETS = ["/", "/manifest.json", "/icon.svg"];
 
 self.addEventListener("install", (event) => {
@@ -17,20 +17,47 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Network-first: this app's data changes constantly, so always prefer a
-// fresh response and only fall back to the cached shell when offline.
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-  const url = new URL(event.request.url);
+  const request = event.request;
+  if (request.method !== "GET") return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/")) return;
 
+  // React Server Component payloads (navigations, prefetches): let Next.js's
+  // own client cache handle them — caching them here would only add latency
+  // and could serve stale data.
+  if (request.headers.get("RSC") || url.searchParams.has("_rsc")) return;
+
+  // Build assets are content-hashed and immutable: serve straight from the
+  // cache (instant on every launch), fetching only the first time.
+  if (url.pathname.startsWith("/_next/static/") || url.pathname === "/icon.svg") {
+    event.respondWith(
+      caches.match(request).then(
+        (cached) =>
+          cached ??
+          fetch(request).then((response) => {
+            if (response.ok) {
+              const copy = response.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+            }
+            return response;
+          }),
+      ),
+    );
+    return;
+  }
+
+  // Pages: network-first (data changes constantly), cached shell offline.
   event.respondWith(
-    fetch(event.request)
+    fetch(request)
       .then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        if (response.ok && request.mode === "navigate") {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        }
         return response;
       })
-      .catch(() => caches.match(event.request).then((cached) => cached ?? caches.match("/"))),
+      .catch(() => caches.match(request).then((cached) => cached ?? caches.match("/"))),
   );
 });

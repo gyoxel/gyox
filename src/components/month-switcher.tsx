@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { addMonths, monthKey, monthLabelFr, type MonthId } from "@/lib/date";
@@ -13,11 +14,16 @@ export function MonthSwitcher({ month, basePath = "/" }: { month: MonthId; baseP
   const searchParams = useSearchParams();
   const touchStartX = useRef<number | null>(null);
 
-  function go(next: MonthId) {
+  function hrefFor(next: MonthId) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("month", monthKey(next));
-    router.push(`${basePath}?${params.toString()}`);
+    return `${basePath}?${params.toString()}`;
   }
+
+  // Previous/next months are fully prefetched by the <Link>s below, so
+  // arrows and swipes both switch instantly from the client cache.
+  const prevHref = hrefFor(addMonths(month, -1));
+  const nextHref = hrefFor(addMonths(month, 1));
 
   function onTouchStart(e: React.TouchEvent) {
     touchStartX.current = e.touches[0].clientX;
@@ -28,7 +34,7 @@ export function MonthSwitcher({ month, basePath = "/" }: { month: MonthId; baseP
     const delta = e.changedTouches[0].clientX - touchStartX.current;
     touchStartX.current = null;
     if (Math.abs(delta) < SWIPE_THRESHOLD_PX) return;
-    go(addMonths(month, delta > 0 ? -1 : 1));
+    router.push(delta > 0 ? prevHref : nextHref);
   }
 
   return (
@@ -37,12 +43,16 @@ export function MonthSwitcher({ month, basePath = "/" }: { month: MonthId; baseP
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      <Button variant="outline" size="icon" onClick={() => go(addMonths(month, -1))} aria-label="Mois précédent">
-        <ChevronLeft className="h-4 w-4" />
+      <Button asChild variant="outline" size="icon">
+        <Link href={prevHref} prefetch scroll={false} aria-label="Mois précédent">
+          <ChevronLeft className="h-4 w-4" />
+        </Link>
       </Button>
       <div className="text-lg font-semibold text-slate-900 dark:text-white">{monthLabelFr(month)}</div>
-      <Button variant="outline" size="icon" onClick={() => go(addMonths(month, 1))} aria-label="Mois suivant">
-        <ChevronRight className="h-4 w-4" />
+      <Button asChild variant="outline" size="icon">
+        <Link href={nextHref} prefetch scroll={false} aria-label="Mois suivant">
+          <ChevronRight className="h-4 w-4" />
+        </Link>
       </Button>
     </div>
   );

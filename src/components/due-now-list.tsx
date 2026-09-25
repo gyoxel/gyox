@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { useRouter } from "next/navigation";
+import { useRefreshData } from "@/lib/use-refresh-data";
 import Link from "next/link";
 import { Check, ChevronLeft, ChevronRight, Plus, PartyPopper } from "lucide-react";
 import { addMonths, monthKey as toMonthKey, monthLabelFr, type MonthId } from "@/lib/date";
@@ -52,7 +52,7 @@ export function DueNowList({
   currentMonth: MonthId;
   currency: string;
 }) {
-  const router = useRouter();
+  const refreshData = useRefreshData();
   const [viewMonth, setViewMonth] = useState<MonthId>(currentMonth);
   // Seeded once from the initial server payload; every change after that
   // flows only through toggle()'s own optimistic add/remove/replace, never
@@ -61,7 +61,7 @@ export function DueNowList({
   // toggle could land after a second, faster toggle and silently overwrite
   // it, making an item that was just checked off flip back to unpaid a
   // moment later. Local state is now the single source of truth for this
-  // list; router.refresh() is still called to keep the Salaire/Disponible
+  // list; refreshData() is still called to keep the Salaire/Disponible
   // figures elsewhere on the page in sync.
   const [localPayments, setLocalPayments] = useState<Payment[]>(payments);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
@@ -110,7 +110,7 @@ export function DueNowList({
         .catch(() => setLocalPayments(removedSnapshot))
         .finally(() => {
           settlePending(expense.id, setPendingIds);
-          router.refresh();
+          void refreshData();
         });
       return;
     }
@@ -133,7 +133,7 @@ export function DueNowList({
       .catch(() => setLocalPayments((prev) => prev.filter((p) => p.id !== optimistic.id)))
       .finally(() => {
         settlePending(expense.id, setPendingIds);
-        router.refresh();
+        void refreshData();
       });
   }
 
@@ -156,6 +156,7 @@ export function DueNowList({
       <div className="flex flex-col gap-2">
         <Link
           href="/expenses/new"
+          prefetch
           className="flex items-center justify-center gap-2 rounded-xl border border-l-4 border-rose-200 border-l-rose-500 bg-rose-50/60 px-3.5 py-3 text-sm font-semibold text-rose-600 shadow-sm transition-colors hover:bg-rose-50 dark:border-rose-900 dark:border-l-rose-500 dark:bg-rose-950/20 dark:text-rose-400"
         >
           <Plus className="h-4 w-4" />

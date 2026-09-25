@@ -57,7 +57,7 @@ export function LinkedCreditCard({
       : { label: "En cours", variant: "blue" as const };
 
   return (
-    <Link href={`/expenses/${expense.id}`}>
+    <Link href={`/expenses/${expense.id}`} prefetch>
       <Card className="transition-colors active:bg-slate-50 dark:active:bg-slate-800">
         <CardContent className="flex flex-col gap-3 pt-4">
           <div className="flex items-center justify-between gap-2">

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useRefreshData } from "@/lib/use-refresh-data";
 import { addMonths, monthKey, monthLabelFr, parseMonthKey, todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { Select } from "@/components/ui/select";
 
 export function DaretForm({ currency }: { currency: string }) {
   const router = useRouter();
+  const refreshData = useRefreshData();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [members, setMembers] = useState("10");
@@ -56,8 +58,8 @@ export function DaretForm({ currency }: { currency: string }) {
         setError(first ?? "Une erreur est survenue. Vérifiez les champs.");
         return;
       }
+      await refreshData();
       router.push("/daret");
-      router.refresh();
     });
   }
 

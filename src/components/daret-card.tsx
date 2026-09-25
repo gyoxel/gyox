@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRefreshData } from "@/lib/use-refresh-data";
 import { Check, Trash2 } from "lucide-react";
 import type { DaretState } from "@/lib/daret";
 import { monthLabelFr } from "@/lib/date";
@@ -38,7 +38,7 @@ export function DaretCard({
   /** Days from today until the 1st of the turn month (only when upcoming). */
   daysToTurn: number | null;
 }) {
-  const router = useRouter();
+  const refreshData = useRefreshData();
   const [paid, setPaid] = useState(state.paidThisMonth);
   const [paidRounds, setPaidRounds] = useState(state.paidRounds);
   const [busy, setBusy] = useState(false);
@@ -65,7 +65,7 @@ export function DaretCard({
       setPaidRounds((n) => n + (next ? -1 : 1));
     }
     setBusy(false);
-    router.refresh();
+    await refreshData();
   }
 
   function handleDelete() {
@@ -73,7 +73,7 @@ export function DaretCard({
       const res = await fetch(`/api/darets/${daret.id}`, { method: "DELETE" });
       if (res.ok) {
         setConfirmOpen(false);
-        router.refresh();
+        await refreshData();
       }
     });
   }

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getAllExpenses, getAllPayments, getExpenseById, getSettings } from "@/lib/repository";
+import { getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
 import { getCreditDisplayProgress, getCreditRealState, getEffectiveEndMonth, getMonthPaymentStatus } from "@/lib/engine";
 import { compareMonths, monthLabelFr, monthOfDateStr, todayMonth } from "@/lib/date";
 import { PageHeader } from "@/components/page-header";
@@ -14,12 +14,9 @@ export const dynamic = "force-dynamic";
 
 export default async function ExpenseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const expense = await getExpenseById(id);
+  const [settings, allExpenses, payments] = await Promise.all([getSettings(), getAllExpenses(), getAllPayments()]);
+  const expense = allExpenses.find((e) => e.id === id);
   if (!expense) notFound();
-
-  const settings = await getSettings();
-  const allExpenses = await getAllExpenses();
-  const payments = await getAllPayments();
   const currentMonth = todayMonth();
 
   let isPaidNow: boolean;

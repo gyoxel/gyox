@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useRefreshData } from "@/lib/use-refresh-data";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +19,7 @@ export function DeleteExpenseButton({ id, name }: { id: string; name: string }) 
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const refreshData = useRefreshData();
 
   function handleDelete() {
     setError(null);
@@ -28,8 +30,8 @@ export function DeleteExpenseButton({ id, name }: { id: string; name: string }) 
         return;
       }
       setOpen(false);
+      await refreshData();
       router.push("/");
-      router.refresh();
     });
   }
 

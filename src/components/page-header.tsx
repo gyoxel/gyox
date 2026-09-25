@@ -19,6 +19,7 @@ export function PageHeader({
         {backHref && (
           <Link
             href={backHref}
+            prefetch
             className="-ml-1.5 flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -31,6 +32,7 @@ export function PageHeader({
         {!hideSettings && (
           <Link
             href="/settings"
+            prefetch
             aria-label="Réglages"
             className="-mr-1.5 flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
           >
