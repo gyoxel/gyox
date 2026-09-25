@@ -45,7 +45,7 @@ export function CreditCard({
             </h3>
             <div className="flex items-center gap-1.5">
               {state.isOverdue && state.pendingAmount > 0 && <Badge variant="red">En retard</Badge>}
-              <Badge variant={status.variant}>{status.label}</Badge>
+              {state.status === "completed" && <Badge variant={status.variant}>{status.label}</Badge>}
               <ChevronRight className="h-4 w-4 text-slate-300" />
             </div>
           </div>

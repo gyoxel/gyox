@@ -67,7 +67,7 @@ export function LinkedCreditCard({
             </h3>
             <div className="flex shrink-0 items-center gap-1.5">
               {overdue && !finished && <Badge variant="red">En retard</Badge>}
-              <Badge variant={status.variant}>{status.label}</Badge>
+              {finished && <Badge variant={status.variant}>{status.label}</Badge>}
               <ChevronRight className="h-4 w-4 text-slate-300" />
             </div>
           </div>
