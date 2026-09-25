@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowDownToLine, ArrowUpFromLine, CalendarRange, Home, LineChart, Plus, Wallet } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, CalendarRange, HandCoins, Home, Plus, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const LEFT_ITEMS = [
@@ -13,7 +13,7 @@ const LEFT_ITEMS = [
 
 const RIGHT_ITEMS = [
   { href: "/credits", label: "Crédits", icon: Wallet },
-  { href: "/timeline", label: "Timeline", icon: LineChart },
+  { href: "/daret", label: "Daret", icon: HandCoins },
 ];
 
 // Fan-out positions (px) of each option's circle center relative to the

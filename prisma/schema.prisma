@@ -31,8 +31,28 @@ model Expense {
   updatedAt           String
 
   payments Payment[]
+  daret    Daret?
 
   @@map("expenses")
+}
+
+// A daret (tontine) the user takes part in. Its monthly contribution is an
+// ordinary temporary Expense (so it shows up in Dépenses, can be checked off
+// and counts toward Disponible with no special-casing); this table only adds
+// what's specific to a daret. The expense's startDate is the daret's first
+// month and it runs for `members` months, one collection per member.
+model Daret {
+  id        String @id @default(uuid())
+  expenseId String @unique
+  /// Number of participants = number of months the daret runs.
+  members   Int
+  /// "YYYY-MM": the month the user collects the pot.
+  turnMonth String
+  createdAt String
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+
+  @@map("darets")
 }
 
 // Records an *actual* confirmed payment. Absence of a row means "not paid" —

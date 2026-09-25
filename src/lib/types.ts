@@ -104,3 +104,18 @@ export interface MonthSummary {
   remaining: number;
 }
 
+
+/** Daret-specific data; the monthly contribution itself lives on `expense`. */
+export interface Daret {
+  id: string;
+  expenseId: string;
+  /** Number of participants = number of months the daret runs. */
+  members: number;
+  /** "YYYY-MM": the month the user collects the pot. */
+  turnMonth: string;
+  createdAt: string;
+}
+
+export interface DaretWithExpense extends Daret {
+  expense: Expense;
+}

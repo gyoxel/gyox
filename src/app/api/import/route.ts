@@ -14,6 +14,17 @@ const backupSchema = z.object({
       updatedAt: z.string().optional(),
     }),
   ),
+  darets: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        expenseId: z.string().min(1),
+        members: z.number().int().min(2),
+        turnMonth: z.string().regex(/^\d{4}-\d{2}$/),
+        createdAt: z.string(),
+      }),
+    )
+    .optional(),
 });
 
 export async function POST(req: NextRequest) {

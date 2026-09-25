@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { prisma } from "./prisma";
-import type { Expense, ExpenseInput, Payment, Settings } from "./types";
+import type { Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings } from "./types";
 
 function mapExpense(row: {
   id: string;
@@ -146,6 +146,8 @@ export interface BackupData {
   exportedAt: string;
   settings: Settings;
   expenses: Expense[];
+  /** Optional so backups made before darets existed still import. */
+  darets?: Daret[];
 }
 
 export async function exportData(): Promise<BackupData> {
@@ -154,6 +156,7 @@ export async function exportData(): Promise<BackupData> {
     exportedAt: new Date().toISOString(),
     settings: await getSettings(),
     expenses: await getAllExpenses(),
+    darets: (await getAllDarets()).map((d) => ({ id: d.id, expenseId: d.expenseId, members: d.members, turnMonth: d.turnMonth, createdAt: d.createdAt })),
   };
 }
 
@@ -179,6 +182,8 @@ export async function importData(data: BackupData): Promise<void> {
         updatedAt: e.updatedAt ?? new Date().toISOString(),
       })),
     }),
+    prisma.daret.deleteMany({}),
+    prisma.daret.createMany({ data: data.darets ?? [] }),
     prisma.settings.update({ where: { id: 1 }, data: data.settings }),
   ]);
 }
@@ -286,4 +291,59 @@ export async function undoLastCreditSlot(expenseId: string): Promise<boolean> {
   if (!last) return false;
   await prisma.payment.delete({ where: { id: last.id } });
   return true;
+}
+
+// ---------------------------------------------------------------------------
+// Darets
+// ---------------------------------------------------------------------------
+
+export async function getAllDarets(): Promise<DaretWithExpense[]> {
+  const rows = await prisma.daret.findMany({ include: { expense: true }, orderBy: { createdAt: "asc" } });
+  return rows.map(({ expense, ...daret }) => ({ ...daret, expense: mapExpense(expense) }));
+}
+
+/** Creates the daret together with the temporary expense that carries its
+ *  monthly contribution, atomically. */
+export async function createDaret(input: {
+  name: string;
+  amount: number;
+  members: number;
+  startDate: string;
+  endDate: string;
+  turnMonth: string;
+}): Promise<DaretWithExpense> {
+  const now = new Date().toISOString();
+  const expenseId = randomUUID();
+  const [expense, daret] = await prisma.$transaction([
+    prisma.expense.create({
+      data: {
+        id: expenseId,
+        name: input.name,
+        amount: input.amount,
+        type: "temporary",
+        frequency: "monthly",
+        startDate: input.startDate,
+        endDate: input.endDate,
+        active: true,
+        color: "yellow",
+        notes: null,
+        creditInitialAmount: null,
+        linkedExpenseId: null,
+        icon: "🤝",
+        createdAt: now,
+        updatedAt: now,
+      },
+    }),
+    prisma.daret.create({
+      data: { id: randomUUID(), expenseId, members: input.members, turnMonth: input.turnMonth, createdAt: now },
+    }),
+  ]);
+  return { ...daret, expense: mapExpense(expense) };
+}
+
+/** Deleting the backing expense cascades to the daret and its payments. */
+export async function deleteDaret(id: string): Promise<boolean> {
+  const daret = await prisma.daret.findUnique({ where: { id } });
+  if (!daret) return false;
+  return deleteExpense(daret.expenseId);
 }
