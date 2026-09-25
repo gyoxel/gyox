@@ -1,8 +1,8 @@
 import type { Expense, Payment } from "@/lib/types";
 import { addMonths, compareMonths, monthKey, monthLabelFr, monthOfDateStr, monthsBetween, todayMonth, type MonthId } from "@/lib/date";
-import { getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, type DisplayColor } from "@/lib/engine";
+import { getCreditDisplayProgress, getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, type DisplayColor } from "@/lib/engine";
 import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, formatMoney } from "@/lib/utils";
 import { ColorDot } from "@/components/color-dot";
 
 const BAR: Record<DisplayColor, string> = { red: "bg-rose-400", yellow: "bg-amber-400", blue: "bg-sky-400" };
@@ -23,8 +23,7 @@ function progressOf(expense: Expense, payments: Payment[], byId: Map<string, Exp
 
   if (expense.type === "credit") {
     const state = getCreditRealState(expense, payments, todayMonth());
-    const initial = expense.creditInitialAmount ?? 0;
-    const percent = initial > 0 ? Math.min(100, Math.round((state.paidTotal / initial) * 100)) : 0;
+    const { percent } = getCreditDisplayProgress(expense, state);
     return { end: state.projectedEndMonth ?? getEffectiveEndMonth(expense, byId), percent };
   }
 
@@ -42,7 +41,15 @@ function progressOf(expense: Expense, payments: Payment[], byId: Map<string, Exp
   return { end, percent: Math.round((paid / total) * 100) };
 }
 
-export function TimelineSection({ expenses, payments }: { expenses: Expense[]; payments: Payment[] }) {
+export function TimelineSection({
+  expenses,
+  payments,
+  currency,
+}: {
+  expenses: Expense[];
+  payments: Payment[];
+  currency: string;
+}) {
   const active = expenses.filter((e) => e.active);
   const byId = new Map(expenses.map((e) => [e.id, e]));
 
@@ -73,6 +80,10 @@ export function TimelineSection({ expenses, payments }: { expenses: Expense[]; p
                 <span className="flex min-w-0 items-center gap-2 font-medium text-slate-800 dark:text-slate-200">
                   <ColorDot color={color} />
                   <span className="truncate">{expense.name}</span>
+                  <span className="shrink-0 text-xs font-normal text-slate-400">
+                    {formatMoney(expense.amount, currency)}
+                    {expense.frequency === "monthly" ? "/mois" : ""}
+                  </span>
                 </span>
                 <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">
                   {percent == null ? "Permanent" : `${percent}% · → ${end ? monthLabelFr(end) : "Sans fin"}`}

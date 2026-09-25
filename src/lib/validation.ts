@@ -31,6 +31,12 @@ export const baseExpenseSchema = z.object({
     .nullable()
     .optional()
     .transform((v) => v ?? null),
+  creditPriorPaid: z.coerce
+    .number()
+    .nonnegative("Le montant déjà remboursé ne peut pas être négatif.")
+    .nullable()
+    .optional()
+    .transform((v) => (v ? v : null)),
   linkedExpenseId: z
     .string()
     .nullable()

@@ -61,7 +61,7 @@ export default async function CreditsPage() {
         )}
 
         <div className="mt-4">
-          <TimelineSection expenses={expenses} payments={payments} />
+          <TimelineSection expenses={expenses} payments={payments} currency={settings.currency} />
         </div>
       </main>
     </>

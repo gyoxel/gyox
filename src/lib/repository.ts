@@ -14,6 +14,7 @@ function mapExpense(row: {
   color: string;
   notes: string | null;
   creditInitialAmount: number | null;
+  creditPriorPaid: number | null;
   linkedExpenseId: string | null;
   icon: string | null;
   createdAt: string;
@@ -31,6 +32,7 @@ function mapExpense(row: {
     color: row.color as Expense["color"],
     notes: row.notes,
     creditInitialAmount: row.creditInitialAmount,
+    creditPriorPaid: row.creditPriorPaid,
     linkedExpenseId: row.linkedExpenseId,
     icon: row.icon,
     createdAt: row.createdAt,
@@ -64,6 +66,7 @@ export async function createExpense(input: ExpenseInput): Promise<Expense> {
       color: input.color,
       notes: input.notes ?? null,
       creditInitialAmount: input.creditInitialAmount ?? null,
+      creditPriorPaid: input.creditPriorPaid ?? null,
       linkedExpenseId: input.linkedExpenseId ?? null,
       icon: input.icon ?? null,
       createdAt: now,
@@ -93,6 +96,7 @@ export async function updateExpense(
       color: merged.color,
       notes: merged.notes ?? null,
       creditInitialAmount: merged.creditInitialAmount ?? null,
+      creditPriorPaid: merged.creditPriorPaid ?? null,
       linkedExpenseId: merged.linkedExpenseId ?? null,
       icon: merged.icon ?? null,
       updatedAt: new Date().toISOString(),
@@ -176,6 +180,7 @@ export async function importData(data: BackupData): Promise<void> {
         color: e.color,
         notes: e.notes ?? null,
         creditInitialAmount: e.creditInitialAmount ?? null,
+        creditPriorPaid: e.creditPriorPaid ?? null,
         linkedExpenseId: e.linkedExpenseId ?? null,
         icon: e.icon ?? null,
         createdAt: e.createdAt ?? new Date().toISOString(),
@@ -328,6 +333,7 @@ export async function createDaret(input: {
         color: "yellow",
         notes: null,
         creditInitialAmount: null,
+        creditPriorPaid: null,
         linkedExpenseId: null,
         icon: "🤝",
         createdAt: now,

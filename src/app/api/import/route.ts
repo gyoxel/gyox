@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
       endDate: e.endDate ?? null,
       notes: e.notes ?? null,
       creditInitialAmount: e.creditInitialAmount ?? null,
+      creditPriorPaid: e.creditPriorPaid ?? null,
       linkedExpenseId: e.linkedExpenseId ?? null,
       createdAt: e.createdAt ?? now,
       updatedAt: e.updatedAt ?? now,

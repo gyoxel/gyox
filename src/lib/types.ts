@@ -21,6 +21,9 @@ export interface Expense {
   notes: string | null;
   /** Remaining debt as of startDate. Required when type === "credit". */
   creditInitialAmount: number | null;
+  /** Credits only: already repaid before being tracked in the app.
+   *  Display-only (total = creditInitialAmount + this). */
+  creditPriorPaid: number | null;
   /** When set, this expense's end date follows the linked expense's (usually a credit). */
   linkedExpenseId: string | null;
   /** Optional custom emoji shown in lists. Falls back to a generic icon

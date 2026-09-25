@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import type { Expense, Payment } from "@/lib/types";
-import { getCreditEndMonth, getCreditRealState } from "@/lib/engine";
+import { getCreditDisplayProgress, getCreditEndMonth, getCreditRealState } from "@/lib/engine";
 import { monthLabelFr, todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,8 +28,7 @@ export function CreditCard({
   color: DisplayColor;
 }) {
   const state = getCreditRealState(expense, payments, todayMonth());
-  const initial = expense.creditInitialAmount ?? 0;
-  const percent = initial > 0 ? Math.min(100, Math.round((state.paidTotal / initial) * 100)) : 0;
+  const { total, paid, percent } = getCreditDisplayProgress(expense, state);
   const status = STATUS_LABEL[state.status];
   // Real projected end once started; the planned schedule end before that.
   const endMonth = state.projectedEndMonth ?? getCreditEndMonth(expense);
@@ -68,7 +67,7 @@ export function CreditCard({
           <div>
             <div className="mb-1 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
               <span>
-                {formatMoney(state.paidTotal, currency)} / {formatMoney(initial, currency)}
+                {formatMoney(paid, currency)} / {formatMoney(total, currency)}
               </span>
               <span>{percent}%</span>
             </div>

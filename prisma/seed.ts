@@ -23,6 +23,7 @@ async function main() {
           color: "blue",
           notes: "Crédit en cours de remboursement.",
           creditInitialAmount: 13000,
+          creditPriorPaid: 4000,
           linkedExpenseId: null,
           icon: "💳",
           createdAt: now,

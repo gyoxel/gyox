@@ -30,6 +30,7 @@ interface FormState {
   color: ColorCategory;
   notes: string;
   creditInitialAmount: string;
+  creditPriorPaid: string;
   icon: string;
   active: boolean;
 }
@@ -48,6 +49,7 @@ function buildInitialState(expense?: Expense, initialType: ExpenseType = "tempor
       color: DEFAULT_COLOR_FOR_TYPE[initialType],
       notes: "",
       creditInitialAmount: "",
+      creditPriorPaid: "",
       icon: "",
       active: true,
     };
@@ -64,6 +66,7 @@ function buildInitialState(expense?: Expense, initialType: ExpenseType = "tempor
     color: expense.color,
     notes: expense.notes ?? "",
     creditInitialAmount: expense.creditInitialAmount != null ? String(expense.creditInitialAmount) : "",
+    creditPriorPaid: expense.creditPriorPaid != null ? String(expense.creditPriorPaid) : "",
     icon: expense.icon ?? "",
     active: expense.active,
   };
@@ -137,6 +140,7 @@ export function ExpenseForm({
       color: state.color,
       notes: state.notes || null,
       creditInitialAmount: state.type === "credit" ? Number(state.creditInitialAmount) : null,
+      creditPriorPaid: state.type === "credit" && state.creditPriorPaid ? Number(state.creditPriorPaid) : null,
       icon: state.icon || null,
       active: state.active,
     };
@@ -260,6 +264,26 @@ export function ExpenseForm({
           </div>
         )}
       </div>
+
+      {state.type === "credit" && (
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="creditPriorPaid">Déjà remboursé avant (DH, optionnel)</Label>
+          <Input
+            id="creditPriorPaid"
+            type="number"
+            min="0"
+            step="0.01"
+            inputMode="decimal"
+            value={state.creditPriorPaid}
+            onChange={(e) => update("creditPriorPaid", e.target.value)}
+            placeholder="0"
+          />
+          <p className="text-xs text-slate-400">
+            Montant payé avant de suivre ce crédit ici. Affiché dans la progression, sans toucher aux dépenses ni au
+            disponible.
+          </p>
+        </div>
+      )}
 
       {showEndOptions && (
         <div className="flex flex-col gap-2 rounded-xl border border-slate-200 p-3 dark:border-slate-800">

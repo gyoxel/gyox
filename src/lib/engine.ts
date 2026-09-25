@@ -326,6 +326,23 @@ function projectCreditInstallment(
   return null; // fully paid off before reaching viewMonth
 }
 
+/**
+ * What to *display* as a credit's overall progress: its full original
+ * total, including anything repaid before it was entered in the app
+ * (`creditPriorPaid`). Display-only — schedules, dues and Disponible keep
+ * using creditInitialAmount / getCreditRealState untouched.
+ */
+export function getCreditDisplayProgress(
+  expense: Expense,
+  state: CreditRealState,
+): { total: number; paid: number; percent: number } {
+  const prior = expense.creditPriorPaid ?? 0;
+  const total = round2((expense.creditInitialAmount ?? 0) + prior);
+  const paid = round2(state.paidTotal + prior);
+  const percent = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+  return { total, paid, percent };
+}
+
 function findPayment(
   payments: Payment[],
   expenseId: string,

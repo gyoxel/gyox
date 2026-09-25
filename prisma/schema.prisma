@@ -23,6 +23,10 @@ model Expense {
   color               String
   notes               String?
   creditInitialAmount Float?
+  /// Credits only: amount already repaid *before* the credit was entered in
+  /// the app (never recorded as a Payment, never touches Dépenses or
+  /// Disponible). Display-only: total = creditInitialAmount + this.
+  creditPriorPaid     Float?
   linkedExpenseId     String?
   /** Optional custom emoji shown in lists (e.g. "🚗"). Falls back to a
    *  generic icon derived from `color` when not set. */

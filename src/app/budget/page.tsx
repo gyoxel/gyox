@@ -12,6 +12,7 @@ import {
   todayMonth,
 } from "@/lib/date";
 import {
+  getCreditDisplayProgress,
   getCreditRealState,
   getExpenseDisplayColor,
   getForecast,
@@ -73,8 +74,8 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
         status,
         isFinalCreditPayment: occ.isFinalCreditPayment,
         credit: {
-          initialAmount: expense.creditInitialAmount ?? 0,
-          paidTotal: state.paidTotal,
+          initialAmount: getCreditDisplayProgress(expense, state).total,
+          paidTotal: getCreditDisplayProgress(expense, state).paid,
           remaining: state.remaining,
           pendingAmount: state.pendingAmount,
           isOverdue: state.isOverdue,

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getAllExpenses, getAllPayments, getExpenseById, getSettings } from "@/lib/repository";
-import { getCreditRealState, getEffectiveEndMonth, getMonthPaymentStatus } from "@/lib/engine";
+import { getCreditDisplayProgress, getCreditRealState, getEffectiveEndMonth, getMonthPaymentStatus } from "@/lib/engine";
 import { compareMonths, monthLabelFr, monthOfDateStr, todayMonth } from "@/lib/date";
 import { PageHeader } from "@/components/page-header";
 import { ExpenseForm } from "@/components/expense-form";
@@ -69,7 +69,7 @@ function CreditInfo({ expense, payments, currency }: { expense: Expense; payment
       <CardContent className="grid grid-cols-2 gap-3 pt-4 text-sm">
         <div>
           <p className="text-xs text-slate-500">Payé</p>
-          <p className="font-semibold text-slate-900 dark:text-white">{formatMoney(state.paidTotal, currency)}</p>
+          <p className="font-semibold text-slate-900 dark:text-white">{formatMoney(getCreditDisplayProgress(expense, state).paid, currency)}</p>
         </div>
         <div className="text-right">
           <p className="text-xs text-slate-500">Restant</p>
