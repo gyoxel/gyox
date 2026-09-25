@@ -25,12 +25,25 @@ const ACTIONS = [
 const TEAL = "#019c86";
 const GRADIENT_ID = "nav-active-gradient";
 
-function NavLink({ href, label, icon: Icon, active }: { href: string; label: string; icon: typeof Home; active: boolean }) {
+function NavLink({
+  href,
+  label,
+  icon: Icon,
+  active,
+  onNavigate,
+}: {
+  href: string;
+  label: string;
+  icon: typeof Home;
+  active: boolean;
+  onNavigate: (href: string) => void;
+}) {
   return (
     <Link
       href={href}
+      onClick={() => !active && onNavigate(href)}
       className={cn(
-        "flex flex-1 flex-col items-center gap-1 pb-2.5 pt-3 text-[11px] font-semibold transition-colors duration-200",
+        "flex flex-1 touch-manipulation select-none flex-col items-center gap-1 pb-2.5 pt-3 text-[11px] font-semibold transition-colors duration-150 active:opacity-70",
         active ? "text-[#019c86]" : "text-[#b3b3b3] dark:text-slate-500",
       )}
     >
@@ -61,7 +74,19 @@ export function BottomNav() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+  // Highlight the tapped tab immediately instead of waiting for the new
+  // route to finish rendering on the server.
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [pendingFrom, setPendingFrom] = useState(pathname);
+  if (pendingHref && pathname !== pendingFrom) setPendingHref(null);
+
+  function navigateTo(href: string) {
+    setPendingFrom(pathname);
+    setPendingHref(href);
+  }
+
+  const current = pendingHref ?? pathname;
+  const isActive = (href: string) => (href === "/" ? current === "/" : current.startsWith(href));
 
   function toggle() {
     setOpenedAt(pathname);
@@ -74,8 +99,8 @@ export function BottomNav() {
         aria-hidden
         onClick={() => setOpen(false)}
         className={cn(
-          "fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-[2px] transition-opacity duration-300",
-          open ? "opacity-100" : "pointer-events-none opacity-0",
+          "fixed inset-0 z-40 bg-slate-900/30 transition-opacity duration-300",
+          open ? "opacity-100 backdrop-blur-[2px]" : "pointer-events-none opacity-0",
         )}
       />
 
@@ -107,7 +132,7 @@ export function BottomNav() {
 
       <svg width="0" height="0" className="absolute" aria-hidden>
         <defs>
-          <linearGradient id={GRADIENT_ID} x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={GRADIENT_ID} gradientUnits="userSpaceOnUse" x1="0" y1="2" x2="0" y2="22">
             <stop offset="0%" stopColor="#00c3ab" />
             <stop offset="100%" stopColor="#007261" />
           </linearGradient>
@@ -117,7 +142,7 @@ export function BottomNav() {
       <nav className="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_30px_rgba(15,23,42,0.08)] dark:bg-slate-900">
         <div className="mx-auto flex max-w-lg items-stretch justify-between px-2">
           {LEFT_ITEMS.map((item) => (
-            <NavLink key={item.href} {...item} active={isActive(item.href)} />
+            <NavLink key={item.href} {...item} active={isActive(item.href)} onNavigate={navigateTo} />
           ))}
 
           <div className="flex flex-1 items-start justify-center">
@@ -133,7 +158,7 @@ export function BottomNav() {
           </div>
 
           {RIGHT_ITEMS.map((item) => (
-            <NavLink key={item.href} {...item} active={isActive(item.href)} />
+            <NavLink key={item.href} {...item} active={isActive(item.href)} onNavigate={navigateTo} />
           ))}
         </div>
       </nav>
