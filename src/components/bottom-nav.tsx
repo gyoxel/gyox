@@ -22,16 +22,25 @@ const ACTIONS = [
   { href: "/expenses/new?type=credit", label: "Crédit", icon: CreditCard, className: "bg-sky-500 text-white shadow-sky-500/30" },
 ];
 
+const TEAL = "#019c86";
+const GRADIENT_ID = "nav-active-gradient";
+
 function NavLink({ href, label, icon: Icon, active }: { href: string; label: string; icon: typeof Home; active: boolean }) {
   return (
     <Link
       href={href}
       className={cn(
-        "flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition-colors",
-        active ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-slate-500",
+        "flex flex-1 flex-col items-center gap-1 pb-2.5 pt-3 text-[11px] font-semibold transition-colors duration-200",
+        active ? "text-[#019c86]" : "text-[#b3b3b3] dark:text-slate-500",
       )}
     >
-      <Icon className={cn("h-5 w-5", active && "stroke-[2.4]")} />
+      <Icon
+        className={cn("h-6 w-6 transition-transform duration-200", active && "scale-110")}
+        strokeWidth={2.2}
+        stroke={active ? `url(#${GRADIENT_ID})` : "currentColor"}
+        fill={active ? TEAL : "none"}
+        fillOpacity={active ? 0.15 : 0}
+      />
       {label}
     </Link>
   );
@@ -70,7 +79,7 @@ export function BottomNav() {
         )}
       />
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-50 flex flex-col items-center gap-3">
+      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(6rem+env(safe-area-inset-bottom))] z-50 flex flex-col items-center gap-3">
         {ACTIONS.map(({ href, label, icon: Icon, className }, i) => {
           // Stagger: nearest to the + button appears first, closes last.
           const order = ACTIONS.length - 1 - i;
@@ -96,8 +105,17 @@ export function BottomNav() {
         })}
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
-        <div className="mx-auto flex max-w-lg items-stretch justify-between px-1">
+      <svg width="0" height="0" className="absolute" aria-hidden>
+        <defs>
+          <linearGradient id={GRADIENT_ID} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#00c3ab" />
+            <stop offset="100%" stopColor="#007261" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      <nav className="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_30px_rgba(15,23,42,0.08)] dark:bg-slate-900">
+        <div className="mx-auto flex max-w-lg items-stretch justify-between px-2">
           {LEFT_ITEMS.map((item) => (
             <NavLink key={item.href} {...item} active={isActive(item.href)} />
           ))}
@@ -108,12 +126,9 @@ export function BottomNav() {
               onClick={toggle}
               aria-expanded={open}
               aria-label={open ? "Fermer le menu d'ajout" : "Ajouter"}
-              className={cn(
-                "-mt-5 flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg shadow-slate-900/25 ring-4 ring-slate-50 transition-all duration-300 active:scale-95 dark:bg-white dark:text-slate-900 dark:ring-slate-950",
-                open && "bg-rose-500 dark:bg-rose-500 dark:text-white",
-              )}
+              className="-mt-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-b from-[#00c3ab] to-[#007261] text-white shadow-[0_6px_22px_rgba(0,195,171,0.45)] ring-[6px] ring-white transition-transform duration-300 active:scale-95 dark:ring-slate-900"
             >
-              <Plus className={cn("h-7 w-7 transition-transform duration-300", open && "rotate-[135deg]")} />
+              <Plus className={cn("h-8 w-8 transition-transform duration-300", open && "rotate-[135deg]")} strokeWidth={2.6} />
             </button>
           </div>
 
