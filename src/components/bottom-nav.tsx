@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowDownToLine, ArrowUpFromLine, CalendarRange, CreditCard, Home, LineChart, Plus, Wallet } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, CalendarRange, Home, LineChart, Plus, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const LEFT_ITEMS = [
@@ -38,7 +38,7 @@ const ACTIONS = [
   {
     href: "/expenses/new?type=credit",
     label: "Crédit",
-    icon: CreditCard,
+    icon: ArrowDownToLine,
     dx: 112,
     dy: -118,
     className: "bg-gradient-to-br from-sky-400 to-blue-600 shadow-sky-400/35",
