@@ -25,6 +25,16 @@ const backupSchema = z.object({
       }),
     )
     .optional(),
+  categories: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        name: z.string().min(1),
+        emoji: z.string().min(1),
+        position: z.number().int(),
+      }),
+    )
+    .optional(),
 });
 
 export async function POST(req: NextRequest) {

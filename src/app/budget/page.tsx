@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Plus, Sparkles } from "lucide-react";
-import { getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
+import { getAllCategories, getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
 import {
   addMonths,
   compareMonths,
@@ -45,12 +45,16 @@ function Row({ label, value, currency, strong }: { label: string; value: number;
 }
 
 export default async function BudgetPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
-  const [sp, settings, expenses, payments] = await Promise.all([
+  const [sp, settings, expenses, payments, categories] = await Promise.all([
     searchParams,
     getSettings(),
     getAllExpenses(),
     getAllPayments(),
+    getAllCategories(),
   ]);
+  const categoryEmoji = new Map(categories.map((c) => [c.id, c.emoji]));
+  const iconOf = (e: { categoryId: string | null; icon: string | null }) =>
+    (e.categoryId && categoryEmoji.get(e.categoryId)) || e.icon;
   const viewMonth = monthFromSearchParams(sp.month, defaultViewMonth());
   const currentOperatingMonth = todayMonth();
   const summary = getMonthSummary(expenses, viewMonth, settings.salary);
@@ -68,7 +72,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
       return {
         expenseId: expense.id,
         name: expense.name,
-        icon: expense.icon,
+        icon: iconOf(expense),
         type: expense.type,
         color: getExpenseDisplayColor(expense, byId),
         amount: occ.amount,
@@ -91,7 +95,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
     return {
       expenseId: expense.id,
       name: expense.name,
-      icon: expense.icon,
+      icon: iconOf(expense),
       type: expense.type,
       color: getExpenseDisplayColor(expense, byId),
       amount: occ.amount,
@@ -112,7 +116,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
       getUnpaidMonths(expense, payments, addMonths(viewMonth, -1), byId).map((u) => ({
         expenseId: expense.id,
         name: `${expense.name} (reporté depuis ${monthLabelShortFr(u.month)})`,
-        icon: expense.icon,
+        icon: iconOf(expense),
         type: expense.type,
         color: getExpenseDisplayColor(expense, byId),
         amount: Math.round((u.amountDue - u.amountPaid) * 100) / 100,

@@ -29,8 +29,18 @@ export interface Expense {
   /** Optional custom emoji shown in lists. Falls back to a generic icon
    *  derived from `color` (see CATEGORY_META) when not set. */
   icon: string | null;
+  /** User-managed category (see Category), or null if uncategorized. */
+  categoryId: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  emoji: string;
+  /** Display order, ascending. */
+  position: number;
 }
 
 export type ExpenseInput = Omit<Expense, "id" | "createdAt" | "updatedAt">;

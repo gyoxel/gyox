@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import { Check, Clock } from "lucide-react";
-import type { ColorCategory, Expense, ExpenseType, Frequency } from "@/lib/types";
+import type { Category, ColorCategory, Expense, ExpenseType, Frequency } from "@/lib/types";
 import { todayDateStr } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { CategoryPicker } from "@/components/category-picker";
 
 const DEFAULT_COLOR_FOR_TYPE: Record<ExpenseType, ColorCategory> = {
   permanent: "red",
@@ -33,6 +34,7 @@ interface FormState {
   creditInitialAmount: string;
   creditPriorPaid: string;
   icon: string;
+  categoryId: string | null;
   active: boolean;
 }
 
@@ -52,6 +54,7 @@ function buildInitialState(expense?: Expense, initialType: ExpenseType = "tempor
       creditInitialAmount: "",
       creditPriorPaid: "",
       icon: "",
+      categoryId: null,
       active: true,
     };
   }
@@ -69,6 +72,7 @@ function buildInitialState(expense?: Expense, initialType: ExpenseType = "tempor
     creditInitialAmount: expense.creditInitialAmount != null ? String(expense.creditInitialAmount) : "",
     creditPriorPaid: expense.creditPriorPaid != null ? String(expense.creditPriorPaid) : "",
     icon: expense.icon ?? "",
+    categoryId: expense.categoryId,
     active: expense.active,
   };
 }
@@ -79,9 +83,11 @@ export function ExpenseForm({
   initialPaidStatus,
   showPaidToggle = true,
   initialType,
+  categories: initialCategories = [],
 }: {
   expense?: Expense;
   allExpenses: Expense[];
+  categories?: Category[];
   initialPaidStatus?: boolean;
   showPaidToggle?: boolean;
   initialType?: ExpenseType;
@@ -90,6 +96,7 @@ export function ExpenseForm({
   const refreshData = useRefreshData();
   const isEdit = !!expense;
   const [state, setState] = useState<FormState>(() => buildInitialState(expense, initialType));
+  const [categories, setCategories] = useState(initialCategories);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [paidNow, setPaidNow] = useState(initialPaidStatus ?? false);
@@ -144,6 +151,7 @@ export function ExpenseForm({
       creditInitialAmount: state.type === "credit" ? Number(state.creditInitialAmount) : null,
       creditPriorPaid: state.type === "credit" && state.creditPriorPaid ? Number(state.creditPriorPaid) : null,
       icon: state.icon || null,
+      categoryId: state.categoryId,
       active: state.active,
     };
 
@@ -193,6 +201,16 @@ export function ExpenseForm({
         </div>
       </div>
 
+      <div className="flex flex-col gap-2">
+        <Label>Catégorie</Label>
+        <CategoryPicker
+          categories={categories}
+          value={state.categoryId}
+          onChange={(id) => update("categoryId", id)}
+          onCreated={(c) => setCategories((prev) => [...prev, c])}
+        />
+      </div>
+
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="amount">{state.type === "credit" ? "Paiement mensuel (DH)" : "Montant (DH)"}</Label>
         <Input
@@ -231,7 +249,7 @@ export function ExpenseForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="color">Catégorie / couleur</Label>
+        <Label htmlFor="color">Groupe (budget)</Label>
         <Select id="color" value={state.color} onChange={(e) => update("color", e.target.value as ColorCategory)}>
           <option value="red">🔴 Permanent</option>
           <option value="blue">🔵 Temporaire lié à un crédit</option>

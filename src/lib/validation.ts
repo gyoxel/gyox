@@ -47,6 +47,16 @@ export const baseExpenseSchema = z.object({
     .nullable()
     .optional()
     .transform((v) => (v && v.trim() !== "" ? v.trim() : null)),
+  categoryId: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((v) => (v && v.trim() !== "" ? v : null)),
+});
+
+export const categoryInputSchema = z.object({
+  name: z.string().trim().min(1, "Le nom est requis.").max(40, "40 caractères maximum."),
+  emoji: z.string().trim().min(1, "Choisis un emoji.").max(16),
 });
 
 // Accepts a partial payload for PATCH requests; merge with the existing

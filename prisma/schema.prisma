@@ -31,9 +31,13 @@ model Expense {
   /** Optional custom emoji shown in lists (e.g. "🚗"). Falls back to a
    *  generic icon derived from `color` when not set. */
   icon                String?
+  /// User-managed category (Réglages). Deleting a category keeps its
+  /// expenses, just uncategorized.
+  categoryId          String?
   createdAt           String
   updatedAt           String
 
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   payments Payment[]
   daret    Daret?
 
@@ -97,4 +101,19 @@ model Settings {
   theme         String @default("system")
 
   @@map("settings")
+}
+
+// Expense categories shown as a swipeable picker on "Ajouter une dépense",
+// fully editable (add, rename, re-emoji, reorder, delete) in Réglages.
+model Category {
+  id        String @id @default(uuid())
+  name      String
+  emoji     String
+  /// Display order, ascending.
+  position  Int
+  createdAt String
+
+  expenses Expense[]
+
+  @@map("categories")
 }

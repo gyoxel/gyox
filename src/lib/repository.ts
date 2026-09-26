@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { prisma } from "./prisma";
-import type { Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings } from "./types";
+import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings } from "./types";
 
 function mapExpense(row: {
   id: string;
@@ -17,6 +17,7 @@ function mapExpense(row: {
   creditPriorPaid: number | null;
   linkedExpenseId: string | null;
   icon: string | null;
+  categoryId: string | null;
   createdAt: string;
   updatedAt: string;
 }): Expense {
@@ -35,6 +36,7 @@ function mapExpense(row: {
     creditPriorPaid: row.creditPriorPaid,
     linkedExpenseId: row.linkedExpenseId,
     icon: row.icon,
+    categoryId: row.categoryId,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -69,6 +71,7 @@ export async function createExpense(input: ExpenseInput): Promise<Expense> {
       creditPriorPaid: input.creditPriorPaid ?? null,
       linkedExpenseId: input.linkedExpenseId ?? null,
       icon: input.icon ?? null,
+      categoryId: input.categoryId ?? null,
       createdAt: now,
       updatedAt: now,
     },
@@ -99,6 +102,7 @@ export async function updateExpense(
       creditPriorPaid: merged.creditPriorPaid ?? null,
       linkedExpenseId: merged.linkedExpenseId ?? null,
       icon: merged.icon ?? null,
+      categoryId: merged.categoryId ?? null,
       updatedAt: new Date().toISOString(),
     },
   });
@@ -152,6 +156,8 @@ export interface BackupData {
   expenses: Expense[];
   /** Optional so backups made before darets existed still import. */
   darets?: Daret[];
+  /** Optional so backups made before categories existed still import. */
+  categories?: Category[];
 }
 
 export async function exportData(): Promise<BackupData> {
@@ -161,12 +167,27 @@ export async function exportData(): Promise<BackupData> {
     settings: await getSettings(),
     expenses: await getAllExpenses(),
     darets: (await getAllDarets()).map((d) => ({ id: d.id, expenseId: d.expenseId, members: d.members, turnMonth: d.turnMonth, createdAt: d.createdAt })),
+    categories: await getAllCategories(),
   };
 }
 
 export async function importData(data: BackupData): Promise<void> {
+  // A backup without categories keeps the current ones; any expense pointing
+  // at a category that won't exist after import is left uncategorized.
+  const categoryIds = new Set(
+    (data.categories ?? (await getAllCategories())).map((c) => c.id),
+  );
+  const now = new Date().toISOString();
   await prisma.$transaction([
     prisma.expense.deleteMany({}),
+    ...(data.categories
+      ? [
+          prisma.category.deleteMany({}),
+          prisma.category.createMany({
+            data: data.categories.map((c) => ({ id: c.id, name: c.name, emoji: c.emoji, position: c.position, createdAt: now })),
+          }),
+        ]
+      : []),
     prisma.expense.createMany({
       data: data.expenses.map((e) => ({
         id: e.id,
@@ -183,6 +204,7 @@ export async function importData(data: BackupData): Promise<void> {
         creditPriorPaid: e.creditPriorPaid ?? null,
         linkedExpenseId: e.linkedExpenseId ?? null,
         icon: e.icon ?? null,
+        categoryId: e.categoryId && categoryIds.has(e.categoryId) ? e.categoryId : null,
         createdAt: e.createdAt ?? new Date().toISOString(),
         updatedAt: e.updatedAt ?? new Date().toISOString(),
       })),
@@ -352,4 +374,56 @@ export async function deleteDaret(id: string): Promise<boolean> {
   const daret = await prisma.daret.findUnique({ where: { id } });
   if (!daret) return false;
   return deleteExpense(daret.expenseId);
+}
+
+// ---------------------------------------------------------------------------
+// Categories
+// ---------------------------------------------------------------------------
+
+function mapCategory(row: { id: string; name: string; emoji: string; position: number }): Category {
+  return { id: row.id, name: row.name, emoji: row.emoji, position: row.position };
+}
+
+export async function getAllCategories(): Promise<Category[]> {
+  const rows = await prisma.category.findMany({ orderBy: [{ position: "asc" }, { createdAt: "asc" }] });
+  return rows.map(mapCategory);
+}
+
+export async function createCategory(input: { name: string; emoji: string }): Promise<Category> {
+  const last = await prisma.category.aggregate({ _max: { position: true } });
+  const row = await prisma.category.create({
+    data: {
+      id: randomUUID(),
+      name: input.name,
+      emoji: input.emoji,
+      position: (last._max.position ?? 0) + 1,
+      createdAt: new Date().toISOString(),
+    },
+  });
+  return mapCategory(row);
+}
+
+export async function updateCategory(id: string, input: { name?: string; emoji?: string }): Promise<Category | null> {
+  try {
+    return mapCategory(await prisma.category.update({ where: { id }, data: input }));
+  } catch {
+    return null;
+  }
+}
+
+/** Expenses in this category are kept, just uncategorized (FK SET NULL). */
+export async function deleteCategory(id: string): Promise<boolean> {
+  try {
+    await prisma.category.delete({ where: { id } });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Persists a new order: `ids` from first to last. Unknown ids are ignored. */
+export async function reorderCategories(ids: string[]): Promise<void> {
+  await prisma.$transaction(
+    ids.map((id, index) => prisma.category.updateMany({ where: { id }, data: { position: index + 1 } })),
+  );
 }
