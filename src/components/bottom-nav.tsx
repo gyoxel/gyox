@@ -105,7 +105,9 @@ export function BottomNav() {
     // /daret/new has no link here. After a data change the whole client
     // cache is purged, so everything is re-prefetched.
     router.prefetch("/daret/new");
-    const prefetchAll = () => PREFETCH_HREFS.forEach((href) => router.prefetch(href));
+    // Staggered so they don't all hit the database at the same instant.
+    const prefetchAll = () =>
+      PREFETCH_HREFS.forEach((href, i) => setTimeout(() => router.prefetch(href), i * 150));
     window.addEventListener(DATA_CHANGED_EVENT, prefetchAll);
     return () => window.removeEventListener(DATA_CHANGED_EVENT, prefetchAll);
   }, [router]);
