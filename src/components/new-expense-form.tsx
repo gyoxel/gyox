@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { Category, ExpenseType, Frequency } from "@/lib/types";
@@ -43,10 +43,20 @@ export function NewExpenseForm({
   const isCredit = preset === "credit";
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [recurring, setRecurring] = useState(isCredit);
+  // Exactly one recurrence option is active at a time.
+  const [recurrenceKind, setRecurrenceKind] = useState<"months" | "until" | "permanent">(
+    isCredit ? "until" : "months",
+  );
   const [months, setMonths] = useState("");
   const [untilTotal, setUntilTotal] = useState("");
-  const [date, setDate] = useState(() => todayDateStr());
-  const [alreadyPaid, setAlreadyPaid] = useState(false);
+  const monthsRef = useRef<HTMLInputElement>(null);
+  const untilRef = useRef<HTMLInputElement>(null);
+  // "Déjà payé": Oui by default (paid today). Non -> choose the start date,
+  // and it waits in Dépenses to be checked off. A new credit defaults to
+  // Non, since its first installment is usually still to come.
+  const [alreadyPaid, setAlreadyPaid] = useState(!isCredit);
+  const [plannedDate, setPlannedDate] = useState(() => todayDateStr());
+  const date = alreadyPaid ? todayDateStr() : plannedDate;
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -55,13 +65,7 @@ export function NewExpenseForm({
   const monthsValue = Math.floor(Number(months) || 0);
   const untilValue = Number(untilTotal) || 0;
 
-  const mode: "once" | "months" | "until" | "permanent" = !recurring
-    ? "once"
-    : monthsValue > 0
-      ? "months"
-      : untilValue > 0
-        ? "until"
-        : "permanent";
+  const mode: "once" | "months" | "until" | "permanent" = recurring ? recurrenceKind : "once";
 
   const summary = useMemo(() => {
     if (!recurring || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
@@ -69,9 +73,11 @@ export function NewExpenseForm({
     if (mode === "permanent") return "Permanent : chaque mois, sans fin.";
     if (amountValue <= 0) return null;
     if (mode === "months") {
+      if (monthsValue <= 0) return null;
       const end = addMonths(start, monthsValue - 1);
       return `${formatMoney(amountValue)} × ${monthsValue} mois = ${formatMoney(amountValue * monthsValue)} · fin ${monthLabelFr(end)}`;
     }
+    if (untilValue <= 0) return null;
     const count = Math.ceil(untilValue / amountValue);
     const last = Math.round((untilValue - (count - 1) * amountValue) * 100) / 100;
     const end = addMonths(start, count - 1);
@@ -85,7 +91,9 @@ export function NewExpenseForm({
     if (amountValue <= 0) return setError("Indique un montant.");
     if (!name.trim()) return setError("Indique un nom.");
     if (!isCredit && categories.length > 0 && !categoryId) return setError("Choisis une catégorie.");
+    if (mode === "months" && monthsValue < 1) return setError("Indique le nombre de mois.");
     if (mode === "months" && monthsValue > MAX_MONTHS) return setError(`${MAX_MONTHS} mois maximum.`);
+    if (mode === "until" && untilValue <= 0) return setError("Indique le montant à atteindre.");
 
     const start = monthOfDateStr(date);
     let type: ExpenseType = "temporary";
@@ -198,77 +206,115 @@ export function NewExpenseForm({
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-3.5 dark:border-slate-800">
         <div className="flex items-center justify-between gap-3">
           <label htmlFor="recurring" className="text-sm font-medium text-slate-800 dark:text-slate-200">
-            Récurrent (chaque mois)
+            Récurrent (+1 mois)
           </label>
           <Switch id="recurring" checked={recurring} onCheckedChange={setRecurring} />
         </div>
 
         {recurring && (
           <>
-            <div className="flex items-end gap-2">
-              <div className="flex flex-1 flex-col gap-1.5">
-                <Label htmlFor="months" className="text-xs">
-                  Nombre de mois
-                </Label>
-                <Input
-                  id="months"
-                  type="number"
-                  inputMode="numeric"
-                  min="1"
-                  max={MAX_MONTHS}
-                  step="1"
-                  value={months}
-                  onChange={(e) => {
-                    setMonths(e.target.value);
-                    if (e.target.value) setUntilTotal("");
-                  }}
-                  placeholder="Ex: 6"
-                />
-              </div>
-              <span className="pb-3 text-xs font-semibold text-slate-400">OU</span>
-              <div className="flex flex-1 flex-col gap-1.5">
-                <Label htmlFor="untilTotal" className="text-xs">
-                  Jusqu&apos;à atteindre (DH)
-                </Label>
-                <Input
-                  id="untilTotal"
-                  type="number"
-                  inputMode="decimal"
-                  min="0.01"
-                  step="0.01"
-                  value={untilTotal}
-                  onChange={(e) => {
-                    setUntilTotal(e.target.value);
-                    if (e.target.value) setMonths("");
-                  }}
-                  placeholder="Ex: 3000"
-                  autoFocus={isCredit}
-                />
-              </div>
-            </div>
-            <p className={cn("text-xs", summary ? "text-[#007261] dark:text-teal-300" : "text-slate-400")}>
-              {summary ?? "Laisse les deux vides si c'est permanent (sans fin)."}
-            </p>
+            <RecurrenceOption
+              label="Nombre de mois"
+              selected={recurrenceKind === "months"}
+              onSelect={() => {
+                setRecurrenceKind("months");
+                setTimeout(() => monthsRef.current?.focus(), 200);
+              }}
+            >
+              <Input
+                ref={monthsRef}
+                id="months"
+                aria-label="Nombre de mois"
+                type="number"
+                inputMode="numeric"
+                min="1"
+                max={MAX_MONTHS}
+                step="1"
+                value={months}
+                onChange={(e) => setMonths(e.target.value)}
+                placeholder="Ex: 6"
+                tabIndex={recurrenceKind === "months" ? 0 : -1}
+              />
+            </RecurrenceOption>
+            <RecurrenceOption
+              label="Jusqu'à atteindre"
+              selected={recurrenceKind === "until"}
+              onSelect={() => {
+                setRecurrenceKind("until");
+                setTimeout(() => untilRef.current?.focus(), 200);
+              }}
+            >
+              <Input
+                ref={untilRef}
+                id="untilTotal"
+                aria-label="Montant à atteindre (DH)"
+                type="number"
+                inputMode="decimal"
+                min="0.01"
+                step="0.01"
+                value={untilTotal}
+                onChange={(e) => setUntilTotal(e.target.value)}
+                placeholder="Ex: 3000 DH"
+                autoFocus={isCredit}
+                tabIndex={recurrenceKind === "until" ? 0 : -1}
+              />
+            </RecurrenceOption>
+            <RecurrenceOption
+              label="Permanent (sans fin)"
+              selected={recurrenceKind === "permanent"}
+              onSelect={() => setRecurrenceKind("permanent")}
+            />
+            {summary && <p className="text-xs text-[#007261] dark:text-teal-300">{summary}</p>}
           </>
         )}
       </div>
 
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-3.5 dark:border-slate-800">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="date">{recurring ? "Date de début" : "Date"}</Label>
-          <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
-        </div>
         <div className="flex items-center justify-between gap-3">
-          <label htmlFor="alreadyPaid" className="flex flex-col">
+          <div className="flex flex-col">
             <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
-              {recurring ? "Déjà payé (1er mois)" : "Déjà payé"}
+              {recurring ? "Déjà payé (1er mois) ?" : "Déjà payé ?"}
             </span>
             <span className="text-xs text-slate-400">
-              {alreadyPaid ? "Sera déduit du disponible." : "Restera dans « Dépenses » à cocher une fois payé."}
+              {alreadyPaid ? "Aujourd'hui · déduit du disponible." : "Restera dans « Dépenses » à cocher."}
             </span>
-          </label>
-          <Switch id="alreadyPaid" checked={alreadyPaid} onCheckedChange={setAlreadyPaid} />
+          </div>
+          <div role="radiogroup" aria-label="Déjà payé" className="flex shrink-0 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+            {[
+              { value: true, label: "Oui" },
+              { value: false, label: "Non" },
+            ].map((option) => (
+              <button
+                key={option.label}
+                type="button"
+                role="radio"
+                aria-checked={alreadyPaid === option.value}
+                onClick={() => setAlreadyPaid(option.value)}
+                className={cn(
+                  "rounded-lg px-4 py-1.5 text-sm font-medium transition-colors duration-200",
+                  alreadyPaid === option.value
+                    ? "bg-[#019c86] text-white shadow-sm"
+                    : "text-slate-500 dark:text-slate-400",
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
+
+        {!alreadyPaid && (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="date">{recurring ? "Date de début" : "Date prévue"}</Label>
+            <Input
+              id="date"
+              type="date"
+              value={plannedDate}
+              onChange={(e) => setPlannedDate(e.target.value)}
+              required
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -287,5 +333,51 @@ export function NewExpenseForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+/** One recurrence choice. When selected it turns green and, if it has an
+ *  input, slides to the left half while the input opens on the right. */
+function RecurrenceOption({
+  label,
+  selected,
+  onSelect,
+  children,
+}: {
+  label: string;
+  selected: boolean;
+  onSelect: () => void;
+  children?: React.ReactNode;
+}) {
+  const expanded = selected && children != null;
+  return (
+    <div className="flex items-stretch">
+      <button
+        type="button"
+        role="radio"
+        aria-checked={selected}
+        onClick={onSelect}
+        className={cn(
+          "flex h-11 shrink-0 items-center justify-center rounded-xl border px-3 text-sm font-medium whitespace-nowrap transition-all duration-300 ease-out",
+          selected
+            ? "border-[#019c86] bg-[#019c86] text-white shadow-sm"
+            : "border-slate-200 bg-white text-slate-600 active:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
+          expanded ? "w-[calc(50%-0.25rem)]" : "w-full",
+        )}
+      >
+        {label}
+      </button>
+      {children != null && (
+        <div
+          aria-hidden={!expanded}
+          className={cn(
+            "overflow-hidden transition-all duration-300 ease-out",
+            expanded ? "ml-2 w-[calc(50%-0.25rem)] opacity-100" : "ml-0 w-0 opacity-0",
+          )}
+        >
+          {children}
+        </div>
+      )}
+    </div>
   );
 }
