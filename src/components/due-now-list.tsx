@@ -12,6 +12,7 @@ import { formatMoney, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ColorDot } from "@/components/color-dot";
+import { displayIcon } from "@/lib/category";
 
 const SWIPE_THRESHOLD_PX = 40;
 
@@ -46,7 +47,9 @@ export function DueNowList({
   payments,
   currentMonth,
   currency,
+  categoryEmoji,
 }: {
+  categoryEmoji: Record<string, string>;
   expenses: Expense[];
   payments: Payment[];
   currentMonth: MonthId;
@@ -67,6 +70,7 @@ export function DueNowList({
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const touchStartX = useRef<number | null>(null);
 
+  const emojiById = useMemo(() => new Map(Object.entries(categoryEmoji)), [categoryEmoji]);
   const items = useMemo(() => {
     const byId = new Map(expenses.map((e) => [e.id, e]));
     return getMonthLedgerItems(expenses, localPayments, viewMonth, currentMonth)
@@ -184,6 +188,7 @@ export function DueNowList({
                 )}
               >
                 <ColorDot color={color} className={cn(paid && "opacity-60")} />
+                <span className={cn("text-base leading-none", paid && "opacity-50")}>{displayIcon(expense, emojiById)}</span>
                 <p
                   className={cn(
                     "min-w-0 flex-1 truncate text-sm font-medium text-slate-900 dark:text-slate-100",

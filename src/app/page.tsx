@@ -1,4 +1,4 @@
-import { getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
+import { getAllCategories, getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
 import { todayMonth } from "@/lib/date";
 import { getPaidThisMonth } from "@/lib/engine";
 import { PageHeader } from "@/components/page-header";
@@ -18,7 +18,13 @@ function todayShortDate(): string {
 }
 
 export default async function HomePage() {
-  const [settings, expenses, payments] = await Promise.all([getSettings(), getAllExpenses(), getAllPayments()]);
+  const [settings, expenses, payments, categories] = await Promise.all([
+    getSettings(),
+    getAllExpenses(),
+    getAllPayments(),
+    getAllCategories(),
+  ]);
+  const categoryEmoji = Object.fromEntries(categories.map((c) => [c.id, c.emoji]));
   const currentMonth = todayMonth();
 
   const paidThisMonth = getPaidThisMonth(expenses, payments, currentMonth);
@@ -72,7 +78,7 @@ export default async function HomePage() {
           <div className="flex items-center justify-between px-1">
             <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400">🔴 Dépenses</h2>
           </div>
-          <DueNowList expenses={expenses} payments={payments} currentMonth={currentMonth} currency={settings.currency} />
+          <DueNowList categoryEmoji={categoryEmoji} expenses={expenses} payments={payments} currentMonth={currentMonth} currency={settings.currency} />
         </section>
       </main>
     </>

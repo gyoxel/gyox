@@ -21,11 +21,13 @@ export function CreditCard({
   payments,
   currency,
   color,
+  icon,
 }: {
   expense: Expense;
   payments: Payment[];
   currency: string;
   color: DisplayColor;
+  icon: string;
 }) {
   const state = getCreditRealState(expense, payments, todayMonth());
   const { total, paid, percent } = getCreditDisplayProgress(expense, state);
@@ -40,6 +42,7 @@ export function CreditCard({
           <div className="flex items-center justify-between">
             <h3 className="flex min-w-0 items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
               <ColorDot color={color} />
+              <span className="text-lg leading-none">{icon}</span>
               <span className="truncate">{expense.name}</span>
             </h3>
             <div className="flex items-center gap-1.5">

@@ -206,8 +206,15 @@ export function ExpenseForm({
         <CategoryPicker
           categories={categories}
           value={state.categoryId}
-          onChange={(id) => update("categoryId", id)}
-          onCreated={(c) => setCategories((prev) => [...prev, c])}
+          onChange={(id) => {
+            update("categoryId", id);
+            const category = categories.find((c) => c.id === id);
+            if (category) update("icon", category.emoji);
+          }}
+          onCreated={(c) => {
+            setCategories((prev) => [...prev, c]);
+            update("icon", c.emoji);
+          }}
         />
       </div>
 

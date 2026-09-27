@@ -47,3 +47,12 @@ const FALLBACK_ICON_BY_TYPE: Record<string, string> = {
 export function expenseIcon(expense: Pick<Expense, "icon" | "type">): string {
   return expense.icon || FALLBACK_ICON_BY_TYPE[expense.type] || "💰";
 }
+
+/** The icon to show for an expense: its category's emoji when it has one,
+ *  otherwise its own icon / type fallback. */
+export function displayIcon(
+  expense: Pick<Expense, "icon" | "type" | "categoryId">,
+  categoryEmoji: ReadonlyMap<string, string>,
+): string {
+  return (expense.categoryId && categoryEmoji.get(expense.categoryId)) || expenseIcon(expense);
+}

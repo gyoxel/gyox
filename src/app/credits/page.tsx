@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
+import { getAllCategories, getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
+import { displayIcon } from "@/lib/category";
 import { PageHeader } from "@/components/page-header";
 import { CreditCard } from "@/components/credit-card";
 import { LinkedCreditCard } from "@/components/linked-credit-card";
@@ -12,7 +13,13 @@ import { Button } from "@/components/ui/button";
 export const dynamic = "force-dynamic";
 
 export default async function CreditsPage() {
-  const [settings, payments, expenses] = await Promise.all([getSettings(), getAllPayments(), getAllExpenses()]);
+  const [settings, payments, expenses, categories] = await Promise.all([
+    getSettings(),
+    getAllPayments(),
+    getAllExpenses(),
+    getAllCategories(),
+  ]);
+  const categoryEmoji = new Map(categories.map((c) => [c.id, c.emoji]));
   const byId = new Map(expenses.map((e) => [e.id, e]));
   const credits = expenses.filter((e) => e.type === "credit");
   // Expenses tied to a credit (e.g. Zineb ends together with Dnya) are shown
@@ -45,6 +52,7 @@ export default async function CreditsPage() {
               payments={payments}
               currency={settings.currency}
               color={getExpenseDisplayColor(c, byId)}
+              icon={displayIcon(c, categoryEmoji)}
             />,
             ...linkedTo(c.id).map((e) => (
               <LinkedCreditCard
@@ -55,13 +63,14 @@ export default async function CreditsPage() {
                 byId={byId}
                 currency={settings.currency}
                 color={getExpenseDisplayColor(e, byId)}
+                icon={displayIcon(e, categoryEmoji)}
               />
             )),
           ])
         )}
 
         <div className="mt-4">
-          <TimelineSection expenses={expenses} payments={payments} currency={settings.currency} />
+          <TimelineSection expenses={expenses} payments={payments} currency={settings.currency} categoryEmoji={categoryEmoji} />
         </div>
       </main>
     </>

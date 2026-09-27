@@ -38,10 +38,11 @@ export function NewExpenseForm({
 
   const [amount, setAmount] = useState("");
   const [name, setName] = useState("");
-  const [categoryId, setCategoryId] = useState<string | null>(() =>
-    preset === "credit" ? (initialCategories.find((c) => c.name.toLowerCase() === "crédits")?.id ?? null) : null,
-  );
-  const [recurring, setRecurring] = useState(preset === "credit");
+  // Credits have their own entry point (+ > Crédit), so they aren't filed
+  // under a category.
+  const isCredit = preset === "credit";
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [recurring, setRecurring] = useState(isCredit);
   const [months, setMonths] = useState("");
   const [untilTotal, setUntilTotal] = useState("");
   const [date, setDate] = useState(() => todayDateStr());
@@ -83,7 +84,7 @@ export function NewExpenseForm({
 
     if (amountValue <= 0) return setError("Indique un montant.");
     if (!name.trim()) return setError("Indique un nom.");
-    if (categories.length > 0 && !categoryId) return setError("Choisis une catégorie.");
+    if (!isCredit && categories.length > 0 && !categoryId) return setError("Choisis une catégorie.");
     if (mode === "months" && monthsValue > MAX_MONTHS) return setError(`${MAX_MONTHS} mois maximum.`);
 
     const start = monthOfDateStr(date);
@@ -148,7 +149,7 @@ export function NewExpenseForm({
       }
 
       await refreshData();
-      toast.success(preset === "credit" ? "Crédit ajouté." : "Dépense ajoutée.");
+      toast.success(isCredit ? "Crédit ajouté." : "Dépense ajoutée.");
       router.push("/");
     });
   }
@@ -182,15 +183,17 @@ export function NewExpenseForm({
         <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Pizza, Loyer…" />
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label>Catégorie</Label>
-        <CategoryPicker
-          categories={categories}
-          value={categoryId}
-          onChange={setCategoryId}
-          onCreated={(c) => setCategories((prev) => [...prev, c])}
-        />
-      </div>
+      {!isCredit && (
+        <div className="flex flex-col gap-2">
+          <Label>Catégorie</Label>
+          <CategoryPicker
+            categories={categories}
+            value={categoryId}
+            onChange={setCategoryId}
+            onCreated={(c) => setCategories((prev) => [...prev, c])}
+          />
+        </div>
+      )}
 
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-3.5 dark:border-slate-800">
         <div className="flex items-center justify-between gap-3">
@@ -239,7 +242,7 @@ export function NewExpenseForm({
                     if (e.target.value) setMonths("");
                   }}
                   placeholder="Ex: 3000"
-                  autoFocus={preset === "credit"}
+                  autoFocus={isCredit}
                 />
               </div>
             </div>

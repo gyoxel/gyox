@@ -4,6 +4,7 @@ import { getCreditDisplayProgress, getCreditRealState, getEffectiveEndMonth, get
 import { Card, CardContent } from "@/components/ui/card";
 import { cn, formatMoney } from "@/lib/utils";
 import { ColorDot } from "@/components/color-dot";
+import { displayIcon } from "@/lib/category";
 
 const BAR: Record<DisplayColor, string> = { red: "bg-rose-400", yellow: "bg-amber-400", blue: "bg-sky-400" };
 
@@ -45,10 +46,12 @@ export function TimelineSection({
   expenses,
   payments,
   currency,
+  categoryEmoji,
 }: {
   expenses: Expense[];
   payments: Payment[];
   currency: string;
+  categoryEmoji: ReadonlyMap<string, string>;
 }) {
   const active = expenses.filter((e) => e.active);
   const byId = new Map(expenses.map((e) => [e.id, e]));
@@ -79,6 +82,7 @@ export function TimelineSection({
               <div className="flex items-center justify-between gap-2 text-sm">
                 <span className="flex min-w-0 items-center gap-2 font-medium text-slate-800 dark:text-slate-200">
                   <ColorDot color={color} />
+                  <span className="leading-none">{displayIcon(expense, categoryEmoji)}</span>
                   <span className="truncate">{expense.name}</span>
                   <span className="shrink-0 text-xs font-normal text-slate-400">
                     {formatMoney(expense.amount, currency)}

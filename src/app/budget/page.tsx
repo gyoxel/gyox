@@ -26,6 +26,8 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/utils";
+import { displayIcon } from "@/lib/category";
+import type { Expense } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -53,8 +55,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
     getAllCategories(),
   ]);
   const categoryEmoji = new Map(categories.map((c) => [c.id, c.emoji]));
-  const iconOf = (e: { categoryId: string | null; icon: string | null }) =>
-    (e.categoryId && categoryEmoji.get(e.categoryId)) || e.icon;
+  const iconOf = (e: Expense) => displayIcon(e, categoryEmoji);
   const viewMonth = monthFromSearchParams(sp.month, defaultViewMonth());
   const currentOperatingMonth = todayMonth();
   const summary = getMonthSummary(expenses, viewMonth, settings.salary);
