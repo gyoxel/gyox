@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useRef, useState, useTransition } from "react";
+import { Check, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import type { Category, ExpenseType, Frequency } from "@/lib/types";
+import type { Category, Expense, ExpenseType, Frequency } from "@/lib/types";
 import { addMonths, monthKey, monthLabelFr, monthOfDateStr, todayDateStr } from "@/lib/date";
 import { lastDayOfMonth } from "@/lib/daret";
 import { cn, formatMoney } from "@/lib/utils";
@@ -17,47 +18,77 @@ import { Textarea } from "@/components/ui/textarea";
 
 const MAX_MONTHS = 600;
 
+export type RecurrenceKind = "months" | "until" | "permanent";
+
+/** Initial recurrence as shown when editing (computed on the server). */
+export interface RecurrenceInit {
+  recurring: boolean;
+  kind: RecurrenceKind;
+  months: string;
+  until: string;
+}
+
+/** Payment status of the relevant period when editing: this month for
+ *  recurring expenses, the expense's own month for a one-time one. */
+export interface PaymentStatusInit {
+  monthKey: string;
+  paid: boolean;
+  /** "(ce mois-ci)" etc. */
+  hint: string;
+}
+
 /**
- * "Ajouter une dépense". The recurrence settings map onto the existing
- * expense model, so every calculation keeps working unchanged:
+ * "Ajouter une dépense" and the edit page share this form. The recurrence
+ * settings map onto the existing expense model, so every calculation keeps
+ * working unchanged:
  * - not recurring                 -> one-time temporary expense
  * - recurring for N months        -> monthly temporary expense ending after N months
  * - recurring until reaching X DH -> credit (monthly installments until X is repaid)
  * - recurring with no limit       -> permanent expense
  */
-export function NewExpenseForm({
+export function ExpenseEditor({
   categories: initialCategories,
   preset,
+  expense,
+  recurrenceInit,
+  paymentStatus,
 }: {
   categories: Category[];
   preset?: "credit";
+  /** Present when editing. */
+  expense?: Expense;
+  recurrenceInit?: RecurrenceInit;
+  /** Edit only; null when there's no period to pay right now. */
+  paymentStatus?: PaymentStatusInit | null;
 }) {
+  const isEdit = expense != null;
   const router = useRouter();
   const refreshData = useRefreshData();
   const [categories, setCategories] = useState(initialCategories);
 
-  const [amount, setAmount] = useState("");
-  const [name, setName] = useState("");
+  const [amount, setAmount] = useState(expense ? String(expense.amount) : "");
+  const [name, setName] = useState(expense?.name ?? "");
   // Credits have their own entry point (+ > Crédit), so they aren't filed
   // under a category.
-  const isCredit = preset === "credit";
-  const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [recurring, setRecurring] = useState(isCredit);
+  const isCredit = isEdit ? expense.type === "credit" : preset === "credit";
+  const [categoryId, setCategoryId] = useState<string | null>(expense?.categoryId ?? null);
+  const [recurring, setRecurring] = useState(recurrenceInit?.recurring ?? isCredit);
   // Exactly one recurrence option is active at a time.
-  const [recurrenceKind, setRecurrenceKind] = useState<"months" | "until" | "permanent">(
-    isCredit ? "until" : "months",
+  const [recurrenceKind, setRecurrenceKind] = useState<RecurrenceKind>(
+    recurrenceInit?.kind ?? (isCredit ? "until" : "months"),
   );
-  const [months, setMonths] = useState("");
-  const [untilTotal, setUntilTotal] = useState("");
+  const [months, setMonths] = useState(recurrenceInit?.months ?? "");
+  const [untilTotal, setUntilTotal] = useState(recurrenceInit?.until ?? "");
   const monthsRef = useRef<HTMLInputElement>(null);
   const untilRef = useRef<HTMLInputElement>(null);
-  // "Déjà payé": Oui by default (paid today). Non -> choose the start date,
-  // and it waits in Dépenses to be checked off. A new credit defaults to
-  // Non, since its first installment is usually still to come.
-  const [alreadyPaid, setAlreadyPaid] = useState(!isCredit);
-  const [plannedDate, setPlannedDate] = useState(() => todayDateStr());
-  const date = alreadyPaid ? todayDateStr() : plannedDate;
-  const [notes, setNotes] = useState("");
+  // Statut de paiement: "Payé" by default when creating (paid today,
+  // deducted from Disponible); "Pas encore" leaves it in Dépenses to check
+  // off. A new credit defaults to "Pas encore" (first installment usually
+  // still to come). When editing it reflects the current period.
+  const [alreadyPaid, setAlreadyPaid] = useState(isEdit ? (paymentStatus?.paid ?? false) : !isCredit);
+  // New entries start today; an edited one keeps its original start date.
+  const date = expense?.startDate ?? todayDateStr();
+  const [notes, setNotes] = useState(expense?.notes ?? "");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -90,7 +121,7 @@ export function NewExpenseForm({
 
     if (amountValue <= 0) return setError("Indique un montant.");
     if (!name.trim()) return setError("Indique un nom.");
-    if (!isCredit && categories.length > 0 && !categoryId) return setError("Choisis une catégorie.");
+    if (!isEdit && !isCredit && categories.length > 0 && !categoryId) return setError("Choisis une catégorie.");
     if (mode === "months" && monthsValue < 1) return setError("Indique le nombre de mois.");
     if (mode === "months" && monthsValue > MAX_MONTHS) return setError(`${MAX_MONTHS} mois maximum.`);
     if (mode === "until" && untilValue <= 0) return setError("Indique le montant à atteindre.");
@@ -116,35 +147,76 @@ export function NewExpenseForm({
       color = "red";
     }
 
+    const recurrenceFields = {
+      type,
+      frequency,
+      endDate,
+      color,
+      creditInitialAmount,
+      linkedExpenseId: null,
+    };
+
     startTransition(async () => {
+      if (isEdit) {
+        // Only rewrite the recurrence when it was actually changed, so
+        // settings this form doesn't show (a link like "ends with Dnya",
+        // an amount already repaid before tracking…) are preserved.
+        const init = recurrenceInit;
+        const recurrenceChanged =
+          !init ||
+          recurring !== init.recurring ||
+          (recurring &&
+            (recurrenceKind !== init.kind ||
+              (recurrenceKind === "months" && months !== init.months) ||
+              (recurrenceKind === "until" && untilTotal !== init.until)));
+        const res = await fetch(`/api/expenses/${expense.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: name.trim(),
+            amount: amountValue,
+            notes: notes.trim() || null,
+            categoryId,
+            ...(recurrenceChanged ? recurrenceFields : {}),
+          }),
+        });
+        if (!res.ok) return setError(await errorMessage(res));
+
+        if (paymentStatus && alreadyPaid !== paymentStatus.paid) {
+          const payRes = alreadyPaid
+            ? await fetch(`/api/expenses/${expense.id}/payments`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ monthKey: paymentStatus.monthKey }),
+              })
+            : await fetch(`/api/expenses/${expense.id}/payments?monthKey=${paymentStatus.monthKey}`, {
+                method: "DELETE",
+              });
+          if (!payRes.ok) toast.error("Enregistré, mais le statut de paiement n'a pas pu être mis à jour.");
+        }
+
+        await refreshData();
+        toast.success("Modifications enregistrées.");
+        router.back();
+        return;
+      }
+
       const res = await fetch("/api/expenses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
           amount: amountValue,
-          type,
-          frequency,
           startDate: date,
-          endDate,
           active: true,
-          color,
           notes: notes.trim() || null,
-          creditInitialAmount,
           creditPriorPaid: null,
-          linkedExpenseId: null,
           icon: null,
           categoryId,
+          ...recurrenceFields,
         }),
       });
-      if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        const first =
-          body?.error?.formErrors?.[0] ??
-          (body?.error?.fieldErrors && (Object.values(body.error.fieldErrors)[0] as string[] | undefined))?.[0];
-        setError(first ?? "Une erreur est survenue. Vérifiez les champs.");
-        return;
-      }
+      if (!res.ok) return setError(await errorMessage(res));
       const created: { id: string } = await res.json();
 
       if (alreadyPaid) {
@@ -191,7 +263,7 @@ export function NewExpenseForm({
         <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Pizza, Loyer…" />
       </div>
 
-      {!isCredit && (
+      {(isEdit || !isCredit) && (
         <div className="flex flex-col gap-2">
           <Label>Catégorie</Label>
           <CategoryPicker
@@ -269,53 +341,46 @@ export function NewExpenseForm({
         )}
       </div>
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-3.5 dark:border-slate-800">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
-              {recurring ? "Déjà payé (1er mois) ?" : "Déjà payé ?"}
-            </span>
-            <span className="text-xs text-slate-400">
-              {alreadyPaid ? "Aujourd'hui · déduit du disponible." : "Restera dans « Dépenses » à cocher."}
-            </span>
-          </div>
-          <div role="radiogroup" aria-label="Déjà payé" className="flex shrink-0 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
-            {[
-              { value: true, label: "Oui" },
-              { value: false, label: "Non" },
-            ].map((option) => (
-              <button
-                key={option.label}
-                type="button"
-                role="radio"
-                aria-checked={alreadyPaid === option.value}
-                onClick={() => setAlreadyPaid(option.value)}
-                className={cn(
-                  "rounded-lg px-4 py-1.5 text-sm font-medium transition-colors duration-200",
-                  alreadyPaid === option.value
-                    ? "bg-[#019c86] text-white shadow-sm"
-                    : "text-slate-500 dark:text-slate-400",
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
+      {(!isEdit || paymentStatus) && (
+        <div className="flex flex-col gap-1.5">
+          <Label>
+            Statut de paiement
+            {isEdit ? ` ${paymentStatus?.hint ?? ""}` : recurring ? " (1er mois)" : ""}
+          </Label>
+          <div
+            role="radiogroup"
+            aria-label="Statut de paiement"
+            className="flex overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700"
+          >
+            <button
+              type="button"
+              role="radio"
+              aria-checked={alreadyPaid}
+              onClick={() => setAlreadyPaid(true)}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition-colors duration-200",
+                alreadyPaid ? "bg-emerald-500 text-white" : "bg-white text-slate-500 dark:bg-slate-900 dark:text-slate-400",
+              )}
+            >
+              <Check className="h-4 w-4" />
+              Payé
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={!alreadyPaid}
+              onClick={() => setAlreadyPaid(false)}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition-colors duration-200",
+                !alreadyPaid ? "bg-rose-500 text-white" : "bg-white text-slate-500 dark:bg-slate-900 dark:text-slate-400",
+              )}
+            >
+              <Clock className="h-4 w-4" />
+              Pas encore
+            </button>
           </div>
         </div>
-
-        {!alreadyPaid && (
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="date">{recurring ? "Date de début" : "Date prévue"}</Label>
-            <Input
-              id="date"
-              type="date"
-              value={plannedDate}
-              onChange={(e) => setPlannedDate(e.target.value)}
-              required
-            />
-          </div>
-        )}
-      </div>
+      )}
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="notes">Note (optionnel)</Label>
@@ -329,7 +394,7 @@ export function NewExpenseForm({
           Annuler
         </Button>
         <Button type="submit" className="flex-1" disabled={isPending}>
-          {isPending ? "Enregistrement…" : "Ajouter"}
+          {isPending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter"}
         </Button>
       </div>
     </form>
@@ -380,4 +445,12 @@ function RecurrenceOption({
       )}
     </div>
   );
+}
+
+async function errorMessage(res: Response): Promise<string> {
+  const body = await res.json().catch(() => null);
+  const first =
+    body?.error?.formErrors?.[0] ??
+    (body?.error?.fieldErrors && (Object.values(body.error.fieldErrors)[0] as string[] | undefined))?.[0];
+  return first ?? "Une erreur est survenue. Vérifiez les champs.";
 }

@@ -1,13 +1,12 @@
 import { notFound } from "next/navigation";
 import { getAllCategories, getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
-import { getCreditDisplayProgress, getCreditRealState, getEffectiveEndMonth, getMonthPaymentStatus } from "@/lib/engine";
-import { compareMonths, monthLabelFr, monthOfDateStr, todayMonth } from "@/lib/date";
+import { getCreditDisplayProgress, getCreditRealState, getEffectiveEndMonth, getOccurrenceForMonth } from "@/lib/engine";
+import { compareMonths, monthKey, monthLabelFr, monthOfDateStr, monthsBetween, todayMonth } from "@/lib/date";
 import { PageHeader } from "@/components/page-header";
-import { ExpenseForm } from "@/components/expense-form";
+import { ExpenseEditor, type PaymentStatusInit, type RecurrenceInit } from "@/components/expense-editor";
 import { DeleteExpenseButton } from "@/components/delete-expense-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatMoney } from "@/lib/utils";
-import { TYPE_LABELS_FR } from "@/lib/category";
 import type { Expense, Payment } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -22,18 +21,9 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
   ]);
   const expense = allExpenses.find((e) => e.id === id);
   if (!expense) notFound();
-  const currentMonth = todayMonth();
-
-  let isPaidNow: boolean;
-  let hasCurrentPeriod: boolean;
-  if (expense.type === "credit") {
-    const state = getCreditRealState(expense, payments, currentMonth);
-    hasCurrentPeriod = state.status !== "not-started";
-    isPaidNow = state.pendingAmount <= 0 && hasCurrentPeriod;
-  } else {
-    hasCurrentPeriod = compareMonths(currentMonth, monthOfDateStr(expense.startDate)) >= 0;
-    isPaidNow = hasCurrentPeriod && getMonthPaymentStatus(expense, currentMonth, payments, currentMonth) === "paid";
-  }
+  const byId = new Map(allExpenses.map((e) => [e.id, e]));
+  const recurrenceInit = getRecurrenceInit(expense, byId);
+  const paymentStatus = getPaymentStatusInit(expense, payments, byId);
 
   return (
     <>
@@ -46,20 +36,12 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
           <LinkedInfo expenseId={expense.id} allExpenses={allExpenses} />
         )}
 
-        <Card>
-          <CardContent className="pt-4">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
-              {TYPE_LABELS_FR[expense.type]}
-            </p>
-            <ExpenseForm
-              expense={expense}
-              allExpenses={allExpenses}
-              categories={categories}
-              initialPaidStatus={isPaidNow}
-              showPaidToggle={hasCurrentPeriod}
-            />
-          </CardContent>
-        </Card>
+        <ExpenseEditor
+          expense={expense}
+          categories={categories}
+          recurrenceInit={recurrenceInit}
+          paymentStatus={paymentStatus}
+        />
       </main>
     </>
   );
@@ -110,4 +92,44 @@ function LinkedInfo({ expenseId, allExpenses }: { expenseId: string; allExpenses
       </CardContent>
     </Card>
   );
+}
+
+/** Which recurrence option the form should open on for this expense. */
+function getRecurrenceInit(expense: Expense, byId: Map<string, Expense>): RecurrenceInit {
+  if (expense.type === "credit") {
+    return { recurring: true, kind: "until", months: "", until: String(expense.creditInitialAmount ?? "") };
+  }
+  if (expense.type === "permanent") return { recurring: true, kind: "permanent", months: "", until: "" };
+  if (expense.frequency === "one-time") return { recurring: false, kind: "months", months: "", until: "" };
+  const end = getEffectiveEndMonth(expense, byId);
+  if (!end) return { recurring: true, kind: "permanent", months: "", until: "" };
+  const count = Math.max(1, monthsBetween(monthOfDateStr(expense.startDate), end) + 1);
+  return { recurring: true, kind: "months", months: String(count), until: "" };
+}
+
+/** Payment status of the period that matters: the expense's own month for a
+ *  one-time expense, this month otherwise. Null when nothing is due then. */
+function getPaymentStatusInit(
+  expense: Expense,
+  payments: Payment[],
+  byId: Map<string, Expense>,
+): PaymentStatusInit | null {
+  const current = todayMonth();
+  const currentKey = monthKey(current);
+
+  if (expense.type === "credit") {
+    const state = getCreditRealState(expense, payments, current);
+    const paid = payments.some((p) => p.expenseId === expense.id && p.slotIndex != null && p.monthKey === currentKey);
+    if (state.status === "not-started" || (state.status === "completed" && !paid)) return null;
+    return { monthKey: currentKey, paid, hint: "(ce mois-ci)" };
+  }
+
+  const target = expense.frequency === "one-time" ? monthOfDateStr(expense.startDate) : current;
+  if (!getOccurrenceForMonth(expense, target, byId)) return null;
+  const key = monthKey(target);
+  const paid = payments.some(
+    (p) => p.expenseId === expense.id && p.monthKey === key && p.amountPaid >= p.amountDue - 0.005,
+  );
+  const hint = compareMonths(target, current) === 0 ? "(ce mois-ci)" : `(${monthLabelFr(target)})`;
+  return { monthKey: key, paid, hint };
 }

@@ -1,6 +1,6 @@
 import { getAllCategories } from "@/lib/repository";
 import { PageHeader } from "@/components/page-header";
-import { NewExpenseForm } from "@/components/new-expense-form";
+import { ExpenseEditor } from "@/components/expense-editor";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +12,7 @@ export default async function NewExpensePage({ searchParams }: { searchParams: P
       <PageHeader title={isCredit ? "Ajouter un crédit" : "Ajouter une dépense"} backHref="/" />
       <main className="px-4 py-5">
         {/* key: switching between the two presets remounts with fresh defaults */}
-        <NewExpenseForm key={isCredit ? "credit" : "expense"} categories={categories} preset={isCredit ? "credit" : undefined} />
+        <ExpenseEditor key={isCredit ? "credit" : "expense"} categories={categories} preset={isCredit ? "credit" : undefined} />
       </main>
     </>
   );
