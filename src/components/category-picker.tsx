@@ -74,7 +74,9 @@ export function CategoryPicker({
         className="no-scrollbar -mx-4 overflow-x-auto overscroll-x-contain px-4 pb-1"
       >
         <div className="flex w-max flex-col gap-2">
-          {splitInTwo([...categories.map((c) => ({ kind: "category" as const, category: c })), { kind: "add" as const }]).map(
+          {splitInTwo([...categories.map((c) => ({ kind: "category" as const, category: c })), { kind: "add" as const }], (chip) =>
+            chipWidth(chip.kind === "add" ? "Ajouter" : chip.category.name),
+          ).map(
             (row, rowIndex) => (
               <div key={rowIndex} className="flex gap-2">
                 {row.map((chip) =>
@@ -157,9 +159,31 @@ export function CategoryPicker({
   );
 }
 
-/** First half on the top row, second half on the bottom row (reading order
- *  follows the order set in Réglages). */
-function splitInTwo<T>(items: T[]): [T[], T[]] {
-  const half = Math.ceil(items.length / 2);
-  return [items.slice(0, half), items.slice(half)];
+/** Approximate rendered width (px) of a chip: padding + border + emoji/icon
+ *  + gap, plus ~7.2px per character of text-sm. An estimate (not a DOM
+ *  measurement) so server and client split the rows identically. */
+function chipWidth(label: string): number {
+  return 52 + label.length * 7.2;
+}
+
+/** Splits the chips, in order (the order set in Réglages), into a top and a
+ *  bottom row of about the same WIDTH — not the same count — so both rows
+ *  end close to each other. */
+function splitInTwo<T>(items: T[], widthOf: (item: T) => number): [T[], T[]] {
+  const GAP = 8;
+  const widths = items.map(widthOf);
+  const total = widths.reduce((s, w) => s + w, 0) + GAP * Math.max(0, items.length - 1);
+  let best = Math.ceil(items.length / 2);
+  let bestDiff = Infinity;
+  let top = 0;
+  for (let k = 1; k < items.length; k++) {
+    top += widths[k - 1] + (k > 1 ? GAP : 0);
+    const bottom = total - top - GAP;
+    const diff = Math.abs(top - bottom);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = k;
+    }
+  }
+  return [items.slice(0, best), items.slice(best)];
 }
