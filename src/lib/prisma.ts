@@ -14,6 +14,13 @@ function withTimeouts(url: string | undefined): string | undefined {
     const parsed = new URL(url);
     if (!parsed.searchParams.has("connect_timeout")) parsed.searchParams.set("connect_timeout", "15");
     if (!parsed.searchParams.has("pool_timeout")) parsed.searchParams.set("pool_timeout", "20");
+    // Each serverless instance keeps its own pool open, even while idle, and
+    // a burst of requests can start several instances at once: cap the
+    // connections per instance (Prisma's default here is 5) so a burst can't
+    // exhaust the database's connection limit.
+    if (process.env.VERCEL && !parsed.searchParams.has("connection_limit")) {
+      parsed.searchParams.set("connection_limit", "3");
+    }
     return parsed.toString();
   } catch {
     return url;

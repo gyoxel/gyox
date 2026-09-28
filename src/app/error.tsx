@@ -24,6 +24,7 @@ export default function Error({ error, retry }: { error: Error & { digest?: stri
   const autoRetry = autoDelay != null;
   const [manualRetry, setManualRetry] = useState(false);
   const retrying = autoRetry || manualRetry;
+  const diagnosis = useDiagnosis(!retrying);
 
   useEffect(() => {
     console.error(error);
@@ -54,6 +55,9 @@ export default function Error({ error, retry }: { error: Error & { digest?: stri
           Réessayer
         </Button>
       )}
+      {!retrying && diagnosis && (
+        <p className="max-w-sm text-xs break-words text-slate-500 select-text">{diagnosis}</p>
+      )}
       {error.digest && <p className="text-[11px] text-slate-300">Code : {error.digest}</p>}
     </main>
   );
@@ -66,4 +70,27 @@ function nextAutoRetryDelay(): number | null {
   }
   if (autoRetriesUsed >= AUTO_RETRY_DELAYS.length) return null;
   return AUTO_RETRY_DELAYS[autoRetriesUsed++];
+}
+
+/** Once the automatic retries are over, asks /api/health what actually
+ *  fails (production pages only expose an opaque code) and shows it. */
+function useDiagnosis(enabled: boolean): string | null {
+  const [diagnosis, setDiagnosis] = useState<string | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    let cancelled = false;
+    fetch("/api/health", { cache: "no-store" })
+      .then(async (res) => {
+        const body = await res.json().catch(() => null);
+        if (cancelled) return;
+        if (body?.ok) setDiagnosis("Diagnostic : la base de données répond normalement.");
+        else if (body) setDiagnosis(`Diagnostic (${body.step}) : ${body.message}`);
+        else setDiagnosis(`Diagnostic : réponse ${res.status} du serveur.`);
+      })
+      .catch(() => !cancelled && setDiagnosis("Diagnostic : serveur injoignable (connexion internet ?)."));
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled]);
+  return diagnosis;
 }
