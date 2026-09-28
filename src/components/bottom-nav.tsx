@@ -125,6 +125,22 @@ export function BottomNav() {
   const [open, setOpen] = useState(false);
   const [openedAt, setOpenedAt] = useState(pathname);
 
+  // Hidden while typing on a phone: the keyboard is open, and the bar would
+  // otherwise sit between the field and the keyboard (on browsers that shrink
+  // the page for the keyboard).
+  const [typing, setTyping] = useState(false);
+  useEffect(() => {
+    const touch = window.matchMedia("(pointer: coarse)");
+    const update = () => setTyping(touch.matches && isTextField(document.activeElement));
+    const onFocusOut = () => setTimeout(update, 0); // activeElement is updated after focusout
+    document.addEventListener("focusin", update);
+    document.addEventListener("focusout", onFocusOut);
+    return () => {
+      document.removeEventListener("focusin", update);
+      document.removeEventListener("focusout", onFocusOut);
+    };
+  }, []);
+
   // Close the menu whenever the route changes (e.g. after picking an action).
   if (open && pathname !== openedAt) setOpen(false);
 
@@ -174,7 +190,12 @@ export function BottomNav() {
         </defs>
       </svg>
 
-      <nav className="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_30px_rgba(15,23,42,0.08)] dark:bg-slate-900">
+      <nav
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-50 rounded-t-3xl bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_30px_rgba(15,23,42,0.08)] dark:bg-slate-900",
+          typing && "hidden",
+        )}
+      >
         <div className="mx-auto flex max-w-lg items-stretch justify-between px-2">
           {LEFT_ITEMS.map((item) => (
             <NavLink key={item.href} {...item} active={isActive(item.href)} onNavigate={navigateTo} />
@@ -247,4 +268,13 @@ export function BottomNav() {
       </nav>
     </>
   );
+}
+
+const NON_TEXT_INPUTS = new Set(["checkbox", "radio", "button", "submit", "reset", "range", "color", "file", "image"]);
+
+/** Whether focusing this element opens the on-screen keyboard. */
+function isTextField(el: Element | null): boolean {
+  if (el instanceof HTMLTextAreaElement) return true;
+  if (el instanceof HTMLInputElement) return !NON_TEXT_INPUTS.has(el.type);
+  return el instanceof HTMLElement && el.isContentEditable;
 }

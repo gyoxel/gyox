@@ -395,29 +395,47 @@ export function ExpenseEditor({
 }
 
 /**
- * When one of these fields is tapped and the keyboard opens, scrolls the page
- * so the field sits right above the keyboard (the browser alone may leave it
- * hidden behind the keyboard, or partly covered). Waits for the keyboard to
- * finish sliding in (the visual viewport stops resizing) before scrolling.
+ * When one of these fields is tapped and the keyboard opens, places the page
+ * so the field sits right above the keyboard, instead of wherever the browser
+ * leaves it (hidden, or in the middle of the screen). Waits until both the
+ * keyboard (visual viewport resizes) and the browser's own scrolling have
+ * settled, then scrolls in one go, and re-checks once in case the browser
+ * moved it again.
  */
-const KEYBOARD_GAP_PX = 12;
+const KEYBOARD_GAP_PX = 10;
+const SETTLE_MS = 180;
 
 function keepAboveKeyboard(input: HTMLInputElement) {
   const viewport = window.visualViewport;
-  let timer = setTimeout(reveal, 450); // no resize: keyboard already open, or none
-  function reveal() {
-    viewport?.removeEventListener("resize", onResize);
+  const startedAt = Date.now();
+  let timer = setTimeout(place, 450); // no resize: keyboard already open, or none
+
+  function settle() {
+    clearTimeout(timer);
+    // Give up waiting after a while so it can never keep postponing.
+    timer = setTimeout(place, Date.now() - startedAt > 1500 ? 0 : SETTLE_MS);
+  }
+  function stopListening() {
+    viewport?.removeEventListener("resize", settle);
+    viewport?.removeEventListener("scroll", settle);
+    window.removeEventListener("scroll", settle);
+  }
+  function align() {
     if (document.activeElement !== input) return;
     // Bottom of the visible area = top of the keyboard.
     const visibleBottom = viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
     const delta = input.getBoundingClientRect().bottom + KEYBOARD_GAP_PX - visibleBottom;
-    if (Math.abs(delta) > 1) window.scrollBy({ top: delta, behavior: "smooth" });
+    if (Math.abs(delta) > 1) window.scrollBy(0, delta);
   }
-  function onResize() {
-    clearTimeout(timer);
-    timer = setTimeout(reveal, 120);
+  function place() {
+    stopListening();
+    align();
+    setTimeout(align, 300);
   }
-  viewport?.addEventListener("resize", onResize);
+
+  viewport?.addEventListener("resize", settle);
+  viewport?.addEventListener("scroll", settle);
+  window.addEventListener("scroll", settle);
 }
 
 /** One recurrence choice. When selected it turns green and, if it has an

@@ -30,6 +30,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  // The keyboard covers the page instead of shrinking it: the bottom bar
+  // stays behind the keyboard rather than jumping up above it.
+  interactiveWidget: "resizes-visual",
   themeColor: "#ffffff",
 };
 
