@@ -1,0 +1,29 @@
+/**
+ * Build step: apply migrations, then seed. Both need a direct database
+ * connection, and Prisma Postgres only accepts a few of those: while the
+ * serverless instances of an older deployment still hold some (they keep
+ * them open until they shut down), wait and try again instead of failing
+ * the deployment on the first "too many connections".
+ */
+import { spawnSync } from "node:child_process";
+
+const RETRYABLE = /too many (connections|clients)|Can't reach database server|Timed out|P1001|P1002|P1017/i;
+// Seconds to wait before each new attempt: about 5 minutes in all.
+const DELAYS = [10, 20, 30, 45, 60, 60, 60];
+
+function prisma(...args) {
+  for (let attempt = 0; ; attempt++) {
+    const result = spawnSync("npx", ["prisma", ...args], { encoding: "utf8", stdio: ["inherit", "pipe", "pipe"] });
+    process.stdout.write(result.stdout ?? "");
+    process.stderr.write(result.stderr ?? "");
+    if (result.status === 0) return;
+    if (attempt >= DELAYS.length || !RETRYABLE.test(`${result.stdout}${result.stderr}`)) {
+      process.exit(result.status ?? 1);
+    }
+    console.log(`\`prisma ${args.join(" ")}\`: database busy, retrying in ${DELAYS[attempt]}s…`);
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, DELAYS[attempt] * 1000);
+  }
+}
+
+prisma("migrate", "deploy");
+prisma("db", "seed");

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, runtimeDatabaseUrl } from "@/lib/prisma";
 import { addMonths, todayMonth } from "@/lib/date";
 import { getMonthLedgerItems, getPaidThisMonth } from "@/lib/engine";
 import { getAllCategories, getAllDarets, getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
@@ -39,13 +39,22 @@ export async function GET() {
       for (let i = -1; i <= 2; i++) getMonthLedgerItems(expenses, payments, addMonths(month, i), month);
       return settings.salary;
     });
-    return NextResponse.json({ ok: true, steps }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ ok: true, pooled: isPooled(), steps }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     const e = error as Error & { step?: string };
     return NextResponse.json(
-      { ok: false, step: e.step ?? "inconnu", message: e.message, steps },
+      { ok: false, pooled: isPooled(), step: e.step ?? "inconnu", message: e.message, steps },
       { status: 503, headers: { "Cache-Control": "no-store" } },
     );
+  }
+}
+
+/** Whether the app goes through the connection pooler (see lib/prisma.ts). */
+function isPooled(): boolean {
+  try {
+    return new URL(runtimeDatabaseUrl(process.env.DATABASE_URL) ?? "").hostname.startsWith("pooled.");
+  } catch {
+    return false;
   }
 }
 
