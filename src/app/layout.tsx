@@ -30,9 +30,10 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  // The keyboard covers the page instead of shrinking it: the bottom bar
-  // stays behind the keyboard rather than jumping up above it.
-  interactiveWidget: "resizes-visual",
+  // The keyboard shrinks the page to the area above it, so a focused field
+  // can be scrolled right above the keyboard reliably (the bottom bar hides
+  // while typing, see BottomNav).
+  interactiveWidget: "resizes-content",
   themeColor: "#ffffff",
 };
 

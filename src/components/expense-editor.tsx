@@ -395,52 +395,66 @@ export function ExpenseEditor({
 }
 
 /**
- * When one of these fields is tapped and the keyboard opens, places the page
- * so the field sits right above the keyboard. The keyboard covers the page
- * without shrinking it (interactive-widget=resizes-visual): the visible area
- * (visual viewport) shrinks instead. Every time it changes size while the
- * field is focused — the keyboard sliding in, a suggestion bar appearing —
- * the field is re-aligned once it has settled. While focused, the page gets
- * extra room at the bottom (the keyboard's height) so it can always scroll
- * that far.
+ * When one of these fields is tapped, keeps it right above the keyboard.
+ *
+ * The keyboard shrinks the visible area (interactive-widget=resizes-content;
+ * the visual viewport is used too, for browsers that overlay it instead).
+ * The browser also scrolls the field into view on its own — often leaving it
+ * mid-screen, sometimes after an animation. So for a short while after each
+ * keyboard change, every scroll that settles (the browser's) is followed by a
+ * re-alignment; our own scroll then settles with nothing left to correct.
  */
 const KEYBOARD_GAP_PX = 8;
-const SETTLE_MS = 120;
+const SETTLE_MS = 100;
+const WATCH_MS = 1200;
+let fullHeight = 0; // tallest visible area seen, i.e. without the keyboard
+let fullWidth = 0;
+
+function visibleBottom(): number {
+  const vv = window.visualViewport;
+  return vv ? vv.offsetTop + vv.height : window.innerHeight;
+}
 
 function keepAboveKeyboard(input: HTMLInputElement) {
-  const viewport = window.visualViewport;
-  if (!viewport) return;
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  let recheck: ReturnType<typeof setTimeout> | undefined;
+  const vv = window.visualViewport;
+  let settleTimer: ReturnType<typeof setTimeout> | undefined;
+  let watchUntil = Date.now() + WATCH_MS;
 
+  function keyboardOpen(): boolean {
+    const height = vv?.height ?? window.innerHeight;
+    if (window.innerWidth !== fullWidth) fullHeight = 0; // rotated
+    fullWidth = window.innerWidth;
+    fullHeight = Math.max(fullHeight, height, window.screen.height * 0.7);
+    return height < fullHeight - 120;
+  }
   function align() {
-    if (document.activeElement !== input || !viewport) return;
-    const visibleBottom = viewport.offsetTop + viewport.height; // = top of the keyboard
-    const keyboard = window.innerHeight - visibleBottom;
-    if (keyboard < 80) return; // keyboard not open (yet)
-    document.body.style.paddingBottom = `${Math.ceil(keyboard)}px`;
-    const delta = input.getBoundingClientRect().bottom + KEYBOARD_GAP_PX - visibleBottom;
+    if (document.activeElement !== input || !keyboardOpen()) return;
+    const delta = input.getBoundingClientRect().bottom + KEYBOARD_GAP_PX - visibleBottom();
     if (Math.abs(delta) > 1) window.scrollBy(0, delta);
   }
-  function schedule() {
-    clearTimeout(timer);
-    clearTimeout(recheck);
-    timer = setTimeout(() => {
-      align();
-      // The browser may still nudge the page right after: check once more.
-      recheck = setTimeout(align, 250);
-    }, SETTLE_MS);
+  function onScroll() {
+    if (Date.now() > watchUntil) return;
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(align, SETTLE_MS);
+  }
+  function onResize() {
+    watchUntil = Date.now() + WATCH_MS;
+    onScroll();
   }
 
-  viewport.addEventListener("resize", schedule);
-  schedule(); // keyboard already open (e.g. coming from another field)
+  vv?.addEventListener("resize", onResize);
+  vv?.addEventListener("scroll", onScroll);
+  window.addEventListener("resize", onResize);
+  window.addEventListener("scroll", onScroll);
+  onResize(); // keyboard already open (e.g. coming from another field)
   input.addEventListener(
     "blur",
     () => {
-      clearTimeout(timer);
-      clearTimeout(recheck);
-      viewport.removeEventListener("resize", schedule);
-      document.body.style.paddingBottom = "";
+      clearTimeout(settleTimer);
+      vv?.removeEventListener("resize", onResize);
+      vv?.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onScroll);
     },
     { once: true },
   );
