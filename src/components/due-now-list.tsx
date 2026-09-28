@@ -201,42 +201,53 @@ export function DueNowList({
                   else rowRefs.current.delete(expense.id);
                 }}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl border border-l-4 border-slate-200 bg-white px-3.5 py-3 shadow-sm transition-opacity dark:border-slate-800 dark:bg-slate-900",
+                  "flex items-center rounded-xl border border-l-4 border-slate-200 bg-white pr-1.5 shadow-sm transition-opacity dark:border-slate-800 dark:bg-slate-900",
                   BORDER_CLASS[color],
                   paid && "border-l-slate-300 opacity-50 dark:border-l-slate-700",
                 )}
               >
-                <ColorDot color={color} className={cn(paid && "opacity-60")} />
-                <span className={cn("text-base leading-none", paid && "opacity-50")}>{displayIcon(expense, emojiById)}</span>
-                <p
-                  className={cn(
-                    "min-w-0 flex-1 truncate text-sm font-medium text-slate-900 dark:text-slate-100",
-                    paid && "text-slate-400 line-through dark:text-slate-500",
-                  )}
+                {/* Tapping the row opens the edit page; only the round
+                    checkbox on the right toggles "payé". */}
+                <Link
+                  href={`/expenses/${expense.id}`}
+                  className="flex min-w-0 flex-1 items-center gap-3 py-3 pl-3.5 pr-1 active:opacity-70"
                 >
-                  {expense.name}
-                </p>
-                <span
-                  className={cn(
-                    "shrink-0 text-sm font-semibold text-rose-600",
-                    paid && "text-slate-400 line-through dark:text-slate-500",
-                  )}
-                >
-                  {formatMoney(amount, currency)}
-                </span>
+                  <ColorDot color={color} className={cn(paid && "opacity-60")} />
+                  <span className={cn("text-base leading-none", paid && "opacity-50")}>{displayIcon(expense, emojiById)}</span>
+                  <p
+                    className={cn(
+                      "min-w-0 flex-1 truncate text-sm font-medium text-slate-900 dark:text-slate-100",
+                      paid && "text-slate-400 line-through dark:text-slate-500",
+                    )}
+                  >
+                    {expense.name}
+                  </p>
+                  <span
+                    className={cn(
+                      "shrink-0 text-sm font-semibold text-rose-600",
+                      paid && "text-slate-400 line-through dark:text-slate-500",
+                    )}
+                  >
+                    {formatMoney(amount, currency)}
+                  </span>
+                </Link>
                 <button
                   type="button"
                   onClick={() => toggle(expense, paid)}
                   disabled={isPending}
                   aria-label={paid ? `Annuler le paiement de ${expense.name}` : `Marquer ${expense.name} comme payé`}
-                  className={cn(
-                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors disabled:opacity-50",
-                    paid
-                      ? "border-emerald-500 bg-emerald-500"
-                      : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800",
-                  )}
+                  className="group flex h-11 w-11 shrink-0 items-center justify-center"
                 >
-                  {paid && <Check className="h-3.5 w-3.5 text-white" />}
+                  <span
+                    className={cn(
+                      "flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors group-disabled:opacity-50",
+                      paid
+                        ? "border-emerald-500 bg-emerald-500"
+                        : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800",
+                    )}
+                  >
+                    {paid && <Check className="h-3.5 w-3.5 text-white" />}
+                  </span>
                 </button>
               </div>
             );
