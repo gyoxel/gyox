@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
-import { flushSync } from "react-dom";
+import { useMemo, useState, useTransition } from "react";
 import { Check, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -80,8 +79,6 @@ export function ExpenseEditor({
   );
   const [months, setMonths] = useState(recurrenceInit?.months ?? "");
   const [untilTotal, setUntilTotal] = useState(recurrenceInit?.until ?? "");
-  const monthsRef = useRef<HTMLInputElement>(null);
-  const untilRef = useRef<HTMLInputElement>(null);
   // Statut de paiement: "Payé" by default when creating (paid today,
   // deducted from Disponible); "Pas encore" leaves it in Dépenses to check
   // off. A new credit defaults to "Pas encore" (first installment usually
@@ -289,15 +286,9 @@ export function ExpenseEditor({
             <RecurrenceOption
               label="Nombre de mois"
               selected={recurrenceKind === "months"}
-              onSelect={() => {
-                // Focus synchronously, inside the tap itself: mobile browsers
-                // only open the keyboard for a focus() made during the gesture.
-                flushSync(() => setRecurrenceKind("months"));
-                focusAboveKeyboard(monthsRef.current);
-              }}
+              onSelect={() => setRecurrenceKind("months")}
             >
               <Input
-                ref={monthsRef}
                 id="months"
                 aria-label="Nombre de mois"
                 type="number"
@@ -308,6 +299,7 @@ export function ExpenseEditor({
                 value={months}
                 onChange={(e) => setMonths(e.target.value)}
                 placeholder="Ex: 6"
+                onFocus={(e) => keepAboveKeyboard(e.currentTarget)}
                 tabIndex={recurrenceKind === "months" ? 0 : -1}
                 className="shadow-none"
               />
@@ -315,13 +307,9 @@ export function ExpenseEditor({
             <RecurrenceOption
               label="Jusqu'à atteindre"
               selected={recurrenceKind === "until"}
-              onSelect={() => {
-                flushSync(() => setRecurrenceKind("until"));
-                focusAboveKeyboard(untilRef.current);
-              }}
+              onSelect={() => setRecurrenceKind("until")}
             >
               <Input
-                ref={untilRef}
                 id="untilTotal"
                 aria-label="Montant à atteindre (DH)"
                 type="number"
@@ -331,7 +319,7 @@ export function ExpenseEditor({
                 value={untilTotal}
                 onChange={(e) => setUntilTotal(e.target.value)}
                 placeholder="Ex: 3000 DH"
-                autoFocus={isCredit}
+                onFocus={(e) => keepAboveKeyboard(e.currentTarget)}
                 tabIndex={recurrenceKind === "until" ? 0 : -1}
                 className="shadow-none"
               />
@@ -407,23 +395,24 @@ export function ExpenseEditor({
 }
 
 /**
- * Focuses a field from a tap on another control (so the keyboard opens) and
- * keeps it visible above the keyboard. Phones only scroll a field into view
- * by themselves when the field itself is tapped; here the field is still
- * sliding open, so wait for the keyboard to take its space (the visual
- * viewport shrinks) and then scroll the field to the middle of what's left.
+ * When one of these fields is tapped and the keyboard opens, scrolls the page
+ * so the field sits right above the keyboard (the browser alone may leave it
+ * hidden behind the keyboard, or partly covered). Waits for the keyboard to
+ * finish sliding in (the visual viewport stops resizing) before scrolling.
  */
-function focusAboveKeyboard(input: HTMLInputElement | null) {
-  if (!input) return;
-  input.focus({ preventScroll: true });
+const KEYBOARD_GAP_PX = 12;
+
+function keepAboveKeyboard(input: HTMLInputElement) {
   const viewport = window.visualViewport;
-  let timer = setTimeout(reveal, 450); // no keyboard resize (already open, or none)
+  let timer = setTimeout(reveal, 450); // no resize: keyboard already open, or none
   function reveal() {
     viewport?.removeEventListener("resize", onResize);
-    if (document.activeElement === input) input!.scrollIntoView({ block: "center", behavior: "smooth" });
+    if (document.activeElement !== input) return;
+    // Bottom of the visible area = top of the keyboard.
+    const visibleBottom = viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
+    const delta = input.getBoundingClientRect().bottom + KEYBOARD_GAP_PX - visibleBottom;
+    if (Math.abs(delta) > 1) window.scrollBy({ top: delta, behavior: "smooth" });
   }
-  // The keyboard can resize the viewport several times while it slides in:
-  // reveal once it has settled.
   function onResize() {
     clearTimeout(timer);
     timer = setTimeout(reveal, 120);
