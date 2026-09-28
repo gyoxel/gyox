@@ -14,7 +14,7 @@ export function PageHeader({
   hideSettings?: boolean;
 }) {
   return (
-    <div className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90">
+    <div className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
       <div className="flex items-center gap-2">
         {backHref && (
           <Link
