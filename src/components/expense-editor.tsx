@@ -293,7 +293,7 @@ export function ExpenseEditor({
                 // Focus synchronously, inside the tap itself: mobile browsers
                 // only open the keyboard for a focus() made during the gesture.
                 flushSync(() => setRecurrenceKind("months"));
-                monthsRef.current?.focus({ preventScroll: true });
+                focusAboveKeyboard(monthsRef.current);
               }}
             >
               <Input
@@ -317,7 +317,7 @@ export function ExpenseEditor({
               selected={recurrenceKind === "until"}
               onSelect={() => {
                 flushSync(() => setRecurrenceKind("until"));
-                untilRef.current?.focus({ preventScroll: true });
+                focusAboveKeyboard(untilRef.current);
               }}
             >
               <Input
@@ -404,6 +404,31 @@ export function ExpenseEditor({
       </div>
     </form>
   );
+}
+
+/**
+ * Focuses a field from a tap on another control (so the keyboard opens) and
+ * keeps it visible above the keyboard. Phones only scroll a field into view
+ * by themselves when the field itself is tapped; here the field is still
+ * sliding open, so wait for the keyboard to take its space (the visual
+ * viewport shrinks) and then scroll the field to the middle of what's left.
+ */
+function focusAboveKeyboard(input: HTMLInputElement | null) {
+  if (!input) return;
+  input.focus({ preventScroll: true });
+  const viewport = window.visualViewport;
+  let timer = setTimeout(reveal, 450); // no keyboard resize (already open, or none)
+  function reveal() {
+    viewport?.removeEventListener("resize", onResize);
+    if (document.activeElement === input) input!.scrollIntoView({ block: "center", behavior: "smooth" });
+  }
+  // The keyboard can resize the viewport several times while it slides in:
+  // reveal once it has settled.
+  function onResize() {
+    clearTimeout(timer);
+    timer = setTimeout(reveal, 120);
+  }
+  viewport?.addEventListener("resize", onResize);
 }
 
 /** One recurrence choice. When selected it turns green and, if it has an
