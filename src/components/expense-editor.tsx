@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState, useTransition } from "react";
+import { flushSync } from "react-dom";
 import { Check, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -289,8 +290,10 @@ export function ExpenseEditor({
               label="Nombre de mois"
               selected={recurrenceKind === "months"}
               onSelect={() => {
-                setRecurrenceKind("months");
-                setTimeout(() => monthsRef.current?.focus(), 200);
+                // Focus synchronously, inside the tap itself: mobile browsers
+                // only open the keyboard for a focus() made during the gesture.
+                flushSync(() => setRecurrenceKind("months"));
+                monthsRef.current?.focus({ preventScroll: true });
               }}
             >
               <Input
@@ -306,14 +309,15 @@ export function ExpenseEditor({
                 onChange={(e) => setMonths(e.target.value)}
                 placeholder="Ex: 6"
                 tabIndex={recurrenceKind === "months" ? 0 : -1}
+                className="shadow-none"
               />
             </RecurrenceOption>
             <RecurrenceOption
               label="Jusqu'à atteindre"
               selected={recurrenceKind === "until"}
               onSelect={() => {
-                setRecurrenceKind("until");
-                setTimeout(() => untilRef.current?.focus(), 200);
+                flushSync(() => setRecurrenceKind("until"));
+                untilRef.current?.focus({ preventScroll: true });
               }}
             >
               <Input
@@ -329,6 +333,7 @@ export function ExpenseEditor({
                 placeholder="Ex: 3000 DH"
                 autoFocus={isCredit}
                 tabIndex={recurrenceKind === "until" ? 0 : -1}
+                className="shadow-none"
               />
             </RecurrenceOption>
             <RecurrenceOption

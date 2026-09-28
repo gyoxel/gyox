@@ -3,8 +3,8 @@ import { monthKey as toMonthKey, parseMonthKey, todayMonth } from "@/lib/date";
 import { getCreditRealState, getOccurrenceForMonth, getUnpaidMonths } from "@/lib/engine";
 import {
   getAllExpenses,
-  getAllPayments,
   getExpenseById,
+  getPaymentsForExpense,
   markCreditSlotPaid,
   markMonthPaid,
   markMonthUnpaid,
@@ -27,11 +27,15 @@ interface Params {
  */
 export async function POST(req: NextRequest, { params }: Params) {
   const { id } = await params;
-  const expense = await getExpenseById(id);
+  // Only this expense's payments are needed (the engine filters by id
+  // anyway); loading the whole table on every tap made quick successive
+  // ticks needlessly heavy for the database.
+  const [expense, payments, body] = await Promise.all([
+    getExpenseById(id),
+    getPaymentsForExpense(id),
+    req.json().catch(() => ({}) as { monthKey?: string }),
+  ]);
   if (!expense) return NextResponse.json({ error: "Dépense introuvable." }, { status: 404 });
-
-  const body = await req.json().catch(() => ({}) as { monthKey?: string });
-  const payments = await getAllPayments();
 
   if (expense.type === "credit") {
     const evalMonth = body.monthKey ? parseMonthKey(body.monthKey) : todayMonth();

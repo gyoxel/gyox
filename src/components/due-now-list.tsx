@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { useRefreshData } from "@/lib/use-refresh-data";
+import { flushPendingRefresh, trackMutation } from "@/lib/use-refresh-data";
 import Link from "next/link";
 import { Check, ChevronLeft, ChevronRight, Plus, PartyPopper } from "lucide-react";
 import { addMonths, monthKey as toMonthKey, monthLabelFr, type MonthId } from "@/lib/date";
@@ -30,21 +30,40 @@ function nextOptimisticId(): string {
   return `optimistic-${optimisticIdCounter}`;
 }
 
-/** Runs a state update inside a View Transition when the browser supports
- *  it, so a row sliding to the bottom (once paid) animates smoothly instead
- *  of jumping there instantly. Falls back to a plain update otherwise. */
-function animateReorder(update: () => void) {
-  const doc = typeof document !== "undefined" ? (document as Document & { startViewTransition?: (cb: () => void) => void }) : null;
-  if (doc?.startViewTransition) {
-    doc.startViewTransition(() => flushSync(update));
-  } else {
-    update();
+const REORDER_MS = 320;
+
+/** Applies a state update and slides the rows that moved from their old
+ *  position to their new one (FLIP). Only the rows are animated — unlike a
+ *  page-wide View Transition, the rest of the page (bottom bar, + button)
+ *  is never snapshotted or hidden, and taps keep working mid-animation. */
+function animateReorder(rows: Map<string, HTMLElement>, update: () => void) {
+  const before = new Map<string, number>();
+  for (const [id, el] of rows) before.set(id, el.getBoundingClientRect().top);
+  flushSync(update);
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+  for (const [id, el] of rows) {
+    const top = before.get(id);
+    if (top == null) continue;
+    const dy = top - el.getBoundingClientRect().top;
+    if (Math.abs(dy) < 1) continue;
+    el.getAnimations().forEach((a) => a.cancel());
+    el.animate([{ transform: `translateY(${dy}px)` }, { transform: "translateY(0)" }], {
+      duration: REORDER_MS,
+      easing: "cubic-bezier(0.2, 0, 0, 1)",
+    });
   }
 }
 
+/**
+ * `payments` / `setPayments` are the Dashboard's local copy (see
+ * HomeDashboard): every toggle updates them optimistically, so the list AND
+ * the Disponible figures react instantly without asking the server. The
+ * server refresh is coalesced into one after a burst of taps.
+ */
 export function DueNowList({
   expenses,
-  payments,
+  payments: localPayments,
+  setPayments: setLocalPayments,
   currentMonth,
   currency,
   categoryEmoji,
@@ -52,23 +71,18 @@ export function DueNowList({
   categoryEmoji: Record<string, string>;
   expenses: Expense[];
   payments: Payment[];
+  setPayments: React.Dispatch<React.SetStateAction<Payment[]>>;
   currentMonth: MonthId;
   currency: string;
 }) {
-  const refreshData = useRefreshData();
   const [viewMonth, setViewMonth] = useState<MonthId>(currentMonth);
-  // Seeded once from the initial server payload; every change after that
-  // flows only through toggle()'s own optimistic add/remove/replace, never
-  // from a later `payments` prop. Re-syncing from a fresh router.refresh()
-  // snapshot here used to race: a slow refresh triggered by an earlier
-  // toggle could land after a second, faster toggle and silently overwrite
-  // it, making an item that was just checked off flip back to unpaid a
-  // moment later. Local state is now the single source of truth for this
-  // list; refreshData() is still called to keep the Salaire/Disponible
-  // figures elsewhere on the page in sync.
-  const [localPayments, setLocalPayments] = useState<Payment[]>(payments);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const touchStartX = useRef<number | null>(null);
+  const rowRefs = useRef(new Map<string, HTMLElement>());
+
+  // Leaving the Dashboard right after ticking: refresh now rather than
+  // after the quiet delay, so the next page isn't shown with stale data.
+  useEffect(() => () => flushPendingRefresh(), []);
 
   const emojiById = useMemo(() => new Map(Object.entries(categoryEmoji)), [categoryEmoji]);
   const items = useMemo(() => {
@@ -101,31 +115,36 @@ export function DueNowList({
     const monthKeyValue = toMonthKey(viewMonth);
 
     if (wasPaid) {
-      const removedSnapshot = localPayments;
-      animateReorder(() => setLocalPayments((prev) => removeOptimisticPayment(prev, expense, viewMonth)));
+      const kept = new Set(removeOptimisticPayment(localPayments, expense, viewMonth));
+      const removed = localPayments.filter((p) => !kept.has(p));
+      animateReorder(rowRefs.current, () =>
+        setLocalPayments((prev) => removeOptimisticPayment(prev, expense, viewMonth)),
+      );
       const url =
         expense.type === "credit"
           ? `/api/expenses/${expense.id}/payments`
           : `/api/expenses/${expense.id}/payments?monthKey=${monthKeyValue}`;
-      fetch(url, { method: "DELETE" })
+      // On failure put back only what this toggle removed — restoring a
+      // whole snapshot would also undo other taps made in the meantime.
+      const restore = () => setLocalPayments((prev) => [...prev, ...removed]);
+      void trackMutation(fetch(url, { method: "DELETE" }))
         .then((res) => {
-          if (!res.ok) setLocalPayments(removedSnapshot);
+          if (!res.ok) restore();
         })
-        .catch(() => setLocalPayments(removedSnapshot))
-        .finally(() => {
-          settlePending(expense.id, setPendingIds);
-          void refreshData();
-        });
+        .catch(restore)
+        .finally(() => settlePending(expense.id, setPendingIds));
       return;
     }
 
     const optimistic = buildOptimisticPayment(expense, viewMonth, localPayments);
-    animateReorder(() => setLocalPayments((prev) => [...prev, optimistic]));
-    fetch(`/api/expenses/${expense.id}/payments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ monthKey: monthKeyValue }),
-    })
+    animateReorder(rowRefs.current, () => setLocalPayments((prev) => [...prev, optimistic]));
+    void trackMutation(
+      fetch(`/api/expenses/${expense.id}/payments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ monthKey: monthKeyValue }),
+      }),
+    )
       .then(async (res) => {
         if (!res.ok) {
           setLocalPayments((prev) => prev.filter((p) => p.id !== optimistic.id));
@@ -135,10 +154,7 @@ export function DueNowList({
         setLocalPayments((prev) => prev.map((p) => (p.id === optimistic.id ? real : p)));
       })
       .catch(() => setLocalPayments((prev) => prev.filter((p) => p.id !== optimistic.id)))
-      .finally(() => {
-        settlePending(expense.id, setPendingIds);
-        void refreshData();
-      });
+      .finally(() => settlePending(expense.id, setPendingIds));
   }
 
   return (
@@ -180,7 +196,10 @@ export function DueNowList({
             return (
               <div
                 key={expense.id}
-                style={{ viewTransitionName: `expense-row-${expense.id}` }}
+                ref={(el) => {
+                  if (el) rowRefs.current.set(expense.id, el);
+                  else rowRefs.current.delete(expense.id);
+                }}
                 className={cn(
                   "flex items-center gap-3 rounded-xl border border-l-4 border-slate-200 bg-white px-3.5 py-3 shadow-sm transition-opacity dark:border-slate-800 dark:bg-slate-900",
                   BORDER_CLASS[color],
