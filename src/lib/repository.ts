@@ -389,17 +389,25 @@ export async function getAllCategories(): Promise<Category[]> {
   return rows.map(mapCategory);
 }
 
+/** Categories that stay at the very end of the list, in this order (user
+ *  request: "Santé" then "Autres", right before "+ Ajouter"). */
+const PINNED_LAST = ["Santé", "Autres"];
+
+/** Appends a category — before the pinned tail (Santé, Autres) when the list
+ *  currently ends with it, so those two always stay last. */
 export async function createCategory(input: { name: string; emoji: string }): Promise<Category> {
-  const last = await prisma.category.aggregate({ _max: { position: true } });
-  const row = await prisma.category.create({
-    data: {
-      id: randomUUID(),
-      name: input.name,
-      emoji: input.emoji,
-      position: (last._max.position ?? 0) + 1,
-      createdAt: new Date().toISOString(),
-    },
-  });
+  const all = await prisma.category.findMany({ orderBy: [{ position: "asc" }, { createdAt: "asc" }] });
+  let tailStart = all.length;
+  while (tailStart > 0 && PINNED_LAST.includes(all[tailStart - 1].name)) tailStart--;
+  const tail = all.slice(tailStart);
+  const position = tail.length > 0 ? tail[0].position : (all.at(-1)?.position ?? 0) + 1;
+
+  const [row] = await prisma.$transaction([
+    prisma.category.create({
+      data: { id: randomUUID(), name: input.name, emoji: input.emoji, position, createdAt: new Date().toISOString() },
+    }),
+    ...tail.map((c, i) => prisma.category.update({ where: { id: c.id }, data: { position: position + 1 + i } })),
+  ]);
   return mapCategory(row);
 }
 
