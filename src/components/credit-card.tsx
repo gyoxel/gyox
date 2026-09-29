@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import type { Expense, Payment } from "@/lib/types";
-import { getCreditDisplayProgress, getCreditEndMonth, getCreditRealState } from "@/lib/engine";
-import { monthLabelFr, todayMonth } from "@/lib/date";
+import { getCreditEndMonth, getCreditRealState } from "@/lib/engine";
+import { monthLabelShortFr, todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { ColorDot, DOT_CLASS } from "@/components/color-dot";
+import { ColorDot } from "@/components/color-dot";
 import type { DisplayColor } from "@/lib/engine";
 
 const STATUS_LABEL: Record<string, { label: string; variant: "neutral" | "blue" | "green" | "red" }> = {
@@ -30,7 +29,6 @@ export function CreditCard({
   icon: string;
 }) {
   const state = getCreditRealState(expense, payments, todayMonth());
-  const { total, paid, percent } = getCreditDisplayProgress(expense, state);
   const status = STATUS_LABEL[state.status];
   // Real projected end once started; the planned schedule end before that.
   const endMonth = state.projectedEndMonth ?? getCreditEndMonth(expense);
@@ -38,49 +36,24 @@ export function CreditCard({
   return (
     <Link href={`/expenses/${expense.id}`} prefetch>
       <Card className="transition-colors active:bg-slate-50 dark:active:bg-slate-800">
-        <CardContent className="flex flex-col gap-3 pt-4">
-          <div className="flex items-center justify-between">
-            <h3 className="flex min-w-0 items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
-              <ColorDot color={color} />
-              <span className="text-lg leading-none">{icon}</span>
-              <span className="truncate">{expense.name}</span>
-            </h3>
+        <CardContent className="flex items-center gap-3 px-3.5 py-3">
+          <ColorDot color={color} />
+          <span className="text-lg leading-none">{icon}</span>
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
+              <h3 className="truncate text-sm font-semibold text-slate-900 dark:text-white">{expense.name}</h3>
               {state.isOverdue && state.pendingAmount > 0 && <Badge variant="red">En retard</Badge>}
               {state.status === "completed" && <Badge variant={status.variant}>{status.label}</Badge>}
-              <ChevronRight className="h-4 w-4 text-slate-300" />
             </div>
+            <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+              {formatMoney(expense.amount, currency)}/mois → {endMonth ? monthLabelShortFr(endMonth) : "—"}
+            </p>
           </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Restant</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-white">
-                {formatMoney(state.remaining, currency)}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-slate-500 dark:text-slate-400">Paiement mensuel</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-white">
-                {formatMoney(expense.amount, currency)}
-              </p>
-            </div>
+          <div className="shrink-0 text-right">
+            <p className="text-[10px] uppercase tracking-wide text-slate-400">Restant</p>
+            <p className="text-sm font-bold text-slate-900 dark:text-white">{formatMoney(state.remaining, currency)}</p>
           </div>
-
-          <div>
-            <div className="mb-1 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-              <span>
-                {formatMoney(paid, currency)} / {formatMoney(total, currency)}
-              </span>
-              <span>{percent}%</span>
-            </div>
-            <Progress value={percent} indicatorClassName={DOT_CLASS[color]} />
-          </div>
-
-          <div className="flex items-center justify-between text-sm">
-            <p className="text-xs text-slate-500 dark:text-slate-400">Fin prévue</p>
-            <p className="font-medium text-slate-800 dark:text-slate-200">{endMonth ? monthLabelFr(endMonth) : "—"}</p>
-          </div>
+          <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
         </CardContent>
       </Card>
     </Link>

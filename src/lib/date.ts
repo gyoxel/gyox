@@ -65,8 +65,11 @@ export function monthLabelFr(m: MonthId): string {
   return `${MONTHS_FR[m.month - 1]} ${m.year}`;
 }
 
+// Standard French abbreviations (never ambiguous: Juin vs Juil.).
+const MONTHS_SHORT_FR = ["Janv.", "Févr.", "Mars", "Avr.", "Mai", "Juin", "Juil.", "Août", "Sept.", "Oct.", "Nov.", "Déc."];
+
 export function monthLabelShortFr(m: MonthId): string {
-  return `${MONTHS_FR[m.month - 1].slice(0, 3)} ${m.year}`;
+  return `${MONTHS_SHORT_FR[m.month - 1]} ${m.year}`;
 }
 
 export function monthToDateStr(m: MonthId): string {

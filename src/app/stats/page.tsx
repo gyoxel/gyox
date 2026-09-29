@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
-import { getAllCategories, getAllDarets, getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
+import { getAllCategories, getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
 import { addMonths, compareMonths, defaultViewMonth, monthFromSearchParams, monthLabelFr, todayMonth } from "@/lib/date";
 import { getExpenseDisplayColor, getForecast, getMonthSummary, getPaidThisMonth, type DisplayColor } from "@/lib/engine";
 import { displayIcon } from "@/lib/category";
 import { BudgetDonut, type DonutSegment } from "@/components/budget-donut";
 import { MonthSwitcher } from "@/components/month-switcher";
 import { PageHeader } from "@/components/page-header";
-import { TimelineSection } from "@/components/timeline-section";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatMoney } from "@/lib/utils";
 
@@ -25,17 +24,16 @@ const SEGMENTS: { color: DisplayColor; label: string }[] = [
 
 /**
  * Statistiques et prévisions: this month's real salary use, the planned
- * budget of any month (month switcher), when the credits end, the forecast
- * for the coming months, and the credits / darets timeline.
+ * budget of any month (month switcher), when the credits end, and the
+ * forecast for the coming months.
  */
 export default async function StatsPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
-  const [sp, settings, expenses, payments, categories, darets] = await Promise.all([
+  const [sp, settings, expenses, payments, categories] = await Promise.all([
     searchParams,
     getSettings(),
     getAllExpenses(),
     getAllPayments(),
     getAllCategories(),
-    getAllDarets(),
   ]);
   const currency = settings.currency;
   const categoryEmoji = new Map(categories.map((c) => [c.id, c.emoji]));
@@ -153,13 +151,6 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           </Card>
         </section>
 
-        <TimelineSection
-          expenses={expenses}
-          darets={darets}
-          payments={payments}
-          currency={currency}
-          categoryEmoji={categoryEmoji}
-        />
       </main>
     </>
   );
