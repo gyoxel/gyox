@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
 import type { DisplayColor } from "@/lib/engine";
-import { COLOR_HEX } from "@/components/color-dot";
 import { cn, formatMoney } from "@/lib/utils";
 
 export interface DonutSegment {
@@ -12,18 +11,35 @@ export interface DonutSegment {
   items: { id: string; name: string; icon: string; amount: number }[];
 }
 
-const SIZE = 200;
-const STROKE = 30;
-const RADIUS = (SIZE - STROKE) / 2 - 6; // room for the selected segment to grow
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-const GAP = 2; // px of surface between segments
-// What's left is white (⚪): drawn as a white arc over a thin outlined track.
-const REST_COLOR = "#ffffff";
-const TRACK_COLOR = "#cbd5e1";
+/** Light → deep stops of each color's gradient (🟠 🔵 🟡 🔴). */
+const GRADIENT: Record<DisplayColor, [string, string]> = {
+  orange: ["#fdba74", "#ea580c"],
+  blue: ["#60a5fa", "#1d4ed8"],
+  yellow: ["#fef08a", "#eab308"],
+  red: ["#fb7185", "#be123c"],
+};
+
+const SIZE = 232;
+const CENTER = SIZE / 2;
+const STROKE = 26;
+const RADIUS = CENTER - STROKE / 2 - 10; // room for the selected arc to grow
+const GAP_PX = 4; // surface between two arcs
+
+function point(angle: number): [number, number] {
+  return [CENTER + RADIUS * Math.cos(angle), CENTER + RADIUS * Math.sin(angle)];
+}
+
+/** SVG arc from angle a0 to a1 (radians, 0 = 3 o'clock, clockwise). */
+function arcPath(a0: number, a1: number): string {
+  const [x0, y0] = point(a0);
+  const [x1, y1] = point(a1);
+  const large = a1 - a0 > Math.PI ? 1 : 0;
+  return `M ${x0} ${y0} A ${RADIUS} ${RADIUS} 0 ${large} 1 ${x1} ${y1}`;
+}
 
 /**
- * A month's budget as a full ring: each color's share of the salary, plus
- * what's left (gray). Tap a segment — or its legend row — to see what it's
+ * A month's budget as a full ring: each group's share of the salary, and
+ * what's left (white ⚪). Tap an arc — or its legend row — to see what it's
  * made of; tap again to close.
  */
 export function BudgetDonut({
@@ -35,7 +51,15 @@ export function BudgetDonut({
   salary: number;
   currency: string;
 }) {
+  const uid = useId().replace(/:/g, "");
   const [selected, setSelected] = useState<DisplayColor | null>(null);
+  // Arcs sweep in once, right after the first paint.
+  const [drawn, setDrawn] = useState(false);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setDrawn(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
   const shown = segments.filter((s) => s.amount > 0);
   const total = shown.reduce((s, x) => s + x.amount, 0);
   const rest = salary - total;
@@ -43,104 +67,163 @@ export function BudgetDonut({
   const base = Math.max(salary, total, 1);
   const pct = (amount: number) => (salary > 0 ? Math.round((amount / salary) * 100) : 0);
 
-  let offset = 0;
-  const arcs = [
-    ...shown.map((s) => ({ key: s.color as string, color: COLOR_HEX[s.color], amount: s.amount, segment: s })),
-    ...(rest > 0 ? [{ key: "rest", color: REST_COLOR, amount: rest, segment: null }] : []),
-  ].map((arc) => {
-    const length = (arc.amount / base) * CIRCUMFERENCE;
-    const start = offset;
-    offset += length;
-    return { ...arc, length, start };
+  // Angles, starting at 12 o'clock; each arc is trimmed by half a gap on both
+  // ends, plus its rounded caps' radius when it's long enough to have them.
+  const gapAngle = GAP_PX / RADIUS;
+  const capAngle = STROKE / 2 / RADIUS;
+  const multiple = shown.length + (rest > 0 ? 1 : 0) > 1;
+  const sweeps = shown.map((s) => (s.amount / base) * 2 * Math.PI);
+  const arcs = shown.map((s, i) => {
+    const sweep = sweeps[i];
+    const a0 = -Math.PI / 2 + sweeps.slice(0, i).reduce((sum, x) => sum + x, 0);
+    const trim = multiple ? gapAngle / 2 : 0;
+    const round = sweep - 2 * trim > 4 * capAngle;
+    const inset = trim + (round ? capAngle : 0);
+    const full = !multiple && sweep >= 2 * Math.PI - 1e-6;
+    return {
+      segment: s,
+      d: full ? arcPath(a0, a0 + 2 * Math.PI - 0.0001) : arcPath(a0 + inset, a0 + sweep - inset),
+      round: round || full,
+      from: point(a0),
+      to: point(a0 + sweep),
+    };
   });
-  const single = arcs.length === 1;
 
   const current = shown.find((s) => s.color === selected) ?? null;
   const toggle = (color: DisplayColor) => setSelected((c) => (c === color ? null : color));
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <div className="relative mx-auto" style={{ width: SIZE, height: SIZE }}>
-        <svg viewBox={`0 0 ${SIZE} ${SIZE}`} width={SIZE} height={SIZE} className="-rotate-90">
-          {[RADIUS - STROKE / 2, RADIUS + STROKE / 2].map((r) => (
-            <circle key={r} cx={SIZE / 2} cy={SIZE / 2} r={r} fill="none" stroke={TRACK_COLOR} strokeWidth={1} />
-          ))}
-          {arcs.map((arc) => {
-            const isSelected = arc.segment != null && arc.segment.color === selected;
-            const dimmed = selected != null && !isSelected;
-            const visible = Math.max(0, arc.length - (single ? 0 : GAP));
-            return (
-              <circle
-                key={arc.key}
-                cx={SIZE / 2}
-                cy={SIZE / 2}
-                r={RADIUS}
-                fill="none"
-                stroke={arc.color}
-                strokeWidth={isSelected ? STROKE + 8 : arc.segment ? STROKE : STROKE - 2}
-                strokeDasharray={`${visible} ${CIRCUMFERENCE - visible}`}
-                strokeDashoffset={-arc.start}
-                className={cn(
-                  "transition-[stroke-width,opacity] duration-200",
-                  arc.segment && "cursor-pointer",
-                  dimmed && "opacity-35",
-                )}
-                onClick={arc.segment ? () => toggle(arc.segment!.color) : undefined}
+        <svg
+          viewBox={`0 0 ${SIZE} ${SIZE}`}
+          width={SIZE}
+          height={SIZE}
+          className="drop-shadow-[0_10px_18px_rgba(15,23,42,0.10)]"
+        >
+          <defs>
+            {arcs.map(({ segment, from, to }) => (
+              <linearGradient
+                key={segment.color}
+                id={`${uid}-${segment.color}`}
+                gradientUnits="userSpaceOnUse"
+                x1={from[0]}
+                y1={from[1]}
+                x2={to[0]}
+                y2={to[1]}
               >
-                <title>{`${arc.segment ? arc.segment.label : "Reste"} · ${formatMoney(arc.amount, currency)}`}</title>
-              </circle>
+                <stop offset="0%" stopColor={GRADIENT[segment.color][0]} />
+                <stop offset="100%" stopColor={GRADIENT[segment.color][1]} />
+              </linearGradient>
+            ))}
+          </defs>
+
+          {/* Track: what's left shows as white (⚪) with a soft edge. */}
+          <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke="#e2e8f0" strokeWidth={STROKE + 2} />
+          <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke="#ffffff" strokeWidth={STROKE - 2} />
+
+          {arcs.map(({ segment, d, round }, i) => {
+            const isSelected = segment.color === selected;
+            const dimmed = selected != null && !isSelected;
+            return (
+              <path
+                key={segment.color}
+                d={d}
+                pathLength={1}
+                fill="none"
+                stroke={`url(#${uid}-${segment.color})`}
+                strokeWidth={isSelected ? STROKE + 8 : STROKE}
+                strokeLinecap={round ? "round" : "butt"}
+                strokeDasharray="1 1"
+                strokeDashoffset={drawn ? 0 : 1}
+                onClick={() => toggle(segment.color)}
+                className={cn(
+                  "cursor-pointer transition-[stroke-dashoffset,stroke-width,opacity] ease-out",
+                  dimmed && "opacity-30",
+                )}
+                style={{
+                  transitionDuration: drawn ? "700ms, 200ms, 200ms" : "0ms",
+                  transitionDelay: `${i * 90}ms, 0ms, 0ms`,
+                  filter: isSelected ? `drop-shadow(0 0 6px ${GRADIENT[segment.color][1]}66)` : undefined,
+                }}
+              >
+                <title>{`${segment.label} · ${formatMoney(segment.amount, currency)}`}</title>
+              </path>
             );
           })}
         </svg>
+
+        {/* Center */}
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
           {current ? (
             <>
-              <span className="max-w-[120px] text-xs text-slate-500 dark:text-slate-400">{current.label}</span>
-              <span className="text-xl font-bold text-slate-900 dark:text-white">{formatMoney(current.amount, currency)}</span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">{pct(current.amount)}% du salaire</span>
+              <span className="max-w-[130px] text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                {current.label}
+              </span>
+              <span className="mt-0.5 text-2xl font-bold tabular-nums text-slate-900 dark:text-white">
+                {formatMoney(current.amount, currency)}
+              </span>
+              <span
+                className="mt-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold text-white"
+                style={{ background: `linear-gradient(135deg, ${GRADIENT[current.color][0]}, ${GRADIENT[current.color][1]})` }}
+              >
+                {pct(current.amount)}% du salaire
+              </span>
             </>
           ) : (
             <>
-              <span className="text-xs text-slate-500 dark:text-slate-400">Reste</span>
-              <span className={cn("text-2xl font-bold", rest < 0 ? "text-rose-600" : "text-emerald-600")}>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Reste</span>
+              <span
+                className={cn(
+                  "mt-0.5 text-3xl font-bold tabular-nums",
+                  rest < 0 ? "text-rose-600" : "text-emerald-600",
+                )}
+              >
                 {formatMoney(rest, currency)}
               </span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">sur {formatMoney(salary, currency)}</span>
+              <span className="mt-1 text-xs text-slate-400">sur {formatMoney(salary, currency)}</span>
             </>
           )}
         </div>
       </div>
 
-      {/* Legend (also the table view): every segment with its amount and share. */}
-      <div className="flex flex-col">
+      {/* Legend (also the table view): every group with its share and amount. */}
+      <div className="flex flex-col gap-1.5">
         {segments.map((s) => {
           const isSelected = s.color === selected;
+          const [light, deep] = GRADIENT[s.color];
           return (
-            <div key={s.color} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
+            <div key={s.color}>
               <button
                 type="button"
                 onClick={() => toggle(s.color)}
                 disabled={s.amount <= 0}
                 aria-expanded={isSelected}
                 className={cn(
-                  "flex w-full items-center gap-2.5 py-2.5 text-left text-sm disabled:opacity-50",
-                  selected != null && !isSelected && "opacity-60",
+                  "flex w-full items-center gap-2.5 rounded-xl px-2 py-2.5 text-left text-sm transition-colors disabled:opacity-40",
+                  isSelected ? "bg-slate-50 dark:bg-slate-800/60" : "active:bg-slate-50 dark:active:bg-slate-800/60",
+                  selected != null && !isSelected && "opacity-55",
                 )}
               >
-                <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: COLOR_HEX[s.color] }} />
-                <span className="flex-1 font-medium text-slate-700 dark:text-slate-200">{s.label}</span>
-                <span className="text-xs text-slate-400">{pct(s.amount)}%</span>
-                <span className="w-24 text-right font-semibold text-slate-900 dark:text-white">
+                <span
+                  className="h-3.5 w-3.5 shrink-0 rounded-full shadow-sm"
+                  style={{ background: `linear-gradient(135deg, ${light}, ${deep})` }}
+                />
+                <span className="min-w-0 flex-1 truncate font-medium text-slate-700 dark:text-slate-200">{s.label}</span>
+                <span className="w-8 text-right text-xs font-medium tabular-nums text-slate-400">{pct(s.amount)}%</span>
+                <span className="w-[4.75rem] text-right font-semibold tabular-nums text-slate-900 dark:text-white">
                   {formatMoney(s.amount, currency)}
                 </span>
               </button>
               {isSelected && s.items.length > 0 && (
-                <ul className="mb-2 flex flex-col gap-1.5 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/60">
+                <ul className="mx-2 mb-1 mt-1 flex flex-col gap-2 border-l-2 pl-3" style={{ borderColor: deep }}>
                   {s.items.map((item) => (
                     <li key={item.id} className="flex items-center gap-2 text-sm">
                       <span className="leading-none">{item.icon}</span>
-                      <span className="flex-1 truncate text-slate-700 dark:text-slate-200">{item.name}</span>
-                      <span className="font-medium text-slate-900 dark:text-white">{formatMoney(item.amount, currency)}</span>
+                      <span className="flex-1 truncate text-slate-600 dark:text-slate-300">{item.name}</span>
+                      <span className="font-medium tabular-nums text-slate-900 dark:text-white">
+                        {formatMoney(item.amount, currency)}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -148,11 +231,11 @@ export function BudgetDonut({
             </div>
           );
         })}
-        <div className="flex items-center gap-2.5 border-t border-dashed border-slate-200 pt-2.5 text-sm dark:border-slate-700">
-          <span className="h-3 w-3 shrink-0 rounded-full border border-slate-300 bg-white" />
+        <div className="mt-1 flex items-center gap-2.5 border-t border-dashed border-slate-200 px-2 pt-3 text-sm dark:border-slate-700">
+          <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-slate-300 bg-white shadow-sm" />
           <span className="flex-1 font-medium text-slate-700 dark:text-slate-200">Reste</span>
-          <span className="text-xs text-slate-400">{pct(Math.max(0, rest))}%</span>
-          <span className={cn("w-24 text-right font-bold", rest < 0 ? "text-rose-600" : "text-emerald-600")}>
+          <span className="w-8 text-right text-xs font-medium tabular-nums text-slate-400">{pct(Math.max(0, rest))}%</span>
+          <span className={cn("w-[4.75rem] text-right font-bold tabular-nums", rest < 0 ? "text-rose-600" : "text-emerald-600")}>
             {formatMoney(rest, currency)}
           </span>
         </div>
