@@ -17,7 +17,9 @@ const STROKE = 30;
 const RADIUS = (SIZE - STROKE) / 2 - 6; // room for the selected segment to grow
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const GAP = 2; // px of surface between segments
-const REST_COLOR = "#e2e8f0";
+// What's left is white (⚪): drawn as a white arc over a thin outlined track.
+const REST_COLOR = "#ffffff";
+const TRACK_COLOR = "#cbd5e1";
 
 /**
  * A month's budget as a full ring: each color's share of the salary, plus
@@ -60,6 +62,9 @@ export function BudgetDonut({
     <div className="flex flex-col gap-4">
       <div className="relative mx-auto" style={{ width: SIZE, height: SIZE }}>
         <svg viewBox={`0 0 ${SIZE} ${SIZE}`} width={SIZE} height={SIZE} className="-rotate-90">
+          {[RADIUS - STROKE / 2, RADIUS + STROKE / 2].map((r) => (
+            <circle key={r} cx={SIZE / 2} cy={SIZE / 2} r={r} fill="none" stroke={TRACK_COLOR} strokeWidth={1} />
+          ))}
           {arcs.map((arc) => {
             const isSelected = arc.segment != null && arc.segment.color === selected;
             const dimmed = selected != null && !isSelected;
@@ -72,7 +77,7 @@ export function BudgetDonut({
                 r={RADIUS}
                 fill="none"
                 stroke={arc.color}
-                strokeWidth={isSelected ? STROKE + 8 : STROKE}
+                strokeWidth={isSelected ? STROKE + 8 : arc.segment ? STROKE : STROKE - 2}
                 strokeDasharray={`${visible} ${CIRCUMFERENCE - visible}`}
                 strokeDashoffset={-arc.start}
                 className={cn(
@@ -144,7 +149,7 @@ export function BudgetDonut({
           );
         })}
         <div className="flex items-center gap-2.5 border-t border-dashed border-slate-200 pt-2.5 text-sm dark:border-slate-700">
-          <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: REST_COLOR }} />
+          <span className="h-3 w-3 shrink-0 rounded-full border border-slate-300 bg-white" />
           <span className="flex-1 font-medium text-slate-700 dark:text-slate-200">Reste</span>
           <span className="text-xs text-slate-400">{pct(Math.max(0, rest))}%</span>
           <span className={cn("w-24 text-right font-bold", rest < 0 ? "text-rose-600" : "text-emerald-600")}>

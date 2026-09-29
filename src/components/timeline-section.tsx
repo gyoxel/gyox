@@ -7,7 +7,7 @@ import { cn, formatMoney } from "@/lib/utils";
 import { ColorDot } from "@/components/color-dot";
 import { displayIcon } from "@/lib/category";
 
-const BAR: Record<DisplayColor, string> = { brown: "bg-[#a0522d]", red: "bg-[#e11d48]", yellow: "bg-[#facc15]", blue: "bg-[#2563eb]" };
+const BAR: Record<DisplayColor, string> = { orange: "bg-[#f97316]", red: "bg-[#e11d48]", yellow: "bg-[#facc15]", blue: "bg-[#2563eb]" };
 
 interface Row {
   expense: Expense;

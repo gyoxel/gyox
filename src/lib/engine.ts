@@ -83,19 +83,19 @@ export function getEffectiveEndMonth(
   return null;
 }
 
-export type DisplayColor = "brown" | "red" | "blue" | "yellow";
+export type DisplayColor = "orange" | "red" | "blue" | "yellow";
 
 /**
  * The color an expense is shown in, everywhere (dots, borders, bars, the
  * statistics chart):
- * - brown: permanent expenses;
+ * - orange: permanent expenses;
  * - red: any other expense (temporary, one-time, daret);
  * - blue: a credit repaid within 3 months;
  * - yellow: a long-term credit ("Crédit longue durée"), over 3 months —
  *   its span comes from its payoff schedule.
  */
 export function getExpenseDisplayColor(expense: Expense, byId: Map<string, Expense>): DisplayColor {
-  if (expense.type === "permanent") return "brown";
+  if (expense.type === "permanent") return "orange";
   if (expense.type !== "credit") return "red";
   const end = getEffectiveEndMonth(expense, byId);
   if (!end) return "yellow"; // no end in sight — treat as long-running

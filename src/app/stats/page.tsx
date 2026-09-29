@@ -16,7 +16,7 @@ const FORECAST_MONTHS = 6;
 
 // Ring order (checked for colorblind separation between neighbours).
 const SEGMENTS: { color: DisplayColor; label: string }[] = [
-  { color: "brown", label: "Dépenses permanentes" },
+  { color: "orange", label: "Dépenses permanentes" },
   { color: "blue", label: "Crédits" },
   { color: "yellow", label: "Crédits longue durée" },
   { color: "red", label: "Dépenses" },

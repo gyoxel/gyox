@@ -16,10 +16,10 @@ import { displayIcon } from "@/lib/category";
 
 const SWIPE_THRESHOLD_PX = 40;
 
-const COLOR_RANK: Record<DisplayColor, number> = { brown: 0, red: 1, yellow: 2, blue: 3 };
+const COLOR_RANK: Record<DisplayColor, number> = { orange: 0, red: 1, yellow: 2, blue: 3 };
 
 const BORDER_CLASS: Record<DisplayColor, string> = {
-  brown: "border-l-[#a0522d]",
+  orange: "border-l-[#f97316]",
   red: "border-l-[#e11d48]",
   yellow: "border-l-[#facc15]",
   blue: "border-l-[#2563eb]",
