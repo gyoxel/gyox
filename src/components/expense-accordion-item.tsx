@@ -27,6 +27,8 @@ export interface AccordionItemData {
   amount: number;
   monthKey: string;
   status: PaymentStatus;
+  /** "Reportés" rows: the month(s) left unpaid, shown next to the badge. */
+  missedLabel?: string;
   isFinalCreditPayment?: boolean;
   /** Credit-only real-time state. */
   credit?: {
@@ -62,9 +64,14 @@ export function ExpenseAccordionItem({ item, currency }: { item: AccordionItemDa
           <span className="text-lg leading-none">{expenseIcon({ icon: item.icon, type: item.type })}</span>
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{item.name}</p>
-            <span className={cn("mt-0.5 inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium", status.className)}>
-              {status.label}
-            </span>
+            <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+              <span className={cn("inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium", status.className)}>
+                {item.missedLabel ? "Non payé" : status.label}
+              </span>
+              {item.missedLabel && (
+                <span className="text-[11px] font-medium text-rose-600 dark:text-rose-400">{item.missedLabel}</span>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
