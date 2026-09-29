@@ -19,7 +19,6 @@ import {
   getForecast,
   getMonthPaymentStatus,
   getMonthSummary,
-  getUnpaidMonths,
   carriesOver,
 } from "@/lib/engine";
 import { MonthSwitcher } from "@/components/month-switcher";
@@ -107,47 +106,34 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
     };
   });
 
-  // "Reportés / en retard": only money owed to someone (credits, and
-  // expenses linked to a credit such as Zineb), for months before the one
-  // viewed that were left unpaid — the current month included once browsing
-  // ahead (it isn't paid yet), never a month that hasn't come yet. Each row
-  // shows which month(s) went unpaid. Ordinary expenses never appear here:
-  // unpaid in their month means gone (see carriesOver).
+  // "Reportés / en retard": only credits (money owed to someone), for
+  // months before the one viewed that were left unpaid — the current month
+  // included once browsing ahead (it isn't paid yet), never a month that
+  // hasn't come yet. A credit's missed months don't stack: one row with its
+  // pending installment and every month since it fell due. Ordinary expenses
+  // never appear here: unpaid in their month means gone (see carriesOver).
   const lastMissable = [addMonths(viewMonth, -1), currentOperatingMonth].sort(compareMonths)[0];
   const carriedItems: AccordionItemData[] = expenses
-    .filter((e) => e.active && carriesOver(e, byId))
+    .filter((e) => e.active && carriesOver(e))
     .flatMap((expense): AccordionItemData[] => {
-      const base = {
-        expenseId: expense.id,
-        name: expense.name,
-        icon: iconOf(expense),
-        type: expense.type,
-        color: getExpenseDisplayColor(expense, byId),
-        status: "unpaid" as const,
-      };
-      if (expense.type === "credit") {
-        // A credit's missed months don't stack: one installment is owed,
-        // and every month since it fell due went unpaid.
-        const state = getCreditRealState(expense, payments, currentOperatingMonth);
-        if (state.status !== "in-progress" || !state.dueMonth || state.pendingAmount <= 0) return [];
-        const months: MonthId[] = [];
-        for (let m = state.dueMonth; compareMonths(m, lastMissable) <= 0; m = addMonths(m, 1)) months.push(m);
-        if (months.length === 0) return [];
-        return [
-          {
-            ...base,
-            amount: state.pendingAmount,
-            monthKey: monthKey(months[0]),
-            missedLabel: months.length === 1 ? monthLabelFr(months[0]) : months.map(monthLabelShortFr).join(", "),
-          },
-        ];
-      }
-      return getUnpaidMonths(expense, payments, lastMissable, byId).map((u) => ({
-        ...base,
-        amount: Math.round((u.amountDue - u.amountPaid) * 100) / 100,
-        monthKey: u.monthKey,
-        missedLabel: monthLabelFr(u.month),
-      }));
+      const state = getCreditRealState(expense, payments, currentOperatingMonth);
+      if (state.status !== "in-progress" || !state.dueMonth || state.pendingAmount <= 0) return [];
+      const months: MonthId[] = [];
+      for (let m = state.dueMonth; compareMonths(m, lastMissable) <= 0; m = addMonths(m, 1)) months.push(m);
+      if (months.length === 0) return [];
+      return [
+        {
+          expenseId: expense.id,
+          name: expense.name,
+          icon: iconOf(expense),
+          type: expense.type,
+          color: getExpenseDisplayColor(expense, byId),
+          status: "unpaid",
+          amount: state.pendingAmount,
+          monthKey: monthKey(months[0]),
+          missedLabel: months.length === 1 ? monthLabelFr(months[0]) : months.map(monthLabelShortFr).join(", "),
+        },
+      ];
     });
 
   // Automatically detect the moment temporary credits/obligations finish and

@@ -66,9 +66,8 @@ export function getCreditEndMonth(expense: Expense): MonthId | null {
 
 /**
  * The effective end month of an expense: for a credit it's calculated from
- * the payoff schedule; for an expense linked to another one (e.g. Zineb
- * ending with Dnya) it follows the linked expense; otherwise it's the
- * expense's own endDate (or null = permanent / never ends).
+ * the payoff schedule; otherwise it's the expense's own endDate (or null =
+ * permanent / never ends).
  */
 export function getEffectiveEndMonth(
   expense: Expense,
@@ -80,10 +79,6 @@ export function getEffectiveEndMonth(
 
   if (expense.type === "credit") return getCreditEndMonth(expense);
   if (expense.frequency === "one-time") return monthOfDateStr(expense.startDate);
-  if (expense.linkedExpenseId) {
-    const linked = byId.get(expense.linkedExpenseId);
-    if (linked) return getEffectiveEndMonth(linked, byId, seen);
-  }
   if (expense.endDate) return monthOfDateStr(expense.endDate);
   return null;
 }
@@ -377,16 +372,13 @@ export function getMonthPaymentStatus(
 
 /**
  * Whether an unpaid month stays owed afterwards. Only money owed to someone
- * does: a credit (handled by getCreditRealState: a missed installment pushes
- * the schedule back) or an expense linked to a credit (e.g. Zineb, tied to
- * Dnya). Any other expense (permanent, temporary, one-time) belongs to its
- * own month only: not ticked that month means not spent — it's simply gone
- * once the month is over, never carried into the next one.
+ * does — a credit (getCreditRealState: a missed installment pushes the
+ * schedule back). Any other expense (permanent, temporary, one-time) belongs
+ * to its own month only: not ticked that month means not spent — it's simply
+ * gone once the month is over, never carried into the next one.
  */
-export function carriesOver(expense: Expense, byId: Map<string, Expense>): boolean {
-  if (expense.type === "credit") return true;
-  const linked = expense.linkedExpenseId ? byId.get(expense.linkedExpenseId) : undefined;
-  return linked?.type === "credit";
+export function carriesOver(expense: Expense): boolean {
+  return expense.type === "credit";
 }
 
 export interface UnpaidMonth {
@@ -443,9 +435,7 @@ export interface LedgerItem {
  * (so the UI can show it struck through) rather than silently dropped, so
  * the checklist looks the same after a reload as it does right after
  * checking something off. Credits never stack (see getCreditRealState) —
- * only one installment can ever be pending at a time. An expense linked to
- * a credit (money owed to someone) accumulates: every past occurrence never
- * paid keeps adding to what's due, until settled. Any other expense only
+ * only one installment can ever be pending at a time. Any other expense only
  * ever shows its own month's occurrence — unpaid in its month means it's
  * gone afterwards (see carriesOver).
  *
@@ -533,22 +523,7 @@ export function getMonthLedgerItems(
       continue;
     }
 
-    if (carriesOver(expense, byId)) {
-      // Owed to someone: every past month left unpaid is still due.
-      const owed = getUnpaidMonths(expense, payments, viewMonth, byId).reduce(
-        (s, u) => s + (u.amountDue - u.amountPaid),
-        0,
-      );
-      if (owed > 0.005) {
-        items.push({ expense, amount: round2(owed), paid: false });
-        continue;
-      }
-      const occ = getOccurrenceForMonth(expense, viewMonth, byId);
-      if (occ) items.push({ expense, amount: occ.amount, paid: true });
-      continue;
-    }
-
-    // Ordinary expense: only this month's own occurrence, paid or not.
+    // Not a credit: only this month's own occurrence, paid or not.
     const occ = getOccurrenceForMonth(expense, viewMonth, byId);
     if (!occ) continue;
     const payment = findPayment(payments, expense.id, monthKey(viewMonth));

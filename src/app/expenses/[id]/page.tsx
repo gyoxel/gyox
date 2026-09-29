@@ -33,7 +33,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
           <CreditInfo expense={expense} payments={payments} currency={settings.currency} />
         )}
         {expense.type !== "credit" && expense.frequency === "monthly" && (
-          <LinkedInfo expenseId={expense.id} allExpenses={allExpenses} />
+          <EndInfo expense={expense} allExpenses={allExpenses} />
         )}
 
         <ExpenseEditor
@@ -77,9 +77,7 @@ function CreditInfo({ expense, payments, currency }: { expense: Expense; payment
   );
 }
 
-function LinkedInfo({ expenseId, allExpenses }: { expenseId: string; allExpenses: Expense[] }) {
-  const expense = allExpenses.find((e) => e.id === expenseId);
-  if (!expense) return null;
+function EndInfo({ expense, allExpenses }: { expense: Expense; allExpenses: Expense[] }) {
   const byId = new Map(allExpenses.map((e) => [e.id, e]));
   const end = getEffectiveEndMonth(expense, byId);
   return (
