@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Sparkles } from "lucide-react";
+import { Plus } from "lucide-react";
 import { getAllCategories, getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
 import {
   addMonths,
@@ -16,7 +16,6 @@ import {
   getCreditDisplayProgress,
   getCreditRealState,
   getExpenseDisplayColor,
-  getForecast,
   getMonthPaymentStatus,
   getMonthSummary,
   carriesOver,
@@ -32,21 +31,6 @@ import type { Expense } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-const FORECAST_MONTHS = 6;
-
-function Row({ label, value, currency, strong }: { label: string; value: number; currency: string; strong?: boolean }) {
-  return (
-    <div className="flex items-center justify-between py-1.5">
-      <span className={strong ? "text-sm font-medium text-slate-700 dark:text-slate-300" : "text-sm text-slate-500 dark:text-slate-400"}>
-        {label}
-      </span>
-      <span className={strong ? "text-base font-semibold text-slate-900 dark:text-white" : "text-sm text-slate-700 dark:text-slate-300"}>
-        {formatMoney(value, currency)}
-      </span>
-    </div>
-  );
-}
-
 export default async function BudgetPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const [sp, settings, expenses, payments, categories] = await Promise.all([
     searchParams,
@@ -60,7 +44,6 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
   const viewMonth = monthFromSearchParams(sp.month, defaultViewMonth());
   const currentOperatingMonth = todayMonth();
   const summary = getMonthSummary(expenses, viewMonth, settings.salary);
-  const forecast = getForecast(expenses, settings.salary, defaultViewMonth(), FORECAST_MONTHS);
 
   const viewMonthKey = monthKey(viewMonth);
   const byId = new Map(expenses.map((e) => [e.id, e]));
@@ -136,46 +119,11 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
       ];
     });
 
-  // Automatically detect the moment temporary credits/obligations finish and
-  // the budget frees up (relocated here from the Dashboard, which is now
-  // real-situation-only).
-  let transition: { monthLabel: string; totalPermanent: number; remaining: number } | null = null;
-  if (summary.totalCredit > 0 || summary.totalTemporary > 0) {
-    let cursor = addMonths(viewMonth, 1);
-    for (let i = 0; i < 36; i++) {
-      const s = getMonthSummary(expenses, cursor, settings.salary);
-      if (s.totalCredit === 0 && s.totalTemporary === 0) {
-        transition = { monthLabel: s.label, totalPermanent: s.totalPermanent, remaining: s.remaining };
-        break;
-      }
-      cursor = addMonths(cursor, 1);
-    }
-  }
-
   return (
     <>
       <PageHeader title="Dépenses" />
       <main className="flex flex-col gap-5 px-4 py-5">
         <MonthSwitcher month={viewMonth} basePath="/budget" />
-
-        <Card>
-          <CardContent className="pt-4">
-            <Row label="Salaire" value={summary.salary} currency={settings.currency} strong />
-            <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
-            <Row label="🔴 Dépenses permanentes" value={summary.totalPermanent} currency={settings.currency} />
-            <Row label="🔵 Crédits" value={summary.totalCredit} currency={settings.currency} />
-            <Row label="🟡 Autres temporaires" value={summary.totalTemporary} currency={settings.currency} />
-            <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
-            <Row label="Total dépenses" value={summary.totalExpenses} currency={settings.currency} strong />
-            <div className="my-2 border-t border-dashed border-slate-200 dark:border-slate-700" />
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Reste</span>
-              <span className={`text-2xl font-bold ${summary.remaining < 0 ? "text-rose-600" : "text-emerald-600"}`}>
-                {formatMoney(summary.remaining, settings.currency)}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
 
         {carriedItems.length > 0 && (
           <section className="flex flex-col gap-2.5">
@@ -211,52 +159,6 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
           </Button>
         </section>
 
-        {transition && (
-          <Card className="border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/30">
-            <CardContent className="flex gap-3 pt-4">
-              <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-              <div className="text-sm text-emerald-900 dark:text-emerald-200">
-                <p className="font-semibold">Dès {transition.monthLabel}</p>
-                <p className="mt-1 text-emerald-800/90 dark:text-emerald-300/90">
-                  Vos crédits et obligations temporaires seront terminés. Dépenses permanentes:{" "}
-                  {formatMoney(transition.totalPermanent, settings.currency)} — Reste estimé:{" "}
-                  <span className="font-semibold">{formatMoney(transition.remaining, settings.currency)}</span>
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        <section className="flex flex-col gap-2.5">
-          <h2 className="px-1 text-sm font-semibold text-slate-500 dark:text-slate-400">Prévisions</h2>
-          <Card>
-            <CardContent className="divide-y divide-slate-100 pt-2 dark:divide-slate-800">
-              {forecast.map((s) => (
-                <Link
-                  key={s.monthKey}
-                  href={`/budget?month=${s.monthKey}`}
-                  className="flex items-center justify-between py-2.5 text-sm first:pt-1 last:pb-1"
-                >
-                  <span
-                    className={
-                      compareMonths(s.month, viewMonth) === 0
-                        ? "font-semibold text-slate-900 dark:text-white"
-                        : "text-slate-600 dark:text-slate-300"
-                    }
-                  >
-                    {s.label}
-                  </span>
-                  <span className="flex items-center gap-3">
-                    <span className="text-slate-400">{formatMoney(s.totalExpenses, settings.currency)}</span>
-                    <span className={`font-medium ${s.remaining < 0 ? "text-rose-600" : "text-emerald-600"}`}>
-                      {formatMoney(s.remaining, settings.currency)}
-                    </span>
-                  </span>
-                </Link>
-              ))}
-            </CardContent>
-          </Card>
-        </section>
       </main>
     </>
   );

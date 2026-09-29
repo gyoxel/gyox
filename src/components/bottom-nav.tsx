@@ -91,6 +91,7 @@ function NavLink({
 const PREFETCH_HREFS = [
   ...[...LEFT_ITEMS, ...RIGHT_ITEMS].map((i) => i.href),
   "/settings",
+  "/stats",
   "/expenses/new",
   "/expenses/new?type=credit",
   "/daret/new",

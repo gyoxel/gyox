@@ -1,23 +1,21 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { getAllCategories, getAllDarets, getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
+import { getAllCategories, getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
 import { displayIcon } from "@/lib/category";
 import { PageHeader } from "@/components/page-header";
 import { CreditCard } from "@/components/credit-card";
 import { getExpenseDisplayColor } from "@/lib/engine";
-import { TimelineSection } from "@/components/timeline-section";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
 export default async function CreditsPage() {
-  const [settings, payments, expenses, categories, darets] = await Promise.all([
+  const [settings, payments, expenses, categories] = await Promise.all([
     getSettings(),
     getAllPayments(),
     getAllExpenses(),
     getAllCategories(),
-    getAllDarets(),
   ]);
   const categoryEmoji = new Map(categories.map((c) => [c.id, c.emoji]));
   const byId = new Map(expenses.map((e) => [e.id, e]));
@@ -54,9 +52,6 @@ export default async function CreditsPage() {
           ))
         )}
 
-        <div className="mt-4">
-          <TimelineSection expenses={expenses} darets={darets} payments={payments} currency={settings.currency} categoryEmoji={categoryEmoji} />
-        </div>
       </main>
     </>
   );
