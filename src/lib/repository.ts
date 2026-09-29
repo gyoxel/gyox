@@ -357,7 +357,7 @@ export async function createDaret(input: {
         creditInitialAmount: null,
         creditPriorPaid: null,
         linkedExpenseId: null,
-        icon: "🤝",
+        icon: "🤝🏻",
         createdAt: now,
         updatedAt: now,
       },

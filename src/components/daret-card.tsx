@@ -95,7 +95,7 @@ export function DaretCard({
         <div className="flex items-center justify-between gap-2">
           <h3 className="flex min-w-0 items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
             <ColorDot color={color} />
-            <span className="text-lg leading-none">{daret.expense.icon ?? "🤝"}</span>
+            <span className="text-lg leading-none">{daret.expense.icon ?? "🤝🏻"}</span>
             <span className="truncate">{daret.expense.name}</span>
           </h3>
           <div className="flex shrink-0 items-center gap-1.5">

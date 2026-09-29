@@ -38,7 +38,7 @@ export default async function DaretPage() {
         {darets.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center gap-3 py-8 text-center text-sm text-slate-500">
-              <span className="text-3xl">🤝</span>
+              <span className="text-3xl">🤝🏻</span>
               Aucune daret pour le moment.
               <Button asChild size="sm" variant="outline">
                 <Link href="/daret/new">
