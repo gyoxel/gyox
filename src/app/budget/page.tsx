@@ -19,6 +19,7 @@ import {
   getMonthPaymentStatus,
   getMonthSummary,
   getUnpaidMonths,
+  carriesOver,
 } from "@/lib/engine";
 import { MonthSwitcher } from "@/components/month-switcher";
 import { ExpenseAccordionItem, type AccordionItemData } from "@/components/expense-accordion-item";
@@ -105,14 +106,13 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
     };
   });
 
-  // Carried-over debts: unpaid non-credit occurrences from months strictly
-  // before the one being viewed. Shown as their own rows — never merged
-  // into this month's own mensualité — since the rule is "le montant reste
-  // dû jusqu'à ce qu'il soit payé", distinct from a new month's own due
-  // amount. This is where that history lives (the Dashboard only shows the
-  // combined total, per spec).
+  // Carried-over debts: unpaid occurrences, from months strictly before the
+  // one being viewed, of expenses owed to someone (linked to a credit, e.g.
+  // Zineb). Shown as their own rows, never merged into this month's own
+  // amount. Ordinary expenses never carry over: unpaid in their month means
+  // gone (see carriesOver).
   const carriedItems: AccordionItemData[] = expenses
-    .filter((e) => e.active && e.type !== "credit")
+    .filter((e) => e.active && e.type !== "credit" && carriesOver(e, byId))
     .flatMap((expense) =>
       getUnpaidMonths(expense, payments, addMonths(viewMonth, -1), byId).map((u) => ({
         expenseId: expense.id,

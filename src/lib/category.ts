@@ -49,10 +49,14 @@ export function expenseIcon(expense: Pick<Expense, "icon" | "type">): string {
 }
 
 /** The icon to show for an expense: its category's emoji when it has one,
- *  otherwise its own icon / type fallback. */
+ *  otherwise its own icon / type fallback. Money owed to a person (a credit,
+ *  or an expense linked to one, e.g. Zineb) shows its own icon first — the
+ *  person (👩, 👨, 👵👴…) — rather than the category's. */
 export function displayIcon(
-  expense: Pick<Expense, "icon" | "type" | "categoryId">,
+  expense: Pick<Expense, "icon" | "type" | "categoryId"> & { linkedExpenseId?: string | null },
   categoryEmoji: ReadonlyMap<string, string>,
 ): string {
+  const owedToSomeone = expense.type === "credit" || !!expense.linkedExpenseId;
+  if (owedToSomeone && expense.icon) return expense.icon;
   return (expense.categoryId && categoryEmoji.get(expense.categoryId)) || expenseIcon(expense);
 }
