@@ -9,7 +9,7 @@ import { formatMoney, cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { DeleteExpenseButton } from "@/components/delete-expense-button";
-import { ColorDot } from "@/components/color-dot";
+import { ColorDot, DOT_CLASS } from "@/components/color-dot";
 import type { DisplayColor } from "@/lib/engine";
 
 const STATUS_META: Record<PaymentStatus, { label: string; className: string }> = {
@@ -93,7 +93,7 @@ export function ExpenseAccordionItem({ item, currency }: { item: AccordionItemDa
                   </span>
                   <span>{percent}%</span>
                 </div>
-                <Progress value={percent} indicatorClassName="bg-sky-400 dark:bg-sky-500" />
+                <Progress value={percent} indicatorClassName={DOT_CLASS[item.color]} />
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-sm">

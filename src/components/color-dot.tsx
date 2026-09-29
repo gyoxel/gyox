@@ -1,10 +1,20 @@
 import type { DisplayColor } from "@/lib/engine";
 import { cn } from "@/lib/utils";
 
+/** One palette for every place an expense's color shows (checked for
+ *  colorblind separation): see getExpenseDisplayColor. */
+export const COLOR_HEX: Record<DisplayColor, string> = {
+  brown: "#a0522d",
+  red: "#e11d48",
+  blue: "#2563eb",
+  yellow: "#ca8a04",
+};
+
 export const DOT_CLASS: Record<DisplayColor, string> = {
-  red: "bg-rose-400",
-  yellow: "bg-amber-400",
-  blue: "bg-sky-400",
+  brown: "bg-[#a0522d]",
+  red: "bg-[#e11d48]",
+  blue: "bg-[#2563eb]",
+  yellow: "bg-[#ca8a04]",
 };
 
 /** The category dot shown before every expense name (same rule everywhere:

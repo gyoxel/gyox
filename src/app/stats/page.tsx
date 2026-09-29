@@ -2,7 +2,9 @@ import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { getAllCategories, getAllDarets, getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
 import { addMonths, compareMonths, defaultViewMonth, monthFromSearchParams, monthLabelFr, todayMonth } from "@/lib/date";
-import { getForecast, getMonthSummary, getPaidThisMonth } from "@/lib/engine";
+import { getExpenseDisplayColor, getForecast, getMonthSummary, getPaidThisMonth, type DisplayColor } from "@/lib/engine";
+import { displayIcon } from "@/lib/category";
+import { BudgetDonut, type DonutSegment } from "@/components/budget-donut";
 import { MonthSwitcher } from "@/components/month-switcher";
 import { PageHeader } from "@/components/page-header";
 import { TimelineSection } from "@/components/timeline-section";
@@ -13,18 +15,13 @@ export const dynamic = "force-dynamic";
 
 const FORECAST_MONTHS = 6;
 
-function Row({ label, value, currency, strong }: { label: string; value: number; currency: string; strong?: boolean }) {
-  return (
-    <div className="flex items-center justify-between py-1.5">
-      <span className={strong ? "text-sm font-medium text-slate-700 dark:text-slate-300" : "text-sm text-slate-500 dark:text-slate-400"}>
-        {label}
-      </span>
-      <span className={strong ? "text-base font-semibold text-slate-900 dark:text-white" : "text-sm text-slate-700 dark:text-slate-300"}>
-        {formatMoney(value, currency)}
-      </span>
-    </div>
-  );
-}
+// Ring order (checked for colorblind separation between neighbours).
+const SEGMENTS: { color: DisplayColor; label: string }[] = [
+  { color: "brown", label: "Dépenses permanentes" },
+  { color: "blue", label: "Crédits" },
+  { color: "yellow", label: "Crédits longue durée" },
+  { color: "red", label: "Dépenses" },
+];
 
 /**
  * Statistiques et prévisions: this month's real salary use, the planned
@@ -52,6 +49,14 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   // Planned budget of the viewed month (next month by default).
   const viewMonth = monthFromSearchParams(sp.month, defaultViewMonth());
   const summary = getMonthSummary(expenses, viewMonth, settings.salary);
+  const byId = new Map(expenses.map((e) => [e.id, e]));
+  const segments: DonutSegment[] = SEGMENTS.map(({ color, label }) => {
+    const items = summary.occurrences
+      .filter((o) => getExpenseDisplayColor(o.expense, byId) === color)
+      .map((o) => ({ id: o.expense.id, name: o.expense.name, icon: displayIcon(o.expense, categoryEmoji), amount: o.amount }))
+      .sort((a, b) => b.amount - a.amount);
+    return { color, label, amount: Math.round(items.reduce((s, i) => s + i.amount, 0) * 100) / 100, items };
+  });
   const forecast = getForecast(expenses, settings.salary, defaultViewMonth(), FORECAST_MONTHS);
 
   // The moment credits and temporary obligations are all over.
@@ -95,21 +100,8 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         <section className="flex flex-col gap-2.5">
           <MonthSwitcher month={viewMonth} basePath="/stats" />
           <Card>
-            <CardContent className="pt-4">
-              <Row label="Salaire" value={summary.salary} currency={currency} strong />
-              <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
-              <Row label="🔴 Dépenses permanentes" value={summary.totalPermanent} currency={currency} />
-              <Row label="🔵 Crédits" value={summary.totalCredit} currency={currency} />
-              <Row label="🟡 Autres temporaires" value={summary.totalTemporary} currency={currency} />
-              <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
-              <Row label="Total dépenses" value={summary.totalExpenses} currency={currency} strong />
-              <div className="my-2 border-t border-dashed border-slate-200 dark:border-slate-700" />
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Reste</span>
-                <span className={`text-2xl font-bold ${summary.remaining < 0 ? "text-rose-600" : "text-emerald-600"}`}>
-                  {formatMoney(summary.remaining, currency)}
-                </span>
-              </div>
+            <CardContent className="pt-5">
+              <BudgetDonut segments={segments} salary={summary.salary} currency={currency} />
             </CardContent>
           </Card>
         </section>

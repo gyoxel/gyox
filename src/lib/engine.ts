@@ -83,28 +83,24 @@ export function getEffectiveEndMonth(
   return null;
 }
 
-export type DisplayColor = "red" | "yellow" | "blue";
+export type DisplayColor = "brown" | "red" | "blue" | "yellow";
 
 /**
- * The color an expense should be shown in, independent of the manually
- * picked `color` category field: permanent expenses are always red (they
- * lead every list, and never "repeat toward an end" — they just continue).
- * Everything else is colored by how long it recurs: yellow when it spans
- * more than 2 calendar months, blue when it's 2 months or shorter — a
- * one-time expense (inherently a single month) or a credit that pays off
- * within 2 months included. A credit's span comes from its payoff schedule
- * (getEffectiveEndMonth already resolves that), so a quick credit reads
- * blue and a long one reads yellow, exactly like a temporary expense would.
+ * The color an expense is shown in, everywhere (dots, borders, bars, the
+ * statistics chart):
+ * - brown: permanent expenses;
+ * - red: any other expense (temporary, one-time, daret);
+ * - blue: a credit repaid within 3 months;
+ * - yellow: a long-term credit ("Crédit longue durée"), over 3 months —
+ *   its span comes from its payoff schedule.
  */
 export function getExpenseDisplayColor(expense: Expense, byId: Map<string, Expense>): DisplayColor {
-  if (expense.type === "permanent") return "red";
-  if (expense.frequency === "one-time") return "blue";
-
-  const start = monthOfDateStr(expense.startDate);
+  if (expense.type === "permanent") return "brown";
+  if (expense.type !== "credit") return "red";
   const end = getEffectiveEndMonth(expense, byId);
   if (!end) return "yellow"; // no end in sight — treat as long-running
-  const durationMonths = monthsBetween(start, end) + 1;
-  return durationMonths > 2 ? "yellow" : "blue";
+  const durationMonths = monthsBetween(monthOfDateStr(expense.startDate), end) + 1;
+  return durationMonths > 3 ? "yellow" : "blue";
 }
 
 export function getOccurrenceForMonth(
@@ -147,12 +143,14 @@ export function getMonthSummary(expenses: Expense[], m: MonthId, salary: number)
     if (occ) occurrences.push(occ);
   }
 
-  const sumByColor = (color: string) =>
-    round2(occurrences.filter((o) => o.expense.color === color).reduce((s, o) => s + o.amount, 0));
+  // Grouped by type (not by the legacy manual `color` field): permanent,
+  // credits, and everything else (temporary, one-time, darets).
+  const sumWhere = (keep: (e: Expense) => boolean) =>
+    round2(occurrences.filter((o) => keep(o.expense)).reduce((s, o) => s + o.amount, 0));
 
-  const totalPermanent = sumByColor("red");
-  const totalCredit = sumByColor("blue");
-  const totalTemporary = sumByColor("yellow");
+  const totalPermanent = sumWhere((e) => e.type === "permanent");
+  const totalCredit = sumWhere((e) => e.type === "credit");
+  const totalTemporary = sumWhere((e) => e.type !== "permanent" && e.type !== "credit");
   const totalExpenses = round2(totalPermanent + totalCredit + totalTemporary);
 
   return {

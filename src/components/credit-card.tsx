@@ -7,7 +7,7 @@ import { formatMoney } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { ColorDot } from "@/components/color-dot";
+import { ColorDot, DOT_CLASS } from "@/components/color-dot";
 import type { DisplayColor } from "@/lib/engine";
 
 const STATUS_LABEL: Record<string, { label: string; variant: "neutral" | "blue" | "green" | "red" }> = {
@@ -74,7 +74,7 @@ export function CreditCard({
               </span>
               <span>{percent}%</span>
             </div>
-            <Progress value={percent} indicatorClassName="bg-sky-400 dark:bg-sky-500" />
+            <Progress value={percent} indicatorClassName={DOT_CLASS[color]} />
           </div>
 
           <div className="flex items-center justify-between text-sm">

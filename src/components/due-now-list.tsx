@@ -16,12 +16,13 @@ import { displayIcon } from "@/lib/category";
 
 const SWIPE_THRESHOLD_PX = 40;
 
-const COLOR_RANK: Record<DisplayColor, number> = { red: 0, yellow: 1, blue: 2 };
+const COLOR_RANK: Record<DisplayColor, number> = { brown: 0, red: 1, yellow: 2, blue: 3 };
 
 const BORDER_CLASS: Record<DisplayColor, string> = {
-  red: "border-l-rose-400",
-  yellow: "border-l-amber-400",
-  blue: "border-l-sky-400",
+  brown: "border-l-[#a0522d]",
+  red: "border-l-[#e11d48]",
+  yellow: "border-l-[#ca8a04]",
+  blue: "border-l-[#2563eb]",
 };
 
 let optimisticIdCounter = 0;
