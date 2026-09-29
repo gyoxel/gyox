@@ -21,7 +21,7 @@ const COLOR_RANK: Record<DisplayColor, number> = { brown: 0, red: 1, yellow: 2, 
 const BORDER_CLASS: Record<DisplayColor, string> = {
   brown: "border-l-[#a0522d]",
   red: "border-l-[#e11d48]",
-  yellow: "border-l-[#ca8a04]",
+  yellow: "border-l-[#facc15]",
   blue: "border-l-[#2563eb]",
 };
 
