@@ -19,10 +19,10 @@ const GRADIENT: Record<DisplayColor, [string, string]> = {
   red: ["#fb7185", "#be123c"],
 };
 
-const SIZE = 156;
+const SIZE = 248;
 const C = SIZE / 2;
-const OUTER = 70; // leaves room for the selected slice to zoom
-const INNER = 42;
+const OUTER = 112; // leaves room for the selected slice to zoom
+const INNER = 68;
 const LABEL_RADIUS = (OUTER + INNER) / 2;
 const MIN_LABEL_PCT = 7; // smaller slices don't get a % label
 
@@ -44,8 +44,8 @@ function slicePath(a0: number, a1: number): string {
 }
 
 /**
- * A month's budget as a ring (each group's share of the salary, what's left
- * in white) with its legend on the right. Tapping a slice zooms it and fades
+ * A month's budget as a big ring (each group's share of the salary, what's
+ * left in white) with its legend underneath. Tapping a slice zooms it and fades
  * the others; the legend then shows only that group, with what it's made of
  * under its name. Tapping another slice switches; tapping it again closes.
  */
@@ -89,11 +89,11 @@ export function BudgetDonut({
   const toggle = (color: DisplayColor) => setSelected((c) => (c === color ? null : color));
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex flex-col gap-5">
       {/* Ring */}
       <div
         className={cn(
-          "relative shrink-0 transition-[transform,opacity] duration-700 ease-out",
+          "relative mx-auto shrink-0 transition-[transform,opacity] duration-700 ease-out",
           shown ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-75 opacity-0",
         )}
         style={{ width: SIZE, height: SIZE }}
@@ -159,7 +159,7 @@ export function BudgetDonut({
                 y={y}
                 textAnchor="middle"
                 dominantBaseline="central"
-                className="pointer-events-none fill-white text-[10px] font-semibold transition-opacity duration-300"
+                className="pointer-events-none fill-white text-[13px] font-bold transition-opacity duration-300"
                 style={{ opacity: dimmed ? 0 : 1, textShadow: "0 1px 2px rgba(15,23,42,0.35)" }}
               >
                 {pct(s.amount)}%
@@ -172,17 +172,17 @@ export function BudgetDonut({
         </svg>
 
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-          <span className="max-w-[64px] text-[8px] font-semibold uppercase leading-tight tracking-wide text-slate-400">
+          <span className="max-w-[100px] text-[10px] font-semibold uppercase leading-tight tracking-wider text-slate-400">
             Total des dépenses
           </span>
-          <span className="mt-0.5 text-[13px] font-bold tabular-nums text-slate-900 dark:text-slate-900">
+          <span className="mt-1 text-xl font-bold tabular-nums text-slate-900 dark:text-slate-900">
             {formatMoney(total, currency)}
           </span>
         </div>
       </div>
 
       {/* Legend: all groups, or only the selected one with its details */}
-      <div className="min-w-0 flex-1">
+      <div>
         {current ? (
           <div key={current.color} className="flex flex-col gap-2">
             <LegendRow
@@ -194,9 +194,9 @@ export function BudgetDonut({
               onClick={() => toggle(current.color)}
               active
             />
-            <ul className="flex flex-col gap-1.5 border-l-2 pl-2.5" style={{ borderColor: GRADIENT[current.color][1] }}>
+            <ul className="mx-2 flex flex-col gap-2 border-l-2 pl-3" style={{ borderColor: GRADIENT[current.color][1] }}>
               {current.items.map((item) => (
-                <li key={item.id} className="flex items-center gap-1.5 text-xs">
+                <li key={item.id} className="flex items-center gap-2 text-sm">
                   <span className="leading-none">{item.icon}</span>
                   <span className="min-w-0 flex-1 truncate text-slate-600 dark:text-slate-300">{item.name}</span>
                   <span className="font-semibold tabular-nums text-slate-900 dark:text-white">
@@ -219,14 +219,13 @@ export function BudgetDonut({
                 onClick={s.amount > 0 ? () => toggle(s.color) : undefined}
               />
             ))}
-            <div className="flex items-start gap-2 rounded-lg px-1.5 py-1">
-              <span className="mt-1 h-3 w-3 shrink-0 rounded-full border border-slate-300 bg-white" />
-              <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-medium leading-tight text-slate-700 dark:text-slate-200">Reste</p>
-                <p className={cn("text-sm font-bold tabular-nums", rest < 0 ? "text-rose-600" : "text-emerald-600")}>
-                  {formatMoney(rest, currency)}
-                </p>
-              </div>
+            <div className="mt-1 flex items-center gap-2.5 border-t border-dashed border-slate-200 px-2 pt-3 text-[13px] dark:border-slate-700">
+              <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-slate-300 bg-white" />
+              <span className="flex-1 font-medium text-slate-700 dark:text-slate-200">Reste</span>
+              <span className="w-8 text-right text-xs tabular-nums text-slate-400">{pct(Math.max(0, rest))}%</span>
+              <span className={cn("w-[4.75rem] text-right font-bold tabular-nums", rest < 0 ? "text-rose-600" : "text-emerald-600")}>
+                {formatMoney(rest, currency)}
+              </span>
             </div>
           </div>
         )}
@@ -260,20 +259,18 @@ function LegendRow({
       disabled={!onClick}
       aria-expanded={active}
       className={cn(
-        "flex w-full items-start gap-2 rounded-lg px-1.5 py-1 text-left transition-colors disabled:opacity-40",
+        "flex w-full items-center gap-2.5 rounded-xl px-2 py-2.5 text-left text-[13px] transition-colors disabled:opacity-40",
         active ? "bg-slate-50 dark:bg-slate-800/60" : "active:bg-slate-50 dark:active:bg-slate-800/60",
       )}
     >
       <span
-        className="mt-1 h-3 w-3 shrink-0 rounded-full shadow-sm"
+        className="h-3.5 w-3.5 shrink-0 rounded-full shadow-sm"
         style={{ background: `linear-gradient(135deg, ${light}, ${deep})` }}
       />
-      <span className="min-w-0 flex-1">
-        <span className="block text-[13px] font-medium leading-tight text-slate-700 dark:text-slate-200">{label}</span>
-        <span className="flex items-baseline gap-1.5">
-          <span className="text-sm font-bold tabular-nums text-slate-900 dark:text-white">{formatMoney(amount, currency)}</span>
-          <span className="text-[11px] tabular-nums text-slate-400">{percent}%</span>
-        </span>
+      <span className="min-w-0 flex-1 truncate font-medium text-slate-700 dark:text-slate-200">{label}</span>
+      <span className="w-8 text-right text-xs tabular-nums text-slate-400">{percent}%</span>
+      <span className="w-[4.75rem] text-right font-bold tabular-nums text-slate-900 dark:text-white">
+        {formatMoney(amount, currency)}
       </span>
     </button>
   );
