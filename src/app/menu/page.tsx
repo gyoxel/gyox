@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Banknote, ChartNoAxesCombined, ChevronRight, HandCoins, Settings, Tags, Target, type LucideIcon } from "lucide-react";
+import { Banknote, CalendarDays, ChartNoAxesCombined, ChevronRight, HandCoins, Settings, Tags, Target, type LucideIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 
 const GROUPS: { href: string; label: string; hint: string; icon: LucideIcon; tint: string }[][] = [
   [
     { href: "/daret", label: "Daret", hint: "Tes darets et ton tour", icon: HandCoins, tint: "from-teal-400 to-emerald-600" },
     { href: "/goals", label: "Objectifs", hint: "Voiture, maison, voyage…", icon: Target, tint: "from-amber-400 to-orange-500" },
+    { href: "/calendar", label: "Calendrier", hint: "Ce qui est entré et sorti, jour par jour", icon: CalendarDays, tint: "from-rose-400 to-pink-600" },
     {
       href: "/stats",
       label: "Statistiques",
