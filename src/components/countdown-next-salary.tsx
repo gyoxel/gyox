@@ -219,6 +219,28 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
     });
   }
 
+  /** Undo the last "salaire reçu" (a wrong tap): that salary is asked again. */
+  function undoReceived() {
+    if (!salaryReceivedMonth) return;
+    const [y, m] = salaryReceivedMonth.split("-").map(Number);
+    const previous = periodKey(new Date(y, m - 2, 1));
+    startSaving(async () => {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ salaryReceivedMonth: previous }),
+      });
+      if (!res.ok) {
+        toast.error("Impossible d'annuler.");
+        return;
+      }
+      writeLate(null);
+      setEditing(false);
+      toast.success(`Annulé : salaire ${ofMonth(salaryReceivedMonth)} pas encore reçu.`);
+      await refreshData();
+    });
+  }
+
   // The next salary not received yet: an advance comes off that one.
   const advancePeriod = state.phase === "counting" ? state.nextPeriod : state.period;
   const periodAdvances = advances.filter((a) => a.period === advancePeriod);
@@ -337,6 +359,16 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
               label={late ? `Oui, j'ai reçu mon salaire ${ofMonth(state.period)}` : "Oui, j'ai reçu mon salaire"}
               note="Possible une fois le jour du salaire passé, si tu as répondu « Non » à « As-tu reçu ton salaire ? »."
             />
+            {state.phase === "counting" && salaryReceivedMonth && salaryReceivedMonth >= state.period && (
+              <button
+                type="button"
+                onClick={undoReceived}
+                disabled={saving}
+                className="self-center text-xs font-medium text-slate-500 underline underline-offset-2 dark:text-slate-400"
+              >
+                Annuler « salaire {ofMonth(salaryReceivedMonth)} reçu »
+              </button>
+            )}
 
             {/* Advance on the next salary not received yet */}
             <div className="flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50/70 p-3 dark:border-amber-900/60 dark:bg-amber-950/30">
