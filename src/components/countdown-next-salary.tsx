@@ -185,15 +185,134 @@ function todayStr(): string {
   return `${periodKey(d)}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export function CountdownNextSalary({ settings, advances }: { settings: Settings; advances: SalaryAdvance[] }) {
+/** Records the salary of `period` ("YYYY-MM") as received. */
+async function markReceived(period: string): Promise<boolean> {
+  const res = await fetch("/api/settings", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ salaryReceivedMonth: period }),
+  });
+  if (!res.ok) {
+    toast.error("Impossible d'enregistrer.");
+    return false;
+  }
+  writeLate(null);
+  return true;
+}
+
+function useSalaryState(settings: Settings) {
   const { payDay, salaryReceivedMonth } = settings;
-  const [advanceInput, setAdvanceInput] = useState("");
-  const [advanceOpen, setAdvanceOpen] = useState(false);
-  const [toDelete, setToDelete] = useState<SalaryAdvance | null>(null);
+  return useSyncExternalStore(subscribe, () => getSnapshotFor(payDay, salaryReceivedMonth), getServerSnapshot);
+}
+
+export function CountdownNextSalary({ settings, advances }: { settings: Settings; advances: SalaryAdvance[] }) {
   const refreshData = useRefreshData();
   const [editing, setEditing] = useState(false);
   const [saving, startSaving] = useTransition();
-  const state = useSyncExternalStore(subscribe, () => getSnapshotFor(payDay, salaryReceivedMonth), getServerSnapshot);
+  const state = useSalaryState(settings);
+  const late = state.phase === "late";
+
+  function confirmReceived() {
+    startSaving(async () => {
+      if (!(await markReceived(state.period))) return;
+      toast.success("Salaire reçu ✅ Le compte à rebours repart pour le mois prochain.");
+      await refreshData();
+    });
+  }
+
+  const capitalize = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+  const caption = state.period ? (late ? `prévu le ${state.lastLabel}` : capitalize(state.nextLabel)) : "";
+
+  const shell =
+    "rounded-2xl border border-white/50 bg-white/30 p-4 shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-white/5";
+
+  return (
+    <>
+      {state.phase === "ask" ? (
+        <div className={cn(shell, "flex flex-col items-center gap-3 text-center")}>
+          <p className="text-2xl">💰</p>
+          <p className="text-base font-semibold text-slate-900 dark:text-white">
+            As-tu reçu ton salaire {ofMonth(state.period)} ?
+          </p>
+          <div className="grid w-full grid-cols-2 gap-2">
+            <Button type="button" variant="outline" onClick={() => writeLate(state.period)} disabled={saving}>
+              <X className="h-4 w-4" />
+              Non, pas encore
+            </Button>
+            <Button
+              type="button"
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+              onClick={confirmReceived}
+              disabled={saving}
+            >
+              <Check className="h-4 w-4" />
+              Oui
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          aria-label={late ? "Confirmer le salaire" : "Modifier le salaire"}
+          className={cn(shell, "text-left transition-transform active:scale-[0.98]")}
+        >
+          {/* One small line on top: "SALAIRE · Dimanche 1 novembre" */}
+          <p
+            className={cn(
+              "mb-2 h-4 text-center text-[11px]",
+              late ? "text-rose-600 dark:text-rose-400" : "text-slate-500 dark:text-slate-400",
+            )}
+          >
+            <span className="font-semibold uppercase tracking-wide">
+              {late ? `Salaire ${ofMonth(state.period)} en retard` : "Salaire"}
+            </span>
+            {caption && <span>&nbsp;·&nbsp;{caption}</span>}
+          </p>
+          <div className="grid grid-cols-4 gap-2">
+            <Unit value={state.days} label="jours" late={late} />
+            <Unit value={state.hours} label="heures" late={late} />
+            <Unit value={state.minutes} label="min" late={late} />
+            <Unit value={state.seconds} label="sec" late={late} />
+          </div>
+        </button>
+      )}
+
+      <Dialog open={editing} onOpenChange={setEditing}>
+        {/* No autofocus: the keyboard opens only when a field is tapped. */}
+        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="max-h-[88dvh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Salaire</DialogTitle>
+          </DialogHeader>
+          <SalaryPanel settings={settings} advances={advances} onDone={() => setEditing(false)} />
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+/**
+ * Everything about the salary (the countdown's dialog and Menu → Salaire):
+ * paid early / paid now (green when they apply, grey otherwise), undo,
+ * advances on the salary, and the amount / pay day form.
+ */
+export function SalaryPanel({
+  settings,
+  advances,
+  onDone,
+}: {
+  settings: Settings;
+  advances: SalaryAdvance[];
+  /** Called after an action that should close the dialog. */
+  onDone?: () => void;
+}) {
+  const { payDay, salaryReceivedMonth } = settings;
+  const refreshData = useRefreshData();
+  const [advanceInput, setAdvanceInput] = useState("");
+  const [advanceOpen, setAdvanceOpen] = useState(false);
+  const [toDelete, setToDelete] = useState<SalaryAdvance | null>(null);
+  const [saving, startSaving] = useTransition();
+  const state = useSalaryState(settings);
   const late = state.phase === "late";
 
   // In the last week before the pay day, the salary can be marked paid early.
@@ -201,17 +320,8 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
 
   function confirmReceived(period: string, early = false) {
     startSaving(async () => {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ salaryReceivedMonth: period }),
-      });
-      if (!res.ok) {
-        toast.error("Impossible d'enregistrer.");
-        return;
-      }
-      writeLate(null);
-      setEditing(false);
+      if (!(await markReceived(period))) return;
+      onDone?.();
       toast.success(
         early ? "Salaire reçu en avance ✅" : "Salaire reçu ✅ Le compte à rebours repart pour le mois prochain.",
       );
@@ -235,7 +345,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
         return;
       }
       writeLate(null);
-      setEditing(false);
+      onDone?.();
       toast.success(`Annulé : salaire ${ofMonth(salaryReceivedMonth)} pas encore reçu.`);
       await refreshData();
     });
@@ -280,164 +390,99 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
     });
   }
 
-  const capitalize = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
-  const caption = state.period ? (late ? `prévu le ${state.lastLabel}` : capitalize(state.nextLabel)) : "";
-
-  const shell =
-    "rounded-2xl border border-white/50 bg-white/30 p-4 shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-white/5";
-
   return (
     <>
-      {state.phase === "ask" ? (
-        <div className={cn(shell, "flex flex-col items-center gap-3 text-center")}>
-          <p className="text-2xl">💰</p>
-          <p className="text-base font-semibold text-slate-900 dark:text-white">
-            As-tu reçu ton salaire {ofMonth(state.period)} ?
-          </p>
-          <div className="grid w-full grid-cols-2 gap-2">
-            <Button type="button" variant="outline" onClick={() => writeLate(state.period)} disabled={saving}>
-              <X className="h-4 w-4" />
-              Non, pas encore
-            </Button>
+      <div className="mb-4 flex flex-col gap-3">
+        <ActionButton
+          enabled={canPayEarly}
+          pending={saving}
+          onClick={() => confirmReceived(state.nextPeriod, true)}
+          label={canPayEarly ? `J'ai reçu mon salaire ${ofMonth(state.nextPeriod)} en avance` : "J'ai reçu mon salaire en avance"}
+          note="Possible pendant les 7 jours avant le jour du salaire."
+        />
+        <ActionButton
+          enabled={late}
+          pending={saving}
+          onClick={() => confirmReceived(state.period)}
+          label={late ? `Oui, j'ai reçu mon salaire ${ofMonth(state.period)}` : "Oui, j'ai reçu mon salaire"}
+          note="Possible une fois le jour du salaire passé, si tu as répondu « Non » à « As-tu reçu ton salaire ? »."
+        />
+        {state.phase === "counting" && salaryReceivedMonth && salaryReceivedMonth >= state.period && (
+          <button
+            type="button"
+            onClick={undoReceived}
+            disabled={saving}
+            className="self-center text-xs font-medium text-slate-500 underline underline-offset-2 dark:text-slate-400"
+          >
+            Annuler « salaire {ofMonth(salaryReceivedMonth)} reçu »
+          </button>
+        )}
+
+        {/* Advance on the next salary not received yet */}
+        <div className="flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50/70 p-3 dark:border-amber-900/60 dark:bg-amber-950/30">
+          {advanceOpen ? (
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                placeholder="Montant (DH)"
+                aria-label="Montant de l'avance"
+                value={advanceInput}
+                onChange={(e) => setAdvanceInput(cleanDecimalInput(e.target.value))}
+              />
+              <Button
+                type="button"
+                className="shrink-0 bg-amber-500 text-white hover:bg-amber-600"
+                onClick={addAdvance}
+                disabled={saving || !(parseDecimalInput(advanceInput) > 0)}
+              >
+                <Check className="h-4 w-4" />
+                Ajouter
+              </Button>
+            </div>
+          ) : (
             <Button
               type="button"
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
-              onClick={() => confirmReceived(state.period)}
-              disabled={saving}
+              className="w-full bg-amber-500 text-white hover:bg-amber-600"
+              onClick={() => setAdvanceOpen(true)}
+              disabled={!advancePeriod}
             >
-              <Check className="h-4 w-4" />
-              Oui
+              <HandCoins className="h-4 w-4" />
+              Avance sur salaire
             </Button>
-          </div>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          aria-label={late ? "Confirmer le salaire" : "Modifier le salaire"}
-          className={cn(shell, "text-left transition-transform active:scale-[0.98]")}
-        >
-          {/* One small line on top: "SALAIRE · Dimanche 1 novembre" */}
-          <p
-            className={cn(
-              "mb-2 h-4 text-center text-[11px]",
-              late ? "text-rose-600 dark:text-rose-400" : "text-slate-500 dark:text-slate-400",
-            )}
-          >
-            <span className="font-semibold uppercase tracking-wide">
-              {late ? `Salaire ${ofMonth(state.period)} en retard` : "Salaire"}
-            </span>
-            {caption && <span>&nbsp;·&nbsp;{caption}</span>}
+          )}
+          <p className="text-[11px] leading-snug text-amber-800/80 dark:text-amber-200/70">
+            * Ajoutée au solde maintenant, puis déduite de ton salaire{" "}
+            {advancePeriod ? ofMonth(advancePeriod) : ""}.
           </p>
-          <div className="grid grid-cols-4 gap-2">
-            <Unit value={state.days} label="jours" late={late} />
-            <Unit value={state.hours} label="heures" late={late} />
-            <Unit value={state.minutes} label="min" late={late} />
-            <Unit value={state.seconds} label="sec" late={late} />
-          </div>
-        </button>
-      )}
-
-      <Dialog open={editing} onOpenChange={setEditing}>
-        {/* No autofocus: the keyboard opens only when a field is tapped. */}
-        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="max-h-[88dvh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Salaire</DialogTitle>
-          </DialogHeader>
-          <div className="mb-4 flex flex-col gap-3">
-            <ActionButton
-              enabled={canPayEarly}
-              pending={saving}
-              onClick={() => confirmReceived(state.nextPeriod, true)}
-              label={canPayEarly ? `J'ai reçu mon salaire ${ofMonth(state.nextPeriod)} en avance` : "J'ai reçu mon salaire en avance"}
-              note="Possible pendant les 7 jours avant le jour du salaire."
-            />
-            <ActionButton
-              enabled={late}
-              pending={saving}
-              onClick={() => confirmReceived(state.period)}
-              label={late ? `Oui, j'ai reçu mon salaire ${ofMonth(state.period)}` : "Oui, j'ai reçu mon salaire"}
-              note="Possible une fois le jour du salaire passé, si tu as répondu « Non » à « As-tu reçu ton salaire ? »."
-            />
-            {state.phase === "counting" && salaryReceivedMonth && salaryReceivedMonth >= state.period && (
-              <button
-                type="button"
-                onClick={undoReceived}
-                disabled={saving}
-                className="self-center text-xs font-medium text-slate-500 underline underline-offset-2 dark:text-slate-400"
-              >
-                Annuler « salaire {ofMonth(salaryReceivedMonth)} reçu »
-              </button>
-            )}
-
-            {/* Advance on the next salary not received yet */}
-            <div className="flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50/70 p-3 dark:border-amber-900/60 dark:bg-amber-950/30">
-              {advanceOpen ? (
-                <div className="flex gap-2">
-                  <Input
-                    type="text"
-                    inputMode="decimal"
-                    autoComplete="off"
-                    placeholder="Montant (DH)"
-                    aria-label="Montant de l'avance"
-                    value={advanceInput}
-                    onChange={(e) => setAdvanceInput(cleanDecimalInput(e.target.value))}
-                  />
-                  <Button
+          {periodAdvances.length > 0 && (
+            <ul className="flex flex-col gap-1 border-t border-amber-200/70 pt-2 text-sm dark:border-amber-900/60">
+              {periodAdvances.map((a) => (
+                <li key={a.id} className="flex items-center gap-2">
+                  <span className="flex-1 text-slate-700 dark:text-slate-200">
+                    {money(a.amount)}
+                    <span className="ml-1.5 text-[11px] text-slate-400">le {a.date.slice(8, 10)}/{a.date.slice(5, 7)}</span>
+                  </span>
+                  <button
                     type="button"
-                    className="shrink-0 bg-amber-500 text-white hover:bg-amber-600"
-                    onClick={addAdvance}
-                    disabled={saving || !(parseDecimalInput(advanceInput) > 0)}
+                    onClick={() => setToDelete(a)}
+                    aria-label="Supprimer l'avance"
+                    className="rounded-lg p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40"
                   >
-                    <Check className="h-4 w-4" />
-                    Ajouter
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  type="button"
-                  className="w-full bg-amber-500 text-white hover:bg-amber-600"
-                  onClick={() => setAdvanceOpen(true)}
-                  disabled={!advancePeriod}
-                >
-                  <HandCoins className="h-4 w-4" />
-                  Avance sur salaire
-                </Button>
-              )}
-              <p className="text-[11px] leading-snug text-amber-800/80 dark:text-amber-200/70">
-                * Ajoutée au solde maintenant, puis déduite de ton salaire{" "}
-                {advancePeriod ? ofMonth(advancePeriod) : ""}.
-              </p>
-              {periodAdvances.length > 0 && (
-                <ul className="flex flex-col gap-1 border-t border-amber-200/70 pt-2 text-sm dark:border-amber-900/60">
-                  {periodAdvances.map((a) => (
-                    <li key={a.id} className="flex items-center gap-2">
-                      <span className="flex-1 text-slate-700 dark:text-slate-200">
-                        {money(a.amount)}
-                        <span className="ml-1.5 text-[11px] text-slate-400">le {a.date.slice(8, 10)}/{a.date.slice(5, 7)}</span>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setToDelete(a)}
-                        aria-label="Supprimer l'avance"
-                        className="rounded-lg p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </li>
-                  ))}
-                  <li className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Salaire {ofMonth(advancePeriod)} restant :{" "}
-                    <b className="text-slate-700 dark:text-slate-200">{money(Math.max(0, settings.salary - advancedTotal))}</b>
-                  </li>
-                </ul>
-              )}
-            </div>
-          </div>
-          <SalaryForm key={`${settings.salary}-${payDay}`} settings={settings} plain onSaved={() => setEditing(false)} />
-        </DialogContent>
-      </Dialog>
-
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </li>
+              ))}
+              <li className="text-[11px] text-slate-500 dark:text-slate-400">
+                Salaire {ofMonth(advancePeriod)} restant :{" "}
+                <b className="text-slate-700 dark:text-slate-200">{money(Math.max(0, settings.salary - advancedTotal))}</b>
+              </li>
+            </ul>
+          )}
+        </div>
+      </div>
+      <SalaryForm key={`${settings.salary}-${payDay}`} settings={settings} plain onSaved={onDone} />
       <ConfirmDialog
         open={toDelete != null}
         onOpenChange={(open) => !open && setToDelete(null)}
