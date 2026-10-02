@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { prisma } from "./prisma";
-import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote } from "./types";
+import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote, SalaryAdvance } from "./types";
 
 function mapExpense(row: {
   id: string;
@@ -167,6 +167,7 @@ export interface BackupData {
   goalDeposits?: GoalDeposit[];
   goalIdeas?: GoalIdea[];
   dayNotes?: DayNote[];
+  salaryAdvances?: SalaryAdvance[];
 }
 
 export async function exportData(): Promise<BackupData> {
@@ -182,6 +183,7 @@ export async function exportData(): Promise<BackupData> {
     goalDeposits: goals.flatMap((g) => g.deposits),
     goalIdeas: await getAllGoalIdeas(),
     dayNotes: await getAllDayNotes(),
+    salaryAdvances: await getAllSalaryAdvances(),
   };
 }
 
@@ -234,6 +236,9 @@ export async function importData(data: BackupData): Promise<void> {
       : []),
     ...(data.goalIdeas ? [prisma.goalIdea.deleteMany({}), prisma.goalIdea.createMany({ data: data.goalIdeas })] : []),
     ...(data.dayNotes ? [prisma.dayNote.deleteMany({}), prisma.dayNote.createMany({ data: data.dayNotes })] : []),
+    ...(data.salaryAdvances
+      ? [prisma.salaryAdvance.deleteMany({}), prisma.salaryAdvance.createMany({ data: data.salaryAdvances })]
+      : []),
     prisma.settings.update({ where: { id: 1 }, data: data.settings }),
   ]);
 }
@@ -565,4 +570,17 @@ export async function setDayNote(date: string, text: string): Promise<DayNote | 
   }
   const updatedAt = new Date().toISOString();
   return prisma.dayNote.upsert({ where: { date }, create: { date, text: clean, updatedAt }, update: { text: clean, updatedAt } });
+}
+
+export async function getAllSalaryAdvances(): Promise<SalaryAdvance[]> {
+  return prisma.salaryAdvance.findMany({ orderBy: { date: "asc" } });
+}
+
+export async function createSalaryAdvance(input: { amount: number; date: string; period: string }): Promise<SalaryAdvance> {
+  return prisma.salaryAdvance.create({ data: { id: randomUUID(), ...input, createdAt: new Date().toISOString() } });
+}
+
+export async function deleteSalaryAdvance(id: string): Promise<boolean> {
+  const { count } = await prisma.salaryAdvance.deleteMany({ where: { id } });
+  return count > 0;
 }

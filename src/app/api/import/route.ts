@@ -69,6 +69,17 @@ const backupSchema = z.object({
   dayNotes: z
     .array(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), text: z.string().min(1), updatedAt: z.string() }))
     .optional(),
+  salaryAdvances: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        amount: z.number().positive(),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        period: z.string().regex(/^\d{4}-\d{2}$/),
+        createdAt: z.string(),
+      }),
+    )
+    .optional(),
 });
 
 export async function POST(req: NextRequest) {

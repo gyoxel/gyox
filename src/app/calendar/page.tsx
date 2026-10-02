@@ -1,4 +1,14 @@
-import { getAllCategories, getAllDarets, getAllDayNotes, getAllExpenses, getAllGoals, getAllPayments, getSettings } from "@/lib/repository";
+import {
+  getAllCategories,
+  getAllDarets,
+  getAllDayNotes,
+  getAllExpenses,
+  getAllGoals,
+  getAllPayments,
+  getAllSalaryAdvances,
+  getSettings,
+} from "@/lib/repository";
+import { advancesOn } from "@/lib/salary";
 import { addMonths, compareMonths, monthFromSearchParams, monthKey, monthLabelFr, todayMonth, type MonthId } from "@/lib/date";
 import { displayIcon } from "@/lib/category";
 import { getCreditRealState } from "@/lib/engine";
@@ -25,7 +35,7 @@ const dueDayOf = (startDate: string) => Number(startDate.slice(8, 10)) || 1;
  * daret payout, goal reached, deadlines, next salary) and a free note per day.
  */
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
-  const [sp, settings, expenses, payments, categories, goals, darets, dayNotes] = await Promise.all([
+  const [sp, settings, expenses, payments, categories, goals, darets, dayNotes, advances] = await Promise.all([
     searchParams,
     getSettings(),
     getAllExpenses(),
@@ -34,6 +44,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     getAllGoals(),
     getAllDarets(),
     getAllDayNotes(),
+    getAllSalaryAdvances(),
   ]);
   const current = todayMonth();
 
@@ -62,8 +73,31 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
   const payday = dayIn(month, settings.payDay);
   const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Casablanca" }).format(new Date());
-  if (settings.salary > 0 && payday <= todayStr) {
-    events.push({ id: `salary-${key}`, kind: "in", label: "Salaire", icon: "💰", amount: settings.salary, at: payday });
+  // The salary of this month, less what was taken from it in advance; each
+  // advance is money in on the day it was received.
+  const taken = advancesOn(advances, key);
+  const salaryHere = Math.max(0, settings.salary - taken);
+  if (salaryHere > 0 && payday <= todayStr) {
+    events.push({
+      id: `salary-${key}`,
+      kind: "in",
+      label: taken > 0 ? "Salaire (moins l'avance)" : "Salaire",
+      icon: "💰",
+      amount: salaryHere,
+      at: payday,
+    });
+  }
+  for (const a of advances) {
+    if (!a.date.startsWith(key)) continue;
+    const [y, m] = a.period.split("-").map(Number);
+    events.push({
+      id: a.id,
+      kind: "in",
+      label: `Avance sur salaire · ${monthLabelFr({ year: y, month: m })}`,
+      icon: "💵",
+      amount: a.amount,
+      at: a.date,
+    });
   }
 
   for (const g of goals) {
@@ -78,8 +112,14 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const same = (m: MonthId | null) => m != null && compareMonths(m, month) === 0;
   const infos: CalendarInfo[] = [];
 
-  if (settings.salary > 0 && payday > todayStr) {
-    infos.push({ id: `salary-${key}`, date: payday, icon: "💰", label: "Salaire prévu", detail: `+${money(settings.salary)}` });
+  if (salaryHere > 0 && payday > todayStr) {
+    infos.push({
+      id: `salary-${key}`,
+      date: payday,
+      icon: "💰",
+      label: "Salaire prévu",
+      detail: taken > 0 ? `+${money(salaryHere)} (avance de ${money(taken)} déduite)` : `+${money(salaryHere)}`,
+    });
   }
 
   for (const e of expenses) {

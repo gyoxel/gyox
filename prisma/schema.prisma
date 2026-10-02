@@ -181,3 +181,17 @@ model DayNote {
 
   @@map("day_notes")
 }
+
+/// Advance on salary: money received before the pay day. It adds to the
+/// month it's taken in, and comes off the salary of `period`.
+model SalaryAdvance {
+  id        String @id @default(uuid())
+  amount    Float
+  /// "YYYY-MM-DD" it was received.
+  date      String
+  /// "YYYY-MM" of the pay day whose salary it is deducted from.
+  period    String
+  createdAt String
+
+  @@map("salary_advances")
+}

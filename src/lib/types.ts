@@ -179,3 +179,13 @@ export interface DayNote {
   text: string;
   updatedAt: string;
 }
+
+/** Advance on salary: adds to the month it's taken in ("YYYY-MM-DD" date),
+ *  and comes off the salary of `period` ("YYYY-MM" of that pay day). */
+export interface SalaryAdvance {
+  id: string;
+  amount: number;
+  date: string;
+  period: string;
+  createdAt: string;
+}
