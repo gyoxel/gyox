@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSettings, updateSettings } from "@/lib/repository";
 import { settingsInputSchema } from "@/lib/validation";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   return NextResponse.json(await getSettings());
 }

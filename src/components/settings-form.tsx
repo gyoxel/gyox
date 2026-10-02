@@ -25,12 +25,25 @@ export function SettingsForm({ settings }: { settings: Settings }) {
   const [pendingImport, setPendingImport] = useState<File | null>(null);
 
   // The saved theme wins: bring this device in line if it differs (e.g. the
-  // theme was changed on another phone).
+  // theme was changed on another phone). Read fresh from the server — the
+  // page itself can come from the client cache, prefetched before the last
+  // change, and would otherwise put the old theme back.
   useEffect(() => {
-    try {
-      if (localStorage.getItem(THEME_STORAGE_KEY) !== settings.theme) applyTheme(settings.theme);
-    } catch {}
-  }, [settings.theme]);
+    let cancelled = false;
+    fetch("/api/settings", { cache: "no-store" })
+      .then((res) => (res.ok ? (res.json() as Promise<Settings>) : null))
+      .then((fresh) => {
+        if (cancelled || !fresh) return;
+        setTheme(fresh.theme);
+        try {
+          if (localStorage.getItem(THEME_STORAGE_KEY) !== fresh.theme) applyTheme(fresh.theme);
+        } catch {}
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function chooseTheme(choice: ThemeChoice) {
     const previous = theme;
@@ -45,7 +58,10 @@ export function SettingsForm({ settings }: { settings: Settings }) {
       setTheme(previous);
       applyTheme(previous);
       toast.error("Impossible d'enregistrer le thème.");
+      return;
     }
+    // Drop cached pages so none of them comes back with the old theme.
+    await refreshData();
   }
 
   async function handleImportFile(file: File) {
