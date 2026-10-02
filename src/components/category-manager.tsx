@@ -130,6 +130,12 @@ export function CategoryManager({
   const justDragged = useRef(false);
   const tileRefs = useRef(new Map<string, HTMLElement>());
   const gridRef = useRef<HTMLDivElement>(null);
+  const ghostRef = useRef<HTMLDivElement>(null);
+  // Latest list for the auto-scroll loop (which outlives a render).
+  const categoriesRef = useRef(categories);
+  useLayoutEffect(() => {
+    categoriesRef.current = categories;
+  }, [categories]);
   const prevRects = useRef<Map<string, DOMRect> | null>(null);
   const orderChanged = categories.map((c) => c.id).join() !== savedOrder.join();
 
@@ -174,6 +180,7 @@ export function CategoryManager({
       setDraggingId(id);
       setGhost({ x: p.lastX - p.offsetX, y: p.lastY - p.offsetY, w: p.w, h: p.h, dropping: false });
       navigator.vibrate?.(15);
+      requestAnimationFrame(autoScroll);
     }, 320);
     press.current = {
       id,
@@ -199,21 +206,55 @@ export function CategoryManager({
       if (Math.hypot(e.clientX - p.startX, e.clientY - p.startY) > 8) cancelPress();
       return;
     }
-    setGhost((g) => (g ? { ...g, x: e.clientX - p.offsetX, y: e.clientY - p.offsetY } : g));
+    dragAt(e.clientX, e.clientY);
+  }
+
+  /** The lifted tile follows the finger; the tile under it makes room. */
+  function dragAt(x: number, y: number) {
+    const p = press.current;
+    const id = dragging.current;
+    if (!p || !id) return;
+    // Moved straight in the DOM: re-rendering the whole grid on every
+    // finger move made the drag lag.
+    const ghostEl = ghostRef.current;
+    if (ghostEl) {
+      ghostEl.style.left = `${x - p.offsetX}px`;
+      ghostEl.style.top = `${y - p.offsetY}px`;
+    }
     // Hit-test against the tiles' layout slots, not where they're drawn: a
     // tile still sliding out of the way must not be swapped straight back
     // (that flip-flop made tiles jump back and forth). A small inner margin
     // keeps a hover on the edge between two tiles from swapping.
-    const overId = slotUnder(e.clientX, e.clientY);
-    if (!overId || overId === dragging.current) return;
-    const from = categories.findIndex((c) => c.id === dragging.current);
-    const to = categories.findIndex((c) => c.id === overId);
+    const overId = slotUnder(x, y);
+    if (!overId || overId === id) return;
+    const list = categoriesRef.current;
+    const from = list.findIndex((c) => c.id === id);
+    const to = list.findIndex((c) => c.id === overId);
     if (from < 0 || to < 0) return;
-    prevRects.current = new Map([...tileRefs.current].map(([id, el]) => [id, el.getBoundingClientRect()]));
-    const next = [...categories];
+    prevRects.current = new Map([...tileRefs.current].map(([tid, el]) => [tid, el.getBoundingClientRect()]));
+    const next = [...list];
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved);
+    categoriesRef.current = next;
     setCategories(next);
+  }
+
+  /** Holding the tile near the top or bottom of the screen scrolls the
+   *  page (faster the closer to the edge), so it can go anywhere. */
+  function autoScroll() {
+    const p = press.current;
+    if (!p || !dragging.current) return;
+    const top = 120; // under the header
+    const bottom = window.innerHeight - 150; // above the bottom bar
+    let speed = 0;
+    if (p.lastY < top) speed = -Math.min(18, 4 + (top - p.lastY) / 6);
+    else if (p.lastY > bottom) speed = Math.min(18, 4 + (p.lastY - bottom) / 6);
+    if (speed !== 0) {
+      const before = window.scrollY;
+      window.scrollBy(0, speed);
+      if (window.scrollY !== before) dragAt(p.lastX, p.lastY);
+    }
+    requestAnimationFrame(autoScroll);
   }
 
   function slotUnder(x: number, y: number): string | null {
@@ -324,6 +365,7 @@ export function CategoryManager({
       {/* The lifted tile, following the finger above the others */}
       {ghost && ghostCategory && (
         <div
+          ref={ghostRef}
           aria-hidden
           className={cn(
             "pointer-events-none fixed z-50 flex flex-col gap-2.5 rounded-2xl border border-white/60 bg-gradient-to-br p-3 shadow-2xl ring-2 ring-violet-500/70 dark:border-slate-700",
@@ -407,7 +449,7 @@ export function CategoryManager({
         </button>
       </div>
 
-      {orderChanged && (
+      {orderChanged && !draggingId && (
         <div className="sticky bottom-28 z-20 flex gap-2 rounded-2xl border border-violet-200 bg-white/95 p-2 shadow-lg backdrop-blur dark:border-violet-900 dark:bg-slate-900/95">
           <Button type="button" variant="outline" className="flex-1" onClick={resetOrder} disabled={busy}>
             <RotateCcw className="h-4 w-4" />
