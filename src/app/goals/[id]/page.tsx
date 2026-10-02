@@ -38,7 +38,7 @@ export default async function GoalDetailPage({ params }: { params: Promise<{ id:
     <>
       <PageHeader
         title={`${goal.emoji} ${goal.name}`}
-        backHref="/goals"
+        back
         action={
           <Button asChild size="sm" variant="outline">
             <Link href={`/goals/${goal.id}/edit`}>

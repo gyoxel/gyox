@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useNavBack } from "@/lib/nav-history";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ export function DeleteExpenseButton({ id, name }: { id: string; name: string }) 
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  const nav = useNavBack();
   const refreshData = useRefreshData();
 
   function handleDelete() {
@@ -31,7 +31,7 @@ export function DeleteExpenseButton({ id, name }: { id: string; name: string }) 
       }
       setOpen(false);
       await refreshData();
-      router.push("/");
+      nav.back();
     });
   }
 

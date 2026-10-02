@@ -27,7 +27,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
 
   return (
     <>
-      <PageHeader title={expense.name} backHref="/" action={<DeleteExpenseButton id={expense.id} name={expense.name} />} />
+      <PageHeader title={expense.name} back action={<DeleteExpenseButton id={expense.id} name={expense.name} />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         {expense.type === "credit" && (
           <CreditInfo expense={expense} payments={payments} currency={settings.currency} />

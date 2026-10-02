@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useNavBack } from "@/lib/nav-history";
 import { Check, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import type { Goal, GoalIdea } from "@/lib/types";
@@ -50,7 +50,7 @@ export function GoalForm({
   /** The user's own ideas, shown after the built-in ones. */
   ideas?: GoalIdea[];
 }) {
-  const router = useRouter();
+  const nav = useNavBack();
   const refreshData = useRefreshData();
   const [emoji, setEmoji] = useState(goal?.emoji ?? "🎯");
   const [name, setName] = useState(goal?.name ?? "");
@@ -131,7 +131,7 @@ export function GoalForm({
       }
       await refreshData();
       toast.success(goal ? "Objectif modifié." : "Objectif ajouté.");
-      router.push(goal ? `/goals/${goal.id}` : "/goals");
+      nav.back(goal ? `/goals/${goal.id}` : "/goals");
     });
   }
 
@@ -145,7 +145,7 @@ export function GoalForm({
       }
       await refreshData();
       toast.success("Objectif supprimé.");
-      router.push("/goals");
+      nav.backTo("/goals");
     });
   }
 

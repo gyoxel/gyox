@@ -8,7 +8,7 @@ export default async function CategoriesPage() {
   const categories = await getAllCategories();
   return (
     <>
-      <PageHeader title="Catégories" backHref="/menu" />
+      <PageHeader title="Catégories" back />
       <main className="flex flex-col gap-5 px-4 py-5">
         <CategoryManager categories={categories} />
       </main>

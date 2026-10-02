@@ -9,7 +9,7 @@ export default async function NewExpensePage({ searchParams }: { searchParams: P
   const isCredit = type === "credit";
   return (
     <>
-      <PageHeader title={isCredit ? "Ajouter un crédit" : "Ajouter une dépense"} backHref="/" />
+      <PageHeader title={isCredit ? "Ajouter un crédit" : "Ajouter une dépense"} back />
       <main className="px-4 py-5">
         {/* key: switching between the two presets remounts with fresh defaults */}
         <ExpenseEditor key={isCredit ? "credit" : "expense"} categories={categories} preset={isCredit ? "credit" : undefined} />

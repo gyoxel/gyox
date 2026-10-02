@@ -25,7 +25,7 @@ export default async function DaretPage() {
     <>
       <PageHeader
         title="Daret"
-        backHref="/menu"
+        back
         action={
           <Button asChild size="sm">
             <Link href="/daret/new">

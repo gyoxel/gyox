@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { Check, Clock } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useNavBack } from "@/lib/nav-history";
 import { toast } from "sonner";
 import type { Category, Expense, ExpenseType, Frequency } from "@/lib/types";
 import { addMonths, monthKey, monthLabelFr, monthOfDateStr, todayDateStr } from "@/lib/date";
@@ -62,7 +62,7 @@ export function ExpenseEditor({
   paymentStatus?: PaymentStatusInit | null;
 }) {
   const isEdit = expense != null;
-  const router = useRouter();
+  const nav = useNavBack();
   const refreshData = useRefreshData();
   const [categories, setCategories] = useState(initialCategories);
 
@@ -195,7 +195,7 @@ export function ExpenseEditor({
 
         await refreshData();
         toast.success("Modifications enregistrées.");
-        router.back();
+        nav.back();
         return;
       }
 
@@ -228,7 +228,7 @@ export function ExpenseEditor({
 
       await refreshData();
       toast.success(isCredit ? "Crédit ajouté." : "Dépense ajoutée.");
-      router.push("/");
+      nav.back();
     });
   }
 
@@ -381,7 +381,7 @@ export function ExpenseEditor({
       {error && <p className="text-sm text-rose-600">{error}</p>}
 
       <div className="flex gap-2">
-        <Button type="button" variant="outline" className="flex-1" onClick={() => router.back()}>
+        <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back()}>
           Annuler
         </Button>
         <Button type="submit" className="flex-1" disabled={isPending}>

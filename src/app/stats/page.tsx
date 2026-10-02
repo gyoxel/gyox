@@ -73,7 +73,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <PageHeader title="Statistiques et prévisions" backHref="/" />
+      <PageHeader title="Statistiques et prévisions" back />
       <main className="flex flex-col gap-5 px-4 py-5">
         <Card>
           <CardContent className="pt-4">
@@ -128,6 +128,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
                 <Link
                   key={s.monthKey}
                   href={`/stats?month=${s.monthKey}`}
+                  replace
                   className="flex items-center justify-between py-2.5 text-sm first:pt-1 last:pb-1"
                 >
                   <span

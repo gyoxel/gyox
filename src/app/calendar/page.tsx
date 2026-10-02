@@ -76,7 +76,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageHeader title="Calendrier" backHref="/menu" />
+      <PageHeader title="Calendrier" back />
       <main className="px-4 py-5">
         <CalendarView
           key={key}

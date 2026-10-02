@@ -8,7 +8,7 @@ export default async function SalaryPage() {
   const settings = await getSettings();
   return (
     <>
-      <PageHeader title="Salaire" backHref="/menu" />
+      <PageHeader title="Salaire" back />
       <main className="flex flex-col gap-5 px-4 py-5">
         <SalaryForm settings={settings} />
       </main>

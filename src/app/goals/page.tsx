@@ -27,7 +27,7 @@ export default async function GoalsPage() {
     <>
       <PageHeader
         title="Objectifs"
-        backHref="/menu"
+        back
         action={
           <Button asChild size="sm">
             <Link href="/goals/new">

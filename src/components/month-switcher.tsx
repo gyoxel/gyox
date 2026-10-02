@@ -34,7 +34,7 @@ export function MonthSwitcher({ month, basePath = "/" }: { month: MonthId; baseP
     const delta = e.changedTouches[0].clientX - touchStartX.current;
     touchStartX.current = null;
     if (Math.abs(delta) < SWIPE_THRESHOLD_PX) return;
-    router.push(delta > 0 ? prevHref : nextHref);
+    router.replace(delta > 0 ? prevHref : nextHref, { scroll: false });
   }
 
   return (
@@ -44,13 +44,13 @@ export function MonthSwitcher({ month, basePath = "/" }: { month: MonthId; baseP
       onTouchEnd={onTouchEnd}
     >
       <Button asChild variant="outline" size="icon">
-        <Link href={prevHref} prefetch scroll={false} aria-label="Mois précédent">
+        <Link href={prevHref} prefetch replace scroll={false} aria-label="Mois précédent">
           <ChevronLeft className="h-4 w-4" />
         </Link>
       </Button>
       <div className="text-lg font-semibold text-slate-900 dark:text-white">{monthLabelFr(month)}</div>
       <Button asChild variant="outline" size="icon">
-        <Link href={nextHref} prefetch scroll={false} aria-label="Mois suivant">
+        <Link href={nextHref} prefetch replace scroll={false} aria-label="Mois suivant">
           <ChevronRight className="h-4 w-4" />
         </Link>
       </Button>

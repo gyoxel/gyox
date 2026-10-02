@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useNavBack } from "@/lib/nav-history";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import { addMonths, monthKey, monthLabelFr, parseMonthKey, todayMonth } from "@/lib/date";
 import { cleanDecimalInput, formatMoney, parseDecimalInput } from "@/lib/utils";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 
 export function DaretForm({ currency }: { currency: string }) {
-  const router = useRouter();
+  const nav = useNavBack();
   const refreshData = useRefreshData();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
@@ -59,7 +59,7 @@ export function DaretForm({ currency }: { currency: string }) {
         return;
       }
       await refreshData();
-      router.push("/daret");
+      nav.back("/daret");
     });
   }
 
@@ -137,7 +137,7 @@ export function DaretForm({ currency }: { currency: string }) {
       {error && <p className="text-sm text-rose-600">{error}</p>}
 
       <div className="mt-2 flex gap-2">
-        <Button type="button" variant="outline" className="flex-1" onClick={() => router.back()}>
+        <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back("/daret")}>
           Annuler
         </Button>
         <Button type="submit" className="flex-1" disabled={isPending || turnOptions.length === 0}>

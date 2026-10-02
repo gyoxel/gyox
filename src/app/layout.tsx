@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { BottomNav } from "@/components/bottom-nav";
+import { NavHistoryTracker } from "@/lib/nav-history";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         <div className="mx-auto flex w-full max-w-lg flex-1 flex-col pb-28">{children}</div>
         <BottomNav />
+        <NavHistoryTracker />
         <Toaster position="top-center" richColors />
         <ServiceWorkerRegister />
       </body>

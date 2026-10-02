@@ -202,7 +202,7 @@ function NavArrow({ href, label, children }: { href: string | null; label: strin
   const className =
     "flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200";
   return href ? (
-    <Link href={href} prefetch aria-label={label} className={className}>
+    <Link href={href} prefetch replace scroll={false} aria-label={label} className={className}>
       {children}
     </Link>
   ) : (

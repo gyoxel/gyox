@@ -8,7 +8,7 @@ export default async function SettingsPage() {
   const settings = await getSettings();
   return (
     <>
-      <PageHeader title="Paramètres" backHref="/menu" hideSettings />
+      <PageHeader title="Paramètres" back hideSettings />
       <main className="flex flex-col gap-5 px-4 py-5">
         <SettingsForm settings={settings} />
       </main>

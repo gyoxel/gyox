@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useNavBack } from "@/lib/nav-history";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRefreshData } from "@/lib/use-refresh-data";
@@ -10,7 +10,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 
 /** Bottom of a goal's detail page: delete it, after confirmation. */
 export function DeleteGoalButton({ id, label }: { id: string; label: string }) {
-  const router = useRouter();
+  const nav = useNavBack();
   const refreshData = useRefreshData();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -25,7 +25,7 @@ export function DeleteGoalButton({ id, label }: { id: string; label: string }) {
       setOpen(false);
       await refreshData();
       toast.success("Objectif supprimé.");
-      router.push("/goals");
+      nav.backTo("/goals");
     });
   }
 
