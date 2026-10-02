@@ -15,8 +15,34 @@ const SLIDE_MS = 200;
 const TITLES: Record<string, string> = { "/": "GX Salaire", "/budget": "Dépenses", "/credits": "Crédits", "/menu": "Menu" };
 
 /** Last seen look of each tab (its page's HTML), shown next to the current
- *  page while swiping so the neighbour is already there — no blank. */
+ *  page while swiping so the neighbour is already there — no blank. Kept in
+ *  localStorage too, so even the first swipe after a reload has them. */
+const STORE_KEY = "gx-tab-snapshots";
 const snapshots = new Map<string, string>();
+/** Tabs snapshotted since this load (the stored ones may be older). */
+const fresh = new Set<string>();
+let restored = false;
+
+function restoreSnapshots() {
+  if (restored) return;
+  restored = true;
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY) ?? "{}") as Record<string, unknown>;
+    for (const t of TABS) if (typeof saved[t] === "string" && !snapshots.has(t)) snapshots.set(t, saved[t] as string);
+  } catch {
+    // nothing saved or storage blocked: the tabs get snapshotted as they load
+  }
+}
+
+function saveSnapshot(path: string, html: string) {
+  snapshots.set(path, html);
+  fresh.add(path);
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(Object.fromEntries(snapshots)));
+  } catch {
+    // storage full or blocked: kept for this visit only
+  }
+}
 
 function validSnapshot(root: Element | null | undefined, path: string): string | null {
   // (no `instanceof Element`: an element from a preload frame belongs to
@@ -30,7 +56,7 @@ function validSnapshot(root: Element | null | undefined, path: string): string |
 function snapshotCurrent(path: string) {
   if (!TABS.includes(path) || window.location.pathname !== path) return;
   const html = validSnapshot(document.getElementById(PAGE_ID), path);
-  if (html) snapshots.set(path, html);
+  if (html) saveSnapshot(path, html);
 }
 
 /** Stand-in while a tab has no snapshot yet: its header and a skeleton. */
@@ -39,12 +65,16 @@ function placeholder(path: string): string {
   return `<div class="sticky top-0 z-30 flex items-center border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-950"><h1 class="text-base font-semibold text-slate-900 dark:text-white">${TITLES[path] ?? ""}</h1></div><div class="flex flex-col gap-4 px-4 py-5">${block("h-28")}${block("h-20")}${block("h-14")}${block("h-14")}${block("h-14")}</div>`;
 }
 
-/** Loads the tabs never seen yet in a hidden frame, once, to snapshot them. */
+/** Loads the other tabs in a hidden frame, once per visit, to snapshot them
+ *  (fresh data); the current tab's neighbours first. */
 let preloading = false;
 function preloadSnapshots() {
   if (preloading || window.self !== window.top) return;
   preloading = true;
-  const missing = TABS.filter((t) => !snapshots.has(t) && t !== window.location.pathname);
+  const here = TABS.indexOf(window.location.pathname);
+  const missing = TABS.filter((t) => !fresh.has(t) && t !== window.location.pathname).sort(
+    (a, b) => Math.abs(TABS.indexOf(a) - here) - Math.abs(TABS.indexOf(b) - here),
+  );
   const next = () => {
     const path = missing.shift();
     if (!path) return;
@@ -63,15 +93,16 @@ function preloadSnapshots() {
         // not readable: that tab simply keeps its placeholder
       }
       if (html || Date.now() - startedAt > 10000) {
-        if (html && !snapshots.has(path)) snapshots.set(path, html);
+        if (html && !fresh.has(path)) saveSnapshot(path, html);
         frame.remove();
         next();
         return;
       }
-      setTimeout(poll, 300);
+      setTimeout(poll, 250);
     };
-    frame.onload = () => setTimeout(poll, 300);
     document.body.appendChild(frame);
+    // The page is streamed: no need to wait for the frame's load event.
+    setTimeout(poll, 250);
   };
   next();
 }
@@ -132,8 +163,9 @@ export function TabSwipe() {
   // Keep this tab's snapshot fresh, and fetch the others once.
   useEffect(() => {
     if (!TABS.includes(pathname)) return;
+    restoreSnapshots();
     const t1 = setTimeout(() => snapshotCurrent(pathname), 800);
-    const t2 = setTimeout(preloadSnapshots, 1200);
+    const t2 = setTimeout(preloadSnapshots, 400);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
