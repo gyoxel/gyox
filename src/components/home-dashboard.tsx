@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ChartNoAxesCombined, ChevronRight, HandCoins, Target } from "lucide-react";
+import { CalendarDays, ChartNoAxesCombined, ChevronRight, HandCoins, Target } from "lucide-react";
 import type { MonthId } from "@/lib/date";
 import { getPaidThisMonth } from "@/lib/engine";
 import type { Expense, Payment } from "@/lib/types";
@@ -66,21 +66,11 @@ export function HomeDashboard({
 
       {countdown}
 
-      <Link
-        href="/stats"
-        prefetch
-        className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-sky-400 to-blue-600 px-4 py-2.5 text-white shadow-sm transition-transform active:scale-[0.98]"
-      >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15">
-          <ChartNoAxesCombined className="h-4 w-4" />
-        </span>
-        <span className="flex-1 text-sm font-semibold">Statistiques et prévisions</span>
-        <ChevronRight className="h-5 w-5 opacity-80" />
-      </Link>
-
-      <div className="-mt-1.5 grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 gap-2.5">
         <ShortcutBanner href="/daret" label="Daret" icon={HandCoins} className="from-teal-400 to-emerald-600" />
         <ShortcutBanner href="/goals" label="Objectifs" icon={Target} className="from-amber-400 to-orange-500" />
+        <ShortcutBanner href="/stats" label="Statistiques" icon={ChartNoAxesCombined} className="from-sky-400 to-blue-600" />
+        <ShortcutBanner href="/calendar" label="Calendrier" icon={CalendarDays} className="from-rose-400 to-pink-600" />
       </div>
 
       <section className="flex flex-col gap-2.5">
@@ -100,7 +90,7 @@ export function HomeDashboard({
   );
 }
 
-/** Half-width banner under "Statistiques et prévisions" (Daret, Objectifs). */
+/** Half-width shortcut banner (Daret, Objectifs, Statistiques, Calendrier). */
 function ShortcutBanner({
   href,
   label,
@@ -117,15 +107,15 @@ function ShortcutBanner({
       href={href}
       prefetch
       className={cn(
-        "flex items-center gap-2.5 rounded-2xl bg-gradient-to-r px-3 py-2.5 text-white shadow-sm transition-transform active:scale-[0.98]",
+        "flex items-center gap-2 rounded-2xl bg-gradient-to-r px-2.5 py-2.5 text-white shadow-sm transition-transform active:scale-[0.98]",
         className,
       )}
     >
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/15">
         <Icon className="h-4 w-4" />
       </span>
-      <span className="flex-1 truncate text-sm font-semibold">{label}</span>
-      <ChevronRight className="h-4 w-4 opacity-80" />
+      <span className="min-w-0 flex-1 truncate text-sm font-semibold">{label}</span>
+      <ChevronRight className="-mr-1 h-4 w-4 shrink-0 opacity-70" />
     </Link>
   );
 }
