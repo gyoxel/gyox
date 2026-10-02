@@ -35,7 +35,7 @@ export default async function HomePage() {
           payments={payments}
           currentMonth={currentMonth}
           categoryEmoji={categoryEmoji}
-          countdown={<CountdownNextSalary payDay={settings.payDay} />}
+          countdown={<CountdownNextSalary settings={settings} />}
         />
       </main>
     </>

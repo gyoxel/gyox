@@ -101,6 +101,8 @@ model Settings {
   theme         String @default("system")
   /// Day of the month the salary arrives (1-31; clamped to short months).
   payDay        Int    @default(1)
+  /// "HH:MM" the salary arrives on its pay day (the countdown's target).
+  payTime       String @default("00:00")
 
   @@map("settings")
 }

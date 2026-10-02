@@ -54,6 +54,8 @@ export interface Settings {
   theme: "light" | "dark" | "system";
   /** Day of the month the salary arrives (1-31). */
   payDay: number;
+  /** "HH:MM" the salary arrives on the pay day. */
+  payTime: string;
 }
 
 export interface MonthlyOccurrence {

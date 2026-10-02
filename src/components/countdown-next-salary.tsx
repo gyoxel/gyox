@@ -1,6 +1,9 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
+import type { Settings } from "@/lib/types";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { SalaryForm } from "@/components/salary-form";
 
 interface Remaining {
   days: number;
@@ -14,21 +17,22 @@ function subscribe(callback: () => void) {
   return () => clearInterval(id);
 }
 
-/** Next salary day at midnight: this month's pay day if still ahead, else
- *  next month's. A pay day past the end of a short month (e.g. 31 in
- *  February) falls on that month's last day. */
-function nextPayday(now: Date, payDay: number): Date {
+/** Next salary moment (pay day at pay time, "HH:MM"): this month's if still
+ *  ahead, else next month's. A pay day past the end of a short month (e.g. 31
+ *  in February) falls on that month's last day. */
+function nextPayday(now: Date, payDay: number, payTime: string): Date {
+  const [hour, minute] = payTime.split(":").map(Number);
   const at = (year: number, month: number) => {
     const lastDay = new Date(year, month + 1, 0).getDate();
-    return new Date(year, month, Math.min(payDay, lastDay), 0, 0, 0, 0);
+    return new Date(year, month, Math.min(payDay, lastDay), hour || 0, minute || 0, 0, 0);
   };
   const thisMonth = at(now.getFullYear(), now.getMonth());
   return now < thisMonth ? thisMonth : at(now.getFullYear(), now.getMonth() + 1);
 }
 
-function computeRemaining(payDay: number): Remaining {
+function computeRemaining(payDay: number, payTime: string): Remaining {
   const now = new Date();
-  const target = nextPayday(now, payDay);
+  const target = nextPayday(now, payDay, payTime);
   const diff = Math.max(0, target.getTime() - now.getTime());
   return {
     days: Math.floor(diff / 86_400_000),
@@ -50,13 +54,14 @@ function sameRemaining(a: Remaining, b: Remaining): boolean {
 // keeps the reference stable in between, while still being always derived
 // from the real clock (never a hardcoded date) and self-correcting across
 // month/year boundaries since it's recomputed from scratch each tick.
-const cache = new Map<number, Remaining>();
+const cache = new Map<string, Remaining>();
 
-function getSnapshotFor(payDay: number): Remaining {
-  const next = computeRemaining(payDay);
-  const cached = cache.get(payDay);
+function getSnapshotFor(payDay: number, payTime: string): Remaining {
+  const key = `${payDay} ${payTime}`;
+  const next = computeRemaining(payDay, payTime);
+  const cached = cache.get(key);
   if (cached && sameRemaining(cached, next)) return cached;
-  cache.set(payDay, next);
+  cache.set(key, next);
   return next;
 }
 
@@ -74,6 +79,8 @@ function getServerSnapshot(): Remaining {
 // The pay date under the countdown ("jeudi 1 novembre"). A string snapshot is
 // stable by value; empty on the server for the same hydration reason.
 const PAY_DATE = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+const formatPayDate = (payDay: number, payTime: string) =>
+  `${PAY_DATE.format(nextPayday(new Date(), payDay, payTime))}${payTime !== "00:00" ? ` à ${payTime.replace(":", "h")}` : ""}`;
 const getServerDate = () => "";
 
 function Unit({ value, label }: { value: number; label: string }) {
@@ -85,20 +92,40 @@ function Unit({ value, label }: { value: number; label: string }) {
   );
 }
 
-/** Countdown to the next salary day (set in Menu → Salaire). */
-export function CountdownNextSalary({ payDay = 1 }: { payDay?: number }) {
-  const remaining = useSyncExternalStore(subscribe, () => getSnapshotFor(payDay), getServerSnapshot);
-  const payDate = useSyncExternalStore(subscribe, () => PAY_DATE.format(nextPayday(new Date(), payDay)), getServerDate);
+/** Countdown to the next salary (set in Menu → Salaire). Tapping it opens
+ *  the salary settings: amount, pay day and time. */
+export function CountdownNextSalary({ settings }: { settings: Settings }) {
+  const { payDay, payTime } = settings;
+  const [editing, setEditing] = useState(false);
+  const remaining = useSyncExternalStore(subscribe, () => getSnapshotFor(payDay, payTime), getServerSnapshot);
+  const payDate = useSyncExternalStore(subscribe, () => formatPayDate(payDay, payTime), getServerDate);
 
   return (
-    <div className="rounded-2xl border border-white/50 bg-white/30 p-4 shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
-      <div className="grid grid-cols-4 gap-2">
-        <Unit value={remaining.days} label="jours" />
-        <Unit value={remaining.hours} label="heures" />
-        <Unit value={remaining.minutes} label="min" />
-        <Unit value={remaining.seconds} label="sec" />
-      </div>
-      <p className="mt-2 h-4 text-center text-[11px] first-letter:uppercase text-slate-500 dark:text-slate-400">{payDate}</p>
-    </div>
+    <>
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        aria-label="Modifier le salaire"
+        className="rounded-2xl border border-white/50 bg-white/30 p-4 text-left shadow-lg backdrop-blur-xl transition-transform active:scale-[0.98] dark:border-white/10 dark:bg-white/5"
+      >
+        <div className="grid grid-cols-4 gap-2">
+          <Unit value={remaining.days} label="jours" />
+          <Unit value={remaining.hours} label="heures" />
+          <Unit value={remaining.minutes} label="min" />
+          <Unit value={remaining.seconds} label="sec" />
+        </div>
+        <p className="mt-2 h-4 text-center text-[11px] first-letter:uppercase text-slate-500 dark:text-slate-400">{payDate}</p>
+      </button>
+
+      <Dialog open={editing} onOpenChange={setEditing}>
+        {/* No autofocus: the keyboard opens only when a field is tapped. */}
+        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>Salaire</DialogTitle>
+          </DialogHeader>
+          <SalaryForm key={`${settings.salary}-${payDay}-${payTime}`} settings={settings} plain onSaved={() => setEditing(false)} />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
