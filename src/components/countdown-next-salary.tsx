@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore, useTransition } from "react";
-import { Check, HandCoins, Trash2, X } from "lucide-react";
+import { Check, ChevronRight, HandCoins, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import type { PaymentMethod, SalaryAdvance, Settings } from "@/lib/types";
 import { METHOD_META } from "@/lib/payment-method";
@@ -41,6 +41,8 @@ interface CountdownState {
   hours: number;
   minutes: number;
   seconds: number;
+  /** Share of the pay period gone by (0–1), for the ring; 1 when late. */
+  progress: number;
 }
 
 const LATE_KEY = "gx-salary-late";
@@ -104,6 +106,10 @@ function compute(payDay: number, receivedMonth: string | null): CountdownState {
       : upcoming;
   const phase: Phase = received ? "counting" : readLate() === period ? "late" : "ask";
   const diff = Math.abs(phase === "counting" ? next.getTime() - now.getTime() : now.getTime() - last.getTime());
+  const periodStart = payDateIn(next.getFullYear(), next.getMonth() - 1, payDay);
+  const span = next.getTime() - periodStart.getTime();
+  const progress =
+    phase === "counting" && span > 0 ? Math.min(1, Math.max(0, (now.getTime() - periodStart.getTime()) / span)) : 1;
   return {
     phase,
     period,
@@ -114,6 +120,7 @@ function compute(payDay: number, receivedMonth: string | null): CountdownState {
     hours: Math.floor((diff / 3_600_000) % 24),
     minutes: Math.floor((diff / 60_000) % 60),
     seconds: Math.floor((diff / 1_000) % 60),
+    progress: Math.round(progress * 1000) / 1000,
   };
 }
 
@@ -129,7 +136,8 @@ const sameState = (a: CountdownState, b: CountdownState) =>
   a.days === b.days &&
   a.hours === b.hours &&
   a.minutes === b.minutes &&
-  a.seconds === b.seconds;
+  a.seconds === b.seconds &&
+  a.progress === b.progress;
 
 function getSnapshotFor(payDay: number, receivedMonth: string | null): CountdownState {
   const key = `${payDay} ${receivedMonth}`;
@@ -152,6 +160,7 @@ const SERVER_SNAPSHOT: CountdownState = {
   hours: 0,
   minutes: 0,
   seconds: 0,
+  progress: 0,
 };
 const getServerSnapshot = () => SERVER_SNAPSHOT;
 
@@ -164,20 +173,56 @@ function ofMonth(period: string): string {
   return /^[aeiouéèh]/i.test(name) ? `d'${name}` : `de ${name}`;
 }
 
-function Unit({ value, label, late }: { value: number; label: string; late: boolean }) {
+const RING = 92;
+const RING_STROKE = 8;
+
+/** The pay period as a ring filling up, with the days left inside. */
+function Ring({ progress, days, late }: { progress: number; days: number; late: boolean }) {
+  const r = (RING - RING_STROKE) / 2;
+  const c = 2 * Math.PI * r;
   return (
-    <div
-      className={cn(
-        "rounded-2xl py-3 text-center text-white shadow-inner",
-        late ? "bg-rose-600/90 dark:bg-rose-700/70" : "bg-slate-900/80 dark:bg-black/40",
-      )}
-    >
-      <div className="text-2xl font-bold tabular-nums">
-        {late && "−"}
-        {String(value).padStart(2, "0")}
+    <div className="relative shrink-0" style={{ width: RING, height: RING }}>
+      <svg width={RING} height={RING} className="-rotate-90" aria-hidden>
+        <defs>
+          <linearGradient id="salary-ring" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={late ? "#fb7185" : "#34d399"} />
+            <stop offset="100%" stopColor={late ? "#e11d48" : "#22d3ee"} />
+          </linearGradient>
+        </defs>
+        <circle cx={RING / 2} cy={RING / 2} r={r} fill="none" strokeWidth={RING_STROKE} className="stroke-white/10" />
+        <circle
+          cx={RING / 2}
+          cy={RING / 2}
+          r={r}
+          fill="none"
+          strokeWidth={RING_STROKE}
+          strokeLinecap="round"
+          stroke="url(#salary-ring)"
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - progress)}
+          className="transition-[stroke-dashoffset] duration-700"
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className={cn("text-3xl font-bold leading-none tabular-nums", late && "text-rose-300")}>
+          {late && "−"}
+          {days}
+        </span>
+        <span className="mt-1 text-[10px] font-medium uppercase tracking-wider text-white/60">
+          {days > 1 ? "jours" : "jour"}
+        </span>
       </div>
-      <div className={cn("text-[10px] uppercase tracking-wide", late ? "text-rose-100" : "text-slate-300")}>{label}</div>
     </div>
+  );
+}
+
+/** Hours / minutes / seconds as small tiles. */
+function TimeChip({ value, unit }: { value: number; unit: string }) {
+  return (
+    <span className="flex min-w-[2.75rem] items-baseline justify-center gap-0.5 rounded-lg bg-white/10 px-1.5 py-1 ring-1 ring-white/10">
+      <span className="text-base font-bold tabular-nums">{String(value).padStart(2, "0")}</span>
+      <span className="text-[10px] text-white/60">{unit}</span>
+    </span>
   );
 }
 
@@ -226,24 +271,38 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
   const caption = state.period ? (late ? `prévu le ${state.lastLabel}` : capitalize(state.nextLabel)) : "";
 
   const shell =
-    "rounded-2xl border border-white/50 bg-white/30 p-4 shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-white/5";
+    "relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-4 text-white shadow-lg ring-1 ring-white/5 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/80 dark:ring-white/10";
+  const glow = (
+    <span
+      aria-hidden
+      className={cn(
+        "pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full blur-2xl",
+        late ? "bg-rose-500/25" : "bg-indigo-500/25",
+      )}
+    />
+  );
 
   return (
     <>
       {state.phase === "ask" ? (
         <div className={cn(shell, "flex flex-col items-center gap-3 text-center")}>
-          <p className="text-2xl">💰</p>
-          <p className="text-base font-semibold text-slate-900 dark:text-white">
-            As-tu reçu ton salaire {ofMonth(state.period)} ?
-          </p>
-          <div className="grid w-full grid-cols-2 gap-2">
-            <Button type="button" variant="outline" onClick={() => writeLate(state.period)} disabled={saving}>
+          {glow}
+          <p className="relative text-3xl">💰</p>
+          <p className="relative text-base font-semibold">As-tu reçu ton salaire {ofMonth(state.period)} ?</p>
+          <div className="relative grid w-full grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="border-white/20 bg-white/10 text-white hover:bg-white/20 dark:border-white/20 dark:bg-white/10 dark:text-white"
+              onClick={() => writeLate(state.period)}
+              disabled={saving}
+            >
               <X className="h-4 w-4" />
               Non, pas encore
             </Button>
             <Button
               type="button"
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
+              className="bg-emerald-500 text-white hover:bg-emerald-600 dark:bg-emerald-500 dark:text-white"
               onClick={confirmReceived}
               disabled={saving}
             >
@@ -257,25 +316,28 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
           type="button"
           onClick={() => setEditing(true)}
           aria-label={late ? "Confirmer le salaire" : "Modifier le salaire"}
-          className={cn(shell, "text-left transition-transform active:scale-[0.98]")}
+          className={cn(shell, "block text-left transition-transform active:scale-[0.98]")}
         >
-          {/* One small line on top: "SALAIRE · Dimanche 1 novembre" */}
-          <p
-            className={cn(
-              "mb-2 h-4 text-center text-[11px]",
-              late ? "text-rose-600 dark:text-rose-400" : "text-slate-500 dark:text-slate-400",
-            )}
-          >
-            <span className="font-semibold uppercase tracking-wide">
-              {late ? `Salaire ${ofMonth(state.period)} en retard` : "Salaire"}
-            </span>
-            {caption && <span>&nbsp;·&nbsp;{caption}</span>}
-          </p>
-          <div className="grid grid-cols-4 gap-2">
-            <Unit value={state.days} label="jours" late={late} />
-            <Unit value={state.hours} label="heures" late={late} />
-            <Unit value={state.minutes} label="min" late={late} />
-            <Unit value={state.seconds} label="sec" late={late} />
+          {glow}
+          <div className="relative flex items-center gap-4">
+            <Ring progress={state.progress} days={state.days} late={late} />
+            <div className="min-w-0 flex-1">
+              <p
+                className={cn(
+                  "text-[11px] font-semibold uppercase tracking-[0.16em]",
+                  late ? "text-rose-300" : "text-indigo-200/80",
+                )}
+              >
+                {late ? "Salaire en retard" : "Prochain salaire"}
+              </p>
+              <p className="mt-0.5 h-6 truncate text-base font-semibold">{caption}</p>
+              <div className="mt-2 flex items-center gap-1.5">
+                <TimeChip value={state.hours} unit="h" />
+                <TimeChip value={state.minutes} unit="min" />
+                <TimeChip value={state.seconds} unit="s" />
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-white/40" />
           </div>
         </button>
       )}

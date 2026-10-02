@@ -32,7 +32,7 @@ export default async function HomePage() {
 
       <main className="flex flex-col gap-4 px-4 py-5">
         <HomeDashboard
-          solde={wallet.total}
+          solde={wallet.balance}
           currency={settings.currency}
           expenses={expenses}
           payments={payments}

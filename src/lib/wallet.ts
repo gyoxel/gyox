@@ -52,11 +52,13 @@ function countsInWallet(p: Payment, byId: ReadonlyMap<string, Expense>): boolean
   return p.method != null && byId.has(p.expenseId) && p.amountPaid > 0;
 }
 
-/** Total of the payments that come off the Solde: lets the home page move
+/** What the payments take off each account: lets the home page move
  *  Disponible instantly while a tick is still being saved. */
-export function walletPaidOut(payments: Payment[], expenses: Expense[]): number {
+export function walletPaidOut(payments: Payment[], expenses: Expense[]): Record<PaymentMethod, number> {
   const byId = new Map(expenses.map((e) => [e.id, e]));
-  return payments.filter((p) => countsInWallet(p, byId)).reduce((s, p) => s + p.amountPaid, 0);
+  const out = { cash: 0, card: 0 };
+  for (const p of payments) if (countsInWallet(p, byId)) out[p.method!] += p.amountPaid;
+  return out;
 }
 
 export function buildWallet(input: {
