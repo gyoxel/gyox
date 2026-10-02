@@ -69,7 +69,7 @@ export function HomeDashboard({
       <Link
         href="/stats"
         prefetch
-        className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-[#00c3ab] to-[#007261] px-4 py-2.5 text-white shadow-sm transition-transform active:scale-[0.98]"
+        className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-sky-400 to-blue-600 px-4 py-2.5 text-white shadow-sm transition-transform active:scale-[0.98]"
       >
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15">
           <ChartNoAxesCombined className="h-4 w-4" />
