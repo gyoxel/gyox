@@ -19,7 +19,7 @@ const ITEM_PX = 48; // finger travel for one item
 const TAU = 325; // ms: how long a fling keeps going (exponential decay)
 const MAX_FLING = 3 * N; // items, at most
 const FLICK_PX_MS = 0.35; // slower than this on release: no momentum
-const HEIGHT = 150;
+const HEIGHT = 128;
 
 /** Where the wheel was left, kept while the app stays open. */
 let savedPos = 0;
@@ -206,8 +206,8 @@ export function ShortcutWheel() {
       className="relative touch-none select-none outline-none"
       style={{
         height: HEIGHT,
-        maskImage: "linear-gradient(to bottom, transparent, black 8%, black 92%, transparent)",
-        WebkitMaskImage: "linear-gradient(to bottom, transparent, black 8%, black 92%, transparent)",
+        maskImage: "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
+        WebkitMaskImage: "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
       }}
     >
       {ITEMS.map(({ href, label, hint, icon: Icon, tint }, i) => (

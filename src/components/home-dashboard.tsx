@@ -117,9 +117,6 @@ export function HomeDashboard({
       <ShortcutWheel />
 
       <section className="flex flex-col gap-2.5">
-        <div className="flex items-center justify-between px-1">
-          <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400">🔴 Dépenses</h2>
-        </div>
         <DueNowList
           categoryEmoji={categoryEmoji}
           expenses={expenses}
