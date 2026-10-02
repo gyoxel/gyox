@@ -8,7 +8,6 @@ import {
   monthKey,
   monthLabelFr,
   monthOfDateStr,
-  monthsBetween,
   parseMonthKey,
 } from "./date";
 import type { CreditRealState, Expense, MonthSummary, MonthlyOccurrence, Payment, PaymentStatus } from "./types";
@@ -83,24 +82,19 @@ export function getEffectiveEndMonth(
   return null;
 }
 
-export type DisplayColor = "orange" | "red" | "blue" | "yellow";
+export type DisplayColor = "orange" | "red" | "blue";
 
 /**
  * The color an expense is shown in, everywhere (dots, borders, bars, the
  * statistics chart):
  * - orange: permanent expenses;
  * - red: any other expense (temporary, one-time, daret);
- * - blue: a credit repaid within 3 months;
- * - yellow: a long-term credit ("Crédit longue durée"), over 3 months —
- *   its span comes from its payoff schedule.
+ * - blue: every credit, short or long.
  */
-export function getExpenseDisplayColor(expense: Expense, byId: Map<string, Expense>): DisplayColor {
+export function getExpenseDisplayColor(expense: Expense): DisplayColor {
   if (expense.type === "permanent") return "orange";
   if (expense.type !== "credit") return "red";
-  const end = getEffectiveEndMonth(expense, byId);
-  if (!end) return "yellow"; // no end in sight — treat as long-running
-  const durationMonths = monthsBetween(monthOfDateStr(expense.startDate), end) + 1;
-  return durationMonths > 3 ? "yellow" : "blue";
+  return "blue";
 }
 
 export function getOccurrenceForMonth(

@@ -7,14 +7,12 @@ export const COLOR_HEX: Record<DisplayColor, string> = {
   orange: "#f97316",
   red: "#e11d48",
   blue: "#2563eb",
-  yellow: "#facc15",
 };
 
 export const DOT_CLASS: Record<DisplayColor, string> = {
   orange: "bg-[#f97316]",
   red: "bg-[#e11d48]",
   blue: "bg-[#2563eb]",
-  yellow: "bg-[#facc15]",
 };
 
 /** The category dot shown before every expense name (same rule everywhere:

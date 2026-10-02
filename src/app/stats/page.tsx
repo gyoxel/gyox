@@ -19,7 +19,6 @@ const FORECAST_MONTHS = 6;
 const SEGMENTS: { color: DisplayColor; label: string }[] = [
   { color: "orange", label: "Dépenses permanentes" },
   { color: "blue", label: "Crédits" },
-  { color: "yellow", label: "Crédits longue durée" },
   { color: "red", label: "Dépenses" },
 ];
 
@@ -51,10 +50,9 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   // Planned budget of the viewed month (next month by default).
   const viewMonth = monthFromSearchParams(sp.month, defaultViewMonth());
   const summary = getMonthSummary(expenses, viewMonth, salaryForMonth(settings.salary, advances, monthKey(viewMonth)));
-  const byId = new Map(expenses.map((e) => [e.id, e]));
   const segments: DonutSegment[] = SEGMENTS.map(({ color, label }) => {
     const items = summary.occurrences
-      .filter((o) => getExpenseDisplayColor(o.expense, byId) === color)
+      .filter((o) => getExpenseDisplayColor(o.expense) === color)
       .map((o) => ({ id: o.expense.id, name: o.expense.name, icon: displayIcon(o.expense, categoryEmoji), amount: o.amount }))
       .sort((a, b) => b.amount - a.amount);
     return { color, label, amount: Math.round(items.reduce((s, i) => s + i.amount, 0) * 100) / 100, items };

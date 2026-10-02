@@ -18,7 +18,6 @@ type SliceKey = DisplayColor | "rest";
 const GRADIENT: Record<SliceKey, [string, string]> = {
   orange: ["#fdba74", "#ea580c"],
   blue: ["#60a5fa", "#1d4ed8"],
-  yellow: ["#fde047", "#eab308"],
   red: ["#fb7185", "#be123c"],
   rest: ["#6ee7b7", "#059669"],
 };
@@ -37,7 +36,10 @@ const INNER = 68;
 const LABEL_RADIUS = (OUTER + INNER) / 2;
 const MIN_LABEL_PCT = 7; // smaller slices don't get a % label
 
-const polar = (r: number, a: number): [number, number] => [C + r * Math.cos(a), C + r * Math.sin(a)];
+// Rounded: server and browser trig can differ in the last digit, which
+// would break hydration of the SVG attributes.
+const round3 = (n: number) => Math.round(n * 1000) / 1000;
+const polar = (r: number, a: number): [number, number] => [round3(C + r * Math.cos(a)), round3(C + r * Math.sin(a))];
 
 /** Ring slice between angles a0 and a1 (radians, clockwise from 3 o'clock). */
 function slicePath(a0: number, a1: number): string {

@@ -60,7 +60,7 @@ export default async function DaretPage() {
                 currency={settings.currency}
                 currentMonthKey={monthKey(current)}
                 daysToTurn={state.turnStatus === "upcoming" ? daysUntil(state.turn.year, state.turn.month) : null}
-                color={getExpenseDisplayColor(daret.expense, new Map([[daret.expense.id, daret.expense]]))}
+                color={getExpenseDisplayColor(daret.expense)}
               />
             );
           })

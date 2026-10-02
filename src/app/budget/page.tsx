@@ -28,7 +28,6 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
   const summary = getMonthSummary(expenses, viewMonth, settings.salary);
 
   const viewMonthKey = monthKey(viewMonth);
-  const byId = new Map(expenses.map((e) => [e.id, e]));
 
   // Credits (Solaih, Zineb, Dnya, Dar…) live on the Crédits page only —
   // including their overdue state — so this page lists ordinary expenses.
@@ -41,7 +40,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
         name: expense.name,
         icon: iconOf(expense),
         type: expense.type,
-        color: getExpenseDisplayColor(expense, byId),
+        color: getExpenseDisplayColor(expense),
         amount: occ.amount,
         monthKey: viewMonthKey,
         status: getMonthPaymentStatus(expense, viewMonth, payments, currentOperatingMonth),

@@ -316,9 +316,13 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
           aria-label={late ? "Confirmer le salaire" : "Modifier le salaire"}
           className={cn(shell, "text-left transition-transform active:scale-[0.98]")}
         >
-          {late && (
+          {late ? (
             <p className="mb-2 text-center text-xs font-semibold text-rose-600 dark:text-rose-400">
               Salaire {ofMonth(state.period)} en retard
+            </p>
+          ) : (
+            <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              Salaire
             </p>
           )}
           <div className="grid grid-cols-4 gap-2">

@@ -7,7 +7,7 @@ import { cn, formatMoney } from "@/lib/utils";
 import { ColorDot } from "@/components/color-dot";
 import { displayIcon } from "@/lib/category";
 
-const BAR: Record<DisplayColor, string> = { orange: "bg-[#f97316]", red: "bg-[#e11d48]", yellow: "bg-[#facc15]", blue: "bg-[#2563eb]" };
+const BAR: Record<DisplayColor, string> = { orange: "bg-[#f97316]", red: "bg-[#e11d48]", blue: "bg-[#2563eb]" };
 
 interface Row {
   expense: Expense;
@@ -46,7 +46,7 @@ export function TimelineSection({
       const state = getCreditRealState(expense, payments, current);
       return {
         expense,
-        color: getExpenseDisplayColor(expense, byId),
+        color: getExpenseDisplayColor(expense),
         end: state.projectedEndMonth ?? getEffectiveEndMonth(expense, byId),
         ...getCreditDisplayProgress(expense, state),
       };
@@ -58,7 +58,7 @@ export function TimelineSection({
       const state = getDaretState(daret, payments, current);
       return {
         expense: daret.expense,
-        color: getExpenseDisplayColor(daret.expense, byId),
+        color: getExpenseDisplayColor(daret.expense),
         end: state.end,
         percent: Math.round((state.paidRounds / Math.max(1, daret.members)) * 100),
         paid: state.paidRounds * daret.expense.amount,

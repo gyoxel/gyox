@@ -20,7 +20,6 @@ export default async function CreditsPage() {
     getAllDarets(),
   ]);
   const categoryEmoji = new Map(categories.map((c) => [c.id, c.emoji]));
-  const byId = new Map(expenses.map((e) => [e.id, e]));
   const credits = expenses.filter((e) => e.type === "credit");
 
   return (
@@ -51,7 +50,7 @@ export default async function CreditsPage() {
               expense={c}
               payments={payments}
               currency={settings.currency}
-              color={getExpenseDisplayColor(c, byId)}
+              color={getExpenseDisplayColor(c)}
               icon={displayIcon(c, categoryEmoji)}
             />
           ))

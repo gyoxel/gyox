@@ -16,12 +16,11 @@ import { displayIcon } from "@/lib/category";
 
 const SWIPE_THRESHOLD_PX = 40;
 
-const COLOR_RANK: Record<DisplayColor, number> = { orange: 0, red: 1, yellow: 2, blue: 3 };
+const COLOR_RANK: Record<DisplayColor, number> = { orange: 0, red: 1, blue: 2 };
 
 const BORDER_CLASS: Record<DisplayColor, string> = {
   orange: "border-l-[#f97316]",
   red: "border-l-[#e11d48]",
-  yellow: "border-l-[#facc15]",
   blue: "border-l-[#2563eb]",
 };
 
@@ -87,9 +86,8 @@ export function DueNowList({
 
   const emojiById = useMemo(() => new Map(Object.entries(categoryEmoji)), [categoryEmoji]);
   const items = useMemo(() => {
-    const byId = new Map(expenses.map((e) => [e.id, e]));
     return getMonthLedgerItems(expenses, localPayments, viewMonth, currentMonth)
-      .map((item) => ({ ...item, color: getExpenseDisplayColor(item.expense, byId) }))
+      .map((item) => ({ ...item, color: getExpenseDisplayColor(item.expense) }))
       .sort((a, b) => b.amount - a.amount)
       .sort((a, b) => COLOR_RANK[a.color] - COLOR_RANK[b.color])
       .sort((a, b) => Number(a.paid) - Number(b.paid));
