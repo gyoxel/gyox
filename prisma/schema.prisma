@@ -119,3 +119,24 @@ model Category {
 
   @@map("categories")
 }
+
+/// A savings goal (car, house, trip…). Progress = what's already saved plus
+/// the payouts of the darets attached to it (each counted in its turn month).
+model Goal {
+  id            String   @id @default(uuid())
+  name          String
+  emoji         String
+  targetAmount  Float
+  /// Money already put aside for this goal (grows with "+ Versement").
+  savedAmount   Float    @default(0)
+  /// Optional planned saving per month, used for the estimated finish date.
+  monthlySaving Float?
+  /// Optional "YYYY-MM" deadline.
+  deadline      String?
+  /// Darets whose payout goes to this goal.
+  daretIds      String[] @default([])
+  position      Int      @default(0)
+  createdAt     String
+
+  @@map("goals")
+}

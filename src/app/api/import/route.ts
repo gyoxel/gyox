@@ -35,6 +35,22 @@ const backupSchema = z.object({
       }),
     )
     .optional(),
+  goals: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        name: z.string().min(1),
+        emoji: z.string().min(1),
+        targetAmount: z.number().positive(),
+        savedAmount: z.number().nonnegative(),
+        monthlySaving: z.number().positive().nullable(),
+        deadline: z.string().regex(/^\d{4}-\d{2}$/).nullable(),
+        daretIds: z.array(z.string()),
+        position: z.number().int(),
+        createdAt: z.string(),
+      }),
+    )
+    .optional(),
 });
 
 export async function POST(req: NextRequest) {

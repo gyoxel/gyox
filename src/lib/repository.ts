@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { prisma } from "./prisma";
-import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings } from "./types";
+import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal } from "./types";
 
 function mapExpense(row: {
   id: string;
@@ -160,6 +160,8 @@ export interface BackupData {
   darets?: Daret[];
   /** Optional so backups made before categories existed still import. */
   categories?: Category[];
+  /** Optional so backups made before goals existed still import. */
+  goals?: Goal[];
 }
 
 export async function exportData(): Promise<BackupData> {
@@ -170,6 +172,7 @@ export async function exportData(): Promise<BackupData> {
     expenses: await getAllExpenses(),
     darets: (await getAllDarets()).map((d) => ({ id: d.id, expenseId: d.expenseId, members: d.members, turnMonth: d.turnMonth, createdAt: d.createdAt })),
     categories: await getAllCategories(),
+    goals: await getAllGoals(),
   };
 }
 
@@ -213,6 +216,7 @@ export async function importData(data: BackupData): Promise<void> {
     }),
     prisma.daret.deleteMany({}),
     prisma.daret.createMany({ data: data.darets ?? [] }),
+    ...(data.goals ? [prisma.goal.deleteMany({}), prisma.goal.createMany({ data: data.goals })] : []),
     prisma.settings.update({ where: { id: 1 }, data: data.settings }),
   ]);
 }
@@ -436,4 +440,60 @@ export async function reorderCategories(ids: string[]): Promise<void> {
   await prisma.$transaction(
     ids.map((id, index) => prisma.category.updateMany({ where: { id }, data: { position: index + 1 } })),
   );
+}
+
+// ---------------------------------------------------------------------------
+// Goals (objectifs)
+// ---------------------------------------------------------------------------
+
+export type GoalInput = Omit<Goal, "id" | "position" | "createdAt">;
+
+function mapGoal(row: Goal): Goal {
+  return { ...row, daretIds: row.daretIds ?? [] };
+}
+
+export async function getAllGoals(): Promise<Goal[]> {
+  const rows = await prisma.goal.findMany({ orderBy: [{ position: "asc" }, { createdAt: "asc" }] });
+  return rows.map(mapGoal);
+}
+
+export async function getGoalById(id: string): Promise<Goal | null> {
+  const row = await prisma.goal.findUnique({ where: { id } });
+  return row ? mapGoal(row) : null;
+}
+
+/** A daret can feed only one goal: attaching it here detaches it elsewhere. */
+async function detachDarets(daretIds: string[], exceptGoalId?: string) {
+  if (daretIds.length === 0) return;
+  const others = await prisma.goal.findMany({ where: { daretIds: { hasSome: daretIds }, NOT: exceptGoalId ? { id: exceptGoalId } : undefined } });
+  for (const g of others) {
+    await prisma.goal.update({ where: { id: g.id }, data: { daretIds: g.daretIds.filter((d) => !daretIds.includes(d)) } });
+  }
+}
+
+export async function createGoal(input: GoalInput): Promise<Goal> {
+  await detachDarets(input.daretIds);
+  const last = await prisma.goal.aggregate({ _max: { position: true } });
+  const row = await prisma.goal.create({
+    data: { ...input, id: randomUUID(), position: (last._max.position ?? 0) + 1, createdAt: new Date().toISOString() },
+  });
+  return mapGoal(row);
+}
+
+export async function updateGoal(id: string, input: Partial<GoalInput>): Promise<Goal | null> {
+  try {
+    if (input.daretIds) await detachDarets(input.daretIds, id);
+    return mapGoal(await prisma.goal.update({ where: { id }, data: input }));
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteGoal(id: string): Promise<boolean> {
+  try {
+    await prisma.goal.delete({ where: { id } });
+    return true;
+  } catch {
+    return false;
+  }
 }

@@ -18,7 +18,7 @@ const RIGHT_ITEMS = [
 ];
 
 // Pages opened from the Menu tab keep it highlighted.
-const MENU_PATHS = ["/menu", "/daret", "/stats", "/categories", "/salary", "/settings"];
+const MENU_PATHS = ["/menu", "/daret", "/goals", "/stats", "/categories", "/salary", "/settings"];
 
 // Fan-out positions (px) of each option's circle center relative to the
 // + button's center: left, top, right — like a radial speed-dial.
@@ -96,6 +96,7 @@ const PREFETCH_HREFS = [
   "/settings",
   "/stats",
   "/daret",
+  "/goals",
   "/salary",
   "/categories",
   "/expenses/new",

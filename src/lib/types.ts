@@ -134,3 +134,20 @@ export interface Daret {
 export interface DaretWithExpense extends Daret {
   expense: Expense;
 }
+
+export interface Goal {
+  id: string;
+  name: string;
+  emoji: string;
+  targetAmount: number;
+  /** Money already put aside for this goal. */
+  savedAmount: number;
+  /** Optional planned saving per month (for the estimated finish date). */
+  monthlySaving: number | null;
+  /** Optional "YYYY-MM" deadline. */
+  deadline: string | null;
+  /** Darets whose payout goes to this goal. */
+  daretIds: string[];
+  position: number;
+  createdAt: string;
+}

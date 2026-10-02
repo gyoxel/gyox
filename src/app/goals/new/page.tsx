@@ -1,0 +1,18 @@
+import { getAllDarets, getAllGoals, getSettings } from "@/lib/repository";
+import { daretOptions } from "@/lib/goal-options";
+import { PageHeader } from "@/components/page-header";
+import { GoalForm } from "@/components/goal-form";
+
+export const dynamic = "force-dynamic";
+
+export default async function NewGoalPage() {
+  const [settings, goals, darets] = await Promise.all([getSettings(), getAllGoals(), getAllDarets()]);
+  return (
+    <>
+      <PageHeader title="Nouvel objectif" backHref="/goals" />
+      <main className="px-4 py-5">
+        <GoalForm darets={daretOptions(darets, goals)} currency={settings.currency} />
+      </main>
+    </>
+  );
+}

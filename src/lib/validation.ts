@@ -119,3 +119,17 @@ export const settingsInputSchema = z.object({
 });
 
 export type SettingsFormValues = z.infer<typeof settingsInputSchema>;
+
+export const goalInputSchema = z.object({
+  name: z.string().trim().min(1, "Donne un nom à l'objectif.").max(60),
+  emoji: z.string().trim().min(1).max(16),
+  targetAmount: z.coerce.number().positive("Le montant de l'objectif doit être positif."),
+  savedAmount: z.coerce.number().nonnegative("Le montant épargné ne peut pas être négatif.").default(0),
+  monthlySaving: z.coerce.number().positive().nullable().default(null),
+  deadline: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/, "Date invalide.")
+    .nullable()
+    .default(null),
+  daretIds: z.array(z.string().min(1)).default([]),
+});
