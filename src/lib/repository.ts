@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { prisma } from "./prisma";
+import { DEFAULT_CATEGORIES } from "./default-categories";
 import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote, SalaryAdvance, Income, PaymentMethod } from "./types";
 
 function mapExpense(row: {
@@ -469,6 +470,35 @@ export async function deleteCategory(id: string): Promise<boolean> {
 }
 
 /** Persists a new order: `ids` from first to last. Unknown ids are ignored. */
+/**
+ * Back to the original categories: each one gets its default name, emoji
+ * and place back (found by id, else by name; recreated if it was deleted),
+ * and every other category is removed — its expenses stay, uncategorized.
+ */
+export async function resetCategories(): Promise<Category[]> {
+  const all = await prisma.category.findMany();
+  const used = new Set<string>();
+  const now = new Date().toISOString();
+  const ops = DEFAULT_CATEGORIES.map((d, i) => {
+    const match =
+      all.find((c) => c.id === d.id && !used.has(c.id)) ??
+      all.find((c) => c.name.trim().toLowerCase() === d.name.toLowerCase() && !used.has(c.id));
+    const data = { name: d.name, emoji: d.emoji, position: i + 1 };
+    if (match) {
+      used.add(match.id);
+      return prisma.category.update({ where: { id: match.id }, data });
+    }
+    const id = all.some((c) => c.id === d.id) ? randomUUID() : d.id;
+    used.add(id);
+    return prisma.category.create({ data: { id, ...data, createdAt: now } });
+  });
+  await prisma.$transaction([
+    prisma.category.deleteMany({ where: { id: { notIn: [...all.map((c) => c.id).filter((id) => used.has(id))] } } }),
+    ...ops,
+  ]);
+  return getAllCategories();
+}
+
 export async function reorderCategories(ids: string[]): Promise<void> {
   await prisma.$transaction(
     ids.map((id, index) => prisma.category.updateMany({ where: { id }, data: { position: index + 1 } })),

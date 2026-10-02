@@ -64,6 +64,7 @@ export function CategoryManager({
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [toDelete, setToDelete] = useState<Category | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
   const money = (n: number) => formatMoney(n, currency);
   const totalMonth = Object.values(stats).reduce((s, x) => s + x.monthTotal, 0);
 
@@ -316,6 +317,19 @@ export function CategoryManager({
     setCategories((prev) => savedOrder.map((id) => prev.find((c) => c.id === id)).filter((c): c is Category => c != null));
   }
 
+  async function resetAll() {
+    setBusy(true);
+    const res = await fetch("/api/categories/reset", { method: "POST" });
+    setBusy(false);
+    if (!res.ok) return toast.error("Réinitialisation impossible.");
+    const list: Category[] = await res.json();
+    setCategories(list);
+    setSavedOrder(list.map((c) => c.id));
+    setConfirmReset(false);
+    toast.success("Catégories réinitialisées.");
+    void refreshData();
+  }
+
   async function confirmDelete() {
     if (!toDelete) return;
     setBusy(true);
@@ -448,6 +462,30 @@ export function CategoryManager({
           <span className="text-sm font-semibold">Ajouter</span>
         </button>
       </div>
+
+      <button
+        type="button"
+        onClick={() => setConfirmReset(true)}
+        className="mx-auto flex items-center gap-1.5 text-xs font-medium text-slate-400 underline underline-offset-2 active:text-slate-600 dark:active:text-slate-200"
+      >
+        <RotateCcw className="h-3.5 w-3.5" />
+        Réinitialiser les catégories
+      </button>
+
+      <ConfirmDialog
+        open={confirmReset}
+        onOpenChange={setConfirmReset}
+        title="Réinitialiser les catégories ?"
+        description={
+          <>
+            Les catégories d&apos;origine reviennent avec leurs noms, leurs icônes et leur ordre. Celles que tu as
+            ajoutées sont supprimées (leurs dépenses sont gardées, sans catégorie).
+          </>
+        }
+        confirmLabel="Réinitialiser"
+        pending={busy}
+        onConfirm={resetAll}
+      />
 
       {orderChanged && !draggingId && (
         <div className="sticky bottom-28 z-20 flex gap-2 rounded-2xl border border-violet-200 bg-white/95 p-2 shadow-lg backdrop-blur dark:border-violet-900 dark:bg-slate-900/95">
