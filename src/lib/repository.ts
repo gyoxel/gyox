@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { prisma } from "./prisma";
-import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal } from "./types";
+import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea } from "./types";
 
 function mapExpense(row: {
   id: string;
@@ -161,10 +161,13 @@ export interface BackupData {
   /** Optional so backups made before categories existed still import. */
   categories?: Category[];
   /** Optional so backups made before goals existed still import. */
-  goals?: Goal[];
+  goals?: (Omit<Goal, "deposits"> & { deposits?: undefined })[];
+  goalDeposits?: GoalDeposit[];
+  goalIdeas?: GoalIdea[];
 }
 
 export async function exportData(): Promise<BackupData> {
+  const goals = await getAllGoals();
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
@@ -172,7 +175,9 @@ export async function exportData(): Promise<BackupData> {
     expenses: await getAllExpenses(),
     darets: (await getAllDarets()).map((d) => ({ id: d.id, expenseId: d.expenseId, members: d.members, turnMonth: d.turnMonth, createdAt: d.createdAt })),
     categories: await getAllCategories(),
-    goals: await getAllGoals(),
+    goals: goals.map((g) => ({ ...g, deposits: undefined })),
+    goalDeposits: goals.flatMap((g) => g.deposits),
+    goalIdeas: await getAllGoalIdeas(),
   };
 }
 
@@ -216,7 +221,14 @@ export async function importData(data: BackupData): Promise<void> {
     }),
     prisma.daret.deleteMany({}),
     prisma.daret.createMany({ data: data.darets ?? [] }),
-    ...(data.goals ? [prisma.goal.deleteMany({}), prisma.goal.createMany({ data: data.goals })] : []),
+    ...(data.goals
+      ? [
+          prisma.goal.deleteMany({}),
+          prisma.goal.createMany({ data: data.goals }),
+          prisma.goalDeposit.createMany({ data: data.goalDeposits ?? [] }),
+        ]
+      : []),
+    ...(data.goalIdeas ? [prisma.goalIdea.deleteMany({}), prisma.goalIdea.createMany({ data: data.goalIdeas })] : []),
     prisma.settings.update({ where: { id: 1 }, data: data.settings }),
   ]);
 }
@@ -446,26 +458,36 @@ export async function reorderCategories(ids: string[]): Promise<void> {
 // Goals (objectifs)
 // ---------------------------------------------------------------------------
 
-export type GoalInput = Omit<Goal, "id" | "position" | "createdAt">;
+export type GoalInput = Omit<Goal, "id" | "position" | "createdAt" | "deposits">;
 
-function mapGoal(row: Goal): Goal {
-  return { ...row, daretIds: row.daretIds ?? [] };
+type GoalRow = Omit<Goal, "deposits"> & { deposits?: GoalDeposit[] };
+
+function mapGoal(row: GoalRow): Goal {
+  const deposits = [...(row.deposits ?? [])].sort(
+    (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
+  );
+  return { ...row, daretIds: row.daretIds ?? [], deposits };
 }
 
 export async function getAllGoals(): Promise<Goal[]> {
-  const rows = await prisma.goal.findMany({ orderBy: [{ position: "asc" }, { createdAt: "asc" }] });
+  const rows = await prisma.goal.findMany({
+    orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+    include: { deposits: true },
+  });
   return rows.map(mapGoal);
 }
 
 export async function getGoalById(id: string): Promise<Goal | null> {
-  const row = await prisma.goal.findUnique({ where: { id } });
+  const row = await prisma.goal.findUnique({ where: { id }, include: { deposits: true } });
   return row ? mapGoal(row) : null;
 }
 
 /** A daret can feed only one goal: attaching it here detaches it elsewhere. */
 async function detachDarets(daretIds: string[], exceptGoalId?: string) {
   if (daretIds.length === 0) return;
-  const others = await prisma.goal.findMany({ where: { daretIds: { hasSome: daretIds }, NOT: exceptGoalId ? { id: exceptGoalId } : undefined } });
+  const others = await prisma.goal.findMany({
+    where: { daretIds: { hasSome: daretIds }, NOT: exceptGoalId ? { id: exceptGoalId } : undefined },
+  });
   for (const g of others) {
     await prisma.goal.update({ where: { id: g.id }, data: { daretIds: g.daretIds.filter((d) => !daretIds.includes(d)) } });
   }
@@ -483,7 +505,7 @@ export async function createGoal(input: GoalInput): Promise<Goal> {
 export async function updateGoal(id: string, input: Partial<GoalInput>): Promise<Goal | null> {
   try {
     if (input.daretIds) await detachDarets(input.daretIds, id);
-    return mapGoal(await prisma.goal.update({ where: { id }, data: input }));
+    return mapGoal(await prisma.goal.update({ where: { id }, data: input, include: { deposits: true } }));
   } catch {
     return null;
   }
@@ -496,4 +518,31 @@ export async function deleteGoal(id: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export async function addGoalDeposit(
+  goalId: string,
+  input: { name: string; amount: number; date: string },
+): Promise<GoalDeposit> {
+  return prisma.goalDeposit.create({
+    data: { id: randomUUID(), goalId, ...input, createdAt: new Date().toISOString() },
+  });
+}
+
+export async function deleteGoalDeposit(goalId: string, depositId: string): Promise<boolean> {
+  const { count } = await prisma.goalDeposit.deleteMany({ where: { id: depositId, goalId } });
+  return count > 0;
+}
+
+export async function getAllGoalIdeas(): Promise<GoalIdea[]> {
+  return prisma.goalIdea.findMany({ orderBy: { createdAt: "asc" } });
+}
+
+export async function createGoalIdea(input: { emoji: string; name: string }): Promise<GoalIdea> {
+  return prisma.goalIdea.create({ data: { id: randomUUID(), ...input, createdAt: new Date().toISOString() } });
+}
+
+export async function deleteGoalIdea(id: string): Promise<boolean> {
+  const { count } = await prisma.goalIdea.deleteMany({ where: { id } });
+  return count > 0;
 }

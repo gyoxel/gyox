@@ -8,7 +8,7 @@ import type { DaretWithExpense, Goal, Payment } from "./types";
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 export interface GoalStep {
-  kind: "saved" | "daret";
+  kind: "saved" | "deposits" | "daret";
   label: string;
   amount: number;
   /** Month the money arrives (null = already there). */
@@ -22,6 +22,8 @@ export interface GoalStep {
 
 export interface GoalProgress {
   target: number;
+  /** Initial savings + every deposit. */
+  savedTotal: number;
   /** In hand today: saved + darets already collected. */
   reachedNow: number;
   percentNow: number;
@@ -60,6 +62,9 @@ export function getGoalProgress(
     })
     .sort((a, b) => compareMonths(a.turn, b.turn));
 
+  const depositsTotal = round2(goal.deposits.reduce((s, d) => s + d.amount, 0));
+  const savedTotal = round2(goal.savedAmount + depositsTotal);
+
   const steps: GoalStep[] = [];
   let cumulative = goal.savedAmount;
   if (goal.savedAmount > 0) {
@@ -73,10 +78,22 @@ export function getGoalProgress(
       percent: pct(cumulative, target),
     });
   }
+  if (depositsTotal > 0) {
+    cumulative = savedTotal;
+    steps.push({
+      kind: "deposits",
+      label: goal.deposits.length === 1 ? "1 versement" : `${goal.deposits.length} versements`,
+      amount: depositsTotal,
+      month: null,
+      received: true,
+      cumulative,
+      percent: pct(cumulative, target),
+    });
+  }
   let reachedByDaretsIn: MonthId | null = null;
   for (const a of attached) {
     cumulative = round2(cumulative + a.payout);
-    if (!reachedByDaretsIn && cumulative >= target && goal.savedAmount < target) reachedByDaretsIn = a.turn;
+    if (!reachedByDaretsIn && cumulative >= target && savedTotal < target) reachedByDaretsIn = a.turn;
     steps.push({
       kind: "daret",
       label: a.daret.expense.name,
@@ -88,7 +105,7 @@ export function getGoalProgress(
     });
   }
 
-  const reachedNow = round2(goal.savedAmount + attached.filter((a) => a.received).reduce((s, a) => s + a.payout, 0));
+  const reachedNow = round2(savedTotal + attached.filter((a) => a.received).reduce((s, a) => s + a.payout, 0));
   const projected = cumulative;
 
   // Deadline: what's left after the darets that pay out by then, spread over
@@ -99,7 +116,7 @@ export function getGoalProgress(
   if (deadline) {
     monthsToDeadline = monthsBetween(currentMonth, deadline) + 1;
     const byDeadline =
-      goal.savedAmount +
+      savedTotal +
       attached.filter((a) => compareMonths(a.turn, deadline) <= 0).reduce((s, a) => s + a.payout, 0);
     const missing = Math.max(0, target - byDeadline);
     monthlyNeeded = monthsToDeadline > 0 ? round2(missing / monthsToDeadline) : missing > 0 ? missing : 0;
@@ -111,7 +128,7 @@ export function getGoalProgress(
     for (let i = 0; i < 600; i++) {
       const m = addMonths(currentMonth, i);
       const total =
-        goal.savedAmount +
+        savedTotal +
         goal.monthlySaving * (i + 1) +
         attached.filter((a) => compareMonths(a.turn, m) <= 0).reduce((s, a) => s + a.payout, 0);
       if (total >= target) {
@@ -123,6 +140,7 @@ export function getGoalProgress(
 
   return {
     target,
+    savedTotal,
     reachedNow,
     percentNow: pct(reachedNow, target),
     projected,
@@ -137,4 +155,91 @@ export function getGoalProgress(
     monthlyNeeded,
     estimatedMonth,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Simulations ("what if") for the goal detail page. They take the goal's
+// state today plus its darets still to come, so they run in the browser.
+// ---------------------------------------------------------------------------
+
+export interface GoalSimBase {
+  target: number;
+  /** In hand today (savings, deposits, darets already collected). */
+  reachedNow: number;
+  /** Attached darets not collected yet: "YYYY-MM" turn and payout. */
+  upcoming: { month: string; amount: number }[];
+  /** "YYYY-MM" of the current month. */
+  currentMonth: string;
+}
+
+const daretsUntil = (base: GoalSimBase, until: MonthId) =>
+  base.upcoming.filter((u) => compareMonths(parseMonthKey(u.month), until) <= 0).reduce((s, u) => s + u.amount, 0);
+
+export interface SimResult {
+  months: number;
+  /** Put aside over the period. */
+  added: number;
+  /** Darets collected by the end of the period. */
+  fromDarets: number;
+  total: number;
+  percent: number;
+  remaining: number;
+}
+
+/** "If I put `monthly` aside every month from `from` to `to`…" */
+export function simulateSaving(base: GoalSimBase, monthly: number, from: MonthId, to: MonthId): SimResult | null {
+  if (!(monthly > 0) || compareMonths(to, from) < 0) return null;
+  const months = monthsBetween(from, to) + 1;
+  const added = round2(monthly * months);
+  const fromDarets = round2(daretsUntil(base, to));
+  const total = round2(base.reachedNow + fromDarets + added);
+  return {
+    months,
+    added,
+    fromDarets,
+    total,
+    percent: pct(total, base.target),
+    remaining: round2(Math.max(0, base.target - total)),
+  };
+}
+
+export interface NeedResult {
+  months: number;
+  monthly: number;
+  fromDarets: number;
+  total: number;
+  percent: number;
+  remaining: number;
+}
+
+/** "I want to gather `amount` by `by`" — per month from now (this month included). */
+export function savingNeeded(base: GoalSimBase, amount: number, by: MonthId): NeedResult | null {
+  const now = parseMonthKey(base.currentMonth);
+  if (!(amount > 0) || compareMonths(by, now) < 0) return null;
+  const months = monthsBetween(now, by) + 1;
+  const fromDarets = round2(daretsUntil(base, by));
+  const total = round2(base.reachedNow + fromDarets + amount);
+  return {
+    months,
+    monthly: round2(amount / months),
+    fromDarets,
+    total,
+    percent: pct(total, base.target),
+    remaining: round2(Math.max(0, base.target - total)),
+  };
+}
+
+/** What's still missing by `by` once the darets due by then are in. */
+export function missingBy(base: GoalSimBase, by: MonthId): number {
+  return round2(Math.max(0, base.target - base.reachedNow - daretsUntil(base, by)));
+}
+
+/** First month the goal is reached putting `monthly` aside from this month on. */
+export function finishMonthFor(base: GoalSimBase, monthly: number): MonthId | null {
+  const now = parseMonthKey(base.currentMonth);
+  for (let i = 0; i < 600; i++) {
+    const m = addMonths(now, i);
+    if (base.reachedNow + daretsUntil(base, m) + monthly * (i + 1) >= base.target) return m;
+  }
+  return null;
 }

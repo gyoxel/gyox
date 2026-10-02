@@ -20,10 +20,22 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
  * what's needed to finish (per month before the deadline, or the month the
  * planned saving gets there).
  */
-export function GoalCard({ goal, progress, currency }: { goal: Goal; progress: GoalProgress; currency: string }) {
+export function GoalCard({
+  goal,
+  progress,
+  currency,
+  linkToDetail = false,
+}: {
+  goal: Goal;
+  progress: GoalProgress;
+  currency: string;
+  /** In the list: tapping the card opens the goal's detail page. */
+  linkToDetail?: boolean;
+}) {
   const refreshData = useRefreshData();
   const [adding, setAdding] = useState(false);
   const [deposit, setDeposit] = useState("");
+  const [depositName, setDepositName] = useState("");
   const [saving, setSaving] = useState(false);
   const p = progress;
 
@@ -31,22 +43,22 @@ export function GoalCard({ goal, progress, currency }: { goal: Goal; progress: G
     const value = parseDecimalInput(deposit);
     if (value <= 0) return;
     setSaving(true);
-    const res = await fetch(`/api/goals/${goal.id}`, {
-      method: "PATCH",
+    const res = await fetch(`/api/goals/${goal.id}/deposits`, {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ addToSaved: value }),
+      body: JSON.stringify({ amount: value, name: depositName.trim() }),
     });
     setSaving(false);
     if (!res.ok) return toast.error("Versement impossible.");
     toast.success(`+${formatMoney(value, currency)} pour ${goal.name}`);
     setAdding(false);
     setDeposit("");
+    setDepositName("");
     await refreshData();
   }
 
-  return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div className="flex flex-col gap-3.5 p-4">
+  const body = (
+    <div className="flex flex-col gap-3.5 p-4">
         {/* Header */}
         <div className="flex items-center gap-3">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-50 to-emerald-100 text-2xl dark:from-teal-950 dark:to-emerald-900">
@@ -104,7 +116,7 @@ export function GoalCard({ goal, progress, currency }: { goal: Goal; progress: G
           <ol className="flex flex-col gap-2 border-l-2 border-teal-200 pl-3 dark:border-teal-900">
             {p.steps.map((step, i) => (
               <li key={i} className="flex items-center gap-2 text-sm">
-                <span className="leading-none">{step.kind === "saved" ? "💰" : "🤝🏻"}</span>
+                <span className="leading-none">{step.kind === "saved" ? "💰" : step.kind === "deposits" ? "💵" : "🤝🏻"}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium text-slate-700 dark:text-slate-200">{step.label}</span>
                   <span className="block text-[11px] text-slate-400">
@@ -169,7 +181,18 @@ export function GoalCard({ goal, progress, currency }: { goal: Goal; progress: G
             )}
           </div>
         )}
-      </div>
+    </div>
+  );
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      {linkToDetail ? (
+        <Link href={`/goals/${goal.id}`} className="block active:bg-slate-50 dark:active:bg-slate-800/60">
+          {body}
+        </Link>
+      ) : (
+        body
+      )}
 
       <div className="grid grid-cols-2 border-t border-slate-100 dark:border-slate-800">
         <button
@@ -181,7 +204,7 @@ export function GoalCard({ goal, progress, currency }: { goal: Goal; progress: G
           Versement
         </button>
         <Link
-          href={`/goals/${goal.id}`}
+          href={`/goals/${goal.id}/edit`}
           className="flex items-center justify-center gap-1.5 border-l border-slate-100 py-3 text-sm font-medium text-slate-600 active:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:active:bg-slate-800"
         >
           <Pencil className="h-4 w-4" />
@@ -197,6 +220,16 @@ export function GoalCard({ goal, progress, currency }: { goal: Goal; progress: G
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`deposit-name-${goal.id}`}>Nom</Label>
+            <Input
+              id={`deposit-name-${goal.id}`}
+              value={depositName}
+              onChange={(e) => setDepositName(e.target.value)}
+              placeholder="Ex: Prime, reste du mois…"
+              maxLength={60}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
             <Label htmlFor={`deposit-${goal.id}`}>Montant mis de côté (DH)</Label>
             <Input
               id={`deposit-${goal.id}`}
@@ -206,7 +239,6 @@ export function GoalCard({ goal, progress, currency }: { goal: Goal; progress: G
               value={deposit}
               onChange={(e) => setDeposit(cleanDecimalInput(e.target.value))}
               placeholder="Ex: 500"
-              autoFocus
             />
           </div>
           <DialogFooter>

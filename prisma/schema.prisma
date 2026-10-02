@@ -138,5 +138,33 @@ model Goal {
   position      Int      @default(0)
   createdAt     String
 
+  deposits GoalDeposit[]
+
   @@map("goals")
+}
+
+/// Money put aside for a goal ("+ Versement"), with an optional label.
+model GoalDeposit {
+  id        String @id @default(uuid())
+  goalId    String
+  name      String
+  amount    Float
+  /// "YYYY-MM-DD"
+  date      String
+  createdAt String
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
+  @@map("goal_deposits")
+}
+
+/// The user's own goal ideas, shown after the built-in ones (Voiture, Maison…).
+model GoalIdea {
+  id        String @id @default(uuid())
+  emoji     String
+  name      String
+  createdAt String
+
+  @@map("goal_ideas")
 }

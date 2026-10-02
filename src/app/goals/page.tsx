@@ -72,7 +72,7 @@ export default async function GoalsPage() {
               </div>
             )}
             {rows.map(({ goal, progress }) => (
-              <GoalCard key={goal.id} goal={goal} progress={progress} currency={settings.currency} />
+              <GoalCard key={goal.id} goal={goal} progress={progress} currency={settings.currency} linkToDetail />
             ))}
           </>
         )}

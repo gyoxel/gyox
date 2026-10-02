@@ -140,7 +140,7 @@ export interface Goal {
   name: string;
   emoji: string;
   targetAmount: number;
-  /** Money already put aside for this goal. */
+  /** Money already put aside when the goal was created (deposits come on top). */
   savedAmount: number;
   /** Optional planned saving per month (for the estimated finish date). */
   monthlySaving: number | null;
@@ -149,5 +149,24 @@ export interface Goal {
   /** Darets whose payout goes to this goal. */
   daretIds: string[];
   position: number;
+  createdAt: string;
+  /** "+ Versement" entries, newest first. */
+  deposits: GoalDeposit[];
+}
+
+export interface GoalDeposit {
+  id: string;
+  goalId: string;
+  name: string;
+  amount: number;
+  /** "YYYY-MM-DD" */
+  date: string;
+  createdAt: string;
+}
+
+export interface GoalIdea {
+  id: string;
+  emoji: string;
+  name: string;
   createdAt: string;
 }

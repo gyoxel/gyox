@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Trash2 } from "lucide-react";
+import { Check, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
-import type { Goal } from "@/lib/types";
+import type { Goal, GoalIdea } from "@/lib/types";
 import { monthLabelFr, parseMonthKey } from "@/lib/date";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { useRefreshData } from "@/lib/use-refresh-data";
@@ -37,7 +37,18 @@ const PRESETS: { emoji: string; name: string }[] = [
 /** Create or edit a goal: name & emoji (with quick presets), target, money
  *  already saved, optional deadline / monthly saving, and the darets whose
  *  payout goes to it. */
-export function GoalForm({ goal, darets, currency }: { goal?: Goal; darets: DaretOption[]; currency: string }) {
+export function GoalForm({
+  goal,
+  darets,
+  currency,
+  ideas: initialIdeas = [],
+}: {
+  goal?: Goal;
+  darets: DaretOption[];
+  currency: string;
+  /** The user's own ideas, shown after the built-in ones. */
+  ideas?: GoalIdea[];
+}) {
   const router = useRouter();
   const refreshData = useRefreshData();
   const [emoji, setEmoji] = useState(goal?.emoji ?? "🎯");
@@ -50,6 +61,36 @@ export function GoalForm({ goal, darets, currency }: { goal?: Goal; darets: Dare
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [ideas, setIdeas] = useState(initialIdeas);
+  const [addingIdea, setAddingIdea] = useState(false);
+  const [ideaEmoji, setIdeaEmoji] = useState("🎯");
+  const [ideaName, setIdeaName] = useState("");
+
+  async function saveIdea() {
+    if (!ideaName.trim()) return;
+    const res = await fetch("/api/goal-ideas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ emoji: ideaEmoji.trim() || "🎯", name: ideaName.trim() }),
+    });
+    if (!res.ok) return toast.error("Impossible d'ajouter l'idée.");
+    const idea: GoalIdea = await res.json();
+    setIdeas((list) => [...list, idea]);
+    setEmoji(idea.emoji);
+    setName(idea.name);
+    setAddingIdea(false);
+    setIdeaName("");
+    setIdeaEmoji("🎯");
+  }
+
+  async function removeIdea(idea: GoalIdea) {
+    setIdeas((list) => list.filter((i) => i.id !== idea.id));
+    const res = await fetch(`/api/goal-ideas/${idea.id}`, { method: "DELETE" });
+    if (!res.ok) {
+      setIdeas((list) => [...list, idea]);
+      toast.error("Suppression impossible.");
+    }
+  }
 
   const targetValue = parseDecimalInput(target);
   const fromDarets = darets.filter((d) => daretIds.includes(d.id)).reduce((s, d) => s + d.payout, 0);
@@ -86,7 +127,7 @@ export function GoalForm({ goal, darets, currency }: { goal?: Goal; darets: Dare
       }
       await refreshData();
       toast.success(goal ? "Objectif modifié." : "Objectif ajouté.");
-      router.push("/goals");
+      router.push(goal ? `/goals/${goal.id}` : "/goals");
     });
   }
 
@@ -110,25 +151,49 @@ export function GoalForm({ goal, darets, currency }: { goal?: Goal; darets: Dare
         <div className="flex flex-col gap-2">
           <Label>Idées</Label>
           <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-            {PRESETS.map((p) => (
-              <button
-                key={p.name}
-                type="button"
-                onClick={() => {
-                  setEmoji(p.emoji);
-                  setName(p.name);
-                }}
-                className={cn(
-                  "flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm whitespace-nowrap",
-                  name === p.name
-                    ? "border-[#019c86] bg-[#019c86]/10 font-semibold text-[#007261] dark:text-teal-300"
-                    : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
-                )}
-              >
-                <span className="text-base leading-none">{p.emoji}</span>
-                {p.name}
-              </button>
-            ))}
+            {[...PRESETS.map((p) => ({ ...p, idea: null as GoalIdea | null })), ...ideas.map((i) => ({ emoji: i.emoji, name: i.name, idea: i }))].map(
+              (p) => (
+                <span
+                  key={p.idea?.id ?? p.name}
+                  className={cn(
+                    "flex shrink-0 items-center rounded-full border text-sm whitespace-nowrap",
+                    name === p.name
+                      ? "border-[#019c86] bg-[#019c86]/10 font-semibold text-[#007261] dark:text-teal-300"
+                      : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
+                  )}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmoji(p.emoji);
+                      setName(p.name);
+                    }}
+                    className={cn("flex items-center gap-1.5 py-2 pl-3.5", p.idea ? "pr-1" : "pr-3.5")}
+                  >
+                    <span className="text-base leading-none">{p.emoji}</span>
+                    {p.name}
+                  </button>
+                  {p.idea && (
+                    <button
+                      type="button"
+                      onClick={() => removeIdea(p.idea!)}
+                      aria-label={`Retirer l'idée ${p.name}`}
+                      className="flex h-8 w-7 items-center justify-center text-slate-300 hover:text-rose-500"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </span>
+              ),
+            )}
+            <button
+              type="button"
+              onClick={() => setAddingIdea(true)}
+              className="flex shrink-0 items-center gap-1.5 rounded-full border border-dashed border-slate-300 px-3.5 py-2 text-sm whitespace-nowrap text-slate-500 dark:border-slate-600 dark:text-slate-400"
+            >
+              <Plus className="h-4 w-4" />
+              Ajouter
+            </button>
           </div>
         </div>
       )}
@@ -257,6 +322,33 @@ export function GoalForm({ goal, darets, currency }: { goal?: Goal; darets: Dare
       <Button type="submit" disabled={isPending}>
         {isPending ? "Enregistrement…" : goal ? "Enregistrer" : "Ajouter l'objectif"}
       </Button>
+
+      <Dialog open={addingIdea} onOpenChange={setAddingIdea}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nouvelle idée</DialogTitle>
+            <DialogDescription>Elle restera dans la liste des idées pour tes prochains objectifs.</DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3">
+            <div className="flex w-20 flex-col gap-1.5">
+              <Label htmlFor="idea-emoji">Icône</Label>
+              <Input id="idea-emoji" value={ideaEmoji} onChange={(e) => setIdeaEmoji(e.target.value)} maxLength={8} className="text-center text-lg" />
+            </div>
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor="idea-name">Nom</Label>
+              <Input id="idea-name" value={ideaName} onChange={(e) => setIdeaName(e.target.value)} placeholder="Ex: Moto" maxLength={40} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setAddingIdea(false)}>
+              Annuler
+            </Button>
+            <Button type="button" onClick={saveIdea} disabled={!ideaName.trim()}>
+              Ajouter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {goal && (
         <>

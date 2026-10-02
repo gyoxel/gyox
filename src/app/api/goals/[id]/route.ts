@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { deleteGoal, getGoalById, updateGoal } from "@/lib/repository";
 import { goalInputSchema } from "@/lib/validation";
 
@@ -7,10 +6,8 @@ interface Params {
   params: Promise<{ id: string }>;
 }
 
-// Any field of the goal, or `addToSaved` to record a deposit ("+ Versement").
-const patchSchema = goalInputSchema.partial().extend({
-  addToSaved: z.coerce.number().positive().optional(),
-});
+// Any field of the goal (deposits have their own route).
+const patchSchema = goalInputSchema.partial();
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   const { id } = await params;
@@ -22,10 +19,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { addToSaved, ...fields } = parsed.data;
   // Only the fields actually sent (partial() still fills in defaults).
-  const sent = Object.fromEntries(Object.entries(fields).filter(([k]) => body && k in body));
-  if (addToSaved) sent.savedAmount = Math.round((current.savedAmount + addToSaved) * 100) / 100;
+  const sent = Object.fromEntries(Object.entries(parsed.data).filter(([k]) => body && k in body));
 
   const goal = await updateGoal(id, sent);
   if (!goal) return NextResponse.json({ error: "Modification impossible." }, { status: 400 });
