@@ -26,6 +26,8 @@ interface CountdownState {
   phase: Phase;
   /** "YYYY-MM" of the last pay day reached (the salary in question). */
   period: string;
+  /** "YYYY-MM" of the pay day counted down to (can be marked paid early). */
+  nextPeriod: string;
   /** The last and next pay days, e.g. "jeudi 1 octobre". */
   lastLabel: string;
   nextLabel: string;
@@ -85,14 +87,21 @@ const DAY = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", 
 
 function compute(payDay: number, receivedMonth: string | null): CountdownState {
   const now = new Date();
-  const { last, next } = payDays(now, payDay);
+  const { last, next: upcoming } = payDays(now, payDay);
   const period = periodKey(last);
   const received = receivedMonth != null && receivedMonth >= period;
+  // Paid early ("tkhlsst bkri"): the upcoming salary is already in, so count
+  // down to the one after it.
+  const next =
+    receivedMonth != null && receivedMonth >= periodKey(upcoming)
+      ? payDateIn(upcoming.getFullYear(), upcoming.getMonth() + 1, payDay)
+      : upcoming;
   const phase: Phase = received ? "counting" : readLate() === period ? "late" : "ask";
   const diff = Math.abs(phase === "counting" ? next.getTime() - now.getTime() : now.getTime() - last.getTime());
   return {
     phase,
     period,
+    nextPeriod: periodKey(next),
     lastLabel: DAY.format(last),
     nextLabel: DAY.format(next),
     days: Math.floor(diff / 86_400_000),
@@ -108,6 +117,7 @@ const cache = new Map<string, CountdownState>();
 const sameState = (a: CountdownState, b: CountdownState) =>
   a.phase === b.phase &&
   a.period === b.period &&
+  a.nextPeriod === b.nextPeriod &&
   a.lastLabel === b.lastLabel &&
   a.nextLabel === b.nextLabel &&
   a.days === b.days &&
@@ -129,6 +139,7 @@ function getSnapshotFor(payDay: number, receivedMonth: string | null): Countdown
 const SERVER_SNAPSHOT: CountdownState = {
   phase: "counting",
   period: "",
+  nextPeriod: "",
   lastLabel: "",
   nextLabel: "",
   days: 0,
@@ -172,8 +183,10 @@ export function CountdownNextSalary({ settings }: { settings: Settings }) {
   const state = useSyncExternalStore(subscribe, () => getSnapshotFor(payDay, salaryReceivedMonth), getServerSnapshot);
   const late = state.phase === "late";
 
-  function confirmReceived() {
-    const period = state.period;
+  // In the last week before the pay day, the salary can be marked paid early.
+  const canPayEarly = state.phase === "counting" && state.period !== "" && state.days < 7;
+
+  function confirmReceived(period: string, early = false) {
     startSaving(async () => {
       const res = await fetch("/api/settings", {
         method: "PATCH",
@@ -186,7 +199,9 @@ export function CountdownNextSalary({ settings }: { settings: Settings }) {
       }
       writeLate(null);
       setEditing(false);
-      toast.success("Salaire reçu ✅ Le compte à rebours repart pour le mois prochain.");
+      toast.success(
+        early ? "Salaire reçu en avance ✅" : "Salaire reçu ✅ Le compte à rebours repart pour le mois prochain.",
+      );
       await refreshData();
     });
   }
@@ -209,7 +224,12 @@ export function CountdownNextSalary({ settings }: { settings: Settings }) {
               <X className="h-4 w-4" />
               Non, pas encore
             </Button>
-            <Button type="button" onClick={confirmReceived} disabled={saving}>
+            <Button
+              type="button"
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+              onClick={() => confirmReceived(state.period)}
+              disabled={saving}
+            >
               <Check className="h-4 w-4" />
               Oui
             </Button>
@@ -254,11 +274,22 @@ export function CountdownNextSalary({ settings }: { settings: Settings }) {
             <Button
               type="button"
               className="mb-4 w-full bg-emerald-600 hover:bg-emerald-700"
-              onClick={confirmReceived}
+              onClick={() => confirmReceived(state.period)}
               disabled={saving}
             >
               <Check className="h-4 w-4" />
               {saving ? "Enregistrement…" : `Oui, j'ai reçu mon salaire ${ofMonth(state.period)}`}
+            </Button>
+          )}
+          {canPayEarly && (
+            <Button
+              type="button"
+              className="mb-4 w-full bg-emerald-600 hover:bg-emerald-700"
+              onClick={() => confirmReceived(state.nextPeriod, true)}
+              disabled={saving}
+            >
+              <Check className="h-4 w-4" />
+              {saving ? "Enregistrement…" : `J'ai reçu mon salaire ${ofMonth(state.nextPeriod)} en avance`}
             </Button>
           )}
           <SalaryForm key={`${settings.salary}-${payDay}`} settings={settings} plain onSaved={() => setEditing(false)} />
