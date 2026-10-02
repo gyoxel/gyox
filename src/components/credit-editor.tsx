@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CalendarClock, Check, Clock, Coins, Sparkles } from "lucide-react";
+import { CalendarClock, Check, Clock, Coins, Plus, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import type { Expense } from "@/lib/types";
 import { addMonths, monthKey, monthLabelFr, monthOfDateStr, todayDateStr } from "@/lib/date";
@@ -86,6 +86,30 @@ export function CreditEditor({
     if (next === "months" && plan) setMonths(String(plan.count));
     if (next === "monthly" && monthlyValue > 0) setMonthly(toDecimalInput(monthlyValue));
     setMode(next);
+  }
+
+  // "+" in a suggestion row: try any duration / amount, see the result,
+  // and pick it — without adding it to the suggestions.
+  const [custom, setCustom] = useState<"months" | "amount" | null>(null);
+  const [customValue, setCustomValue] = useState("");
+  const customNumber = custom === "months" ? Math.floor(Number(customValue) || 0) : parseDecimalInput(customValue);
+  const customResult =
+    totalValue > 0 && customNumber > 0
+      ? custom === "months"
+        ? customNumber <= MAX_MONTHS
+          ? `${money(monthlyFor(totalValue, customNumber))} / mois`
+          : null
+        : `${Math.ceil(totalValue / customNumber - 1e-9)} mois`
+      : null;
+  function openCustom(row: "months" | "amount") {
+    setCustomValue("");
+    setCustom((c) => (c === row ? null : row));
+  }
+  function applyCustom() {
+    if (!customResult) return;
+    if (custom === "months") pickMonths(customNumber);
+    else pickMonthly(customNumber);
+    setCustom(null);
   }
 
   const monthSuggestions = totalValue > 0 ? MONTH_STEPS.filter((n) => monthlyFor(totalValue, n) >= 50) : [];
@@ -266,6 +290,7 @@ export function CreditEditor({
               Suggestions
             </p>
             <SuggestionRow label="Selon la durée">
+              <PlusChip open={custom === "months"} onClick={() => openCustom("months")} label="Autre durée" />
               {monthSuggestions.map((n) => (
                 <Chip key={n} selected={mode === "months" && monthsValue === n} onClick={() => pickMonths(n)}>
                   <b>{n} mois</b>
@@ -273,7 +298,20 @@ export function CreditEditor({
                 </Chip>
               ))}
             </SuggestionRow>
+            {custom === "months" && (
+              <CustomTry
+                inputMode="numeric"
+                unit="mois"
+                placeholder="Ex: 15"
+                value={customValue}
+                onChange={(v) => setCustomValue(v.replace(/\D/g, "").slice(0, 3))}
+                result={customResult}
+                onApply={applyCustom}
+                onClose={() => setCustom(null)}
+              />
+            )}
             <SuggestionRow label="Selon le montant">
+              <PlusChip open={custom === "amount"} onClick={() => openCustom("amount")} label="Autre montant" />
               {amountSuggestions.map((n) => (
                 <Chip key={n} selected={mode === "monthly" && monthlyValue === n} onClick={() => pickMonthly(n)}>
                   <b>{money(n)}</b>
@@ -281,6 +319,18 @@ export function CreditEditor({
                 </Chip>
               ))}
             </SuggestionRow>
+            {custom === "amount" && (
+              <CustomTry
+                inputMode="decimal"
+                unit="DH / mois"
+                placeholder="Ex: 1200"
+                value={customValue}
+                onChange={(v) => setCustomValue(cleanDecimalInput(v))}
+                result={customResult}
+                onApply={applyCustom}
+                onClose={() => setCustom(null)}
+              />
+            )}
           </div>
         )}
       </div>
@@ -384,6 +434,102 @@ function Stat({ label, value, highlight = false }: { label: string; value: strin
       >
         {value}
       </p>
+    </div>
+  );
+}
+
+/** First chip of a suggestion row: opens the "try your own" field. */
+function PlusChip({ open, onClick, label }: { open: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      aria-expanded={open}
+      className={cn(
+        "flex w-11 shrink-0 items-center justify-center rounded-xl border border-dashed transition-colors",
+        open
+          ? "border-blue-600 bg-blue-600 text-white"
+          : "border-blue-300 bg-blue-50 text-blue-600 active:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/50 dark:text-sky-300",
+      )}
+    >
+      <Plus className={cn("h-4 w-4 transition-transform", open && "rotate-45")} />
+    </button>
+  );
+}
+
+/** Try a value: the result shows right away; "Choisir" applies it. */
+function CustomTry({
+  inputMode,
+  unit,
+  placeholder,
+  value,
+  onChange,
+  result,
+  onApply,
+  onClose,
+}: {
+  inputMode: "numeric" | "decimal";
+  unit: string;
+  placeholder: string;
+  value: string;
+  onChange: (value: string) => void;
+  result: string | null;
+  onApply: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-blue-200 bg-blue-50/60 p-2.5 dark:border-blue-900/60 dark:bg-blue-950/30">
+      <div className="flex items-center gap-2">
+        <Input
+          type="text"
+          inputMode={inputMode}
+          autoComplete="off"
+          autoFocus
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={(e) => keepAboveKeyboard(e.currentTarget)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              onApply();
+            }
+          }}
+          placeholder={placeholder}
+          aria-label={unit}
+          className="h-10 flex-1 bg-white dark:bg-slate-900"
+        />
+        <span className="shrink-0 text-xs text-slate-500">{unit}</span>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Fermer"
+          className="rounded-lg p-1.5 text-slate-400 hover:bg-white/70 dark:hover:bg-slate-800"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm text-slate-600 dark:text-slate-300">
+          {result ? (
+            <>
+              = <b className="text-blue-700 dark:text-sky-300">{result}</b>
+            </>
+          ) : (
+            <span className="text-xs text-slate-400">Le résultat s&apos;affiche ici.</span>
+          )}
+        </span>
+        <Button
+          type="button"
+          size="sm"
+          className="bg-blue-600 text-white hover:bg-blue-700"
+          onClick={onApply}
+          disabled={!result}
+        >
+          <Check className="h-4 w-4" />
+          Choisir
+        </Button>
+      </div>
     </div>
   );
 }
