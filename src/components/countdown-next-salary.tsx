@@ -280,7 +280,8 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
     });
   }
 
-  const caption = state.period ? (late ? `Prévu le ${state.lastLabel} · touche pour confirmer` : state.nextLabel) : "";
+  const capitalize = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+  const caption = state.period ? (late ? `prévu le ${state.lastLabel}` : capitalize(state.nextLabel)) : "";
 
   const shell =
     "rounded-2xl border border-white/50 bg-white/30 p-4 shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-white/5";
@@ -316,29 +317,24 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
           aria-label={late ? "Confirmer le salaire" : "Modifier le salaire"}
           className={cn(shell, "text-left transition-transform active:scale-[0.98]")}
         >
-          {late ? (
-            <p className="mb-2 text-center text-xs font-semibold text-rose-600 dark:text-rose-400">
-              Salaire {ofMonth(state.period)} en retard
-            </p>
-          ) : (
-            <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Salaire
-            </p>
-          )}
+          {/* One small line on top: "SALAIRE · Dimanche 1 novembre" */}
+          <p
+            className={cn(
+              "mb-2 h-4 text-center text-[11px]",
+              late ? "text-rose-600 dark:text-rose-400" : "text-slate-500 dark:text-slate-400",
+            )}
+          >
+            <span className="font-semibold uppercase tracking-wide">
+              {late ? `Salaire ${ofMonth(state.period)} en retard` : "Salaire"}
+            </span>
+            {caption && <span>&nbsp;·&nbsp;{caption}</span>}
+          </p>
           <div className="grid grid-cols-4 gap-2">
             <Unit value={state.days} label="jours" late={late} />
             <Unit value={state.hours} label="heures" late={late} />
             <Unit value={state.minutes} label="min" late={late} />
             <Unit value={state.seconds} label="sec" late={late} />
           </div>
-          <p
-            className={cn(
-              "mt-2 h-4 text-center text-[11px] first-letter:uppercase",
-              late ? "text-rose-600 dark:text-rose-400" : "text-slate-500 dark:text-slate-400",
-            )}
-          >
-            {caption}
-          </p>
         </button>
       )}
 

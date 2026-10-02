@@ -1,28 +1,45 @@
 import type { DaretWithExpense, Expense, Payment } from "@/lib/types";
-import { compareMonths, monthLabelFr, todayMonth, type MonthId } from "@/lib/date";
+import { addMonths, compareMonths, monthLabelFr, monthOfDateStr, monthsBetween, todayMonth, type MonthId } from "@/lib/date";
 import { getDaretState } from "@/lib/daret";
-import { getCreditDisplayProgress, getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, type DisplayColor } from "@/lib/engine";
-import { Card, CardContent } from "@/components/ui/card";
+import { getCreditDisplayProgress, getCreditRealState, getEffectiveEndMonth } from "@/lib/engine";
 import { cn, formatMoney } from "@/lib/utils";
-import { ColorDot } from "@/components/color-dot";
 import { displayIcon } from "@/lib/category";
 
-const BAR: Record<DisplayColor, string> = { orange: "bg-[#f97316]", red: "bg-[#e11d48]", blue: "bg-[#2563eb]" };
+const INITIALS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+/** Longest span drawn (beyond it, bars are cut at the edge). */
+const MAX_MONTHS = 36;
 
 interface Row {
   expense: Expense;
-  color: DisplayColor;
+  kind: "credit" | "daret";
+  start: MonthId;
   end: MonthId | null;
   /** Share actually repaid, 0-100. */
   percent: number;
   paid: number;
   total: number;
+  /** Daret: the month the user collects the pot. */
+  turn?: MonthId;
 }
 
+const STYLE = {
+  credit: {
+    paid: "bg-gradient-to-r from-sky-400 to-blue-600",
+    rest: "bg-blue-100 dark:bg-blue-950/70",
+    text: "text-blue-700 dark:text-blue-300",
+  },
+  daret: {
+    paid: "bg-gradient-to-r from-rose-400 to-rose-600",
+    rest: "bg-rose-100 dark:bg-rose-950/60",
+    text: "text-rose-700 dark:text-rose-300",
+  },
+} as const;
+
 /**
- * Timeline: only commitments with an end — credits and darets. Progress is
- * what has really been paid: money for a credit, rounds paid for a daret
- * (never elapsed calendar time).
+ * Timeline of every commitment with an end (credits and darets), drawn as a
+ * planning: one bar per commitment from its first to its last month on a
+ * shared month axis, filled with what has really been paid, a line on the
+ * current month and a 🏁 on the day everything is paid off.
  */
 export function TimelineSection({
   expenses,
@@ -39,6 +56,7 @@ export function TimelineSection({
 }) {
   const byId = new Map(expenses.map((e) => [e.id, e]));
   const current = todayMonth();
+  const money = (n: number) => formatMoney(n, currency);
 
   const creditRows: Row[] = expenses
     .filter((e) => e.active && e.type === "credit")
@@ -46,7 +64,8 @@ export function TimelineSection({
       const state = getCreditRealState(expense, payments, current);
       return {
         expense,
-        color: getExpenseDisplayColor(expense),
+        kind: "credit",
+        start: monthOfDateStr(expense.startDate),
         end: state.projectedEndMonth ?? getEffectiveEndMonth(expense, byId),
         ...getCreditDisplayProgress(expense, state),
       };
@@ -58,8 +77,10 @@ export function TimelineSection({
       const state = getDaretState(daret, payments, current);
       return {
         expense: daret.expense,
-        color: getExpenseDisplayColor(daret.expense),
+        kind: "daret",
+        start: state.start,
         end: state.end,
+        turn: state.turn,
         percent: Math.round((state.paidRounds / Math.max(1, daret.members)) * 100),
         paid: state.paidRounds * daret.expense.amount,
         total: state.totalContribution,
@@ -73,43 +94,158 @@ export function TimelineSection({
   });
   if (rows.length === 0) return null;
 
+  // Shared axis: from the earliest start (or this month) to the last end.
+  const ends = rows.map((r) => r.end ?? addMonths(current, MAX_MONTHS - 1));
+  const lastEnd = ends.reduce((a, b) => (compareMonths(a, b) >= 0 ? a : b));
+  let axisStart = rows.map((r) => r.start).reduce((a, b) => (compareMonths(a, b) <= 0 ? a : b), current);
+  if (compareMonths(axisStart, current) > 0) axisStart = current;
+  let axisEnd = compareMonths(lastEnd, current) < 0 ? current : lastEnd;
+  if (monthsBetween(axisStart, axisEnd) + 1 > MAX_MONTHS) axisEnd = addMonths(axisStart, MAX_MONTHS - 1);
+  const span = monthsBetween(axisStart, axisEnd) + 1;
+  const clamp = (n: number) => Math.min(100, Math.max(0, n));
+  /** Left edge of a month on the axis, in %. */
+  const at = (m: MonthId) => clamp((monthsBetween(axisStart, m) / span) * 100);
+  const months = Array.from({ length: span }, (_, i) => addMonths(axisStart, i));
+  const tickEvery = span <= 12 ? 1 : span <= 24 ? 2 : 3;
+  const todayLeft = at(current) + 50 / span;
+
+  // Summary: what's left on the credits, per month now, and the day it's all over.
+  const credits = rows.filter((r) => r.kind === "credit");
+  const remaining = credits.reduce((s, r) => s + Math.max(0, r.total - r.paid), 0);
+  const monthly = credits
+    .filter((r) => r.end && compareMonths(r.end, current) >= 0 && r.percent < 100)
+    .reduce((s, r) => s + r.expense.amount, 0);
+  const freeAt = credits
+    .map((r) => r.end)
+    .filter((m): m is MonthId => m != null)
+    .reduce<MonthId | null>((a, b) => (!a || compareMonths(b, a) > 0 ? b : a), null);
+
   return (
     <section className="flex flex-col gap-2.5">
       <h2 className="px-1 text-sm font-semibold text-slate-500 dark:text-slate-400">Timeline</h2>
-      <p className="px-1 text-xs text-slate-500 dark:text-slate-400">
-        Progression réelle de chaque crédit et daret (ce qui est déjà payé), et sa date de fin.
-      </p>
-      <Card>
-        <CardContent className="flex flex-col gap-4 pt-4">
-          {rows.map(({ expense, color, end, percent, paid, total }) => (
-            <div key={expense.id} className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between gap-2 text-sm">
-                <span className="flex min-w-0 items-center gap-2 font-medium text-slate-800 dark:text-slate-200">
-                  <ColorDot color={color} />
-                  <span className="leading-none">{displayIcon(expense, categoryEmoji)}</span>
-                  <span className="truncate">{expense.name}</span>
-                  <span className="shrink-0 text-xs font-normal text-slate-400">
-                    {formatMoney(expense.amount, currency)}
-                    {expense.frequency === "monthly" ? "/mois" : ""}
-                  </span>
+
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        {/* Summary */}
+        {credits.length > 0 && (
+          <div className="bg-gradient-to-br from-sky-500 to-blue-700 px-4 pb-4 pt-3.5 text-white">
+            <p className="text-xs font-medium text-white/80">Libre de tous tes crédits</p>
+            <p className="mt-0.5 flex items-center gap-2 text-xl font-bold capitalize">
+              🏁 {freeAt ? monthLabelFr(freeAt) : "—"}
+              {freeAt && compareMonths(freeAt, current) > 0 && (
+                <span className="rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold normal-case">
+                  dans {monthsBetween(current, freeAt)} mois
                 </span>
-                <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">
-                  {`${percent}% · → ${end ? monthLabelFr(end) : "Sans fin"}`}
-                </span>
+              )}
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="rounded-xl bg-white/15 px-3 py-2">
+                <p className="text-[11px] text-white/75">Reste à payer</p>
+                <p className="text-sm font-bold tabular-nums">{money(remaining)}</p>
               </div>
-              <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                <div
-                  className={cn("h-full rounded-full transition-[width] duration-500", BAR[color])}
-                  style={{ width: `${percent}%` }}
-                />
+              <div className="rounded-xl bg-white/15 px-3 py-2">
+                <p className="text-[11px] text-white/75">Par mois</p>
+                <p className="text-sm font-bold tabular-nums">{money(monthly)}</p>
               </div>
-              <p className="text-[11px] text-slate-400">
-                Payé {formatMoney(paid, currency)} / Total {formatMoney(total, currency)}
-              </p>
             </div>
-          ))}
-        </CardContent>
-      </Card>
+          </div>
+        )}
+
+        <div className="flex flex-col px-3 pb-3 pt-3">
+          {/* Month axis */}
+          <div className="flex items-end gap-2">
+            <div className="w-[88px] shrink-0" />
+            <div className="relative h-8 flex-1">
+              {months.map((m, i) =>
+                i % tickEvery === 0 || m.month === 1 ? (
+                  <span
+                    key={i}
+                    className={cn(
+                      "absolute bottom-0 -translate-x-1/2 text-center text-[10px] leading-tight",
+                      compareMonths(m, current) === 0 ? "font-bold text-blue-600 dark:text-sky-300" : "text-slate-400",
+                    )}
+                    style={{ left: `${at(m) + 50 / span}%` }}
+                  >
+                    {m.month === 1 || i === 0 ? (
+                      <span className="block text-[9px] font-semibold text-slate-500 dark:text-slate-400">
+                        {String(m.year).slice(2)}
+                      </span>
+                    ) : null}
+                    {INITIALS[m.month - 1]}
+                  </span>
+                ) : null,
+              )}
+            </div>
+          </div>
+
+          {/* Rows */}
+          <div className="relative mt-1 flex flex-col">
+            {rows.map((r) => {
+              const s = STYLE[r.kind];
+              const left = at(r.start);
+              const right = r.end ? clamp(at(r.end) + 100 / span) : 100;
+              const width = Math.max(right - left, 100 / span);
+              const done = r.percent >= 100;
+              return (
+                <div key={r.expense.id} className="flex items-center gap-2 border-t border-slate-100 py-2.5 first:border-t-0 dark:border-slate-800">
+                  <div className="flex w-[88px] shrink-0 items-center gap-1.5">
+                    <span className="text-lg leading-none">{displayIcon(r.expense, categoryEmoji)}</span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-[13px] font-semibold text-slate-800 dark:text-slate-100">
+                        {r.expense.name}
+                      </span>
+                      <span className="block truncate text-[10px] text-slate-400">{money(r.expense.amount)}/m</span>
+                    </span>
+                  </div>
+                  <div className="relative flex-1">
+                    {/* Today */}
+                    <div
+                      className="pointer-events-none absolute -bottom-2.5 -top-2.5 w-px bg-blue-500/50 dark:bg-sky-400/40"
+                      style={{ left: `${todayLeft}%` }}
+                    />
+                    {/* Bar: whole span, filled with what's paid */}
+                    <div className="relative h-4">
+                      <div
+                        className={cn("absolute inset-y-0 overflow-hidden rounded-full", s.rest)}
+                        style={{ left: `${left}%`, width: `${width}%` }}
+                      >
+                        <div className={cn("h-full rounded-full", s.paid)} style={{ width: `${r.percent}%` }} />
+                      </div>
+                      {r.turn && (
+                        <span
+                          className="absolute -top-1 -translate-x-1/2 text-[13px] leading-none"
+                          style={{ left: `${at(r.turn) + 50 / span}%` }}
+                          title={`Ton tour : ${monthLabelFr(r.turn)}`}
+                        >
+                          💰
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 flex justify-between gap-1 text-[10px]">
+                      <span className={cn("font-semibold tabular-nums", s.text)}>{done ? "Terminé ✓" : `${r.percent}%`}</span>
+                      <span className="truncate text-slate-400">
+                        {r.end ? `fin ${monthLabelFr(r.end).toLowerCase()}` : "sans fin"}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-[10px] text-slate-400">
+            <span className="flex items-center gap-1">
+              <span className="h-2 w-3 rounded-full bg-gradient-to-r from-sky-400 to-blue-600" /> Payé
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="h-2 w-3 rounded-full bg-blue-100 dark:bg-blue-950" /> Restant
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="h-2.5 w-px bg-blue-500/60" /> Aujourd&apos;hui
+            </span>
+            {daretRows.length > 0 && <span>💰 Ton tour de daret</span>}
+          </p>
+        </div>
+      </div>
     </section>
   );
 }
