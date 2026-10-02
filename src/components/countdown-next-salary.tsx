@@ -71,6 +71,11 @@ function getServerSnapshot(): Remaining {
   return SERVER_SNAPSHOT;
 }
 
+// The pay date under the countdown ("jeudi 1 novembre"). A string snapshot is
+// stable by value; empty on the server for the same hydration reason.
+const PAY_DATE = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+const getServerDate = () => "";
+
 function Unit({ value, label }: { value: number; label: string }) {
   return (
     <div className="rounded-2xl bg-slate-900/80 py-3 text-center text-white shadow-inner dark:bg-black/40">
@@ -83,6 +88,7 @@ function Unit({ value, label }: { value: number; label: string }) {
 /** Countdown to the next salary day (set in Menu → Salaire). */
 export function CountdownNextSalary({ payDay = 1 }: { payDay?: number }) {
   const remaining = useSyncExternalStore(subscribe, () => getSnapshotFor(payDay), getServerSnapshot);
+  const payDate = useSyncExternalStore(subscribe, () => PAY_DATE.format(nextPayday(new Date(), payDay)), getServerDate);
 
   return (
     <div className="rounded-2xl border border-white/50 bg-white/30 p-4 shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
@@ -92,6 +98,7 @@ export function CountdownNextSalary({ payDay = 1 }: { payDay?: number }) {
         <Unit value={remaining.minutes} label="min" />
         <Unit value={remaining.seconds} label="sec" />
       </div>
+      <p className="mt-2 h-4 text-center text-[11px] text-slate-500 dark:text-slate-400">{payDate && `Salaire le ${payDate}`}</p>
     </div>
   );
 }
