@@ -55,11 +55,11 @@ export function HomeDashboard({
 
   return (
     <>
-      {/* Tapping it opens the Revenus page (the eye only shows / hides). */}
+      {/* Tapping it opens the Solde page (the eye only shows / hides). */}
       <Link
-        href="/incomes"
+        href="/solde"
         prefetch
-        aria-label="Disponible maintenant · voir les revenus"
+        aria-label="Disponible maintenant · voir le solde"
         className="block transition-transform active:scale-[0.98]"
       >
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 px-5 pb-4 pt-4 text-white shadow-lg shadow-emerald-600/20 dark:from-emerald-600 dark:via-teal-700 dark:to-cyan-800 dark:shadow-none">

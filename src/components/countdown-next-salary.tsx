@@ -173,8 +173,8 @@ function ofMonth(period: string): string {
   return /^[aeiouéèh]/i.test(name) ? `d'${name}` : `de ${name}`;
 }
 
-const RING = 92;
-const RING_STROKE = 8;
+const RING = 60;
+const RING_STROKE = 6;
 
 /** The pay period as a ring filling up, with the days left inside. */
 function Ring({ progress, days, late }: { progress: number; days: number; late: boolean }) {
@@ -204,25 +204,15 @@ function Ring({ progress, days, late }: { progress: number; days: number; late: 
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={cn("text-3xl font-bold leading-none tabular-nums", late && "text-rose-300")}>
+        <span className={cn("text-xl font-bold leading-none tabular-nums", late && "text-rose-300")}>
           {late && "−"}
           {days}
         </span>
-        <span className="mt-1 text-[10px] font-medium uppercase tracking-wider text-white/60">
+        <span className="mt-0.5 text-[8px] font-medium uppercase tracking-wider text-white/60">
           {days > 1 ? "jours" : "jour"}
         </span>
       </div>
     </div>
-  );
-}
-
-/** Hours / minutes / seconds as small tiles. */
-function TimeChip({ value, unit }: { value: number; unit: string }) {
-  return (
-    <span className="flex min-w-[2.75rem] items-baseline justify-center gap-0.5 rounded-lg bg-white/10 px-1.5 py-1 ring-1 ring-white/10">
-      <span className="text-base font-bold tabular-nums">{String(value).padStart(2, "0")}</span>
-      <span className="text-[10px] text-white/60">{unit}</span>
-    </span>
   );
 }
 
@@ -271,7 +261,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
   const caption = state.period ? (late ? `prévu le ${state.lastLabel}` : capitalize(state.nextLabel)) : "";
 
   const shell =
-    "relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-4 text-white shadow-lg ring-1 ring-white/5 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/80 dark:ring-white/10";
+    "relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white shadow-lg ring-1 ring-white/5 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/80 dark:ring-white/10";
   const glow = (
     <span
       aria-hidden
@@ -285,7 +275,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
   return (
     <>
       {state.phase === "ask" ? (
-        <div className={cn(shell, "flex flex-col items-center gap-3 text-center")}>
+        <div className={cn(shell, "flex flex-col items-center gap-3 p-4 text-center")}>
           {glow}
           <p className="relative text-3xl">💰</p>
           <p className="relative text-base font-semibold">As-tu reçu ton salaire {ofMonth(state.period)} ?</p>
@@ -316,26 +306,21 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
           type="button"
           onClick={() => setEditing(true)}
           aria-label={late ? "Confirmer le salaire" : "Modifier le salaire"}
-          className={cn(shell, "block text-left transition-transform active:scale-[0.98]")}
+          className={cn(shell, "block px-3.5 py-3 text-left transition-transform active:scale-[0.98]")}
         >
           {glow}
-          <div className="relative flex items-center gap-4">
+          <div className="relative flex items-center gap-3">
             <Ring progress={state.progress} days={state.days} late={late} />
             <div className="min-w-0 flex-1">
               <p
                 className={cn(
-                  "text-[11px] font-semibold uppercase tracking-[0.16em]",
+                  "text-[10px] font-semibold uppercase tracking-[0.16em]",
                   late ? "text-rose-300" : "text-indigo-200/80",
                 )}
               >
                 {late ? "Salaire en retard" : "Prochain salaire"}
               </p>
-              <p className="mt-0.5 h-6 truncate text-base font-semibold">{caption}</p>
-              <div className="mt-2 flex items-center gap-1.5">
-                <TimeChip value={state.hours} unit="h" />
-                <TimeChip value={state.minutes} unit="min" />
-                <TimeChip value={state.seconds} unit="s" />
-              </div>
+              <p className="mt-0.5 h-5 truncate text-sm font-semibold">{caption}</p>
             </div>
             <ChevronRight className="h-4 w-4 shrink-0 text-white/40" />
           </div>
