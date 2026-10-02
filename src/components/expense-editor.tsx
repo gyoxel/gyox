@@ -413,7 +413,7 @@ function visibleBottom(): number {
   return vv ? vv.offsetTop + vv.height : window.innerHeight;
 }
 
-function keepAboveKeyboard(input: HTMLInputElement) {
+export function keepAboveKeyboard(input: HTMLInputElement) {
   const vv = window.visualViewport;
   let settleTimer: ReturnType<typeof setTimeout> | undefined;
   let watchUntil = Date.now() + WATCH_MS;
@@ -504,7 +504,7 @@ function RecurrenceOption({
   );
 }
 
-async function errorMessage(res: Response): Promise<string> {
+export async function errorMessage(res: Response): Promise<string> {
   const body = await res.json().catch(() => null);
   const first =
     body?.error?.formErrors?.[0] ??

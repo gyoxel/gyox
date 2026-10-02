@@ -5,6 +5,7 @@ import { compareMonths, monthKey, monthLabelFr, monthOfDateStr, monthsBetween, t
 import { PageHeader } from "@/components/page-header";
 import { ExpenseEditor, type PaymentStatusInit, type RecurrenceInit } from "@/components/expense-editor";
 import { DeleteExpenseButton } from "@/components/delete-expense-button";
+import { CreditEditor } from "@/components/credit-editor";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatMoney } from "@/lib/utils";
 import type { Expense, Payment } from "@/lib/types";
@@ -36,12 +37,16 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
           <EndInfo expense={expense} allExpenses={allExpenses} />
         )}
 
-        <ExpenseEditor
-          expense={expense}
-          categories={categories}
-          recurrenceInit={recurrenceInit}
-          paymentStatus={paymentStatus}
-        />
+        {expense.type === "credit" ? (
+          <CreditEditor expense={expense} paymentStatus={paymentStatus} />
+        ) : (
+          <ExpenseEditor
+            expense={expense}
+            categories={categories}
+            recurrenceInit={recurrenceInit}
+            paymentStatus={paymentStatus}
+          />
+        )}
       </main>
     </>
   );
