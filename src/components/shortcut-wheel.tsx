@@ -15,11 +15,11 @@ const ITEMS: { href: string; label: string; hint: string; icon: LucideIcon; tint
 ];
 const N = ITEMS.length;
 
-const ITEM_PX = 56; // finger travel for one item
+const ITEM_PX = 48; // finger travel for one item
 const TAU = 325; // ms: how long a fling keeps going (exponential decay)
 const MAX_FLING = 3 * N; // items, at most
 const FLICK_PX_MS = 0.35; // slower than this on release: no momentum
-const HEIGHT = 236;
+const HEIGHT = 150;
 
 /** Where the wheel was left, kept while the app stays open. */
 let savedPos = 0;
@@ -36,16 +36,17 @@ function offsetOf(i: number, pos: number): number {
  *  sharper, the far ones small, faded and blurred. */
 function styleFor(d: number): React.CSSProperties {
   const a = Math.abs(d);
-  const y = Math.sign(d) * (a <= 1 ? a * 64 : 64 + (a - 1) * 46);
-  const scale = Math.max(0.7, 1 - 0.11 * a);
-  const opacity = a <= 1 ? 1 - 0.3 * a : Math.max(0, 0.7 - 0.5 * (a - 1));
-  const blur = Math.max(0, a - 0.8) * 2.2;
+  // Neighbours tucked under the centre card, only their edge showing.
+  const y = Math.sign(d) * (a <= 1 ? a * 30 : 30 + (a - 1) * 14);
+  const scale = Math.max(0.78, 1 - 0.08 * a);
+  const opacity = a <= 1 ? 1 - 0.15 * a : Math.max(0, 0.85 - 0.75 * (a - 1));
+  const blur = Math.max(0, a - 0.6) * 1.6;
   return {
     transform: `translate3d(0, calc(-50% + ${y.toFixed(2)}px), 0) scale(${scale.toFixed(4)})`,
-    opacity: a > 2.6 ? 0 : Number(opacity.toFixed(3)),
+    opacity: a > 2.2 ? 0 : Number(opacity.toFixed(3)),
     filter: blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none",
     zIndex: 100 - Math.round(a * 10),
-    pointerEvents: a > 2.2 ? "none" : "auto",
+    pointerEvents: a > 1.6 ? "none" : "auto",
   };
 }
 
@@ -205,8 +206,8 @@ export function ShortcutWheel() {
       className="relative touch-none select-none outline-none"
       style={{
         height: HEIGHT,
-        maskImage: "linear-gradient(to bottom, transparent, black 16%, black 84%, transparent)",
-        WebkitMaskImage: "linear-gradient(to bottom, transparent, black 16%, black 84%, transparent)",
+        maskImage: "linear-gradient(to bottom, transparent, black 8%, black 92%, transparent)",
+        WebkitMaskImage: "linear-gradient(to bottom, transparent, black 8%, black 92%, transparent)",
       }}
     >
       {ITEMS.map(({ href, label, hint, icon: Icon, tint }, i) => (
