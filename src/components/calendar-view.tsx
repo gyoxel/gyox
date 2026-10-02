@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn, formatMoney } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ const TIME_ZONE = "Africa/Casablanca";
 const DAY_KEY = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" });
 const TIME = new Intl.DateTimeFormat("fr-FR", { timeZone: TIME_ZONE, hour: "2-digit", minute: "2-digit" });
 const DAY_TITLE = new Intl.DateTimeFormat("fr-FR", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" });
+const SWIPE_PX = 40;
 const WEEKDAYS = ["L", "M", "M", "J", "V", "S", "D"];
 
 const dayKeyOf = (at: string) => (at.length === 10 ? at : DAY_KEY.format(new Date(at)));
@@ -49,7 +51,7 @@ export function CalendarView({
   month: string;
   monthLabel: string;
   events: CalendarEvent[];
-  prevHref: string | null;
+  prevHref: string;
   nextHref: string | null;
   currency: string;
 }) {
@@ -66,18 +68,30 @@ export function CalendarView({
   }
   const sum = (list: CalendarEvent[], kind: CalendarEvent["kind"]) =>
     list.filter((e) => e.kind === kind).reduce((s, e) => s + e.amount, 0);
-  const all = [...byDay.values()].flat();
-  const totalIn = sum(all, "in");
-  const totalOut = sum(all, "out");
-  const totalSaving = sum(all, "saving");
-
   const dayKey = (d: number) => `${month}-${String(d).padStart(2, "0")}`;
   const [selected, setSelected] = useState<string | null>(today.startsWith(month) ? today : null);
   const selectedEvents = selected ? (byDay.get(selected) ?? []) : [];
 
+  // Swipe on the grid: right → previous month, left → next (never the future).
+  const router = useRouter();
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  function onTouchStart(e: React.TouchEvent) {
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start) return;
+    const dx = e.changedTouches[0].clientX - start.x;
+    const dy = e.changedTouches[0].clientY - start.y;
+    if (Math.abs(dx) < SWIPE_PX || Math.abs(dx) < Math.abs(dy)) return;
+    const href = dx > 0 ? prevHref : nextHref;
+    if (href) router.replace(href, { scroll: false });
+  }
+
   return (
     <div className="flex flex-col gap-4">
-      {/* Month navigation: past months only */}
+      {/* Month navigation: past months only (arrows or swipe on the grid) */}
       <div className="flex items-center justify-between gap-2">
         <NavArrow href={prevHref} label="Mois précédent">
           <ChevronLeft className="h-4 w-4" />
@@ -89,7 +103,11 @@ export function CalendarView({
       </div>
 
       {/* Grid */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div
+        className="touch-pan-y rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
         <div className="grid grid-cols-7 pb-1">
           {WEEKDAYS.map((w, i) => (
             <span key={i} className="py-1 text-center text-[11px] font-semibold text-slate-400">
@@ -144,22 +162,6 @@ export function CalendarView({
         </div>
       </div>
 
-      {/* Month totals */}
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <Total label="Entrées" value={`+${formatMoney(totalIn, currency)}`} className="text-emerald-600" />
-        <Total label="Sorties" value={`−${formatMoney(totalOut, currency)}`} className="text-rose-600" />
-        <Total
-          label="Solde"
-          value={`${totalIn - totalOut >= 0 ? "+" : "−"}${formatMoney(Math.abs(totalIn - totalOut), currency)}`}
-          className={totalIn - totalOut >= 0 ? "text-emerald-600" : "text-rose-600"}
-        />
-      </div>
-      {totalSaving > 0 && (
-        <p className="-mt-2 text-center text-xs text-slate-500 dark:text-slate-400">
-          Mis de côté pour tes objectifs : <span className="font-semibold text-teal-600">{formatMoney(totalSaving, currency)}</span>
-        </p>
-      )}
-
       {/* Selected day */}
       {selected && (
         <section className="flex flex-col gap-2">
@@ -209,14 +211,5 @@ function NavArrow({ href, label, children }: { href: string | null; label: strin
     <span aria-hidden className={cn(className, "opacity-30")}>
       {children}
     </span>
-  );
-}
-
-function Total({ label, value, className }: { label: string; value: string; className: string }) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white px-2 py-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <p className="text-[11px] text-slate-500 dark:text-slate-400">{label}</p>
-      <p className={cn("text-sm font-bold tabular-nums", className)}>{value}</p>
-    </div>
   );
 }

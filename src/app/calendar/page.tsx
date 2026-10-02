@@ -1,5 +1,5 @@
 import { getAllCategories, getAllExpenses, getAllGoals, getAllPayments, getSettings } from "@/lib/repository";
-import { addMonths, compareMonths, monthFromSearchParams, monthKey, monthLabelFr, parseMonthKey, todayMonth, type MonthId } from "@/lib/date";
+import { addMonths, compareMonths, monthFromSearchParams, monthKey, monthLabelFr, todayMonth, type MonthId } from "@/lib/date";
 import { displayIcon } from "@/lib/category";
 import { PageHeader } from "@/components/page-header";
 import { CalendarView, type CalendarEvent } from "@/components/calendar-view";
@@ -15,7 +15,7 @@ function paydayOf(m: MonthId, payDay: number): string {
 /**
  * Calendrier: the history of money movements, day by day — expenses paid
  * (the day they were ticked), the salary on its pay day, and money put
- * aside for goals. Current and past months only.
+ * aside for goals. Current and past months only (no future).
  */
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const [sp, settings, expenses, payments, categories, goals] = await Promise.all([
@@ -28,17 +28,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   ]);
   const current = todayMonth();
 
-  // History starts with the first recorded movement (or this month).
-  const firstDates = [
-    ...payments.map((p) => p.paidAt.slice(0, 7)),
-    ...goals.flatMap((g) => g.deposits.map((d) => d.date.slice(0, 7))),
-  ].sort();
-  const earliest = firstDates[0] ? parseMonthKey(firstDates[0]) : current;
-  const earliestMonth = compareMonths(earliest, current) < 0 ? earliest : current;
-
   let month = monthFromSearchParams(sp.month, current);
   if (compareMonths(month, current) > 0) month = current;
-  if (compareMonths(month, earliestMonth) < 0) month = earliestMonth;
   const key = monthKey(month);
   // A payment's day is decided in Moroccan time, which can spill one day
   // over the month's edges in UTC: keep a margin, the view filters exactly.
@@ -83,7 +74,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           month={key}
           monthLabel={monthLabelFr(month)}
           events={events}
-          prevHref={compareMonths(month, earliestMonth) > 0 ? `/calendar?month=${monthKey(addMonths(month, -1))}` : null}
+          prevHref={`/calendar?month=${monthKey(addMonths(month, -1))}`}
           nextHref={compareMonths(month, current) < 0 ? `/calendar?month=${monthKey(addMonths(month, 1))}` : null}
           currency={settings.currency}
         />
