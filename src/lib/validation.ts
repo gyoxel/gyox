@@ -138,3 +138,11 @@ export const goalInputSchema = z.object({
     .default(null),
   daretIds: z.array(z.string().min(1)).default([]),
 });
+
+export const incomeInputSchema = z.object({
+  name: z.string().trim().min(1, "Indique un nom.").max(60),
+  amount: z.coerce.number().positive("Le montant doit être positif."),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date invalide."),
+  category: z.string().min(1),
+  notes: z.string().trim().max(500).nullable().default(null),
+});

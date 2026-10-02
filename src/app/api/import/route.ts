@@ -69,6 +69,19 @@ const backupSchema = z.object({
   dayNotes: z
     .array(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), text: z.string().min(1), updatedAt: z.string() }))
     .optional(),
+  incomes: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        name: z.string().min(1),
+        amount: z.number().positive(),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        category: z.string().min(1),
+        notes: z.string().nullable().default(null),
+        createdAt: z.string(),
+      }),
+    )
+    .optional(),
   salaryAdvances: z
     .array(
       z.object({

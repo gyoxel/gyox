@@ -195,3 +195,19 @@ model SalaryAdvance {
 
   @@map("salary_advances")
 }
+
+/// Extra income (prime, freelance, cadeau…), on top of the salary. It adds
+/// to the money of the month it's received.
+model Income {
+  id        String  @id @default(uuid())
+  name      String
+  amount    Float
+  /// "YYYY-MM-DD" received.
+  date      String
+  /// Key of one of the income categories (see lib/income.ts).
+  category  String
+  notes     String?
+  createdAt String
+
+  @@map("incomes")
+}

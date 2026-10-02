@@ -18,13 +18,13 @@ const RIGHT_ITEMS = [
 ];
 
 // Pages opened from the Menu tab keep it highlighted.
-const MENU_PATHS = ["/menu", "/daret", "/goals", "/calendar", "/stats", "/categories", "/salary", "/settings"];
+const MENU_PATHS = ["/menu", "/daret", "/goals", "/calendar", "/stats", "/categories", "/salary", "/incomes", "/settings"];
 
 // Fan-out positions (px) of each option's circle center relative to the
 // + button's center: left, top, right — like a radial speed-dial.
 const ACTIONS = [
   {
-    href: "/salary",
+    href: "/incomes/new",
     label: "Revenu",
     icon: ArrowDownToLine,
     dx: -112,
@@ -99,6 +99,8 @@ const PREFETCH_HREFS = [
   "/goals",
   "/calendar",
   "/salary",
+  "/incomes",
+  "/incomes/new",
   "/categories",
   "/expenses/new",
   "/expenses/new?type=credit",

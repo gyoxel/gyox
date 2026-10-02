@@ -189,3 +189,15 @@ export interface SalaryAdvance {
   period: string;
   createdAt: string;
 }
+
+/** Extra income on top of the salary, received on `date` ("YYYY-MM-DD"). */
+export interface Income {
+  id: string;
+  name: string;
+  amount: number;
+  date: string;
+  /** Key of an income category (lib/income.ts). */
+  category: string;
+  notes: string | null;
+  createdAt: string;
+}

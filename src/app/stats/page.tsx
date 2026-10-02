@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
-import { getAllCategories, getAllExpenses, getAllPayments, getAllSalaryAdvances, getSettings } from "@/lib/repository";
+import { getAllCategories, getAllExpenses, getAllIncomes, getAllPayments, getAllSalaryAdvances, getSettings } from "@/lib/repository";
+import { incomesIn } from "@/lib/income";
 import { addMonths, compareMonths, defaultViewMonth, monthFromSearchParams, monthKey, monthLabelFr, todayMonth } from "@/lib/date";
 import { salaryForMonth } from "@/lib/salary";
 import { getExpenseDisplayColor, getForecast, getMonthSummary, getPaidThisMonth, type DisplayColor } from "@/lib/engine";
@@ -28,13 +29,14 @@ const SEGMENTS: { color: DisplayColor; label: string }[] = [
  * forecast for the coming months.
  */
 export default async function StatsPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
-  const [sp, settings, expenses, payments, categories, advances] = await Promise.all([
+  const [sp, settings, expenses, payments, categories, advances, incomes] = await Promise.all([
     searchParams,
     getSettings(),
     getAllExpenses(),
     getAllPayments(),
     getAllCategories(),
     getAllSalaryAdvances(),
+    getAllIncomes(),
   ]);
   const currency = settings.currency;
   const categoryEmoji = new Map(categories.map((c) => [c.id, c.emoji]));
@@ -43,13 +45,18 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   const currentMonth = todayMonth();
   const paidThisMonth = getPaidThisMonth(expenses, payments, currentMonth);
   // Advances on salary: added the month they're taken, off the salary they're taken on.
-  const salaryNow = salaryForMonth(settings.salary, advances, monthKey(currentMonth));
+  // Extra incomes (prime, freelance…) add to the month they're received.
+  const salaryNow = salaryForMonth(settings.salary, advances, monthKey(currentMonth)) + incomesIn(incomes, monthKey(currentMonth));
   const available = Math.max(0, salaryNow - paidThisMonth);
   const percentUsed = salaryNow > 0 ? Math.min(100, Math.round((paidThisMonth / salaryNow) * 100)) : 0;
 
   // Planned budget of the viewed month (next month by default).
   const viewMonth = monthFromSearchParams(sp.month, defaultViewMonth());
-  const summary = getMonthSummary(expenses, viewMonth, salaryForMonth(settings.salary, advances, monthKey(viewMonth)));
+  const summary = getMonthSummary(
+    expenses,
+    viewMonth,
+    salaryForMonth(settings.salary, advances, monthKey(viewMonth)) + incomesIn(incomes, monthKey(viewMonth)),
+  );
   const segments: DonutSegment[] = SEGMENTS.map(({ color, label }) => {
     const items = summary.occurrences
       .filter((o) => getExpenseDisplayColor(o.expense) === color)
