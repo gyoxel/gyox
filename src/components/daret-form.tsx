@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import { addMonths, monthKey, monthLabelFr, parseMonthKey, todayMonth } from "@/lib/date";
-import { formatMoney } from "@/lib/utils";
+import { cleanDecimalInput, formatMoney, parseDecimalInput } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,7 +33,7 @@ export function DaretForm({ currency }: { currency: string }) {
   const turnIsValid = turnOptions.some((m) => monthKey(m) === turnMonth);
   const effectiveTurn = turnIsValid ? turnMonth : turnOptions[0] ? monthKey(turnOptions[0]) : "";
 
-  const payout = (Number(amount) || 0) * memberCount;
+  const payout = parseDecimalInput(amount) * memberCount;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,7 +44,7 @@ export function DaretForm({ currency }: { currency: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim() || "Daret",
-          amount: Number(amount),
+          amount: parseDecimalInput(amount),
           members: memberCount,
           startMonth,
           turnMonth: effectiveTurn,
@@ -75,12 +75,11 @@ export function DaretForm({ currency }: { currency: string }) {
           <Label htmlFor="amount">Cotisation / mois (DH)</Label>
           <Input
             id="amount"
-            type="number"
-            min="0.01"
-            step="0.01"
+            type="text"
             inputMode="decimal"
+            autoComplete="off"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => setAmount(cleanDecimalInput(e.target.value))}
             required
             placeholder="0"
           />

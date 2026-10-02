@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import type { Settings } from "@/lib/types";
+import { cleanDecimalInput, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,7 @@ const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
  *  countdown counts down to that day). */
 export function SalaryForm({ settings }: { settings: Settings }) {
   const refreshData = useRefreshData();
-  const [salary, setSalary] = useState(String(settings.salary));
+  const [salary, setSalary] = useState(toDecimalInput(settings.salary));
   const [payDay, setPayDay] = useState(String(settings.payDay));
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -28,7 +29,7 @@ export function SalaryForm({ settings }: { settings: Settings }) {
       const res = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ salary: Number(salary), payDay: Number(payDay) }),
+        body: JSON.stringify({ salary: parseDecimalInput(salary), payDay: Number(payDay) }),
       });
       if (!res.ok) {
         setError("Impossible d'enregistrer. Vérifie le montant.");
@@ -47,12 +48,11 @@ export function SalaryForm({ settings }: { settings: Settings }) {
             <Label htmlFor="salary">Salaire mensuel (DH)</Label>
             <Input
               id="salary"
-              type="number"
+              type="text"
               inputMode="decimal"
-              min="0.01"
-              step="0.01"
+              autoComplete="off"
               value={salary}
-              onChange={(e) => setSalary(e.target.value)}
+              onChange={(e) => setSalary(cleanDecimalInput(e.target.value))}
               required
             />
           </div>

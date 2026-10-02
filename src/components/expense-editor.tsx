@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import type { Category, Expense, ExpenseType, Frequency } from "@/lib/types";
 import { addMonths, monthKey, monthLabelFr, monthOfDateStr, todayDateStr } from "@/lib/date";
 import { lastDayOfMonth } from "@/lib/daret";
-import { cn, formatMoney } from "@/lib/utils";
+import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import { CategoryPicker } from "@/components/category-picker";
 import { Button } from "@/components/ui/button";
@@ -66,7 +66,7 @@ export function ExpenseEditor({
   const refreshData = useRefreshData();
   const [categories, setCategories] = useState(initialCategories);
 
-  const [amount, setAmount] = useState(expense ? String(expense.amount) : "");
+  const [amount, setAmount] = useState(expense ? toDecimalInput(expense.amount) : "");
   const [name, setName] = useState(expense?.name ?? "");
   // Credits have their own entry point (+ > Crédit), so they aren't filed
   // under a category.
@@ -78,7 +78,7 @@ export function ExpenseEditor({
     recurrenceInit?.kind ?? (isCredit ? "until" : "months"),
   );
   const [months, setMonths] = useState(recurrenceInit?.months ?? "");
-  const [untilTotal, setUntilTotal] = useState(recurrenceInit?.until ?? "");
+  const [untilTotal, setUntilTotal] = useState(toDecimalInput(recurrenceInit?.until ? Number(recurrenceInit.until) : null));
   // Statut de paiement: "Payé" by default when creating (paid today,
   // deducted from Disponible); "Pas encore" leaves it in Dépenses to check
   // off. A new credit defaults to "Pas encore" (first installment usually
@@ -90,9 +90,9 @@ export function ExpenseEditor({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const amountValue = Number(amount) || 0;
+  const amountValue = parseDecimalInput(amount);
   const monthsValue = Math.floor(Number(months) || 0);
-  const untilValue = Number(untilTotal) || 0;
+  const untilValue = parseDecimalInput(untilTotal);
 
   const mode: "once" | "months" | "until" | "permanent" = recurring ? recurrenceKind : "once";
 
@@ -166,7 +166,7 @@ export function ExpenseEditor({
           (recurring &&
             (recurrenceKind !== init.kind ||
               (recurrenceKind === "months" && months !== init.months) ||
-              (recurrenceKind === "until" && untilTotal !== init.until)));
+              (recurrenceKind === "until" && untilValue !== (Number(init.until) || 0))));
         const res = await fetch(`/api/expenses/${expense.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -241,12 +241,11 @@ export function ExpenseEditor({
         <div className="flex items-baseline gap-2">
           <input
             id="amount"
-            type="number"
+            type="text"
             inputMode="decimal"
-            min="0.01"
-            step="0.01"
+            autoComplete="off"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => setAmount(cleanDecimalInput(e.target.value))}
             placeholder="0"
             // Grow with the digits so "DH" stays right next to the number.
             style={{ width: `${Math.max(1, amount.length) + 0.3}ch` }}
@@ -312,12 +311,11 @@ export function ExpenseEditor({
               <Input
                 id="untilTotal"
                 aria-label="Montant à atteindre (DH)"
-                type="number"
+                type="text"
                 inputMode="decimal"
-                min="0.01"
-                step="0.01"
+                autoComplete="off"
                 value={untilTotal}
-                onChange={(e) => setUntilTotal(e.target.value)}
+                onChange={(e) => setUntilTotal(cleanDecimalInput(e.target.value))}
                 placeholder="Ex: 3000 DH"
                 onFocus={(e) => keepAboveKeyboard(e.currentTarget)}
                 tabIndex={recurrenceKind === "until" ? 0 : -1}
