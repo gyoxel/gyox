@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowLeft, ArrowRight, Check, Plus, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Check, GripVertical, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Category } from "@/lib/types";
 import { useRefreshData } from "@/lib/use-refresh-data";
@@ -29,6 +29,13 @@ const TINTS = [
   "from-lime-100 to-green-50 dark:from-lime-950/60 dark:to-green-950/30",
 ];
 
+/** A tile keeps its color while it moves: picked from its id. */
+function tintOf(id: string): string {
+  let h = 0;
+  for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return TINTS[h % TINTS.length];
+}
+
 const EMOJIS = [
   "🍔", "🛒", "🏠", "🚗", "⛽", "💡", "📱", "🎬", "👕", "💊", "🎁", "✈️",
   "📚", "🐶", "💇", "🏋️", "☕", "🍕", "🧾", "🎮", "🛠️", "💼", "👶", "🏷️",
@@ -37,7 +44,8 @@ const EMOJIS = [
 type Editing = { mode: "new" } | { mode: "edit"; category: Category };
 
 /** Catégories: a grid of tiles (emoji, name, this month's spending); tap
- *  one to rename it, change its emoji, move it or delete it. */
+ *  one to rename it, change its emoji or delete it; hold and drag one to
+ *  reorder, then "Enregistrer l'ordre". */
 export function CategoryManager({
   categories: initial,
   stats,
@@ -88,7 +96,9 @@ export function CategoryManager({
     if (editing.mode === "new") {
       // The server files it before Santé / Autres (kept last): take its order.
       const list = await fetch("/api/categories").then((r) => (r.ok ? (r.json() as Promise<Category[]>) : null));
-      setCategories((prev) => list ?? [...prev, saved]);
+      const nextList = list ?? [...categories, saved];
+      setCategories(nextList);
+      setSavedOrder(nextList.map((c) => c.id));
     } else {
       setCategories((prev) => prev.map((c) => (c.id === saved.id ? saved : c)));
     }
@@ -97,24 +107,84 @@ export function CategoryManager({
     void refreshData();
   }
 
-  async function move(id: string, delta: -1 | 1) {
-    const index = categories.findIndex((c) => c.id === id);
-    const target = index + delta;
-    if (index < 0 || target < 0 || target >= categories.length) return;
-    const next = [...categories];
-    [next[index], next[target]] = [next[target], next[index]];
-    const previous = categories;
-    setCategories(next);
+  // ---- Reorder: hold a tile, drag it to its new place, then save. ----
+  const [savedOrder, setSavedOrder] = useState(() => initial.map((c) => c.id));
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const press = useRef<{ id: string; x: number; y: number; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const dragging = useRef<string | null>(null);
+  const justDragged = useRef(false);
+  const orderChanged = categories.map((c) => c.id).join() !== savedOrder.join();
+
+  // While dragging, the page must not scroll under the finger.
+  useEffect(() => {
+    const block = (e: TouchEvent) => {
+      if (dragging.current) e.preventDefault();
+    };
+    document.addEventListener("touchmove", block, { passive: false });
+    return () => document.removeEventListener("touchmove", block);
+  }, []);
+
+  function onPointerDown(e: React.PointerEvent, id: string) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    const timer = setTimeout(() => {
+      dragging.current = id;
+      setDraggingId(id);
+      navigator.vibrate?.(15);
+    }, 350);
+    press.current = { id, x: e.clientX, y: e.clientY, timer };
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    const p = press.current;
+    if (!p) return;
+    if (!dragging.current) {
+      // Moved before the hold: it's a scroll, not a drag.
+      if (Math.hypot(e.clientX - p.x, e.clientY - p.y) > 8) cancelPress();
+      return;
+    }
+    const over = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>("[data-cat-id]");
+    const overId = over?.dataset.catId;
+    if (!overId || overId === dragging.current) return;
+    setCategories((prev) => {
+      const from = prev.findIndex((c) => c.id === dragging.current);
+      const to = prev.findIndex((c) => c.id === overId);
+      if (from < 0 || to < 0) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  }
+
+  function endPress() {
+    if (dragging.current) justDragged.current = true;
+    cancelPress();
+  }
+
+  function cancelPress() {
+    if (press.current) clearTimeout(press.current.timer);
+    press.current = null;
+    dragging.current = null;
+    setDraggingId(null);
+  }
+
+  async function saveOrder() {
+    setBusy(true);
+    const ids = categories.map((c) => c.id);
     const res = await fetch("/api/categories/order", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids: next.map((c) => c.id) }),
+      body: JSON.stringify({ ids }),
     });
-    if (!res.ok) {
-      setCategories(previous);
-      return toast.error("Réorganisation impossible.");
-    }
+    setBusy(false);
+    if (!res.ok) return toast.error("Réorganisation impossible.");
+    setSavedOrder(ids);
+    toast.success("Ordre enregistré.");
     void refreshData();
+  }
+
+  function resetOrder() {
+    setCategories((prev) => savedOrder.map((id) => prev.find((c) => c.id === id)).filter((c): c is Category => c != null));
   }
 
   async function confirmDelete() {
@@ -124,13 +194,13 @@ export function CategoryManager({
     setBusy(false);
     if (!res.ok) return toast.error("Suppression impossible.");
     setCategories((prev) => prev.filter((c) => c.id !== toDelete.id));
+    setSavedOrder((prev) => prev.filter((id) => id !== toDelete.id));
     toast.success("Catégorie supprimée.");
     setToDelete(null);
     setEditing(null);
     void refreshData();
   }
 
-  const editedIndex = editing?.mode === "edit" ? categories.findIndex((c) => c.id === editing.category.id) : -1;
 
   return (
     <>
@@ -141,28 +211,51 @@ export function CategoryManager({
         <p className="text-[11px] text-white/80">Dépenses classées · {monthLabel}</p>
       </div>
 
+      <p className="-mb-2 px-1 text-[11px] text-slate-400">
+        Touche une catégorie pour la modifier · maintiens-la puis glisse-la pour changer l&apos;ordre.
+      </p>
+
       <div className="grid grid-cols-2 gap-2.5">
-        {categories.map((c, i) => {
+        {categories.map((c) => {
           const s = stats[c.id] ?? { count: 0, monthTotal: 0 };
           const share = totalMonth > 0 ? Math.round((s.monthTotal / totalMonth) * 100) : 0;
+          const isDragged = draggingId === c.id;
           return (
             <button
               key={c.id}
               type="button"
-              onClick={() => open({ mode: "edit", category: c })}
+              data-cat-id={c.id}
+              onPointerDown={(e) => onPointerDown(e, c.id)}
+              onPointerMove={onPointerMove}
+              onPointerUp={endPress}
+              onPointerCancel={cancelPress}
+              onContextMenu={(e) => e.preventDefault()}
+              onClick={() => {
+                if (justDragged.current) {
+                  justDragged.current = false;
+                  return;
+                }
+                open({ mode: "edit", category: c });
+              }}
               className={cn(
-                "flex flex-col items-start gap-2 rounded-2xl border border-slate-200/70 bg-gradient-to-br p-3 text-left shadow-sm transition-transform active:scale-[0.97] dark:border-slate-800",
-                TINTS[i % TINTS.length],
+                "flex select-none flex-col gap-2.5 rounded-2xl border border-slate-200/70 bg-gradient-to-br p-3 text-left shadow-sm transition-[transform,box-shadow] duration-150 [-webkit-touch-callout:none] dark:border-slate-800",
+                tintOf(c.id),
+                isDragged ? "z-10 scale-105 shadow-xl ring-2 ring-violet-500" : "active:scale-[0.97]",
+                draggingId && !isDragged && "opacity-80",
               )}
             >
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/80 text-2xl shadow-sm dark:bg-slate-900/70">
-                {c.emoji}
-              </span>
-              <span className="w-full">
-                <span className="block truncate text-sm font-semibold text-slate-900 dark:text-white">{c.name}</span>
-                <span className="block text-[11px] text-slate-500 dark:text-slate-400">
-                  {s.count === 0 ? "Aucune dépense" : s.count === 1 ? "1 dépense" : `${s.count} dépenses`}
+              {/* Icon, with the name and count on its right */}
+              <span className="flex w-full items-center gap-2.5">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/80 text-xl shadow-sm dark:bg-slate-900/70">
+                  {c.emoji}
                 </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold text-slate-900 dark:text-white">{c.name}</span>
+                  <span className="block truncate text-[11px] text-slate-500 dark:text-slate-400">
+                    {s.count === 0 ? "Aucune dépense" : s.count === 1 ? "1 dépense" : `${s.count} dépenses`}
+                  </span>
+                </span>
+                {isDragged && <GripVertical className="h-4 w-4 shrink-0 text-violet-500" />}
               </span>
               <span className="flex w-full items-baseline justify-between gap-1">
                 <span className="text-sm font-bold tabular-nums text-slate-800 dark:text-slate-100">
@@ -176,7 +269,7 @@ export function CategoryManager({
         <button
           type="button"
           onClick={() => open({ mode: "new" })}
-          className="flex min-h-[132px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 text-slate-500 transition-colors active:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:active:bg-slate-900"
+          className="flex min-h-[96px] flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-slate-300 text-slate-500 transition-colors active:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:active:bg-slate-900"
         >
           <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
             <Plus className="h-5 w-5" />
@@ -184,6 +277,19 @@ export function CategoryManager({
           <span className="text-sm font-semibold">Ajouter</span>
         </button>
       </div>
+
+      {orderChanged && (
+        <div className="sticky bottom-28 z-20 flex gap-2 rounded-2xl border border-violet-200 bg-white/95 p-2 shadow-lg backdrop-blur dark:border-violet-900 dark:bg-slate-900/95">
+          <Button type="button" variant="outline" className="flex-1" onClick={resetOrder} disabled={busy}>
+            <RotateCcw className="h-4 w-4" />
+            Annuler
+          </Button>
+          <Button type="button" className="flex-1 bg-violet-600 text-white hover:bg-violet-700" onClick={saveOrder} disabled={busy}>
+            <Check className="h-4 w-4" />
+            Enregistrer l&apos;ordre
+          </Button>
+        </div>
+      )}
 
       <Dialog open={editing != null} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="max-h-[88dvh] overflow-y-auto">
@@ -240,34 +346,6 @@ export function CategoryManager({
                 className="text-center text-lg"
               />
             </div>
-
-            {editing?.mode === "edit" && (
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm text-slate-500 dark:text-slate-400">Position</span>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => move(editing.category.id, -1)}
-                    disabled={editedIndex <= 0}
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    Avant
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => move(editing.category.id, 1)}
-                    disabled={editedIndex < 0 || editedIndex >= categories.length - 1}
-                  >
-                    Après
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
 
             <Button type="button" onClick={submit} disabled={busy} className="bg-violet-600 text-white hover:bg-violet-700">
               <Check className="h-4 w-4" />
