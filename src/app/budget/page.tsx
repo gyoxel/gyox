@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Check, ChevronRight, Clock, Plus } from "lucide-react";
 import { getAllCategories, getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
-import { defaultViewMonth, monthFromSearchParams, monthKey, monthLabelFr, monthLabelShortFr, todayMonth } from "@/lib/date";
+import { monthFromSearchParams, monthKey, monthLabelFr, monthLabelShortFr, todayMonth } from "@/lib/date";
 import { getEffectiveEndMonth, getMonthPaymentStatus, getMonthSummary } from "@/lib/engine";
 import { METHOD_META } from "@/lib/payment-method";
 import { MonthSwitcher } from "@/components/month-switcher";
@@ -38,8 +38,9 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
   const money = (n: number) => formatMoney(n, settings.currency);
   const categoryEmoji = new Map(categories.map((c) => [c.id, c.emoji]));
   const byId = new Map(expenses.map((e) => [e.id, e]));
-  const viewMonth = monthFromSearchParams(sp.month, defaultViewMonth());
+  // Opens on the current month (like the home page); ‹ › for the others.
   const current = todayMonth();
+  const viewMonth = monthFromSearchParams(sp.month, current);
   const key = monthKey(viewMonth);
   const summary = getMonthSummary(expenses, viewMonth, settings.salary);
 
