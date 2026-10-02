@@ -6,6 +6,9 @@ import { cn, formatMoney } from "@/lib/utils";
 import { displayIcon } from "@/lib/category";
 
 const INITIALS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+const SHORT = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+/** "juin 27" — fits next to the remaining amount. */
+const monthShort = (m: MonthId) => `${SHORT[m.month - 1]} ${String(m.year).slice(2)}`;
 /** Longest span drawn (beyond it, bars are cut at the edge). */
 const MAX_MONTHS = 36;
 
@@ -220,10 +223,16 @@ export function TimelineSection({
                         </span>
                       )}
                     </div>
-                    <p className="mt-1 flex justify-between gap-1 text-[10px]">
+                    <p className="mt-1 flex items-baseline justify-between gap-1 text-[10px]">
                       <span className={cn("font-semibold tabular-nums", s.text)}>{done ? "Terminé ✓" : `${r.percent}%`}</span>
                       <span className="truncate text-slate-400">
-                        {r.end ? `fin ${monthLabelFr(r.end).toLowerCase()}` : "sans fin"}
+                        {!done && (
+                          <>
+                            <b className={cn("text-[11px] tabular-nums", s.text)}>{money(Math.max(0, r.total - r.paid))}</b>{" "}
+                            restants ·{" "}
+                          </>
+                        )}
+                        {r.end ? `fin ${monthShort(r.end)}` : "sans fin"}
                       </span>
                     </p>
                   </div>
