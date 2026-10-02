@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Check, GripVertical, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Check, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Category } from "@/lib/types";
 import { useRefreshData } from "@/lib/use-refresh-data";
@@ -107,12 +107,29 @@ export function CategoryManager({
     void refreshData();
   }
 
-  // ---- Reorder: hold a tile, drag it to its new place, then save. ----
+  // ---- Reorder (like app icons on a phone): hold a tile, it lifts and
+  // follows the finger above the others; the others slide out of its way;
+  // let go and it drops into its new place. Then "Enregistrer l'ordre". ----
   const [savedOrder, setSavedOrder] = useState(() => initial.map((c) => c.id));
   const [draggingId, setDraggingId] = useState<string | null>(null);
-  const press = useRef<{ id: string; x: number; y: number; timer: ReturnType<typeof setTimeout> } | null>(null);
+  /** The lifted copy that follows the finger (fixed position, px). */
+  const [ghost, setGhost] = useState<{ x: number; y: number; w: number; h: number; dropping: boolean } | null>(null);
+  const press = useRef<{
+    id: string;
+    startX: number;
+    startY: number;
+    lastX: number;
+    lastY: number;
+    offsetX: number;
+    offsetY: number;
+    w: number;
+    h: number;
+    timer: ReturnType<typeof setTimeout>;
+  } | null>(null);
   const dragging = useRef<string | null>(null);
   const justDragged = useRef(false);
+  const tileRefs = useRef(new Map<string, HTMLElement>());
+  const prevRects = useRef<Map<string, DOMRect> | null>(null);
   const orderChanged = categories.map((c) => c.id).join() !== savedOrder.join();
 
   // While dragging, the page must not scroll under the finger.
@@ -124,41 +141,91 @@ export function CategoryManager({
     return () => document.removeEventListener("touchmove", block);
   }, []);
 
-  function onPointerDown(e: React.PointerEvent, id: string) {
+  // The tiles that moved slide from their old place to the new one.
+  useLayoutEffect(() => {
+    const before = prevRects.current;
+    prevRects.current = null;
+    if (!before) return;
+    for (const [id, el] of tileRefs.current) {
+      const old = before.get(id);
+      if (!old || id === dragging.current) continue;
+      const now = el.getBoundingClientRect();
+      const dx = old.left - now.left;
+      const dy = old.top - now.top;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;
+      el.animate([{ translate: `${dx}px ${dy}px` }, { translate: "0 0" }], {
+        duration: 220,
+        easing: "cubic-bezier(0.2, 0, 0, 1)",
+      });
+    }
+  }, [categories]);
+
+  function onPointerDown(e: React.PointerEvent<HTMLElement>, id: string) {
     if (e.pointerType === "mouse" && e.button !== 0) return;
+    if (ghost) return;
+    justDragged.current = false; // a drag's flag never outlives the next press
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (e.pointerType === "mouse") e.currentTarget.setPointerCapture(e.pointerId);
     const timer = setTimeout(() => {
+      const p = press.current;
+      if (!p) return;
       dragging.current = id;
       setDraggingId(id);
+      setGhost({ x: p.lastX - p.offsetX, y: p.lastY - p.offsetY, w: p.w, h: p.h, dropping: false });
       navigator.vibrate?.(15);
-    }, 350);
-    press.current = { id, x: e.clientX, y: e.clientY, timer };
+    }, 320);
+    press.current = {
+      id,
+      startX: e.clientX,
+      startY: e.clientY,
+      lastX: e.clientX,
+      lastY: e.clientY,
+      offsetX: e.clientX - rect.left,
+      offsetY: e.clientY - rect.top,
+      w: rect.width,
+      h: rect.height,
+      timer,
+    };
   }
 
   function onPointerMove(e: React.PointerEvent) {
     const p = press.current;
     if (!p) return;
+    p.lastX = e.clientX;
+    p.lastY = e.clientY;
     if (!dragging.current) {
       // Moved before the hold: it's a scroll, not a drag.
-      if (Math.hypot(e.clientX - p.x, e.clientY - p.y) > 8) cancelPress();
+      if (Math.hypot(e.clientX - p.startX, e.clientY - p.startY) > 8) cancelPress();
       return;
     }
+    setGhost((g) => (g ? { ...g, x: e.clientX - p.offsetX, y: e.clientY - p.offsetY } : g));
     const over = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>("[data-cat-id]");
     const overId = over?.dataset.catId;
     if (!overId || overId === dragging.current) return;
-    setCategories((prev) => {
-      const from = prev.findIndex((c) => c.id === dragging.current);
-      const to = prev.findIndex((c) => c.id === overId);
-      if (from < 0 || to < 0) return prev;
-      const next = [...prev];
-      const [moved] = next.splice(from, 1);
-      next.splice(to, 0, moved);
-      return next;
-    });
+    const from = categories.findIndex((c) => c.id === dragging.current);
+    const to = categories.findIndex((c) => c.id === overId);
+    if (from < 0 || to < 0) return;
+    prevRects.current = new Map([...tileRefs.current].map(([id, el]) => [id, el.getBoundingClientRect()]));
+    const next = [...categories];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setCategories(next);
   }
 
   function endPress() {
-    if (dragging.current) justDragged.current = true;
-    cancelPress();
+    const id = dragging.current;
+    if (!id) return cancelPress();
+    justDragged.current = true;
+    if (press.current) clearTimeout(press.current.timer);
+    press.current = null;
+    // Drop: the lifted tile glides into its slot, then lands.
+    const slot = tileRefs.current.get(id)?.getBoundingClientRect();
+    if (slot) setGhost((g) => (g ? { ...g, x: slot.left, y: slot.top, dropping: true } : g));
+    setTimeout(() => {
+      dragging.current = null;
+      setDraggingId(null);
+      setGhost(null);
+    }, slot ? 180 : 0);
   }
 
   function cancelPress() {
@@ -166,6 +233,7 @@ export function CategoryManager({
     press.current = null;
     dragging.current = null;
     setDraggingId(null);
+    setGhost(null);
   }
 
   async function saveOrder() {
@@ -202,8 +270,58 @@ export function CategoryManager({
   }
 
 
+  function tileContent(c: Category) {
+    const st = stats[c.id] ?? { count: 0, monthTotal: 0 };
+    const share = totalMonth > 0 ? Math.round((st.monthTotal / totalMonth) * 100) : 0;
+    return (
+      <>
+        {/* Icon, with the name and count on its right */}
+        <span className="flex w-full items-center gap-2.5">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/80 text-xl shadow-sm dark:bg-slate-900/70">
+            {c.emoji}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold text-slate-900 dark:text-white">{c.name}</span>
+            <span className="block truncate text-[11px] text-slate-500 dark:text-slate-400">
+              {st.count === 0 ? "Aucune dépense" : st.count === 1 ? "1 dépense" : `${st.count} dépenses`}
+            </span>
+          </span>
+        </span>
+        <span className="flex w-full items-baseline justify-between gap-1">
+          <span className="text-sm font-bold tabular-nums text-slate-800 dark:text-slate-100">
+            {st.monthTotal > 0 ? money(st.monthTotal) : "—"}
+          </span>
+          {share > 0 && <span className="text-[11px] font-semibold text-slate-500">{share}%</span>}
+        </span>
+      </>
+    );
+  }
+
+  const ghostCategory = ghost && draggingId ? categories.find((c) => c.id === draggingId) : null;
+
   return (
     <>
+      {/* The lifted tile, following the finger above the others */}
+      {ghost && ghostCategory && (
+        <div
+          aria-hidden
+          className={cn(
+            "pointer-events-none fixed z-50 flex flex-col gap-2.5 rounded-2xl border border-white/60 bg-gradient-to-br p-3 shadow-2xl ring-2 ring-violet-500/70 dark:border-slate-700",
+            tintOf(ghostCategory.id),
+            ghost.dropping ? "transition-[left,top,transform] duration-150 ease-out" : "",
+          )}
+          style={{
+            left: ghost.x,
+            top: ghost.y,
+            width: ghost.w,
+            height: ghost.h,
+            transform: ghost.dropping ? "none" : "scale(1.08) rotate(-2deg)",
+          }}
+        >
+          {tileContent(ghostCategory)}
+        </div>
+      )}
+
       {/* Summary */}
       <div className="rounded-2xl bg-gradient-to-br from-violet-500 to-purple-700 px-4 py-4 text-white shadow-sm">
         <p className="text-xs font-medium text-white/80">{categories.length} catégories</p>
@@ -216,13 +334,15 @@ export function CategoryManager({
       </p>
 
       <div className="grid grid-cols-2 gap-2.5">
-        {categories.map((c) => {
-          const s = stats[c.id] ?? { count: 0, monthTotal: 0 };
-          const share = totalMonth > 0 ? Math.round((s.monthTotal / totalMonth) * 100) : 0;
+        {categories.map((c, i) => {
           const isDragged = draggingId === c.id;
           return (
             <button
               key={c.id}
+              ref={(el) => {
+                if (el) tileRefs.current.set(c.id, el);
+                else tileRefs.current.delete(c.id);
+              }}
               type="button"
               data-cat-id={c.id}
               onPointerDown={(e) => onPointerDown(e, c.id)}
@@ -237,32 +357,20 @@ export function CategoryManager({
                 }
                 open({ mode: "edit", category: c });
               }}
+              style={draggingId && !isDragged ? { animationDelay: `${(i % 3) * -90}ms` } : undefined}
               className={cn(
-                "flex select-none flex-col gap-2.5 rounded-2xl border border-slate-200/70 bg-gradient-to-br p-3 text-left shadow-sm transition-[transform,box-shadow] duration-150 [-webkit-touch-callout:none] dark:border-slate-800",
-                tintOf(c.id),
-                isDragged ? "z-10 scale-105 shadow-xl ring-2 ring-violet-500" : "active:scale-[0.97]",
-                draggingId && !isDragged && "opacity-80",
+                "flex select-none flex-col gap-2.5 rounded-2xl border p-3 text-left [-webkit-touch-callout:none]",
+                isDragged
+                  ? // Its empty slot while it's lifted.
+                    "border-2 border-dashed border-violet-300 bg-violet-50/50 dark:border-violet-700 dark:bg-violet-950/20"
+                  : cn(
+                      "border-slate-200/70 bg-gradient-to-br shadow-sm transition-transform duration-150 active:scale-[0.97] dark:border-slate-800",
+                      tintOf(c.id),
+                      draggingId && "animate-[cat-wiggle_0.32s_ease-in-out_infinite]",
+                    ),
               )}
             >
-              {/* Icon, with the name and count on its right */}
-              <span className="flex w-full items-center gap-2.5">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/80 text-xl shadow-sm dark:bg-slate-900/70">
-                  {c.emoji}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-slate-900 dark:text-white">{c.name}</span>
-                  <span className="block truncate text-[11px] text-slate-500 dark:text-slate-400">
-                    {s.count === 0 ? "Aucune dépense" : s.count === 1 ? "1 dépense" : `${s.count} dépenses`}
-                  </span>
-                </span>
-                {isDragged && <GripVertical className="h-4 w-4 shrink-0 text-violet-500" />}
-              </span>
-              <span className="flex w-full items-baseline justify-between gap-1">
-                <span className="text-sm font-bold tabular-nums text-slate-800 dark:text-slate-100">
-                  {s.monthTotal > 0 ? money(s.monthTotal) : "—"}
-                </span>
-                {share > 0 && <span className="text-[11px] font-semibold text-slate-500">{share}%</span>}
-              </span>
+              <span className={cn("contents", isDragged && "invisible")}>{tileContent(c)}</span>
             </button>
           );
         })}

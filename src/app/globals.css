@@ -44,3 +44,9 @@ body {
     display: none;
   }
 }
+
+/* Catégories: the other tiles wiggle while one is being dragged. */
+@keyframes cat-wiggle {
+  0%, 100% { transform: rotate(-0.8deg); }
+  50% { transform: rotate(0.8deg); }
+}
