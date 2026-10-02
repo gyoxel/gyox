@@ -89,8 +89,10 @@ export function TabSwipe() {
   const preview = useRef<HTMLDivElement | null>(null);
   const navigating = useRef(false);
 
-  // The new tab has rendered: drop the preview that stood in for it — once
-  // the real content is there, not the loading skeleton.
+  // The new tab has rendered: drop the preview that stood in for it — only
+  // once the page really shows that tab (its title, not the loading
+  // skeleton). On a phone the path can change while the old tab is still
+  // on screen for a moment; removing the preview then flashed it back.
   useLayoutEffect(() => {
     const page = document.getElementById(PAGE_ID);
     const finish = () => {
@@ -103,21 +105,27 @@ export function TabSwipe() {
       preview.current?.remove();
       preview.current = null;
     };
-    if (!page || !navigating.current || !page.querySelector('[aria-busy="true"]')) return finish();
-    const observer = new MutationObserver(() => {
-      if (!page.querySelector('[aria-busy="true"]')) {
-        observer.disconnect();
-        finish();
-      }
-    });
-    observer.observe(page, { childList: true, subtree: true });
+    const arrived = () => !!page && validSnapshot(page, pathname) !== null;
+    if (!page || !navigating.current || !TITLES[pathname] || arrived()) return finish();
+    let frame = 0;
+    const check = () => {
+      if (!arrived()) return;
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      clearTimeout(timer);
+      // Let the browser paint the new tab once under the preview first.
+      frame = requestAnimationFrame(finish);
+    };
+    const observer = new MutationObserver(check);
+    observer.observe(page, { childList: true, subtree: true, characterData: true });
     const timer = setTimeout(() => {
       observer.disconnect();
       finish();
-    }, 4000);
+    }, 8000);
     return () => {
       observer.disconnect();
       clearTimeout(timer);
+      cancelAnimationFrame(frame);
     };
   }, [pathname]);
 
@@ -250,7 +258,7 @@ export function TabSwipe() {
         animateTo(-dir * window.innerWidth, () => router.push(target));
         // Safety: if the navigation never lands, bring everything back.
         setTimeout(() => {
-          if (!navigating.current) return;
+          if (!navigating.current || window.location.pathname !== pathname) return;
           navigating.current = false;
           preview.current?.remove();
           preview.current = null;
