@@ -129,6 +129,7 @@ export function CategoryManager({
   const dragging = useRef<string | null>(null);
   const justDragged = useRef(false);
   const tileRefs = useRef(new Map<string, HTMLElement>());
+  const gridRef = useRef<HTMLDivElement>(null);
   const prevRects = useRef<Map<string, DOMRect> | null>(null);
   const orderChanged = categories.map((c) => c.id).join() !== savedOrder.join();
 
@@ -199,8 +200,11 @@ export function CategoryManager({
       return;
     }
     setGhost((g) => (g ? { ...g, x: e.clientX - p.offsetX, y: e.clientY - p.offsetY } : g));
-    const over = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>("[data-cat-id]");
-    const overId = over?.dataset.catId;
+    // Hit-test against the tiles' layout slots, not where they're drawn: a
+    // tile still sliding out of the way must not be swapped straight back
+    // (that flip-flop made tiles jump back and forth). A small inner margin
+    // keeps a hover on the edge between two tiles from swapping.
+    const overId = slotUnder(e.clientX, e.clientY);
     if (!overId || overId === dragging.current) return;
     const from = categories.findIndex((c) => c.id === dragging.current);
     const to = categories.findIndex((c) => c.id === overId);
@@ -212,6 +216,20 @@ export function CategoryManager({
     setCategories(next);
   }
 
+  function slotUnder(x: number, y: number): string | null {
+    const grid = gridRef.current;
+    if (!grid) return null;
+    const g = grid.getBoundingClientRect();
+    for (const [id, el] of tileRefs.current) {
+      const left = g.left + el.offsetLeft;
+      const top = g.top + el.offsetTop;
+      const mx = el.offsetWidth * 0.15;
+      const my = el.offsetHeight * 0.15;
+      if (x > left + mx && x < left + el.offsetWidth - mx && y > top + my && y < top + el.offsetHeight - my) return id;
+    }
+    return null;
+  }
+
   function endPress() {
     const id = dragging.current;
     if (!id) return cancelPress();
@@ -219,8 +237,10 @@ export function CategoryManager({
     if (press.current) clearTimeout(press.current.timer);
     press.current = null;
     // Drop: the lifted tile glides into its slot, then lands.
-    const slot = tileRefs.current.get(id)?.getBoundingClientRect();
-    if (slot) setGhost((g) => (g ? { ...g, x: slot.left, y: slot.top, dropping: true } : g));
+    const el = tileRefs.current.get(id);
+    const g = gridRef.current?.getBoundingClientRect();
+    const slot = el && g ? { left: g.left + el.offsetLeft, top: g.top + el.offsetTop } : null;
+    if (slot) setGhost((gh) => (gh ? { ...gh, x: slot.left, y: slot.top, dropping: true } : gh));
     setTimeout(() => {
       dragging.current = null;
       setDraggingId(null);
@@ -333,7 +353,8 @@ export function CategoryManager({
         Touche une catégorie pour la modifier · maintiens-la puis glisse-la pour changer l&apos;ordre.
       </p>
 
-      <div className="grid grid-cols-2 gap-2.5">
+      {/* relative: the tiles' offsetLeft/Top are measured from the grid */}
+      <div ref={gridRef} className="relative grid grid-cols-2 gap-2.5">
         {categories.map((c, i) => {
           const isDragged = draggingId === c.id;
           return (
