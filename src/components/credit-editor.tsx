@@ -28,8 +28,16 @@ function schedule(total: number, monthly: number, startDate: string) {
   return { count, last, end: addMonths(monthOfDateStr(startDate), count - 1) };
 }
 
-/** Monthly amount to repay `total` in `months` (rounded up to the dirham). */
-const monthlyFor = (total: number, months: number) => Math.ceil(total / months);
+/**
+ * Monthly amount to repay `total` in `months`, rounded to the nearest
+ * hundred (666 → 700, 620 → 600; under 100, to the ten above). The last
+ * month takes whatever is left — one more month if rounded down.
+ */
+function monthlyFor(total: number, months: number): number {
+  const exact = total / months;
+  if (exact < 100) return Math.max(10, Math.ceil(exact / 10) * 10);
+  return Math.round(exact / 100) * 100;
+}
 
 /**
  * Ajouter / modifier un crédit: the total on top, then either the amount
@@ -113,7 +121,9 @@ export function CreditEditor({
   }
 
   const monthSuggestions = totalValue > 0 ? MONTH_STEPS.filter((n) => monthlyFor(totalValue, n) >= 50) : [];
-  const amountSuggestions = totalValue > 0 ? AMOUNT_STEPS.filter((n) => n < totalValue && totalValue / n <= 120) : [];
+  // Shortest duration first (biggest amount first).
+  const amountSuggestions =
+    totalValue > 0 ? AMOUNT_STEPS.filter((n) => n < totalValue && totalValue / n <= 120).sort((a, b) => b - a) : [];
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -274,7 +284,16 @@ export function CreditEditor({
             <Stat label="Fin" value={monthLabelFr(plan.end)} />
             {plan.last !== monthlyValue && (
               <p className="col-span-3 text-[11px] text-slate-500 dark:text-slate-400">
-                Dernier versement : <b>{money(plan.last)}</b>
+                {mode === "months" && plan.count > monthsValue ? (
+                  <>
+                    Arrondi à {money(monthlyValue)} : le reste, <b>{money(plan.last)}</b>, se paie le {plan.count}
+                    <sup>e</sup> mois.
+                  </>
+                ) : (
+                  <>
+                    Dernier versement (le reste) : <b>{money(plan.last)}</b>
+                  </>
+                )}
               </p>
             )}
           </div>
