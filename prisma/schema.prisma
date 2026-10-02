@@ -82,6 +82,8 @@ model Payment {
   amountDue  Float
   amountPaid Float
   paidAt     String
+  /// How it was paid: "cash" or "card" (null for older payments).
+  method     String?
   createdAt  String
 
   expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
@@ -104,6 +106,8 @@ model Settings {
   /// "YYYY-MM" of the last pay day whose salary was confirmed received (the
   /// Accueil countdown asks once the pay day arrives).
   salaryReceivedMonth String?
+  /// How the salary is received: "cash" or "card".
+  salaryMethod  String @default("card")
 
   @@map("settings")
 }
@@ -206,6 +210,8 @@ model Income {
   date      String
   /// Key of one of the income categories (see lib/income.ts).
   category  String
+  /// How it was received: "cash" or "card".
+  method    String  @default("cash")
   notes     String?
   createdAt String
 

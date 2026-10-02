@@ -56,6 +56,8 @@ export interface Settings {
   payDay: number;
   /** "YYYY-MM" of the last pay day whose salary was confirmed received. */
   salaryReceivedMonth: string | null;
+  /** How the salary is received. */
+  salaryMethod: PaymentMethod;
 }
 
 export interface MonthlyOccurrence {
@@ -76,10 +78,15 @@ export interface Payment {
   amountDue: number;
   amountPaid: number;
   paidAt: string;
+  /** "cash" or "card"; null for payments made before it was tracked. */
+  method?: PaymentMethod | null;
   createdAt: string;
 }
 
 export type PaymentStatus = "paid" | "unpaid" | "not-yet-due";
+
+/** How money was paid or received. */
+export type PaymentMethod = "cash" | "card";
 
 /** Real-time (payment-aware) state of a credit, as opposed to the old
  *  theoretical schedule (which assumed every payment happens on time). */
@@ -198,6 +205,8 @@ export interface Income {
   date: string;
   /** Key of an income category (lib/income.ts). */
   category: string;
+  /** How it was received. */
+  method: PaymentMethod;
   notes: string | null;
   createdAt: string;
 }

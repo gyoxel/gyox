@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import type { Income } from "@/lib/types";
+import type { Income, PaymentMethod } from "@/lib/types";
+import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import { INCOME_CATEGORIES } from "@/lib/income";
 import { todayDateStr } from "@/lib/date";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
@@ -18,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 /**
  * Ajouter / modifier un revenu (on top of the salary): amount, category
- * (prime, freelance, cadeau…), name, date and a note. It adds to the money
+ * (prime, freelance, cadeau…), name, cash or card and a note; dated today. It adds to the money
  * of the month it's received.
  */
 export function IncomeEditor({ income }: { income?: Income }) {
@@ -29,7 +30,9 @@ export function IncomeEditor({ income }: { income?: Income }) {
   const [category, setCategory] = useState(income?.category ?? INCOME_CATEGORIES[0].key);
   const [name, setName] = useState(income?.name ?? "");
   const [nameTouched, setNameTouched] = useState(isEdit);
-  const [date, setDate] = useState(income?.date ?? todayDateStr());
+  // Received today (an edit keeps its own date).
+  const date = income?.date ?? todayDateStr();
+  const [method, setMethod] = useState<PaymentMethod>(income?.method ?? "cash");
   const [notes, setNotes] = useState(income?.notes ?? "");
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -45,8 +48,7 @@ export function IncomeEditor({ income }: { income?: Income }) {
     setError(null);
     if (!(amountValue > 0)) return setError("Indique un montant.");
     if (!finalName) return setError("Indique un nom.");
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError("Indique une date.");
-    const body = JSON.stringify({ name: finalName, amount: amountValue, category, date, notes: notes.trim() || null });
+    const body = JSON.stringify({ name: finalName, amount: amountValue, category, date, method, notes: notes.trim() || null });
     startTransition(async () => {
       const res = await fetch(isEdit ? `/api/incomes/${income.id}` : "/api/incomes", {
         method: isEdit ? "PATCH" : "POST",
@@ -124,25 +126,21 @@ export function IncomeEditor({ income }: { income?: Income }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_auto] gap-3">
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <Label htmlFor="name">Nom</Label>
-          <Input
-            id="name"
-            value={name}
-            onChange={(e) => {
-              setNameTouched(true);
-              setName(e.target.value);
-            }}
-            placeholder={selected.label}
-            maxLength={60}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="date">Date</Label>
-          <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-[9.5rem]" />
-        </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="name">Nom</Label>
+        <Input
+          id="name"
+          value={name}
+          onChange={(e) => {
+            setNameTouched(true);
+            setName(e.target.value);
+          }}
+          placeholder={selected.label}
+          maxLength={60}
+        />
       </div>
+
+      <PaymentMethodPicker value={method} onChange={setMethod} label="Reçu en" />
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="notes">Note (optionnel)</Label>

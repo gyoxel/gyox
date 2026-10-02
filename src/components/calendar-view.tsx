@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Info, StickyNote } from "lucide-react";
 import { cn, formatMoney } from "@/lib/utils";
 import { DayNoteEditor } from "@/components/day-note-editor";
+import { METHOD_META } from "@/lib/payment-method";
 
 export interface CalendarEvent {
   id: string;
@@ -15,6 +16,8 @@ export interface CalendarEvent {
   amount: number;
   /** Exact time (ISO) for payments; a plain "YYYY-MM-DD" for the rest. */
   at: string;
+  /** Cash or card, when known. */
+  method?: "cash" | "card" | null;
 }
 
 /** "À savoir": something that happens (or will happen) on a day. */
@@ -228,6 +231,11 @@ export function CalendarView({
                   <span className="flex min-w-0 flex-1 items-baseline gap-2">
                     <span className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">{e.label}</span>
                     {e.at.length > 10 && <span className="shrink-0 text-[11px] text-slate-400">{TIME.format(new Date(e.at))}</span>}
+                    {e.method && (
+                      <span className="shrink-0 text-[11px]" title={METHOD_META[e.method].label}>
+                        {METHOD_META[e.method].emoji}
+                      </span>
+                    )}
                   </span>
                   <span
                     className={cn(

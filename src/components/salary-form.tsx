@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { useRefreshData } from "@/lib/use-refresh-data";
-import type { Settings } from "@/lib/types";
+import type { PaymentMethod, Settings } from "@/lib/types";
+import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import { cleanDecimalInput, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,6 +29,7 @@ export function SalaryForm({
   const refreshData = useRefreshData();
   const [salary, setSalary] = useState(toDecimalInput(settings.salary));
   const [payDay, setPayDay] = useState(String(settings.payDay));
+  const [salaryMethod, setSalaryMethod] = useState<PaymentMethod>(settings.salaryMethod);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -38,7 +40,7 @@ export function SalaryForm({
       const res = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ salary: parseDecimalInput(salary), payDay: Number(payDay) }),
+        body: JSON.stringify({ salary: parseDecimalInput(salary), payDay: Number(payDay), salaryMethod }),
       });
       if (!res.ok) {
         setError("Impossible d'enregistrer. Vérifie le montant.");
@@ -79,6 +81,8 @@ export function SalaryForm({
           dernier jour.
         </p>
       </div>
+
+      <PaymentMethodPicker value={salaryMethod} onChange={setSalaryMethod} label="Reçu en" />
 
       {error && <p className="text-sm text-rose-600">{error}</p>}
 

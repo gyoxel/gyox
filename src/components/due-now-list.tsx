@@ -7,7 +7,8 @@ import Link from "next/link";
 import { Check, ChevronLeft, ChevronRight, Plus, PartyPopper } from "lucide-react";
 import { addMonths, monthKey as toMonthKey, monthLabelFr, type MonthId } from "@/lib/date";
 import { getCreditRealState, getExpenseDisplayColor, getMonthLedgerItems, type DisplayColor } from "@/lib/engine";
-import type { Expense, Payment } from "@/lib/types";
+import type { Expense, Payment, PaymentMethod } from "@/lib/types";
+import { METHOD_META } from "@/lib/payment-method";
 import { formatMoney, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -79,6 +80,24 @@ export function DueNowList({
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const touchStartX = useRef<number | null>(null);
   const rowRefs = useRef(new Map<string, HTMLElement>());
+  // Ticking asks how it was paid: 💵 or 💳 show in place of the checkbox.
+  const [choosingId, setChoosingId] = useState<string | null>(null);
+  const chooserRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!choosingId) return;
+    const close = (e: PointerEvent) => {
+      if (!chooserRef.current?.contains(e.target as Node)) setChoosingId(null);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [choosingId]);
+
+  /** How this month's payment of an expense was made, if known. */
+  function paidMethod(expense: Expense): PaymentMethod | null {
+    const key = toMonthKey(viewMonth);
+    const found = localPayments.filter((p) => p.expenseId === expense.id && p.monthKey === key).at(-1);
+    return found?.method ?? null;
+  }
 
   // Leaving the Dashboard right after ticking: refresh now rather than
   // after the quiet delay, so the next page isn't shown with stale data.
@@ -109,7 +128,8 @@ export function DueNowList({
     goMonth(addMonths(viewMonth, delta > 0 ? -1 : 1));
   }
 
-  function toggle(expense: Expense, wasPaid: boolean) {
+  function toggle(expense: Expense, wasPaid: boolean, method: PaymentMethod | null = null) {
+    setChoosingId(null);
     setPendingIds((prev) => new Set(prev).add(expense.id));
     const monthKeyValue = toMonthKey(viewMonth);
 
@@ -135,13 +155,13 @@ export function DueNowList({
       return;
     }
 
-    const optimistic = buildOptimisticPayment(expense, viewMonth, localPayments);
+    const optimistic = { ...buildOptimisticPayment(expense, viewMonth, localPayments), method };
     animateReorder(rowRefs.current, () => setLocalPayments((prev) => [...prev, optimistic]));
     void trackMutation(
       fetch(`/api/expenses/${expense.id}/payments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ monthKey: monthKeyValue }),
+        body: JSON.stringify({ monthKey: monthKeyValue, method }),
       }),
     )
       .then(async (res) => {
@@ -230,24 +250,45 @@ export function DueNowList({
                     {formatMoney(amount, currency)}
                   </span>
                 </Link>
-                <button
-                  type="button"
-                  onClick={() => toggle(expense, paid)}
-                  disabled={isPending}
-                  aria-label={paid ? `Annuler le paiement de ${expense.name}` : `Marquer ${expense.name} comme payé`}
-                  className="group flex h-11 w-11 shrink-0 items-center justify-center"
-                >
-                  <span
-                    className={cn(
-                      "flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors group-disabled:opacity-50",
-                      paid
-                        ? "border-emerald-500 bg-emerald-500"
-                        : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800",
-                    )}
+                {choosingId === expense.id ? (
+                  <div ref={chooserRef} className="flex shrink-0 items-center gap-1 py-1 pl-1" aria-label="Payé comment ?">
+                    {(["cash", "card"] as const).map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => toggle(expense, false, m)}
+                        aria-label={`Payé en ${METHOD_META[m].label}`}
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-lg shadow-sm transition-transform active:scale-90 dark:border-slate-700 dark:bg-slate-800"
+                      >
+                        {METHOD_META[m].emoji}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => (paid ? toggle(expense, true) : setChoosingId(expense.id))}
+                    disabled={isPending}
+                    aria-label={paid ? `Annuler le paiement de ${expense.name}` : `Marquer ${expense.name} comme payé`}
+                    className="group relative flex h-11 w-11 shrink-0 items-center justify-center"
                   >
-                    {paid && <Check className="h-3.5 w-3.5 text-white" />}
-                  </span>
-                </button>
+                    <span
+                      className={cn(
+                        "flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors group-disabled:opacity-50",
+                        paid
+                          ? "border-emerald-500 bg-emerald-500"
+                          : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800",
+                      )}
+                    >
+                      {paid && <Check className="h-3.5 w-3.5 text-white" />}
+                    </span>
+                    {paid && paidMethod(expense) && (
+                      <span className="absolute bottom-0.5 right-0.5 text-[11px] leading-none">
+                        {METHOD_META[paidMethod(expense)!].emoji}
+                      </span>
+                    )}
+                  </button>
+                )}
               </div>
             );
           })

@@ -8,6 +8,7 @@ import {
   markCreditSlotPaid,
   markMonthPaid,
   markMonthUnpaid,
+  setPaymentMethod,
   undoLastCreditSlot,
 } from "@/lib/repository";
 
@@ -33,8 +34,9 @@ export async function POST(req: NextRequest, { params }: Params) {
   const [expense, payments, body] = await Promise.all([
     getExpenseById(id),
     getPaymentsForExpense(id),
-    req.json().catch(() => ({}) as { monthKey?: string }),
+    req.json().catch(() => ({}) as { monthKey?: string; method?: string }),
   ]);
+  const method = body.method === "cash" || body.method === "card" ? body.method : null;
   if (!expense) return NextResponse.json({ error: "Dépense introuvable." }, { status: 404 });
 
   if (expense.type === "credit") {
@@ -48,6 +50,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       state.pendingAmount,
       state.pendingAmount,
       toMonthKey(evalMonth),
+      method,
     );
     return NextResponse.json(payment, { status: 201 });
   }
@@ -78,7 +81,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     amountDue = unpaid[0].amountDue;
   }
 
-  const payment = await markMonthPaid(expense.id, targetMonthKey, amountDue, amountDue);
+  const payment = await markMonthPaid(expense.id, targetMonthKey, amountDue, amountDue, method);
   return NextResponse.json(payment, { status: 201 });
 }
 
@@ -102,5 +105,17 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const monthKeyValue = req.nextUrl.searchParams.get("monthKey") ?? toMonthKey(todayMonth());
   const ok = await markMonthUnpaid(expense.id, monthKeyValue);
   if (!ok) return NextResponse.json({ error: "Aucun paiement à annuler pour ce mois." }, { status: 400 });
+  return NextResponse.json({ ok: true });
+}
+
+/** Changes how a month's payment was made. Body: { monthKey, method }. */
+export async function PATCH(req: NextRequest, { params }: Params) {
+  const { id } = await params;
+  const body = (await req.json().catch(() => ({}))) as { monthKey?: string; method?: string };
+  if (!body.monthKey || (body.method !== "cash" && body.method !== "card")) {
+    return NextResponse.json({ error: "Requête invalide." }, { status: 400 });
+  }
+  const ok = await setPaymentMethod(id, body.monthKey, body.method);
+  if (!ok) return NextResponse.json({ error: "Aucun paiement pour ce mois." }, { status: 404 });
   return NextResponse.json({ ok: true });
 }

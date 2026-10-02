@@ -71,6 +71,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       icon: expense ? displayIcon(expense, emojiById) : "💸",
       amount: p.amountPaid,
       at: p.paidAt,
+      method: p.method ?? null,
     });
   }
 
@@ -88,11 +89,20 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       icon: "💰",
       amount: salaryHere,
       at: payday,
+      method: settings.salaryMethod,
     });
   }
   for (const i of incomes) {
     if (!i.date.startsWith(key)) continue;
-    events.push({ id: i.id, kind: "in", label: i.name, icon: incomeCategory(i.category).emoji, amount: i.amount, at: i.date });
+    events.push({
+      id: i.id,
+      kind: "in",
+      label: i.name,
+      icon: incomeCategory(i.category).emoji,
+      amount: i.amount,
+      at: i.date,
+      method: i.method,
+    });
   }
   for (const a of advances) {
     if (!a.date.startsWith(key)) continue;

@@ -122,17 +122,18 @@ function getPaymentStatusInit(
 
   if (expense.type === "credit") {
     const state = getCreditRealState(expense, payments, current);
-    const paid = payments.some((p) => p.expenseId === expense.id && p.slotIndex != null && p.monthKey === currentKey);
+    const payment = payments.find((p) => p.expenseId === expense.id && p.slotIndex != null && p.monthKey === currentKey);
+    const paid = payment != null;
     if (state.status === "not-started" || (state.status === "completed" && !paid)) return null;
-    return { monthKey: currentKey, paid, hint: "(ce mois-ci)" };
+    return { monthKey: currentKey, paid, method: payment?.method ?? null, hint: "(ce mois-ci)" };
   }
 
   const target = expense.frequency === "one-time" ? monthOfDateStr(expense.startDate) : current;
   if (!getOccurrenceForMonth(expense, target, byId)) return null;
   const key = monthKey(target);
-  const paid = payments.some(
+  const payment = payments.find(
     (p) => p.expenseId === expense.id && p.monthKey === key && p.amountPaid >= p.amountDue - 0.005,
   );
   const hint = compareMonths(target, current) === 0 ? "(ce mois-ci)" : `(${monthLabelFr(target)})`;
-  return { monthKey: key, paid, hint };
+  return { monthKey: key, paid: payment != null, method: payment?.method ?? null, hint };
 }

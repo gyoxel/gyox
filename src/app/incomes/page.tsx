@@ -6,6 +6,7 @@ import { monthKey, monthLabelFr, parseMonthKey, todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { METHOD_META } from "@/lib/payment-method";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +65,8 @@ export default async function IncomesPage() {
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-sm font-medium text-slate-800 dark:text-slate-100">{i.name}</span>
                             <span className="block text-[11px] text-slate-400">
-                              {c.label} · {i.date.slice(8, 10)}/{i.date.slice(5, 7)}
+                              {c.label} · {i.date.slice(8, 10)}/{i.date.slice(5, 7)} · {METHOD_META[i.method].emoji}{" "}
+                              {METHOD_META[i.method].label}
                             </span>
                           </span>
                           <span className="text-sm font-semibold tabular-nums text-emerald-600">+{money(i.amount)}</span>

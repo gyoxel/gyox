@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { prisma } from "./prisma";
-import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote, SalaryAdvance, Income } from "./types";
+import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote, SalaryAdvance, Income, PaymentMethod } from "./types";
 
 function mapExpense(row: {
   id: string;
@@ -136,6 +136,7 @@ export async function getSettings(): Promise<Settings> {
     theme: row.theme as Settings["theme"],
     payDay: row.payDay,
     salaryReceivedMonth: row.salaryReceivedMonth,
+    salaryMethod: row.salaryMethod === "cash" ? "cash" : "card",
   };
 }
 
@@ -150,6 +151,7 @@ export async function updateSettings(input: Partial<Settings>): Promise<Settings
     theme: row.theme as Settings["theme"],
     payDay: row.payDay,
     salaryReceivedMonth: row.salaryReceivedMonth,
+    salaryMethod: row.salaryMethod === "cash" ? "cash" : "card",
   };
 }
 
@@ -254,6 +256,7 @@ function mapPayment(row: {
   amountDue: number;
   amountPaid: number;
   paidAt: string;
+  method: string | null;
   createdAt: string;
 }): Payment {
   return {
@@ -264,6 +267,7 @@ function mapPayment(row: {
     amountDue: row.amountDue,
     amountPaid: row.amountPaid,
     paidAt: row.paidAt,
+    method: row.method === "cash" || row.method === "card" ? row.method : null,
     createdAt: row.createdAt,
   };
 }
@@ -284,12 +288,14 @@ export async function markMonthPaid(
   monthKeyValue: string,
   amountDue: number,
   amountPaid: number,
+  method: PaymentMethod | null = null,
 ): Promise<Payment> {
   const now = new Date().toISOString();
   const row = await prisma.payment.upsert({
     where: { expenseId_monthKey: { expenseId, monthKey: monthKeyValue } },
-    update: { amountDue, amountPaid, paidAt: now },
+    update: { amountDue, amountPaid, paidAt: now, method },
     create: {
+      method,
       id: randomUUID(),
       expenseId,
       monthKey: monthKeyValue,
@@ -322,11 +328,13 @@ export async function markCreditSlotPaid(
   amountDue: number,
   amountPaid: number,
   recordedInMonthKey: string,
+  method: PaymentMethod | null = null,
 ): Promise<Payment> {
   const now = new Date().toISOString();
   const existingCount = await prisma.payment.count({ where: { expenseId, slotIndex: { not: null } } });
   const row = await prisma.payment.create({
     data: {
+      method,
       id: randomUUID(),
       expenseId,
       monthKey: recordedInMonthKey,
@@ -590,16 +598,22 @@ export async function deleteSalaryAdvance(id: string): Promise<boolean> {
 
 export type IncomeInput = Omit<Income, "id" | "createdAt">;
 
+const mapIncome = (row: Omit<Income, "method"> & { method: string }): Income => ({
+  ...row,
+  method: row.method === "card" ? "card" : "cash",
+});
+
 export async function getAllIncomes(): Promise<Income[]> {
-  return prisma.income.findMany({ orderBy: [{ date: "desc" }, { createdAt: "desc" }] });
+  return (await prisma.income.findMany({ orderBy: [{ date: "desc" }, { createdAt: "desc" }] })).map(mapIncome);
 }
 
 export async function getIncomeById(id: string): Promise<Income | null> {
-  return prisma.income.findUnique({ where: { id } });
+  const row = await prisma.income.findUnique({ where: { id } });
+  return row ? mapIncome(row) : null;
 }
 
 export async function createIncome(input: IncomeInput): Promise<Income> {
-  return prisma.income.create({ data: { id: randomUUID(), ...input, createdAt: new Date().toISOString() } });
+  return mapIncome(await prisma.income.create({ data: { id: randomUUID(), ...input, createdAt: new Date().toISOString() } }));
 }
 
 export async function updateIncome(id: string, input: Partial<IncomeInput>): Promise<Income | null> {
@@ -609,5 +623,11 @@ export async function updateIncome(id: string, input: Partial<IncomeInput>): Pro
 
 export async function deleteIncome(id: string): Promise<boolean> {
   const { count } = await prisma.income.deleteMany({ where: { id } });
+  return count > 0;
+}
+
+/** Changes how this month's payment of an expense was made (cash / card). */
+export async function setPaymentMethod(expenseId: string, monthKeyValue: string, method: PaymentMethod): Promise<boolean> {
+  const { count } = await prisma.payment.updateMany({ where: { expenseId, monthKey: monthKeyValue }, data: { method } });
   return count > 0;
 }

@@ -4,7 +4,8 @@ import { useMemo, useState, useTransition } from "react";
 import { Check, Clock } from "lucide-react";
 import { useNavBack } from "@/lib/nav-history";
 import { toast } from "sonner";
-import type { Category, Expense, ExpenseType, Frequency } from "@/lib/types";
+import type { Category, Expense, ExpenseType, Frequency, PaymentMethod } from "@/lib/types";
+import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import { addMonths, monthKey, monthLabelFr, monthOfDateStr, todayDateStr } from "@/lib/date";
 import { lastDayOfMonth } from "@/lib/daret";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
@@ -33,8 +34,35 @@ export interface RecurrenceInit {
 export interface PaymentStatusInit {
   monthKey: string;
   paid: boolean;
+  /** How it was paid, when it is. */
+  method: PaymentMethod | null;
   /** "(ce mois-ci)" etc. */
   hint: string;
+}
+
+/**
+ * After an edit: applies the "Payé / Pas encore" choice and the cash/card
+ * method to the period's payment. Returns false when that failed.
+ */
+export async function syncPaymentStatus(
+  expenseId: string,
+  status: PaymentStatusInit,
+  paid: boolean,
+  method: PaymentMethod,
+): Promise<boolean> {
+  const base = `/api/expenses/${expenseId}/payments`;
+  const json = { "Content-Type": "application/json" };
+  if (paid !== status.paid) {
+    const res = paid
+      ? await fetch(base, { method: "POST", headers: json, body: JSON.stringify({ monthKey: status.monthKey, method }) })
+      : await fetch(`${base}?monthKey=${status.monthKey}`, { method: "DELETE" });
+    return res.ok;
+  }
+  if (paid && method !== status.method) {
+    const res = await fetch(base, { method: "PATCH", headers: json, body: JSON.stringify({ monthKey: status.monthKey, method }) });
+    return res.ok;
+  }
+  return true;
 }
 
 /**
@@ -84,6 +112,7 @@ export function ExpenseEditor({
   // off. A new credit defaults to "Pas encore" (first installment usually
   // still to come). When editing it reflects the current period.
   const [alreadyPaid, setAlreadyPaid] = useState(isEdit ? (paymentStatus?.paid ?? false) : !isCredit);
+  const [method, setMethod] = useState<PaymentMethod>(paymentStatus?.method ?? "cash");
   // New entries start today; an edited one keeps its original start date.
   const date = expense?.startDate ?? todayDateStr();
   const [notes, setNotes] = useState(expense?.notes ?? "");
@@ -180,17 +209,8 @@ export function ExpenseEditor({
         });
         if (!res.ok) return setError(await errorMessage(res));
 
-        if (paymentStatus && alreadyPaid !== paymentStatus.paid) {
-          const payRes = alreadyPaid
-            ? await fetch(`/api/expenses/${expense.id}/payments`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ monthKey: paymentStatus.monthKey }),
-              })
-            : await fetch(`/api/expenses/${expense.id}/payments?monthKey=${paymentStatus.monthKey}`, {
-                method: "DELETE",
-              });
-          if (!payRes.ok) toast.error("Enregistré, mais le statut de paiement n'a pas pu être mis à jour.");
+        if (paymentStatus && !(await syncPaymentStatus(expense.id, paymentStatus, alreadyPaid, method))) {
+          toast.error("Enregistré, mais le statut de paiement n'a pas pu être mis à jour.");
         }
 
         await refreshData();
@@ -221,7 +241,7 @@ export function ExpenseEditor({
         const paidRes = await fetch(`/api/expenses/${created.id}/payments`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ monthKey: monthKey(start) }),
+          body: JSON.stringify({ monthKey: monthKey(start), method }),
         });
         if (!paidRes.ok) toast.error("Ajoutée, mais le paiement n'a pas pu être enregistré.");
       }
@@ -370,6 +390,7 @@ export function ExpenseEditor({
               Pas encore
             </button>
           </div>
+          {alreadyPaid && <PaymentMethodPicker value={method} onChange={setMethod} />}
         </div>
       )}
 

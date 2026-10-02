@@ -121,6 +121,7 @@ export const settingsInputSchema = z.object({
     .regex(/^\d{4}-\d{2}$/, "Mois invalide.")
     .nullable()
     .default(null),
+  salaryMethod: z.enum(["cash", "card"]).default("card"),
 });
 
 export type SettingsFormValues = z.infer<typeof settingsInputSchema>;
@@ -144,5 +145,6 @@ export const incomeInputSchema = z.object({
   amount: z.coerce.number().positive("Le montant doit être positif."),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date invalide."),
   category: z.string().min(1),
+  method: z.enum(["cash", "card"]).default("cash"),
   notes: z.string().trim().max(500).nullable().default(null),
 });

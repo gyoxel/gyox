@@ -3,12 +3,13 @@
 import { useState, useTransition } from "react";
 import { CalendarClock, Check, Clock, Coins, Plus, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
-import type { Expense } from "@/lib/types";
+import type { Expense, PaymentMethod } from "@/lib/types";
 import { addMonths, monthKey, monthLabelShortFr, monthOfDateStr, todayDateStr } from "@/lib/date";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { useNavBack } from "@/lib/nav-history";
 import { useRefreshData } from "@/lib/use-refresh-data";
-import { errorMessage, keepAboveKeyboard, type PaymentStatusInit } from "@/components/expense-editor";
+import { errorMessage, keepAboveKeyboard, syncPaymentStatus, type PaymentStatusInit } from "@/components/expense-editor";
+import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,6 +68,7 @@ export function CreditEditor({
       : "";
   const [months, setMonths] = useState(initialMonths);
   const [alreadyPaid, setAlreadyPaid] = useState(isEdit ? (paymentStatus?.paid ?? false) : false);
+  const [method, setMethod] = useState<PaymentMethod>(paymentStatus?.method ?? "cash");
   const [notes, setNotes] = useState(expense?.notes ?? "");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -152,15 +154,8 @@ export function CreditEditor({
           body: JSON.stringify(fields),
         });
         if (!res.ok) return setError(await errorMessage(res));
-        if (paymentStatus && alreadyPaid !== paymentStatus.paid) {
-          const payRes = alreadyPaid
-            ? await fetch(`/api/expenses/${expense.id}/payments`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ monthKey: paymentStatus.monthKey }),
-              })
-            : await fetch(`/api/expenses/${expense.id}/payments?monthKey=${paymentStatus.monthKey}`, { method: "DELETE" });
-          if (!payRes.ok) toast.error("Enregistré, mais le statut de paiement n'a pas pu être mis à jour.");
+        if (paymentStatus && !(await syncPaymentStatus(expense.id, paymentStatus, alreadyPaid, method))) {
+          toast.error("Enregistré, mais le statut de paiement n'a pas pu être mis à jour.");
         }
         await refreshData();
         toast.success("Crédit enregistré.");
@@ -187,7 +182,7 @@ export function CreditEditor({
         const paidRes = await fetch(`/api/expenses/${created.id}/payments`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ monthKey: monthKey(monthOfDateStr(startDate)) }),
+          body: JSON.stringify({ monthKey: monthKey(monthOfDateStr(startDate)), method }),
         });
         if (!paidRes.ok) toast.error("Ajouté, mais le paiement n'a pas pu être enregistré.");
       }
@@ -389,6 +384,7 @@ export function CreditEditor({
               Pas encore
             </button>
           </div>
+          {alreadyPaid && <PaymentMethodPicker value={method} onChange={setMethod} />}
         </div>
       )}
 
