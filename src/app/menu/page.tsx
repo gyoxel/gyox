@@ -4,6 +4,10 @@ import { PageHeader } from "@/components/page-header";
 
 const GROUPS: { href: string; label: string; hint: string; icon: LucideIcon; tint: string }[][] = [
   [
+    { href: "/salary", label: "Salaire", hint: "Montant, jour de paie, avances", icon: Banknote, tint: "from-emerald-400 to-teal-600" },
+    { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau, vente…", icon: TrendingUp, tint: "from-lime-400 to-green-600" },
+  ],
+  [
     { href: "/daret", label: "Daret", hint: "Tes darets et ton tour", icon: HandCoins, tint: "from-teal-400 to-emerald-600" },
     { href: "/goals", label: "Objectifs", hint: "Voiture, maison, voyage…", icon: Target, tint: "from-amber-400 to-orange-500" },
     { href: "/calendar", label: "Calendrier", hint: "Jour par jour : entrées, sorties, rappels et notes", icon: CalendarDays, tint: "from-rose-400 to-pink-600" },
@@ -15,10 +19,6 @@ const GROUPS: { href: string; label: string; hint: string; icon: LucideIcon; tin
       tint: "from-sky-400 to-blue-600",
     },
     { href: "/categories", label: "Catégories", hint: "Ajouter, renommer, ordonner", icon: Tags, tint: "from-violet-400 to-purple-600" },
-  ],
-  [
-    { href: "/salary", label: "Salaire", hint: "Montant, jour de paie, avances", icon: Banknote, tint: "from-emerald-400 to-teal-600" },
-    { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau, vente…", icon: TrendingUp, tint: "from-lime-400 to-green-600" },
   ],
   [{ href: "/settings", label: "Paramètres", hint: "Thème, sauvegarde", icon: Settings, tint: "from-slate-400 to-slate-600" }],
 ];
