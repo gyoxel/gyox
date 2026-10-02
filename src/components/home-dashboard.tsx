@@ -2,11 +2,11 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ChartNoAxesCombined, ChevronRight } from "lucide-react";
+import { ChartNoAxesCombined, ChevronRight, HandCoins, Target } from "lucide-react";
 import type { MonthId } from "@/lib/date";
 import { getPaidThisMonth } from "@/lib/engine";
 import type { Expense, Payment } from "@/lib/types";
-import { formatMoney } from "@/lib/utils";
+import { cn, formatMoney } from "@/lib/utils";
 import { mutationsSettled } from "@/lib/use-refresh-data";
 import { DueNowList } from "@/components/due-now-list";
 import { MaskedAmount } from "@/components/masked-amount";
@@ -69,14 +69,19 @@ export function HomeDashboard({
       <Link
         href="/stats"
         prefetch
-        className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-[#00c3ab] to-[#007261] px-4 py-4 text-white shadow-sm transition-transform active:scale-[0.98]"
+        className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-[#00c3ab] to-[#007261] px-4 py-2.5 text-white shadow-sm transition-transform active:scale-[0.98]"
       >
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
-          <ChartNoAxesCombined className="h-5 w-5" />
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15">
+          <ChartNoAxesCombined className="h-4 w-4" />
         </span>
-        <span className="flex-1 text-base font-semibold">Statistiques et prévisions</span>
+        <span className="flex-1 text-sm font-semibold">Statistiques et prévisions</span>
         <ChevronRight className="h-5 w-5 opacity-80" />
       </Link>
+
+      <div className="-mt-1.5 grid grid-cols-2 gap-2.5">
+        <ShortcutBanner href="/daret" label="Daret" icon={HandCoins} className="from-teal-400 to-emerald-600" />
+        <ShortcutBanner href="/goals" label="Objectifs" icon={Target} className="from-amber-400 to-orange-500" />
+      </div>
 
       <section className="flex flex-col gap-2.5">
         <div className="flex items-center justify-between px-1">
@@ -92,5 +97,35 @@ export function HomeDashboard({
         />
       </section>
     </>
+  );
+}
+
+/** Half-width banner under "Statistiques et prévisions" (Daret, Objectifs). */
+function ShortcutBanner({
+  href,
+  label,
+  icon: Icon,
+  className,
+}: {
+  href: string;
+  label: string;
+  icon: typeof Target;
+  className: string;
+}) {
+  return (
+    <Link
+      href={href}
+      prefetch
+      className={cn(
+        "flex items-center gap-2.5 rounded-2xl bg-gradient-to-r px-3 py-2.5 text-white shadow-sm transition-transform active:scale-[0.98]",
+        className,
+      )}
+    >
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15">
+        <Icon className="h-4 w-4" />
+      </span>
+      <span className="flex-1 truncate text-sm font-semibold">{label}</span>
+      <ChevronRight className="h-4 w-4 opacity-80" />
+    </Link>
   );
 }
