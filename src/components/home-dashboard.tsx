@@ -2,10 +2,10 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { CalendarDays, ChartNoAxesCombined, ChevronRight, HandCoins, Target } from "lucide-react";
+import { CalendarDays, ChartNoAxesCombined, ChevronRight, HandCoins, Target, TrendingUp, Wallet } from "lucide-react";
 import type { MonthId } from "@/lib/date";
-import { getPaidThisMonth } from "@/lib/engine";
 import type { Expense, Payment } from "@/lib/types";
+import { walletPaidOut } from "@/lib/wallet";
 import { cn, formatMoney } from "@/lib/utils";
 import { mutationsSettled } from "@/lib/use-refresh-data";
 import { DueNowList } from "@/components/due-now-list";
@@ -15,14 +15,14 @@ import { Card, CardContent } from "@/components/ui/card";
 /**
  * Dashboard body. Owns a local copy of the payments, seeded once from the
  * server: ticking an expense updates it optimistically, so the list and the
- * Disponible / Dépensé figures change instantly, computed right here in the
+ * Disponible figure (the Solde: cash + card) changes instantly, computed here in the
  * browser, instead of waiting for the server to re-render the page after
  * every tap. Fresh server data is adopted only once every tap has been
  * saved and refreshed: a refresh that started before a newer tap would
  * otherwise silently undo it (the item flipping back to unpaid).
  */
 export function HomeDashboard({
-  salary,
+  solde,
   currency,
   expenses,
   payments,
@@ -30,7 +30,8 @@ export function HomeDashboard({
   categoryEmoji,
   countdown,
 }: {
-  salary: number;
+  /** Solde total (cash + card) as of the server's payments. */
+  solde: number;
   currency: string;
   expenses: Expense[];
   payments: Payment[];
@@ -45,11 +46,11 @@ export function HomeDashboard({
     if (mutationsSettled()) setLocalPayments(payments);
   }
 
-  const paidThisMonth = useMemo(
-    () => getPaidThisMonth(expenses, localPayments, currentMonth),
-    [expenses, localPayments, currentMonth],
+  // Disponible = the Solde, moved by the ticks not saved yet.
+  const available = useMemo(
+    () => solde + walletPaidOut(payments, expenses) - walletPaidOut(localPayments, expenses),
+    [solde, payments, localPayments, expenses],
   );
-  const available = Math.max(0, salary - paidThisMonth);
 
   return (
     <>
@@ -71,6 +72,8 @@ export function HomeDashboard({
       {countdown}
 
       <div className="grid grid-cols-2 gap-2.5">
+        <ShortcutBanner href="/incomes" label="Revenus" icon={TrendingUp} className="from-lime-400 to-green-600" />
+        <ShortcutBanner href="/solde" label="Solde" icon={Wallet} className="from-indigo-400 to-violet-600" />
         <ShortcutBanner href="/daret" label="Daret" icon={HandCoins} className="from-teal-400 to-emerald-600" />
         <ShortcutBanner href="/goals" label="Objectifs" icon={Target} className="from-amber-400 to-orange-500" />
         <ShortcutBanner href="/stats" label="Statistiques" icon={ChartNoAxesCombined} className="from-sky-400 to-blue-600" />
@@ -94,7 +97,7 @@ export function HomeDashboard({
   );
 }
 
-/** Half-width shortcut banner (Daret, Objectifs, Statistiques, Calendrier). */
+/** Half-width shortcut banner (Revenus, Solde, Daret, Objectifs…). */
 function ShortcutBanner({
   href,
   label,

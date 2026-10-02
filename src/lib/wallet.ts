@@ -47,6 +47,18 @@ const round = (n: number) => Math.round(n * 100) / 100;
 const MONTHS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
 const periodLabel = (period: string) => `${MONTHS[Number(period.slice(5, 7)) - 1]} ${period.slice(0, 4)}`;
 
+/** Whether a payment moves money in the Solde (it has its cash / card). */
+function countsInWallet(p: Payment, byId: ReadonlyMap<string, Expense>): boolean {
+  return p.method != null && byId.has(p.expenseId) && p.amountPaid > 0;
+}
+
+/** Total of the payments that come off the Solde: lets the home page move
+ *  Disponible instantly while a tick is still being saved. */
+export function walletPaidOut(payments: Payment[], expenses: Expense[]): number {
+  const byId = new Map(expenses.map((e) => [e.id, e]));
+  return payments.filter((p) => countsInWallet(p, byId)).reduce((s, p) => s + p.amountPaid, 0);
+}
+
 export function buildWallet(input: {
   receipts: SalaryReceipt[];
   advances: SalaryAdvance[];
@@ -108,7 +120,7 @@ export function buildWallet(input: {
   }
   for (const p of input.payments) {
     const e = byId.get(p.expenseId);
-    if (!p.method || !e || !(p.amountPaid > 0)) continue;
+    if (!e || !p.method || !countsInWallet(p, byId)) continue;
     entries.push({
       id: `payment-${p.id}`,
       kind: e.type === "credit" ? "credit" : "expense",

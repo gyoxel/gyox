@@ -8,6 +8,7 @@ import { getExpenseDisplayColor, getForecast, getMonthSummary, getPaidThisMonth,
 import { displayIcon } from "@/lib/category";
 import { BudgetDonut, type DonutSegment } from "@/components/budget-donut";
 import { MonthSwitcher } from "@/components/month-switcher";
+import { getWallet } from "@/lib/wallet-data";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatMoney } from "@/lib/utils";
@@ -29,7 +30,7 @@ const SEGMENTS: { color: DisplayColor; label: string }[] = [
  * forecast for the coming months.
  */
 export default async function StatsPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
-  const [sp, settings, expenses, payments, categories, advances, incomes] = await Promise.all([
+  const [sp, settings, expenses, payments, categories, advances, incomes, wallet] = await Promise.all([
     searchParams,
     getSettings(),
     getAllExpenses(),
@@ -37,6 +38,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
     getAllCategories(),
     getAllSalaryAdvances(),
     getAllIncomes(),
+    getWallet(),
   ]);
   const currency = settings.currency;
   const categoryEmoji = new Map(categories.map((c) => [c.id, c.emoji]));
@@ -47,7 +49,8 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   // Advances on salary: added the month they're taken, off the salary they're taken on.
   // Extra incomes (prime, freelance…) add to the month they're received.
   const salaryNow = salaryForMonth(settings.salary, advances, monthKey(currentMonth)) + incomesIn(incomes, monthKey(currentMonth));
-  const available = Math.max(0, salaryNow - paidThisMonth);
+  // Disponible is the Solde (cash + card), the same figure as on Accueil.
+  const available = wallet.total;
   const percentUsed = salaryNow > 0 ? Math.min(100, Math.round((paidThisMonth / salaryNow) * 100)) : 0;
 
   // Planned budget of the viewed month (next month by default).

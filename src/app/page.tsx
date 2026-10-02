@@ -1,7 +1,6 @@
-import { getAllCategories, getAllExpenses, getAllIncomes, getAllPayments, getAllSalaryAdvances, getSettings } from "@/lib/repository";
-import { incomesIn } from "@/lib/income";
-import { monthKey, todayMonth } from "@/lib/date";
-import { salaryForMonth } from "@/lib/salary";
+import { getAllCategories, getAllExpenses, getAllPayments, getAllSalaryAdvances, getSettings } from "@/lib/repository";
+import { todayMonth } from "@/lib/date";
+import { getWallet } from "@/lib/wallet-data";
 import { PageHeader } from "@/components/page-header";
 import { CountdownNextSalary } from "@/components/countdown-next-salary";
 import { HomeDashboard } from "@/components/home-dashboard";
@@ -16,13 +15,13 @@ function todayShortDate(): string {
 }
 
 export default async function HomePage() {
-  const [settings, expenses, payments, categories, advances, incomes] = await Promise.all([
+  const [settings, expenses, payments, categories, advances, wallet] = await Promise.all([
     getSettings(),
     getAllExpenses(),
     getAllPayments(),
     getAllCategories(),
     getAllSalaryAdvances(),
-    getAllIncomes(),
+    getWallet(),
   ]);
   const categoryEmoji = Object.fromEntries(categories.map((c) => [c.id, c.emoji]));
   const currentMonth = todayMonth();
@@ -33,9 +32,7 @@ export default async function HomePage() {
 
       <main className="flex flex-col gap-4 px-4 py-5">
         <HomeDashboard
-          salary={
-            salaryForMonth(settings.salary, advances, monthKey(currentMonth)) + incomesIn(incomes, monthKey(currentMonth))
-          }
+          solde={wallet.total}
           currency={settings.currency}
           expenses={expenses}
           payments={payments}
