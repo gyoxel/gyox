@@ -2,13 +2,14 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { CalendarDays, ChartNoAxesCombined, ChevronRight, Eye, EyeOff, HandCoins, Target, TrendingUp, Wallet } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import type { MonthId } from "@/lib/date";
 import type { Expense, Payment, PaymentMethod } from "@/lib/types";
 import { walletPaidOut } from "@/lib/wallet";
 import { cn, formatMoney } from "@/lib/utils";
 import { mutationsSettled } from "@/lib/use-refresh-data";
 import { DueNowList } from "@/components/due-now-list";
+import { ShortcutWheel } from "@/components/shortcut-wheel";
 
 /**
  * Dashboard body. Owns a local copy of the payments, seeded once from the
@@ -113,14 +114,7 @@ export function HomeDashboard({
 
       {countdown}
 
-      <div className="grid grid-cols-2 gap-2.5">
-        <ShortcutBanner href="/incomes" label="Revenus" icon={TrendingUp} className="from-lime-400 to-green-600" />
-        <ShortcutBanner href="/solde" label="Solde" icon={Wallet} className="from-indigo-400 to-violet-600" />
-        <ShortcutBanner href="/daret" label="Daret" icon={HandCoins} className="from-teal-400 to-emerald-600" />
-        <ShortcutBanner href="/goals" label="Objectifs" icon={Target} className="from-amber-400 to-orange-500" />
-        <ShortcutBanner href="/stats" label="Statistiques" icon={ChartNoAxesCombined} className="from-sky-400 to-blue-600" />
-        <ShortcutBanner href="/calendar" label="Calendrier" icon={CalendarDays} className="from-rose-400 to-pink-600" />
-      </div>
+      <ShortcutWheel />
 
       <section className="flex flex-col gap-2.5">
         <div className="flex items-center justify-between px-1">
@@ -136,35 +130,5 @@ export function HomeDashboard({
         />
       </section>
     </>
-  );
-}
-
-/** Half-width shortcut banner (Revenus, Solde, Daret, Objectifs…). */
-function ShortcutBanner({
-  href,
-  label,
-  icon: Icon,
-  className,
-}: {
-  href: string;
-  label: string;
-  icon: typeof Target;
-  className: string;
-}) {
-  return (
-    <Link
-      href={href}
-      prefetch
-      className={cn(
-        "flex items-center gap-2 rounded-2xl bg-gradient-to-r px-2.5 py-2.5 text-white shadow-sm transition-transform active:scale-[0.98]",
-        className,
-      )}
-    >
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/15">
-        <Icon className="h-4 w-4" />
-      </span>
-      <span className="min-w-0 flex-1 truncate text-sm font-semibold">{label}</span>
-      <ChevronRight className="-mr-1 h-4 w-4 shrink-0 opacity-70" />
-    </Link>
   );
 }
