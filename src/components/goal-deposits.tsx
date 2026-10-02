@@ -6,19 +6,23 @@ import { toast } from "sonner";
 import type { GoalDeposit } from "@/lib/types";
 import { formatMoney } from "@/lib/utils";
 import { useRefreshData } from "@/lib/use-refresh-data";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 const DATE_FMT = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 
 /** Every "+ Versement" of a goal: name, amount and (small) date; removable. */
 export function GoalDeposits({ goalId, deposits, currency }: { goalId: string; deposits: GoalDeposit[]; currency: string }) {
   const refreshData = useRefreshData();
-  const [removing, setRemoving] = useState<string | null>(null);
+  const [toDelete, setToDelete] = useState<GoalDeposit | null>(null);
+  const [removing, setRemoving] = useState(false);
 
-  async function remove(id: string) {
-    setRemoving(id);
-    const res = await fetch(`/api/goals/${goalId}/deposits/${id}`, { method: "DELETE" });
-    setRemoving(null);
+  async function remove() {
+    if (!toDelete) return;
+    setRemoving(true);
+    const res = await fetch(`/api/goals/${goalId}/deposits/${toDelete.id}`, { method: "DELETE" });
+    setRemoving(false);
     if (!res.ok) return toast.error("Suppression impossible.");
+    setToDelete(null);
     toast.success("Versement supprimé.");
     await refreshData();
   }
@@ -43,8 +47,7 @@ export function GoalDeposits({ goalId, deposits, currency }: { goalId: string; d
           <span className="text-sm font-semibold tabular-nums text-emerald-600">+{formatMoney(d.amount, currency)}</span>
           <button
             type="button"
-            onClick={() => remove(d.id)}
-            disabled={removing === d.id}
+            onClick={() => setToDelete(d)}
             aria-label={`Supprimer le versement ${d.name}`}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 hover:text-rose-600 disabled:opacity-40"
           >
@@ -52,6 +55,14 @@ export function GoalDeposits({ goalId, deposits, currency }: { goalId: string; d
           </button>
         </li>
       ))}
+      <ConfirmDialog
+        open={toDelete != null}
+        onOpenChange={(open) => !open && setToDelete(null)}
+        title="Supprimer ce versement ?"
+        description={toDelete && <>« {toDelete.name} » ({formatMoney(toDelete.amount, currency)}) sera retiré de l&apos;objectif.</>}
+        pending={removing}
+        onConfirm={remove}
+      />
     </ul>
   );
 }

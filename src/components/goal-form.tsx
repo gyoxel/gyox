@@ -8,6 +8,7 @@ import type { Goal, GoalIdea } from "@/lib/types";
 import { monthLabelFr, parseMonthKey } from "@/lib/date";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { useRefreshData } from "@/lib/use-refresh-data";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -83,7 +84,10 @@ export function GoalForm({
     setIdeaEmoji("🎯");
   }
 
+  const [ideaToDelete, setIdeaToDelete] = useState<GoalIdea | null>(null);
+
   async function removeIdea(idea: GoalIdea) {
+    setIdeaToDelete(null);
     setIdeas((list) => list.filter((i) => i.id !== idea.id));
     const res = await fetch(`/api/goal-ideas/${idea.id}`, { method: "DELETE" });
     if (!res.ok) {
@@ -176,7 +180,7 @@ export function GoalForm({
                   {p.idea && (
                     <button
                       type="button"
-                      onClick={() => removeIdea(p.idea!)}
+                      onClick={() => setIdeaToDelete(p.idea)}
                       aria-label={`Retirer l'idée ${p.name}`}
                       className="flex h-8 w-7 items-center justify-center text-slate-300 hover:text-rose-500"
                     >
@@ -322,6 +326,15 @@ export function GoalForm({
       <Button type="submit" disabled={isPending}>
         {isPending ? "Enregistrement…" : goal ? "Enregistrer" : "Ajouter l'objectif"}
       </Button>
+
+      <ConfirmDialog
+        open={ideaToDelete != null}
+        onOpenChange={(open) => !open && setIdeaToDelete(null)}
+        title="Retirer cette idée ?"
+        description={ideaToDelete && <>« {ideaToDelete.emoji} {ideaToDelete.name} » ne sera plus proposée. Tes objectifs ne changent pas.</>}
+        confirmLabel="Retirer"
+        onConfirm={() => ideaToDelete && removeIdea(ideaToDelete)}
+      />
 
       <Dialog open={addingIdea} onOpenChange={setAddingIdea}>
         <DialogContent>

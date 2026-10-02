@@ -9,6 +9,7 @@ import { THEME_STORAGE_KEY, applyTheme, type ThemeChoice } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 const THEMES: { value: ThemeChoice; label: string; icon: typeof Sun }[] = [
   { value: "system", label: "Système", icon: Monitor },
@@ -21,6 +22,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
   const refreshData = useRefreshData();
   const [theme, setTheme] = useState<ThemeChoice>(settings.theme);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingImport, setPendingImport] = useState<File | null>(null);
 
   // The saved theme wins: bring this device in line if it differs (e.g. the
   // theme was changed on another phone).
@@ -114,13 +116,30 @@ export function SettingsForm({ settings }: { settings: Settings }) {
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) handleImportFile(file);
+              if (file) setPendingImport(file);
               e.target.value = "";
             }}
           />
           <p className="text-xs text-slate-400">
             L&apos;import remplace toutes les données actuelles par celles du fichier.
           </p>
+          <ConfirmDialog
+            open={pendingImport != null}
+            onOpenChange={(open) => !open && setPendingImport(null)}
+            title="Remplacer toutes les données ?"
+            description={
+              <>
+                Toutes les données actuelles (dépenses, crédits, darets, objectifs…) seront remplacées par celles de «{" "}
+                {pendingImport?.name} ». Cette action est irréversible.
+              </>
+            }
+            confirmLabel="Importer"
+            onConfirm={() => {
+              const file = pendingImport;
+              setPendingImport(null);
+              if (file) void handleImportFile(file);
+            }}
+          />
         </CardContent>
       </Card>
     </div>

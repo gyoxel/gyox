@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/page-header";
 import { GoalCard } from "@/components/goal-card";
 import { GoalDeposits } from "@/components/goal-deposits";
 import { GoalSimulator } from "@/components/goal-simulator";
+import { DeleteGoalButton } from "@/components/delete-goal-button";
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
@@ -92,6 +93,10 @@ export default async function GoalDetailPage({ params }: { params: Promise<{ id:
           <h2 className="px-1 text-sm font-semibold text-slate-500 dark:text-slate-400">Simulations</h2>
           <GoalSimulator key={`${base.reachedNow}-${base.upcoming.length}`} base={base} currency={settings.currency} defaultMonthly={goal.monthlySaving} deadline={goal.deadline} />
         </section>
+
+        <div className="mt-2">
+          <DeleteGoalButton id={goal.id} label={`${goal.emoji} ${goal.name}`} />
+        </div>
       </main>
     </>
   );
