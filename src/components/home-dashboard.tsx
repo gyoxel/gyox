@@ -53,16 +53,20 @@ export function HomeDashboard({
 
   return (
     <>
-      <Card className="border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/20">
-        <CardContent className="pt-4 text-center">
-          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
-            🟢 Disponible maintenant
-          </p>
-          <p className="mt-1 flex items-center justify-center text-3xl font-bold text-emerald-700 dark:text-emerald-400">
-            <MaskedAmount value={formatMoney(available, currency)} />
-          </p>
-        </CardContent>
-      </Card>
+      {/* Tapping it opens the Revenus page (the eye only shows / hides). */}
+      <Link href="/incomes" prefetch aria-label="Disponible maintenant · voir les revenus" className="block transition-transform active:scale-[0.98]">
+        <Card className="border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/20">
+          <CardContent className="pt-4 text-center">
+            <p className="flex items-center justify-center gap-1 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+              🟢 Disponible maintenant
+              <ChevronRight className="h-3.5 w-3.5 opacity-60" />
+            </p>
+            <p className="mt-1 flex items-center justify-center text-3xl font-bold text-emerald-700 dark:text-emerald-400">
+              <MaskedAmount value={formatMoney(available, currency)} />
+            </p>
+          </CardContent>
+        </Card>
+      </Link>
 
       {countdown}
 

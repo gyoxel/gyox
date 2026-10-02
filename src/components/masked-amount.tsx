@@ -18,7 +18,12 @@ export function MaskedAmount({ value, className, buttonClassName }: { value: str
       </span>
       <button
         type="button"
-        onClick={() => setRevealed((v) => !v)}
+        onClick={(e) => {
+          // The amount can sit inside a clickable card: the eye only toggles.
+          e.preventDefault();
+          e.stopPropagation();
+          setRevealed((v) => !v);
+        }}
         aria-label={revealed ? "Masquer le montant" : "Afficher le montant"}
         className={cn(
           "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-current opacity-70 transition-colors hover:bg-black/5 hover:opacity-100 dark:hover:bg-white/10",
