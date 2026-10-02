@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { CalendarClock, Check, Clock, Coins, Plus, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import type { Expense } from "@/lib/types";
-import { addMonths, monthKey, monthLabelFr, monthOfDateStr, todayDateStr } from "@/lib/date";
+import { addMonths, monthKey, monthLabelShortFr, monthOfDateStr, todayDateStr } from "@/lib/date";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { useNavBack } from "@/lib/nav-history";
 import { useRefreshData } from "@/lib/use-refresh-data";
@@ -281,13 +281,13 @@ export function CreditEditor({
           <div className="grid grid-cols-3 gap-2 rounded-xl bg-sky-50 p-3 text-center dark:bg-sky-950/40">
             <Stat label="Par mois" value={money(monthlyValue)} highlight={mode === "months"} />
             <Stat label="Durée" value={`${plan.count} mois`} highlight={mode === "monthly"} />
-            <Stat label="Fin" value={monthLabelFr(plan.end)} />
+            <Stat label="Fin" value={monthLabelShortFr(plan.end)} />
             {plan.last !== monthlyValue && (
               <p className="col-span-3 text-[11px] text-slate-500 dark:text-slate-400">
                 {mode === "months" && plan.count > monthsValue ? (
                   <>
-                    Arrondi à {money(monthlyValue)} : le reste, <b>{money(plan.last)}</b>, se paie le {plan.count}
-                    <sup>e</sup> mois.
+                    Arrondi à {money(monthlyValue)} : il faut <b>{plan.count} mois</b>, dernier versement{" "}
+                    <b>{money(plan.last)}</b>.
                   </>
                 ) : (
                   <>
@@ -447,7 +447,7 @@ function Stat({ label, value, highlight = false }: { label: string; value: strin
       <p className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
       <p
         className={cn(
-          "text-sm font-bold tabular-nums",
+          "whitespace-nowrap text-sm font-bold tabular-nums",
           highlight ? "text-blue-700 dark:text-sky-300" : "text-slate-800 dark:text-slate-100",
         )}
       >
@@ -499,35 +499,7 @@ function CustomTry({
 }) {
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-blue-200 bg-blue-50/60 p-2.5 dark:border-blue-900/60 dark:bg-blue-950/30">
-      <div className="flex items-center gap-2">
-        <Input
-          type="text"
-          inputMode={inputMode}
-          autoComplete="off"
-          autoFocus
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onFocus={(e) => keepAboveKeyboard(e.currentTarget)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              onApply();
-            }
-          }}
-          placeholder={placeholder}
-          aria-label={unit}
-          className="h-10 flex-1 bg-white dark:bg-slate-900"
-        />
-        <span className="shrink-0 text-xs text-slate-500">{unit}</span>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Fermer"
-          className="rounded-lg p-1.5 text-slate-400 hover:bg-white/70 dark:hover:bg-slate-800"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+      {/* Result first, so it stays visible above the keyboard */}
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm text-slate-600 dark:text-slate-300">
           {result ? (
@@ -538,10 +510,42 @@ function CustomTry({
             <span className="text-xs text-slate-400">Le résultat s&apos;affiche ici.</span>
           )}
         </span>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Fermer"
+          className="rounded-lg p-1 text-slate-400 hover:bg-white/70 dark:hover:bg-slate-800"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="relative min-w-0 flex-1">
+          <Input
+            type="text"
+            inputMode={inputMode}
+            autoComplete="off"
+            autoFocus
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onFocus={(e) => keepAboveKeyboard(e.currentTarget)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                onApply();
+              }
+            }}
+            placeholder={placeholder}
+            aria-label={unit}
+            className="h-10 bg-white pr-16 dark:bg-slate-900"
+          />
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+            {unit}
+          </span>
+        </div>
         <Button
           type="button"
-          size="sm"
-          className="bg-blue-600 text-white hover:bg-blue-700"
+          className="h-10 shrink-0 bg-blue-600 px-3 text-white hover:bg-blue-700"
           onClick={onApply}
           disabled={!result}
         >
