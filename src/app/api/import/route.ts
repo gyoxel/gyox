@@ -21,6 +21,8 @@ const backupSchema = z.object({
         expenseId: z.string().min(1),
         members: z.number().int().min(2),
         turnMonth: z.string().regex(/^\d{4}-\d{2}$/),
+        payoutMethod: z.enum(["cash", "card"]).nullable().default(null),
+        payoutReceivedAt: z.string().nullable().default(null),
         createdAt: z.string(),
       }),
     )
@@ -90,6 +92,31 @@ const backupSchema = z.object({
         amount: z.number().positive(),
         date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
         period: z.string().regex(/^\d{4}-\d{2}$/),
+        method: z.enum(["cash", "card"]).default("card"),
+        createdAt: z.string(),
+      }),
+    )
+    .optional(),
+  salaryReceipts: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        period: z.string().regex(/^\d{4}-\d{2}$/),
+        amount: z.number(),
+        method: z.enum(["cash", "card"]),
+        createdAt: z.string(),
+      }),
+    )
+    .optional(),
+  walletOps: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        kind: z.enum(["transfer", "adjust"]),
+        fromAccount: z.enum(["cash", "card"]).nullable(),
+        toAccount: z.enum(["cash", "card"]).nullable(),
+        amount: z.number(),
+        note: z.string().nullable(),
         createdAt: z.string(),
       }),
     )

@@ -3,7 +3,9 @@
 import { useState, useSyncExternalStore, useTransition } from "react";
 import { Check, HandCoins, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
-import type { SalaryAdvance, Settings } from "@/lib/types";
+import type { PaymentMethod, SalaryAdvance, Settings } from "@/lib/types";
+import { METHOD_META } from "@/lib/payment-method";
+import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -310,6 +312,7 @@ export function SalaryPanel({
   const refreshData = useRefreshData();
   const [advanceInput, setAdvanceInput] = useState("");
   const [advanceOpen, setAdvanceOpen] = useState(false);
+  const [advanceMethod, setAdvanceMethod] = useState<PaymentMethod>(settings.salaryMethod);
   const [toDelete, setToDelete] = useState<SalaryAdvance | null>(null);
   const [saving, startSaving] = useTransition();
   const state = useSalaryState(settings);
@@ -364,7 +367,7 @@ export function SalaryPanel({
       const res = await fetch("/api/salary-advances", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount, date: todayStr(), period: advancePeriod }),
+        body: JSON.stringify({ amount, date: todayStr(), period: advancePeriod, method: advanceMethod }),
       });
       if (!res.ok) {
         toast.error("Avance non enregistrée.");
@@ -421,26 +424,29 @@ export function SalaryPanel({
         {/* Advance on the next salary not received yet */}
         <div className="flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50/70 p-3 dark:border-amber-900/60 dark:bg-amber-950/30">
           {advanceOpen ? (
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                inputMode="decimal"
-                autoComplete="off"
-                placeholder="Montant (DH)"
-                aria-label="Montant de l'avance"
-                value={advanceInput}
-                onChange={(e) => setAdvanceInput(cleanDecimalInput(e.target.value))}
-              />
-              <Button
-                type="button"
-                className="shrink-0 bg-amber-500 text-white hover:bg-amber-600"
-                onClick={addAdvance}
-                disabled={saving || !(parseDecimalInput(advanceInput) > 0)}
-              >
-                <Check className="h-4 w-4" />
-                Ajouter
-              </Button>
-            </div>
+            <>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  autoComplete="off"
+                  placeholder="Montant (DH)"
+                  aria-label="Montant de l'avance"
+                  value={advanceInput}
+                  onChange={(e) => setAdvanceInput(cleanDecimalInput(e.target.value))}
+                />
+                <Button
+                  type="button"
+                  className="shrink-0 bg-amber-500 text-white hover:bg-amber-600"
+                  onClick={addAdvance}
+                  disabled={saving || !(parseDecimalInput(advanceInput) > 0)}
+                >
+                  <Check className="h-4 w-4" />
+                  Ajouter
+                </Button>
+              </div>
+              <PaymentMethodPicker value={advanceMethod} onChange={setAdvanceMethod} label="Reçue en" />
+            </>
           ) : (
             <Button
               type="button"
@@ -462,7 +468,9 @@ export function SalaryPanel({
                 <li key={a.id} className="flex items-center gap-2">
                   <span className="flex-1 text-slate-700 dark:text-slate-200">
                     {money(a.amount)}
-                    <span className="ml-1.5 text-[11px] text-slate-400">le {a.date.slice(8, 10)}/{a.date.slice(5, 7)}</span>
+                    <span className="ml-1.5 text-[11px] text-slate-400">
+                      le {a.date.slice(8, 10)}/{a.date.slice(5, 7)} · {METHOD_META[a.method].emoji}
+                    </span>
                   </span>
                   <button
                     type="button"

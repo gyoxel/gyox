@@ -12,14 +12,14 @@ datasource db {
 // (src/lib/engine.ts, src/lib/date.ts) parses them as plain month/day
 // integers and never needs timezone-aware timestamps.
 model Expense {
-  id                  String   @id @default(uuid())
+  id                  String  @id @default(uuid())
   name                String
   amount              Float
   type                String
   frequency           String
   startDate           String
   endDate             String?
-  active              Boolean  @default(true)
+  active              Boolean @default(true)
   color               String
   notes               String?
   creditInitialAmount Float?
@@ -28,8 +28,10 @@ model Expense {
   /// Disponible). Display-only: total = creditInitialAmount + this.
   creditPriorPaid     Float?
   linkedExpenseId     String?
-  /** Optional custom emoji shown in lists (e.g. "🚗"). Falls back to a
-   *  generic icon derived from `color` when not set. */
+  /**
+   * Optional custom emoji shown in lists (e.g. "🚗"). Falls back to a
+   * generic icon derived from `color` when not set.
+   */
   icon                String?
   /// User-managed category (Réglages). Deleting a category keeps its
   /// expenses, just uncategorized.
@@ -50,13 +52,17 @@ model Expense {
 // what's specific to a daret. The expense's startDate is the daret's first
 // month and it runs for `members` months, one collection per member.
 model Daret {
-  id        String @id @default(uuid())
-  expenseId String @unique
+  id               String  @id @default(uuid())
+  expenseId        String  @unique
   /// Number of participants = number of months the daret runs.
-  members   Int
+  members          Int
   /// "YYYY-MM": the month the user collects the pot.
-  turnMonth String
-  createdAt String
+  turnMonth        String
+  /// Payout collected on the turn: how ("cash" / "card") and when (ISO);
+  /// both null until the user confirms it.
+  payoutMethod     String?
+  payoutReceivedAt String?
+  createdAt        String
 
   expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
 
@@ -95,19 +101,19 @@ model Payment {
 
 // Singleton row (id is always 1).
 model Settings {
-  id            Int    @id @default(1)
-  salary        Float
-  currency      String
-  savingsTarget Float
-  startMonth    String
-  theme         String @default("system")
+  id                  Int     @id @default(1)
+  salary              Float
+  currency            String
+  savingsTarget       Float
+  startMonth          String
+  theme               String  @default("system")
   /// Day of the month the salary arrives (1-31; clamped to short months).
-  payDay        Int    @default(1)
+  payDay              Int     @default(1)
   /// "YYYY-MM" of the last pay day whose salary was confirmed received (the
   /// Accueil countdown asks once the pay day arrives).
   salaryReceivedMonth String?
   /// How the salary is received: "cash" or "card".
-  salaryMethod  String @default("card")
+  salaryMethod        String  @default("card")
 
   @@map("settings")
 }
@@ -195,9 +201,38 @@ model SalaryAdvance {
   date      String
   /// "YYYY-MM" of the pay day whose salary it is deducted from.
   period    String
+  /// How it was received: "cash" or "card".
+  method    String @default("card")
   createdAt String
 
   @@map("salary_advances")
+}
+
+/// A salary confirmed received (Solde history): what came in, and where.
+model SalaryReceipt {
+  id        String @id @default(uuid())
+  /// "YYYY-MM" of the pay day.
+  period    String @unique
+  /// Salary minus the advances already taken on it.
+  amount    Float
+  method    String
+  createdAt String
+
+  @@map("salary_receipts")
+}
+
+/// Solde: a transfer between cash and card, or an adjustment of one account
+/// to its real amount (kind "adjust", signed amount on `toAccount`).
+model WalletOp {
+  id          String  @id @default(uuid())
+  kind        String
+  fromAccount String?
+  toAccount   String?
+  amount      Float
+  note        String?
+  createdAt   String
+
+  @@map("wallet_ops")
 }
 
 /// Extra income (prime, freelance, cadeau…), on top of the salary. It adds

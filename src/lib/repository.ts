@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { prisma } from "./prisma";
 import { DEFAULT_CATEGORIES } from "./default-categories";
-import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote, SalaryAdvance, Income, PaymentMethod } from "./types";
+import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote, SalaryAdvance, Income, PaymentMethod, SalaryReceipt, WalletOp } from "./types";
 
 function mapExpense(row: {
   id: string;
@@ -172,6 +172,8 @@ export interface BackupData {
   dayNotes?: DayNote[];
   salaryAdvances?: SalaryAdvance[];
   incomes?: Income[];
+  salaryReceipts?: SalaryReceipt[];
+  walletOps?: WalletOp[];
 }
 
 export async function exportData(): Promise<BackupData> {
@@ -181,7 +183,15 @@ export async function exportData(): Promise<BackupData> {
     exportedAt: new Date().toISOString(),
     settings: await getSettings(),
     expenses: await getAllExpenses(),
-    darets: (await getAllDarets()).map((d) => ({ id: d.id, expenseId: d.expenseId, members: d.members, turnMonth: d.turnMonth, createdAt: d.createdAt })),
+    darets: (await getAllDarets()).map((d) => ({
+      id: d.id,
+      expenseId: d.expenseId,
+      members: d.members,
+      turnMonth: d.turnMonth,
+      payoutMethod: d.payoutMethod,
+      payoutReceivedAt: d.payoutReceivedAt,
+      createdAt: d.createdAt,
+    })),
     categories: await getAllCategories(),
     goals: goals.map((g) => ({ ...g, deposits: undefined })),
     goalDeposits: goals.flatMap((g) => g.deposits),
@@ -189,6 +199,8 @@ export async function exportData(): Promise<BackupData> {
     dayNotes: await getAllDayNotes(),
     salaryAdvances: await getAllSalaryAdvances(),
     incomes: await getAllIncomes(),
+    salaryReceipts: await getAllSalaryReceipts(),
+    walletOps: await getAllWalletOps(),
   };
 }
 
@@ -245,6 +257,10 @@ export async function importData(data: BackupData): Promise<void> {
       ? [prisma.salaryAdvance.deleteMany({}), prisma.salaryAdvance.createMany({ data: data.salaryAdvances })]
       : []),
     ...(data.incomes ? [prisma.income.deleteMany({}), prisma.income.createMany({ data: data.incomes })] : []),
+    ...(data.salaryReceipts
+      ? [prisma.salaryReceipt.deleteMany({}), prisma.salaryReceipt.createMany({ data: data.salaryReceipts })]
+      : []),
+    ...(data.walletOps ? [prisma.walletOp.deleteMany({}), prisma.walletOp.createMany({ data: data.walletOps })] : []),
     prisma.settings.update({ where: { id: 1 }, data: data.settings }),
   ]);
 }
@@ -366,7 +382,7 @@ export async function undoLastCreditSlot(expenseId: string): Promise<boolean> {
 
 export async function getAllDarets(): Promise<DaretWithExpense[]> {
   const rows = await prisma.daret.findMany({ include: { expense: true }, orderBy: { createdAt: "asc" } });
-  return rows.map(({ expense, ...daret }) => ({ ...daret, expense: mapExpense(expense) }));
+  return rows.map(({ expense, ...daret }) => ({ ...mapDaret(daret), expense: mapExpense(expense) }));
 }
 
 /** Creates the daret together with the temporary expense that carries its
@@ -406,7 +422,23 @@ export async function createDaret(input: {
       data: { id: randomUUID(), expenseId, members: input.members, turnMonth: input.turnMonth, createdAt: now },
     }),
   ]);
-  return { ...daret, expense: mapExpense(expense) };
+  return { ...mapDaret(daret), expense: mapExpense(expense) };
+}
+
+const asMethod = (m: string | null): PaymentMethod | null => (m === "cash" || m === "card" ? m : null);
+
+function mapDaret<T extends { payoutMethod: string | null }>(row: T): Omit<T, "payoutMethod"> & { payoutMethod: PaymentMethod | null } {
+  return { ...row, payoutMethod: asMethod(row.payoutMethod) };
+}
+
+/** Confirms the daret's payout as collected in cash or card (now), or
+ *  undoes it (null). */
+export async function setDaretPayout(id: string, method: PaymentMethod | null): Promise<boolean> {
+  const { count } = await prisma.daret.updateMany({
+    where: { id },
+    data: { payoutMethod: method, payoutReceivedAt: method ? new Date().toISOString() : null },
+  });
+  return count > 0;
 }
 
 /** Deleting the backing expense cascades to the daret and its payments. */
@@ -613,12 +645,71 @@ export async function setDayNote(date: string, text: string): Promise<DayNote | 
   return prisma.dayNote.upsert({ where: { date }, create: { date, text: clean, updatedAt }, update: { text: clean, updatedAt } });
 }
 
+const mapAdvance = (row: Omit<SalaryAdvance, "method"> & { method: string }): SalaryAdvance => ({
+  ...row,
+  method: row.method === "cash" ? "cash" : "card",
+});
+
 export async function getAllSalaryAdvances(): Promise<SalaryAdvance[]> {
-  return prisma.salaryAdvance.findMany({ orderBy: { date: "asc" } });
+  return (await prisma.salaryAdvance.findMany({ orderBy: { date: "asc" } })).map(mapAdvance);
 }
 
-export async function createSalaryAdvance(input: { amount: number; date: string; period: string }): Promise<SalaryAdvance> {
-  return prisma.salaryAdvance.create({ data: { id: randomUUID(), ...input, createdAt: new Date().toISOString() } });
+export async function createSalaryAdvance(input: {
+  amount: number;
+  date: string;
+  period: string;
+  method: PaymentMethod;
+}): Promise<SalaryAdvance> {
+  return mapAdvance(await prisma.salaryAdvance.create({ data: { id: randomUUID(), ...input, createdAt: new Date().toISOString() } }));
+}
+
+// ---------------------------------------------------------------------------
+// Solde: salaries received, transfers and adjustments
+// ---------------------------------------------------------------------------
+
+export async function getAllSalaryReceipts(): Promise<SalaryReceipt[]> {
+  const rows = await prisma.salaryReceipt.findMany({ orderBy: { createdAt: "asc" } });
+  return rows.map((r) => ({ ...r, method: r.method === "cash" ? "cash" : "card" }));
+}
+
+/**
+ * Keeps the salary receipts in line with "salaire reçu": confirming a pay
+ * day records what came in (salary minus the advances taken on it) and
+ * where; undoing it removes the receipts after the new last received one.
+ */
+export async function syncSalaryReceipts(previous: string | null, next: string | null, settings: Settings): Promise<void> {
+  if (next === previous) return;
+  if (next && (!previous || next > previous)) {
+    const advanced = (await prisma.salaryAdvance.findMany({ where: { period: next } })).reduce((s, a) => s + a.amount, 0);
+    const amount = Math.max(0, Math.round((settings.salary - advanced) * 100) / 100);
+    await prisma.salaryReceipt.upsert({
+      where: { period: next },
+      update: {},
+      create: { id: randomUUID(), period: next, amount, method: settings.salaryMethod, createdAt: new Date().toISOString() },
+    });
+  } else {
+    await prisma.salaryReceipt.deleteMany({ where: next ? { period: { gt: next } } : {} });
+  }
+}
+
+export async function getAllWalletOps(): Promise<WalletOp[]> {
+  const rows = await prisma.walletOp.findMany({ orderBy: { createdAt: "asc" } });
+  return rows.map((r) => ({
+    ...r,
+    kind: r.kind === "adjust" ? "adjust" : "transfer",
+    fromAccount: asMethod(r.fromAccount),
+    toAccount: asMethod(r.toAccount),
+  }));
+}
+
+export async function createWalletOp(input: Omit<WalletOp, "id" | "createdAt">): Promise<WalletOp> {
+  const row = await prisma.walletOp.create({ data: { id: randomUUID(), ...input, createdAt: new Date().toISOString() } });
+  return { ...input, id: row.id, createdAt: row.createdAt };
+}
+
+export async function deleteWalletOp(id: string): Promise<boolean> {
+  const { count } = await prisma.walletOp.deleteMany({ where: { id } });
+  return count > 0;
 }
 
 export async function deleteSalaryAdvance(id: string): Promise<boolean> {

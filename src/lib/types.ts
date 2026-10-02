@@ -137,6 +137,9 @@ export interface Daret {
   members: number;
   /** "YYYY-MM": the month the user collects the pot. */
   turnMonth: string;
+  /** Payout collected: how and when (ISO); null until confirmed. */
+  payoutMethod: PaymentMethod | null;
+  payoutReceivedAt: string | null;
   createdAt: string;
 }
 
@@ -194,6 +197,30 @@ export interface SalaryAdvance {
   amount: number;
   date: string;
   period: string;
+  /** How it was received. */
+  method: PaymentMethod;
+  createdAt: string;
+}
+
+/** A salary confirmed received: what came in (net of advances) and where. */
+export interface SalaryReceipt {
+  id: string;
+  /** "YYYY-MM" of the pay day. */
+  period: string;
+  amount: number;
+  method: PaymentMethod;
+  createdAt: string;
+}
+
+/** Solde: a transfer between cash and card, or an adjustment of one account
+ *  to its real amount (signed `amount` on `toAccount`). */
+export interface WalletOp {
+  id: string;
+  kind: "transfer" | "adjust";
+  fromAccount: PaymentMethod | null;
+  toAccount: PaymentMethod | null;
+  amount: number;
+  note: string | null;
   createdAt: string;
 }
 

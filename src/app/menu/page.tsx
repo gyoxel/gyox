@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Banknote, CalendarDays, ChartNoAxesCombined, ChevronRight, HandCoins, Settings, Tags, Target, TrendingUp, type LucideIcon } from "lucide-react";
+import { Banknote, CalendarDays, ChartNoAxesCombined, ChevronRight, HandCoins, Settings, Tags, Target, TrendingUp, Wallet, type LucideIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 
 const GROUPS: { href: string; label: string; hint: string; icon: LucideIcon; tint: string }[][] = [
   [
     { href: "/salary", label: "Salaire", hint: "Montant, jour de paie, avances", icon: Banknote, tint: "from-emerald-400 to-teal-600" },
     { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau, vente…", icon: TrendingUp, tint: "from-lime-400 to-green-600" },
+    { href: "/solde", label: "Solde", hint: "Cash et carte, transferts, historique", icon: Wallet, tint: "from-indigo-400 to-violet-600" },
   ],
   [
     { href: "/daret", label: "Daret", hint: "Tes darets et ton tour", icon: HandCoins, tint: "from-teal-400 to-emerald-600" },

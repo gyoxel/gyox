@@ -15,6 +15,11 @@ export function lastDayOfMonth(m: MonthId): string {
   return `${monthKey(m)}-${String(day).padStart(2, "0")}`;
 }
 
+/** What the user collects on their turn: contribution × members. */
+export function daretPayout(daret: DaretWithExpense): number {
+  return Math.round(daret.expense.amount * daret.members * 100) / 100;
+}
+
 export type DaretPhase = "upcoming" | "running" | "finished";
 
 export interface DaretState {
@@ -56,7 +61,7 @@ export function getDaretState(daret: DaretWithExpense, payments: Payment[], curr
     start,
     end,
     turn,
-    payout: Math.round(amount * daret.members * 100) / 100,
+    payout: daretPayout(daret),
     totalContribution: Math.round(amount * daret.members * 100) / 100,
     phase,
     round: phase === "running" ? monthsBetween(start, currentMonth) + 1 : null,
