@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 /** The bottom bar's tabs, in order: swipe left → next, right → previous. */
@@ -19,13 +19,18 @@ export function TabSwipe() {
   const pathname = usePathname();
   const router = useRouter();
   const enteringFrom = useRef<number>(0); // -1 / 1: the new tab slides in from that side
+  const restoreTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // A tab just opened by swipe slides in.
-  useEffect(() => {
+  // A tab just opened by swipe slides in — set up before the first paint
+  // (a plain effect let the new page flash in place for a frame).
+  useLayoutEffect(() => {
     const page = document.getElementById(PAGE_ID);
     const from = enteringFrom.current;
     if (!page || !from) return;
     enteringFrom.current = 0;
+    clearTimeout(restoreTimer.current);
+    page.style.transform = "";
+    page.style.opacity = "";
     page
       .animate(
         [
@@ -103,10 +108,18 @@ export function TabSwipe() {
             easing: "ease-in",
           })
           .finished.then(() => {
-            page.style.transform = "";
-            page.style.opacity = "";
+            // Stay off-screen until the next tab replaces this page (the
+            // old page must not come back meanwhile).
+            page.style.transform = `translateX(${-dir * 100}%)`;
+            page.style.opacity = "0";
             enteringFrom.current = dir;
             router.push(target);
+            // Safety: if the navigation never lands, bring the page back.
+            restoreTimer.current = setTimeout(() => {
+              enteringFrom.current = 0;
+              page.style.transform = "";
+              page.style.opacity = "";
+            }, 4000);
           })
           .catch(() => {});
         return;
@@ -129,8 +142,6 @@ export function TabSwipe() {
       document.removeEventListener("touchmove", onMove);
       document.removeEventListener("touchend", onEnd);
       document.removeEventListener("touchcancel", onEnd);
-      page.style.transform = "";
-      page.style.opacity = "";
     };
   }, [pathname, router]);
 
