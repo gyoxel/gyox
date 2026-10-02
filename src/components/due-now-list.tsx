@@ -179,6 +179,7 @@ export function DueNowList({
   return (
     <div className="flex flex-col gap-2.5">
       <div
+        data-no-tab-swipe
         className="flex items-center justify-between gap-2 touch-pan-y"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}

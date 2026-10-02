@@ -39,6 +39,7 @@ export function MonthSwitcher({ month, basePath = "/" }: { month: MonthId; baseP
 
   return (
     <div
+      data-no-tab-swipe
       className="flex items-center justify-between gap-2 touch-pan-y"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
