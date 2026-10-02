@@ -104,7 +104,7 @@ export function DaretCard({
               type="button"
               onClick={() => setConfirmOpen(true)}
               aria-label={`Supprimer ${daret.expense.name}`}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-rose-600 dark:hover:bg-slate-800"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
             >
               <Trash2 className="h-4 w-4" />
             </button>

@@ -31,7 +31,7 @@ export function DeleteGoalButton({ id, label }: { id: string; label: string }) {
 
   return (
     <>
-      <Button type="button" variant="outline" className="w-full text-rose-600" onClick={() => setOpen(true)}>
+      <Button type="button" variant="destructive" className="w-full" onClick={() => setOpen(true)}>
         <Trash2 className="h-4 w-4" />
         Supprimer l&apos;objectif
       </Button>

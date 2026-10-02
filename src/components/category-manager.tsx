@@ -143,7 +143,7 @@ export function CategoryManager({ categories: initial }: { categories: Category[
                 type="button"
                 onClick={() => setToDelete(c)}
                 aria-label={`Supprimer ${c.name}`}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-rose-600 dark:hover:bg-slate-800"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
               >
                 <Trash2 className="h-4 w-4" />
               </button>

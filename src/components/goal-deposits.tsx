@@ -49,7 +49,7 @@ export function GoalDeposits({ goalId, deposits, currency }: { goalId: string; d
             type="button"
             onClick={() => setToDelete(d)}
             aria-label={`Supprimer le versement ${d.name}`}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 hover:text-rose-600 disabled:opacity-40"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-rose-600 hover:bg-rose-50 disabled:opacity-40 dark:text-rose-400 dark:hover:bg-rose-950/40"
           >
             <Trash2 className="h-4 w-4" />
           </button>

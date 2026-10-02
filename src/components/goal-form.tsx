@@ -182,7 +182,7 @@ export function GoalForm({
                       type="button"
                       onClick={() => setIdeaToDelete(p.idea)}
                       aria-label={`Retirer l'idée ${p.name}`}
-                      className="flex h-8 w-7 items-center justify-center text-slate-300 hover:text-rose-500"
+                      className="flex h-8 w-7 items-center justify-center text-rose-500"
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -365,7 +365,7 @@ export function GoalForm({
 
       {goal && (
         <>
-          <Button type="button" variant="outline" className="text-rose-600" onClick={() => setConfirmDelete(true)} disabled={isPending}>
+          <Button type="button" variant="destructive" onClick={() => setConfirmDelete(true)} disabled={isPending}>
             <Trash2 className="h-4 w-4" />
             Supprimer l&apos;objectif
           </Button>
