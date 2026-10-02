@@ -230,6 +230,31 @@ export function CreditEditor({
 
       {/* Per month OR number of months */}
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-3.5 dark:border-slate-800">
+        {/* Live result, on top */}
+        {plan ? (
+          <div className="grid grid-cols-3 gap-2 rounded-xl bg-sky-50 p-3 text-center dark:bg-sky-950/40">
+            <Stat label="Par mois" value={money(monthlyValue)} highlight={mode === "months"} />
+            <Stat label="Durée" value={`${plan.count} mois`} highlight={mode === "monthly"} />
+            <Stat label="Fin" value={monthLabelShortFr(plan.end)} />
+            {plan.last !== monthlyValue && (
+              <p className="col-span-3 text-[11px] text-slate-500 dark:text-slate-400">
+                {mode === "months" && plan.count > monthsValue ? (
+                  <>
+                    Arrondi à {money(monthlyValue)} : il faut <b>{plan.count} mois</b>, dernier versement{" "}
+                    <b>{money(plan.last)}</b>.
+                  </>
+                ) : (
+                  <>
+                    Dernier versement (le reste) : <b>{money(plan.last)}</b>
+                  </>
+                )}
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-400">Indique le total, puis le montant par mois ou le nombre de mois.</p>
+        )}
+
         <div role="radiogroup" aria-label="Mode de remboursement" className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
           <ModeButton selected={mode === "monthly"} onClick={() => switchMode("monthly")} icon={Coins}>
             Par mois
@@ -274,31 +299,6 @@ export function CreditEditor({
             />
             <span className="shrink-0 text-sm text-slate-500">mois</span>
           </div>
-        )}
-
-        {/* Live result */}
-        {plan ? (
-          <div className="grid grid-cols-3 gap-2 rounded-xl bg-sky-50 p-3 text-center dark:bg-sky-950/40">
-            <Stat label="Par mois" value={money(monthlyValue)} highlight={mode === "months"} />
-            <Stat label="Durée" value={`${plan.count} mois`} highlight={mode === "monthly"} />
-            <Stat label="Fin" value={monthLabelShortFr(plan.end)} />
-            {plan.last !== monthlyValue && (
-              <p className="col-span-3 text-[11px] text-slate-500 dark:text-slate-400">
-                {mode === "months" && plan.count > monthsValue ? (
-                  <>
-                    Arrondi à {money(monthlyValue)} : il faut <b>{plan.count} mois</b>, dernier versement{" "}
-                    <b>{money(plan.last)}</b>.
-                  </>
-                ) : (
-                  <>
-                    Dernier versement (le reste) : <b>{money(plan.last)}</b>
-                  </>
-                )}
-              </p>
-            )}
-          </div>
-        ) : (
-          <p className="text-xs text-slate-400">Indique le total, puis le montant par mois ou le nombre de mois.</p>
         )}
 
         {/* Suggestions */}
