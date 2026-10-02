@@ -68,10 +68,14 @@ function onPop() {
 export function NavHistoryTracker() {
   const pathname = usePathname();
   useEffect(() => {
+    if (window.self !== window.top) return;
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
   useEffect(() => {
+    // The tab swipe's hidden preload frames share this sessionStorage: they
+    // must not write their page into the tab's history.
+    if (window.self !== window.top) return;
     record(pathname);
   }, [pathname]);
   return null;

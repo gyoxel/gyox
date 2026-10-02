@@ -10,13 +10,33 @@ const LOCK_PX = 12; // movement before deciding horizontal vs vertical
 const GO_PX = 70; // drag past this (or a quick flick) switches tab
 const SLIDE_MS = 200;
 
+/** Each tab's page title (its <h1>): a snapshot is only kept when it shows
+ *  that title, so one tab can never be stored under another's name. */
+const TITLES: Record<string, string> = { "/": "GX Salaire", "/budget": "Dépenses", "/credits": "Crédits", "/menu": "Menu" };
+
 /** Last seen look of each tab (its page's HTML), shown next to the current
  *  page while swiping so the neighbour is already there — no blank. */
 const snapshots = new Map<string, string>();
 
+function validSnapshot(root: Element | null | undefined, path: string): string | null {
+  // (no `instanceof Element`: an element from a preload frame belongs to
+  // that frame's window and would fail it)
+  if (!root) return null;
+  if (root.querySelector('[aria-busy="true"]')) return null; // still the loading skeleton
+  if (root.querySelector("h1")?.textContent?.trim() !== TITLES[path]) return null;
+  return root.innerHTML;
+}
+
 function snapshotCurrent(path: string) {
-  const page = document.getElementById(PAGE_ID);
-  if (page && TABS.includes(path)) snapshots.set(path, page.innerHTML);
+  if (!TABS.includes(path) || window.location.pathname !== path) return;
+  const html = validSnapshot(document.getElementById(PAGE_ID), path);
+  if (html) snapshots.set(path, html);
+}
+
+/** Stand-in while a tab has no snapshot yet: its header and a skeleton. */
+function placeholder(path: string): string {
+  const block = (h: string) => `<div class="${h} animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800/70"></div>`;
+  return `<div class="sticky top-0 z-30 flex items-center border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-950"><h1 class="text-base font-semibold text-slate-900 dark:text-white">${TITLES[path] ?? ""}</h1></div><div class="flex flex-col gap-4 px-4 py-5">${block("h-28")}${block("h-20")}${block("h-14")}${block("h-14")}${block("h-14")}</div>`;
 }
 
 /** Loads the tabs never seen yet in a hidden frame, once, to snapshot them. */
@@ -24,27 +44,33 @@ let preloading = false;
 function preloadSnapshots() {
   if (preloading || window.self !== window.top) return;
   preloading = true;
-  const missing = TABS.filter((t) => !snapshots.has(t));
+  const missing = TABS.filter((t) => !snapshots.has(t) && t !== window.location.pathname);
   const next = () => {
     const path = missing.shift();
     if (!path) return;
     const frame = document.createElement("iframe");
     frame.setAttribute("aria-hidden", "true");
     frame.tabIndex = -1;
-    frame.style.cssText = "position:fixed;left:-9999px;top:0;width:390px;height:844px;border:0;visibility:hidden;";
+    frame.style.cssText = `position:fixed;left:-9999px;top:0;width:${window.innerWidth}px;height:${window.innerHeight}px;border:0;visibility:hidden;`;
     frame.src = path;
-    frame.onload = () => {
-      setTimeout(() => {
-        try {
-          const html = frame.contentDocument?.getElementById(PAGE_ID)?.innerHTML;
-          if (html && !snapshots.has(path)) snapshots.set(path, html);
-        } catch {
-          // not readable: that tab simply has no preview yet
-        }
+    const startedAt = Date.now();
+    // Poll until the frame shows the real page (not the skeleton), max 10 s.
+    const poll = () => {
+      let html: string | null = null;
+      try {
+        html = validSnapshot(frame.contentDocument?.getElementById(PAGE_ID), path);
+      } catch {
+        // not readable: that tab simply keeps its placeholder
+      }
+      if (html || Date.now() - startedAt > 10000) {
+        if (html && !snapshots.has(path)) snapshots.set(path, html);
         frame.remove();
         next();
-      }, 900);
+        return;
+      }
+      setTimeout(poll, 300);
     };
+    frame.onload = () => setTimeout(poll, 300);
     document.body.appendChild(frame);
   };
   next();
@@ -98,12 +124,11 @@ export function TabSwipe() {
   // Keep this tab's snapshot fresh, and fetch the others once.
   useEffect(() => {
     if (!TABS.includes(pathname)) return;
-    const t1 = setTimeout(() => snapshotCurrent(pathname), 1200);
-    const t2 = setTimeout(preloadSnapshots, 2500);
+    const t1 = setTimeout(() => snapshotCurrent(pathname), 800);
+    const t2 = setTimeout(preloadSnapshots, 1200);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
-      snapshotCurrent(pathname);
     };
   }, [pathname]);
 
@@ -117,6 +142,7 @@ export function TabSwipe() {
     let mode: "undecided" | "horizontal" | "vertical" = "undecided";
     let dx = 0;
     let shownDir = 0; // which neighbour the preview shows: 1 next, -1 previous
+    let lastSnap = 0;
 
     const blocked = (target: EventTarget | null) => {
       for (let el = target as HTMLElement | null; el && el !== document.body; el = el.parentElement) {
@@ -143,7 +169,7 @@ export function TabSwipe() {
       box.className = "fixed inset-0 z-40 overflow-hidden bg-slate-50 dark:bg-slate-950 pointer-events-none";
       const inner = document.createElement("div");
       inner.className = "mx-auto flex w-full max-w-lg flex-col";
-      inner.innerHTML = snapshots.get(path) ?? "";
+      inner.innerHTML = snapshots.get(path) ?? placeholder(path);
       box.appendChild(inner);
       document.body.appendChild(box);
       preview.current = box;
@@ -161,6 +187,11 @@ export function TabSwipe() {
         return;
       }
       start = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+      // Its latest look, in case the swipe leaves it (e.g. after a tick).
+      if (Date.now() - lastSnap > 1500) {
+        lastSnap = Date.now();
+        snapshotCurrent(pathname);
+      }
       mode = "undecided";
       dx = 0;
       shownDir = 0;
