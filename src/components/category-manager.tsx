@@ -1,57 +1,106 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Category } from "@/lib/types";
 import { useRefreshData } from "@/lib/use-refresh-data";
+import { cn, formatMoney } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-/** Réglages: add, rename, change emoji, reorder and delete categories. */
-export function CategoryManager({ categories: initial }: { categories: Category[] }) {
+export interface CategoryStats {
+  /** Active expenses filed under it. */
+  count: number;
+  /** What they cost this month. */
+  monthTotal: number;
+}
+
+/** Soft tile colors, cycled through the list. */
+const TINTS = [
+  "from-orange-100 to-amber-50 dark:from-orange-950/60 dark:to-amber-950/30",
+  "from-sky-100 to-blue-50 dark:from-sky-950/60 dark:to-blue-950/30",
+  "from-emerald-100 to-teal-50 dark:from-emerald-950/60 dark:to-teal-950/30",
+  "from-violet-100 to-purple-50 dark:from-violet-950/60 dark:to-purple-950/30",
+  "from-rose-100 to-pink-50 dark:from-rose-950/60 dark:to-pink-950/30",
+  "from-lime-100 to-green-50 dark:from-lime-950/60 dark:to-green-950/30",
+];
+
+const EMOJIS = [
+  "🍔", "🛒", "🏠", "🚗", "⛽", "💡", "📱", "🎬", "👕", "💊", "🎁", "✈️",
+  "📚", "🐶", "💇", "🏋️", "☕", "🍕", "🧾", "🎮", "🛠️", "💼", "👶", "🏷️",
+];
+
+type Editing = { mode: "new" } | { mode: "edit"; category: Category };
+
+/** Catégories: a grid of tiles (emoji, name, this month's spending); tap
+ *  one to rename it, change its emoji, move it or delete it. */
+export function CategoryManager({
+  categories: initial,
+  stats,
+  monthLabel,
+  currency,
+}: {
+  categories: Category[];
+  stats: Record<string, CategoryStats>;
+  monthLabel: string;
+  currency: string;
+}) {
   const refreshData = useRefreshData();
   const [categories, setCategories] = useState(initial);
-  const [newEmoji, setNewEmoji] = useState("🏷️");
-  const [newName, setNewName] = useState("");
-  const [toDelete, setToDelete] = useState<Category | null>(null);
+  const [editing, setEditing] = useState<Editing | null>(null);
+  const [emoji, setEmoji] = useState("🏷️");
+  const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
-  // Bumped to remount the (uncontrolled) inputs, e.g. to undo a blank edit.
-  const [resetTick, setResetTick] = useState(0);
+  const [toDelete, setToDelete] = useState<Category | null>(null);
+  const money = (n: number) => formatMoney(n, currency);
+  const totalMonth = Object.values(stats).reduce((s, x) => s + x.monthTotal, 0);
 
-  async function save(id: string, patch: { name?: string; emoji?: string }) {
-    const current = categories.find((c) => c.id === id);
-    if (!current) return;
-    const next = { name: patch.name?.trim(), emoji: patch.emoji?.trim() };
-    if ((next.name !== undefined && !next.name) || (next.emoji !== undefined && !next.emoji)) {
-      // Empty value: restore the saved one instead of saving a blank.
-      setResetTick((t) => t + 1);
-      return;
+  function open(next: Editing) {
+    setEditing(next);
+    setEmoji(next.mode === "edit" ? next.category.emoji : "🏷️");
+    setName(next.mode === "edit" ? next.category.name : "");
+  }
+
+  async function submit() {
+    if (!editing) return;
+    const clean = { name: name.trim(), emoji: emoji.trim() || "🏷️" };
+    if (!clean.name) return toast.error("Donne un nom à la catégorie.");
+    setBusy(true);
+    const res =
+      editing.mode === "new"
+        ? await fetch("/api/categories", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(clean),
+          })
+        : await fetch(`/api/categories/${editing.category.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(clean),
+          });
+    setBusy(false);
+    if (!res.ok) return toast.error(editing.mode === "new" ? "Ajout impossible." : "Modification impossible.");
+    const saved: Category = await res.json();
+    if (editing.mode === "new") {
+      // The server files it before Santé / Autres (kept last): take its order.
+      const list = await fetch("/api/categories").then((r) => (r.ok ? (r.json() as Promise<Category[]>) : null));
+      setCategories((prev) => list ?? [...prev, saved]);
+    } else {
+      setCategories((prev) => prev.map((c) => (c.id === saved.id ? saved : c)));
     }
-    if ((next.name ?? current.name) === current.name && (next.emoji ?? current.emoji) === current.emoji) return;
-    const res = await fetch(`/api/categories/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(next),
-    });
-    if (!res.ok) return toast.error("Modification impossible.");
-    const updated: Category = await res.json();
-    setCategories((prev) => prev.map((c) => (c.id === id ? updated : c)));
+    toast.success(editing.mode === "new" ? `${saved.emoji} ${saved.name} ajoutée.` : "Catégorie modifiée.");
+    setEditing(null);
     void refreshData();
   }
 
-  async function move(index: number, delta: -1 | 1) {
+  async function move(id: string, delta: -1 | 1) {
+    const index = categories.findIndex((c) => c.id === id);
     const target = index + delta;
-    if (target < 0 || target >= categories.length) return;
+    if (index < 0 || target < 0 || target >= categories.length) return;
     const next = [...categories];
     [next[index], next[target]] = [next[target], next[index]];
     const previous = categories;
@@ -68,23 +117,6 @@ export function CategoryManager({ categories: initial }: { categories: Category[
     void refreshData();
   }
 
-  async function add() {
-    if (!newName.trim()) return toast.error("Donne un nom à la catégorie.");
-    setBusy(true);
-    const res = await fetch("/api/categories", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newName.trim(), emoji: newEmoji.trim() || "🏷️" }),
-    });
-    setBusy(false);
-    if (!res.ok) return toast.error("Ajout impossible.");
-    const created: Category = await res.json();
-    setCategories((prev) => [...prev, created]);
-    setNewName("");
-    setNewEmoji("🏷️");
-    void refreshData();
-  }
-
   async function confirmDelete() {
     if (!toDelete) return;
     setBusy(true);
@@ -92,112 +124,178 @@ export function CategoryManager({ categories: initial }: { categories: Category[
     setBusy(false);
     if (!res.ok) return toast.error("Suppression impossible.");
     setCategories((prev) => prev.filter((c) => c.id !== toDelete.id));
+    toast.success("Catégorie supprimée.");
     setToDelete(null);
+    setEditing(null);
     void refreshData();
   }
 
-  // Inputs are uncontrolled (defaultValue) and saved on blur; the key
-  // includes the saved values so a reset/rename re-renders them.
+  const editedIndex = editing?.mode === "edit" ? categories.findIndex((c) => c.id === editing.category.id) : -1;
+
   return (
-    <Card>
-      <CardContent className="flex flex-col gap-3 pt-4">
-        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Catégories</h2>
-        <div className="flex flex-col gap-2">
-          {categories.map((c, i) => (
-            <div key={`${c.id}:${c.name}:${c.emoji}:${resetTick}`} className="flex items-center gap-2">
-              <Input
-                defaultValue={c.emoji}
-                aria-label={`Emoji de ${c.name}`}
-                maxLength={8}
-                onBlur={(e) => save(c.id, { emoji: e.target.value })}
-                className="w-12 shrink-0 px-1 text-center text-lg"
-              />
-              <Input
-                defaultValue={c.name}
-                aria-label={`Nom de ${c.name}`}
-                maxLength={40}
-                onBlur={(e) => save(c.id, { name: e.target.value })}
-                className="min-w-0 flex-1"
-              />
-              <div className="flex shrink-0 flex-col">
-                <button
-                  type="button"
-                  onClick={() => move(i, -1)}
-                  disabled={i === 0}
-                  aria-label={`Monter ${c.name}`}
-                  className="flex h-5 w-7 items-center justify-center rounded text-slate-400 hover:bg-slate-100 disabled:opacity-30 dark:hover:bg-slate-800"
-                >
-                  <ChevronUp className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => move(i, 1)}
-                  disabled={i === categories.length - 1}
-                  aria-label={`Descendre ${c.name}`}
-                  className="flex h-5 w-7 items-center justify-center rounded text-slate-400 hover:bg-slate-100 disabled:opacity-30 dark:hover:bg-slate-800"
-                >
-                  <ChevronDown className="h-4 w-4" />
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={() => setToDelete(c)}
-                aria-label={`Supprimer ${c.name}`}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-        </div>
+    <>
+      {/* Summary */}
+      <div className="rounded-2xl bg-gradient-to-br from-violet-500 to-purple-700 px-4 py-4 text-white shadow-sm">
+        <p className="text-xs font-medium text-white/80">{categories.length} catégories</p>
+        <p className="mt-0.5 text-2xl font-bold tabular-nums">{money(totalMonth)}</p>
+        <p className="text-[11px] text-white/80">Dépenses classées · {monthLabel}</p>
+      </div>
 
-        <div className="flex items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
-          <Input
-            value={newEmoji}
-            onChange={(e) => setNewEmoji(e.target.value)}
-            aria-label="Emoji de la nouvelle catégorie"
-            maxLength={8}
-            className="w-12 shrink-0 px-1 text-center text-lg"
-          />
-          <Input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                void add();
-              }
-            }}
-            placeholder="Nouvelle catégorie"
-            maxLength={40}
-            className="min-w-0 flex-1"
-          />
-          <Button type="button" size="sm" onClick={add} disabled={busy}>
-            <Plus className="h-4 w-4" />
-            Ajouter
-          </Button>
-        </div>
-      </CardContent>
+      <div className="grid grid-cols-2 gap-2.5">
+        {categories.map((c, i) => {
+          const s = stats[c.id] ?? { count: 0, monthTotal: 0 };
+          const share = totalMonth > 0 ? Math.round((s.monthTotal / totalMonth) * 100) : 0;
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => open({ mode: "edit", category: c })}
+              className={cn(
+                "flex flex-col items-start gap-2 rounded-2xl border border-slate-200/70 bg-gradient-to-br p-3 text-left shadow-sm transition-transform active:scale-[0.97] dark:border-slate-800",
+                TINTS[i % TINTS.length],
+              )}
+            >
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/80 text-2xl shadow-sm dark:bg-slate-900/70">
+                {c.emoji}
+              </span>
+              <span className="w-full">
+                <span className="block truncate text-sm font-semibold text-slate-900 dark:text-white">{c.name}</span>
+                <span className="block text-[11px] text-slate-500 dark:text-slate-400">
+                  {s.count === 0 ? "Aucune dépense" : s.count === 1 ? "1 dépense" : `${s.count} dépenses`}
+                </span>
+              </span>
+              <span className="flex w-full items-baseline justify-between gap-1">
+                <span className="text-sm font-bold tabular-nums text-slate-800 dark:text-slate-100">
+                  {s.monthTotal > 0 ? money(s.monthTotal) : "—"}
+                </span>
+                {share > 0 && <span className="text-[11px] font-semibold text-slate-500">{share}%</span>}
+              </span>
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => open({ mode: "new" })}
+          className="flex min-h-[132px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 text-slate-500 transition-colors active:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:active:bg-slate-900"
+        >
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+            <Plus className="h-5 w-5" />
+          </span>
+          <span className="text-sm font-semibold">Ajouter</span>
+        </button>
+      </div>
 
-      <Dialog open={toDelete != null} onOpenChange={(open) => !open && setToDelete(null)}>
-        <DialogContent>
+      <Dialog open={editing != null} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="max-h-[88dvh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Supprimer cette catégorie ?</DialogTitle>
-            <DialogDescription>
-              « {toDelete?.emoji} {toDelete?.name} » sera supprimée. Les dépenses de cette catégorie sont gardées, sans
-              catégorie.
-            </DialogDescription>
+            <DialogTitle>{editing?.mode === "new" ? "Nouvelle catégorie" : "Modifier la catégorie"}</DialogTitle>
           </DialogHeader>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setToDelete(null)} disabled={busy}>
-              Annuler
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-3xl dark:bg-slate-800">
+                {emoji || "🏷️"}
+              </span>
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <Label htmlFor="cat-name">Nom</Label>
+                <Input
+                  id="cat-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void submit();
+                    }
+                  }}
+                  placeholder="Ex: Restaurants"
+                  maxLength={40}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label>Emoji</Label>
+              <div className="grid grid-cols-8 gap-1">
+                {EMOJIS.map((e) => (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => setEmoji(e)}
+                    aria-label={`Emoji ${e}`}
+                    className={cn(
+                      "flex h-9 items-center justify-center rounded-lg text-xl transition-colors",
+                      emoji === e ? "bg-violet-100 ring-2 ring-violet-500 dark:bg-violet-950" : "active:bg-slate-100 dark:active:bg-slate-800",
+                    )}
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+              <Input
+                value={emoji}
+                onChange={(e) => setEmoji(e.target.value)}
+                aria-label="Autre emoji"
+                placeholder="Ou tape un emoji"
+                maxLength={8}
+                className="text-center text-lg"
+              />
+            </div>
+
+            {editing?.mode === "edit" && (
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm text-slate-500 dark:text-slate-400">Position</span>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => move(editing.category.id, -1)}
+                    disabled={editedIndex <= 0}
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Avant
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => move(editing.category.id, 1)}
+                    disabled={editedIndex < 0 || editedIndex >= categories.length - 1}
+                  >
+                    Après
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <Button type="button" onClick={submit} disabled={busy} className="bg-violet-600 text-white hover:bg-violet-700">
+              <Check className="h-4 w-4" />
+              {editing?.mode === "new" ? "Ajouter" : "Enregistrer"}
             </Button>
-            <Button type="button" variant="destructive" onClick={confirmDelete} disabled={busy}>
-              Supprimer
-            </Button>
-          </DialogFooter>
+            {editing?.mode === "edit" && (
+              <Button type="button" variant="destructive" onClick={() => setToDelete(editing.category)} disabled={busy}>
+                <Trash2 className="h-4 w-4" />
+                Supprimer la catégorie
+              </Button>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
-    </Card>
+
+      <ConfirmDialog
+        open={toDelete != null}
+        onOpenChange={(o) => !o && setToDelete(null)}
+        title="Supprimer cette catégorie ?"
+        description={
+          <>
+            « {toDelete?.emoji} {toDelete?.name} » sera supprimée. Les dépenses de cette catégorie sont gardées, sans
+            catégorie.
+          </>
+        }
+        pending={busy}
+        onConfirm={confirmDelete}
+      />
+    </>
   );
 }
