@@ -170,3 +170,10 @@ export interface GoalIdea {
   name: string;
   createdAt: string;
 }
+
+/** Calendrier: a free note on one day ("YYYY-MM-DD"). */
+export interface DayNote {
+  date: string;
+  text: string;
+  updatedAt: string;
+}

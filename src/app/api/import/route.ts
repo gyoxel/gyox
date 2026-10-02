@@ -66,6 +66,9 @@ const backupSchema = z.object({
   goalIdeas: z
     .array(z.object({ id: z.string().min(1), emoji: z.string().min(1), name: z.string().min(1), createdAt: z.string() }))
     .optional(),
+  dayNotes: z
+    .array(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), text: z.string().min(1), updatedAt: z.string() }))
+    .optional(),
 });
 
 export async function POST(req: NextRequest) {

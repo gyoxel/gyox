@@ -6,7 +6,7 @@ const GROUPS: { href: string; label: string; hint: string; icon: LucideIcon; tin
   [
     { href: "/daret", label: "Daret", hint: "Tes darets et ton tour", icon: HandCoins, tint: "from-teal-400 to-emerald-600" },
     { href: "/goals", label: "Objectifs", hint: "Voiture, maison, voyage…", icon: Target, tint: "from-amber-400 to-orange-500" },
-    { href: "/calendar", label: "Calendrier", hint: "Ce qui est entré et sorti, jour par jour", icon: CalendarDays, tint: "from-rose-400 to-pink-600" },
+    { href: "/calendar", label: "Calendrier", hint: "Jour par jour : entrées, sorties, rappels et notes", icon: CalendarDays, tint: "from-rose-400 to-pink-600" },
     {
       href: "/stats",
       label: "Statistiques",

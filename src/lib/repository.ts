@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { prisma } from "./prisma";
-import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea } from "./types";
+import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote } from "./types";
 
 function mapExpense(row: {
   id: string;
@@ -164,6 +164,7 @@ export interface BackupData {
   goals?: (Omit<Goal, "deposits"> & { deposits?: undefined })[];
   goalDeposits?: GoalDeposit[];
   goalIdeas?: GoalIdea[];
+  dayNotes?: DayNote[];
 }
 
 export async function exportData(): Promise<BackupData> {
@@ -178,6 +179,7 @@ export async function exportData(): Promise<BackupData> {
     goals: goals.map((g) => ({ ...g, deposits: undefined })),
     goalDeposits: goals.flatMap((g) => g.deposits),
     goalIdeas: await getAllGoalIdeas(),
+    dayNotes: await getAllDayNotes(),
   };
 }
 
@@ -229,6 +231,7 @@ export async function importData(data: BackupData): Promise<void> {
         ]
       : []),
     ...(data.goalIdeas ? [prisma.goalIdea.deleteMany({}), prisma.goalIdea.createMany({ data: data.goalIdeas })] : []),
+    ...(data.dayNotes ? [prisma.dayNote.deleteMany({}), prisma.dayNote.createMany({ data: data.dayNotes })] : []),
     prisma.settings.update({ where: { id: 1 }, data: data.settings }),
   ]);
 }
@@ -545,4 +548,19 @@ export async function createGoalIdea(input: { emoji: string; name: string }): Pr
 export async function deleteGoalIdea(id: string): Promise<boolean> {
   const { count } = await prisma.goalIdea.deleteMany({ where: { id } });
   return count > 0;
+}
+
+export async function getAllDayNotes(): Promise<DayNote[]> {
+  return prisma.dayNote.findMany({ orderBy: { date: "asc" } });
+}
+
+/** Saves the note of a day; an empty text removes it. */
+export async function setDayNote(date: string, text: string): Promise<DayNote | null> {
+  const clean = text.trim();
+  if (!clean) {
+    await prisma.dayNote.deleteMany({ where: { date } });
+    return null;
+  }
+  const updatedAt = new Date().toISOString();
+  return prisma.dayNote.upsert({ where: { date }, create: { date, text: clean, updatedAt }, update: { text: clean, updatedAt } });
 }

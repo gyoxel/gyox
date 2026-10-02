@@ -168,3 +168,13 @@ model GoalIdea {
 
   @@map("goal_ideas")
 }
+
+/// Calendrier: a free note on one day.
+model DayNote {
+  /// "YYYY-MM-DD"
+  date      String @id
+  text      String
+  updatedAt String
+
+  @@map("day_notes")
+}
