@@ -225,7 +225,7 @@ export function ShortcutWheel() {
           // Same look as the first frame drawn by the effect (centre: Revenus).
           style={styleFor(offsetOf(i, 0))}
           className={cn(
-            "absolute inset-x-3 top-1/2 flex items-center gap-3 rounded-2xl bg-white px-3.5 py-3 text-left will-change-transform",
+            "absolute inset-x-0 top-1/2 flex items-center gap-3 rounded-2xl bg-white px-3.5 py-3 text-left will-change-transform",
             "shadow-[0_10px_30px_-8px_rgba(15,23,42,0.25)] ring-1 ring-slate-900/5 dark:bg-slate-900 dark:ring-white/10",
           )}
         >
