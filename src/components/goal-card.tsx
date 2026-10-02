@@ -29,7 +29,8 @@ export function GoalCard({
   goal: Goal;
   progress: GoalProgress;
   currency: string;
-  /** In the list: tapping the card opens the goal's detail page. */
+  /** In the list: a short card (no steps / insights); tapping it opens the
+   *  goal's detail page. */
   linkToDetail?: boolean;
 }) {
   const refreshData = useRefreshData();
@@ -111,8 +112,8 @@ export function GoalCard({
           </div>
         </div>
 
-        {/* Steps */}
-        {p.steps.length > 0 && (
+        {/* Steps and insights: on the detail page only, the list stays short */}
+        {!linkToDetail && p.steps.length > 0 && (
           <ol className="flex flex-col gap-2 border-l-2 border-teal-200 pl-3 dark:border-teal-900">
             {p.steps.map((step, i) => (
               <li key={i} className="flex items-center gap-2 text-sm">
@@ -136,8 +137,7 @@ export function GoalCard({
           </ol>
         )}
 
-        {/* Insights */}
-        {!p.completed && (
+        {!linkToDetail && !p.completed && (
           <div className="flex flex-col gap-1.5 rounded-xl bg-slate-50 px-3 py-2.5 text-xs text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
             {p.reachedByDaretsIn ? (
               <Insight icon={Sparkles}>
