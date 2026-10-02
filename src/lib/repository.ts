@@ -135,7 +135,7 @@ export async function getSettings(): Promise<Settings> {
     startMonth: row.startMonth,
     theme: row.theme as Settings["theme"],
     payDay: row.payDay,
-    payTime: row.payTime,
+    salaryReceivedMonth: row.salaryReceivedMonth,
   };
 }
 
@@ -149,7 +149,7 @@ export async function updateSettings(input: Partial<Settings>): Promise<Settings
     startMonth: row.startMonth,
     theme: row.theme as Settings["theme"],
     payDay: row.payDay,
-    payTime: row.payTime,
+    salaryReceivedMonth: row.salaryReceivedMonth,
   };
 }
 

@@ -116,10 +116,11 @@ export const settingsInputSchema = z.object({
   startMonth: z.string().regex(/^\d{4}-\d{2}$/, "Mois de départ invalide."),
   theme: z.enum(["light", "dark", "system"]),
   payDay: z.coerce.number().int().min(1, "Jour invalide.").max(31, "Jour invalide.").default(1),
-  payTime: z
+  salaryReceivedMonth: z
     .string()
-    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Heure invalide.")
-    .default("00:00"),
+    .regex(/^\d{4}-\d{2}$/, "Mois invalide.")
+    .nullable()
+    .default(null),
 });
 
 export type SettingsFormValues = z.infer<typeof settingsInputSchema>;

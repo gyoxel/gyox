@@ -13,8 +13,8 @@ import { Select } from "@/components/ui/select";
 
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 
-/** Salaire: the monthly amount, and the day and time it arrives (the
- *  Accueil countdown counts down to that moment). Used on the Salaire page
+/** Salaire: the monthly amount, and the day it arrives (the Accueil
+ *  countdown counts down to that day). Used on the Salaire page
  *  and in the dialog opened by tapping the countdown (`plain`, no card). */
 export function SalaryForm({
   settings,
@@ -28,7 +28,6 @@ export function SalaryForm({
   const refreshData = useRefreshData();
   const [salary, setSalary] = useState(toDecimalInput(settings.salary));
   const [payDay, setPayDay] = useState(String(settings.payDay));
-  const [payTime, setPayTime] = useState(settings.payTime);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -39,7 +38,7 @@ export function SalaryForm({
       const res = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ salary: parseDecimalInput(salary), payDay: Number(payDay), payTime: payTime || "00:00" }),
+        body: JSON.stringify({ salary: parseDecimalInput(salary), payDay: Number(payDay) }),
       });
       if (!res.ok) {
         setError("Impossible d'enregistrer. Vérifie le montant.");
@@ -67,26 +66,16 @@ export function SalaryForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="payDay">Jour et heure du salaire</Label>
-        <div className="grid grid-cols-[1fr_auto] gap-2">
-          <Select id="payDay" value={payDay} onChange={(e) => setPayDay(e.target.value)}>
-            {DAYS.map((d) => (
-              <option key={d} value={d}>
-                Le {d === 1 ? "1er" : d} du mois
-              </option>
-            ))}
-          </Select>
-          <Input
-            id="payTime"
-            type="time"
-            aria-label="Heure du salaire"
-            value={payTime}
-            onChange={(e) => setPayTime(e.target.value)}
-            className="w-28"
-          />
-        </div>
+        <Label htmlFor="payDay">Jour du salaire</Label>
+        <Select id="payDay" value={payDay} onChange={(e) => setPayDay(e.target.value)}>
+          {DAYS.map((d) => (
+            <option key={d} value={d}>
+              Le {d === 1 ? "1er" : d} du mois
+            </option>
+          ))}
+        </Select>
         <p className="text-xs text-slate-400">
-          Le compte à rebours de l&apos;accueil compte jusqu&apos;à ce moment. Si le mois est plus court, c&apos;est son
+          Le compte à rebours de l&apos;accueil compte jusqu&apos;à ce jour. Si le mois est plus court, c&apos;est son
           dernier jour.
         </p>
       </div>
