@@ -52,6 +52,8 @@ export interface Settings {
   /** "YYYY-MM" earliest navigable month */
   startMonth: string;
   theme: "light" | "dark" | "system";
+  /** Day of the month the salary arrives (1-31). */
+  payDay: number;
 }
 
 export interface MonthlyOccurrence {

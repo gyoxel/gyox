@@ -33,7 +33,7 @@ export function PageHeader({
           <Link
             href="/settings"
             prefetch
-            aria-label="Réglages"
+            aria-label="Paramètres"
             className="-mr-1.5 flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             <Settings className="h-5 w-5" />

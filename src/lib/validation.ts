@@ -115,6 +115,7 @@ export const settingsInputSchema = z.object({
   savingsTarget: z.coerce.number().nonnegative("L'objectif d'épargne ne peut pas être négatif."),
   startMonth: z.string().regex(/^\d{4}-\d{2}$/, "Mois de départ invalide."),
   theme: z.enum(["light", "dark", "system"]),
+  payDay: z.coerce.number().int().min(1, "Jour invalide.").max(31, "Jour invalide.").default(1),
 });
 
 export type SettingsFormValues = z.infer<typeof settingsInputSchema>;

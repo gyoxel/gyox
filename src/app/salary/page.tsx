@@ -1,16 +1,16 @@
 import { getSettings } from "@/lib/repository";
 import { PageHeader } from "@/components/page-header";
-import { SettingsForm } from "@/components/settings-form";
+import { SalaryForm } from "@/components/salary-form";
 
 export const dynamic = "force-dynamic";
 
-export default async function SettingsPage() {
+export default async function SalaryPage() {
   const settings = await getSettings();
   return (
     <>
-      <PageHeader title="Paramètres" backHref="/menu" hideSettings />
+      <PageHeader title="Salaire" backHref="/menu" />
       <main className="flex flex-col gap-5 px-4 py-5">
-        <SettingsForm settings={settings} />
+        <SalaryForm settings={settings} />
       </main>
     </>
   );

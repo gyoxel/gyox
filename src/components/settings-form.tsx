@@ -1,48 +1,49 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRefreshData } from "@/lib/use-refresh-data";
-import { Download, Upload } from "lucide-react";
+import { Download, Monitor, Moon, Sun, Upload } from "lucide-react";
 import { toast } from "sonner";
 import type { Settings } from "@/lib/types";
+import { THEME_STORAGE_KEY, applyTheme, type ThemeChoice } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 
+const THEMES: { value: ThemeChoice; label: string; icon: typeof Sun }[] = [
+  { value: "system", label: "Système", icon: Monitor },
+  { value: "light", label: "Clair", icon: Sun },
+  { value: "dark", label: "Sombre", icon: Moon },
+];
+
+/** Paramètres: theme (applied instantly) and data backup. */
 export function SettingsForm({ settings }: { settings: Settings }) {
   const refreshData = useRefreshData();
-  const [salary, setSalary] = useState(String(settings.salary));
-  const [savingsTarget, setSavingsTarget] = useState(String(settings.savingsTarget));
-  const [startMonth, setStartMonth] = useState(settings.startMonth);
-  const [theme, setTheme] = useState(settings.theme);
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [theme, setTheme] = useState<ThemeChoice>(settings.theme);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    startTransition(async () => {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          salary: Number(salary),
-          currency: "MAD",
-          savingsTarget: Number(savingsTarget),
-          startMonth,
-          theme,
-        }),
-      });
-      if (!res.ok) {
-        setError("Impossible d'enregistrer les réglages.");
-        return;
-      }
-      toast.success("Réglages enregistrés. Tous les calculs sont mis à jour.");
-      await refreshData();
+  // The saved theme wins: bring this device in line if it differs (e.g. the
+  // theme was changed on another phone).
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(THEME_STORAGE_KEY) !== settings.theme) applyTheme(settings.theme);
+    } catch {}
+  }, [settings.theme]);
+
+  async function chooseTheme(choice: ThemeChoice) {
+    const previous = theme;
+    setTheme(choice);
+    applyTheme(choice);
+    const res = await fetch("/api/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ theme: choice }),
     });
+    if (!res.ok) {
+      setTheme(previous);
+      applyTheme(previous);
+      toast.error("Impossible d'enregistrer le thème.");
+    }
   }
 
   async function handleImportFile(file: File) {
@@ -67,58 +68,31 @@ export function SettingsForm({ settings }: { settings: Settings }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="salary">Salaire mensuel (DH)</Label>
-          <Input id="salary" type="number" min="0.01" step="0.01" value={salary} onChange={(e) => setSalary(e.target.value)} required />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="currency">Devise</Label>
-          <Select id="currency" value="MAD" disabled>
-            <option value="MAD">MAD / DH</option>
-          </Select>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="savingsTarget">Objectif d&apos;épargne mensuel (DH)</Label>
-          <Input
-            id="savingsTarget"
-            type="number"
-            min="0"
-            step="0.01"
-            value={savingsTarget}
-            onChange={(e) => setSavingsTarget(e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="startMonth">Mois de départ (navigation)</Label>
-          <Input
-            id="startMonth"
-            type="month"
-            value={startMonth}
-            onChange={(e) => setStartMonth(e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="theme">Thème</Label>
-          <Select id="theme" value={theme} onChange={(e) => setTheme(e.target.value as Settings["theme"])}>
-            <option value="system">Système</option>
-            <option value="light">Clair</option>
-            <option value="dark">Sombre</option>
-          </Select>
-        </div>
-
-        {error && <p className="text-sm text-rose-600">{error}</p>}
-
-        <Button type="submit" disabled={isPending}>
-          {isPending ? "Enregistrement…" : "Enregistrer"}
-        </Button>
-      </form>
+      <Card>
+        <CardContent className="flex flex-col gap-3 pt-4">
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Thème</h2>
+          <div role="radiogroup" aria-label="Thème" className="grid grid-cols-3 gap-2">
+            {THEMES.map(({ value, label, icon: Icon }) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={theme === value}
+                onClick={() => chooseTheme(value)}
+                className={cn(
+                  "flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-sm font-medium transition-colors",
+                  theme === value
+                    ? "border-[#019c86] bg-[#019c86]/10 text-[#007261] dark:text-teal-300"
+                    : "border-slate-200 text-slate-600 active:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:active:bg-slate-800",
+                )}
+              >
+                <Icon className="h-5 w-5" />
+                {label}
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="flex flex-col gap-3 pt-4">

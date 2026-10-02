@@ -99,6 +99,8 @@ model Settings {
   savingsTarget Float
   startMonth    String
   theme         String @default("system")
+  /// Day of the month the salary arrives (1-31; clamped to short months).
+  payDay        Int    @default(1)
 
   @@map("settings")
 }

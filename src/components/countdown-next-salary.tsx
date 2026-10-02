@@ -14,9 +14,21 @@ function subscribe(callback: () => void) {
   return () => clearInterval(id);
 }
 
-function computeRemaining(): Remaining {
+/** Next salary day at midnight: this month's pay day if still ahead, else
+ *  next month's. A pay day past the end of a short month (e.g. 31 in
+ *  February) falls on that month's last day. */
+function nextPayday(now: Date, payDay: number): Date {
+  const at = (year: number, month: number) => {
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    return new Date(year, month, Math.min(payDay, lastDay), 0, 0, 0, 0);
+  };
+  const thisMonth = at(now.getFullYear(), now.getMonth());
+  return now < thisMonth ? thisMonth : at(now.getFullYear(), now.getMonth() + 1);
+}
+
+function computeRemaining(payDay: number): Remaining {
   const now = new Date();
-  const target = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0);
+  const target = nextPayday(now, payDay);
   const diff = Math.max(0, target.getTime() - now.getTime());
   return {
     days: Math.floor(diff / 86_400_000),
@@ -38,12 +50,14 @@ function sameRemaining(a: Remaining, b: Remaining): boolean {
 // keeps the reference stable in between, while still being always derived
 // from the real clock (never a hardcoded date) and self-correcting across
 // month/year boundaries since it's recomputed from scratch each tick.
-let cachedRemaining = computeRemaining();
+const cache = new Map<number, Remaining>();
 
-function getSnapshot(): Remaining {
-  const next = computeRemaining();
-  if (!sameRemaining(cachedRemaining, next)) cachedRemaining = next;
-  return cachedRemaining;
+function getSnapshotFor(payDay: number): Remaining {
+  const next = computeRemaining(payDay);
+  const cached = cache.get(payDay);
+  if (cached && sameRemaining(cached, next)) return cached;
+  cache.set(payDay, next);
+  return next;
 }
 
 // The server and the client's pre-hydration pass would each compute their
@@ -66,8 +80,9 @@ function Unit({ value, label }: { value: number; label: string }) {
   );
 }
 
-export function CountdownNextSalary() {
-  const remaining = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+/** Countdown to the next salary day (set in Menu → Salaire). */
+export function CountdownNextSalary({ payDay = 1 }: { payDay?: number }) {
+  const remaining = useSyncExternalStore(subscribe, () => getSnapshotFor(payDay), getServerSnapshot);
 
   return (
     <div className="rounded-2xl border border-white/50 bg-white/30 p-4 shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-white/5">

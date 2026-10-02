@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { DATA_CHANGED_EVENT } from "@/lib/use-refresh-data";
-import { ArrowDownToLine, ArrowUpFromLine, CalendarRange, HandCoins, Home, Plus, Wallet } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, CalendarRange, Home, LayoutGrid, Plus, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const LEFT_ITEMS = [
@@ -14,14 +14,17 @@ const LEFT_ITEMS = [
 
 const RIGHT_ITEMS = [
   { href: "/credits", label: "Crédits", icon: Wallet },
-  { href: "/daret", label: "Daret", icon: HandCoins },
+  { href: "/menu", label: "Menu", icon: LayoutGrid },
 ];
+
+// Pages opened from the Menu tab keep it highlighted.
+const MENU_PATHS = ["/menu", "/daret", "/stats", "/categories", "/salary", "/settings"];
 
 // Fan-out positions (px) of each option's circle center relative to the
 // + button's center: left, top, right — like a radial speed-dial.
 const ACTIONS = [
   {
-    href: "/settings#salary",
+    href: "/salary",
     label: "Revenu",
     icon: ArrowDownToLine,
     dx: -112,
@@ -92,6 +95,9 @@ const PREFETCH_HREFS = [
   ...[...LEFT_ITEMS, ...RIGHT_ITEMS].map((i) => i.href),
   "/settings",
   "/stats",
+  "/daret",
+  "/salary",
+  "/categories",
   "/expenses/new",
   "/expenses/new?type=credit",
   "/daret/new",
@@ -164,7 +170,12 @@ export function BottomNav() {
   }
 
   const current = pendingHref ?? pathname;
-  const isActive = (href: string) => (href === "/" ? current === "/" : current.startsWith(href));
+  const isActive = (href: string) =>
+    href === "/"
+      ? current === "/"
+      : href === "/menu"
+        ? MENU_PATHS.some((p) => current.startsWith(p))
+        : current.startsWith(href);
 
   function toggle() {
     setOpenedAt(pathname);

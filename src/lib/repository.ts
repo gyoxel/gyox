@@ -134,6 +134,7 @@ export async function getSettings(): Promise<Settings> {
     savingsTarget: row.savingsTarget,
     startMonth: row.startMonth,
     theme: row.theme as Settings["theme"],
+    payDay: row.payDay,
   };
 }
 
@@ -146,6 +147,7 @@ export async function updateSettings(input: Partial<Settings>): Promise<Settings
     savingsTarget: row.savingsTarget,
     startMonth: row.startMonth,
     theme: row.theme as Settings["theme"],
+    payDay: row.payDay,
   };
 }
 
