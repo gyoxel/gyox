@@ -98,7 +98,7 @@ export function CountdownNextSalary({ payDay = 1 }: { payDay?: number }) {
         <Unit value={remaining.minutes} label="min" />
         <Unit value={remaining.seconds} label="sec" />
       </div>
-      <p className="mt-2 h-4 text-center text-[11px] text-slate-500 dark:text-slate-400">{payDate}</p>
+      <p className="mt-2 h-4 text-center text-[11px] first-letter:uppercase text-slate-500 dark:text-slate-400">{payDate}</p>
     </div>
   );
 }
