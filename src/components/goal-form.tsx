@@ -151,7 +151,7 @@ export function GoalForm({
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-5">
-      {!goal && (
+      {(
         <div className="flex flex-col gap-2">
           <Label>Idées</Label>
           <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
