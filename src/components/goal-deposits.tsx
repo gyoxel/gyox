@@ -29,14 +29,14 @@ export function GoalDeposits({ goalId, deposits, currency }: { goalId: string; d
 
   if (deposits.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-center text-sm text-slate-400 dark:border-slate-700">
+      <p className="rounded-2xl border border-dashed border-slate-200 px-3 py-4 text-center text-sm text-slate-400 dark:border-slate-700">
         Aucun versement pour le moment — utilise « + Versement ».
       </p>
     );
   }
 
   return (
-    <ul className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
       {deposits.map((d) => (
         <li key={d.id} className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 first:border-t-0 dark:border-slate-800">
           <span className="text-lg leading-none">💵</span>

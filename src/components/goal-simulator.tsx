@@ -164,9 +164,11 @@ export function GoalSimulator({
 
 function Panel({ icon: Icon, title, children }: { icon: typeof Coins; title: string; children: React.ReactNode }) {
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
-        <Icon className="h-4 w-4 text-[#019c86]" />
+    <section className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <h3 className="flex items-center gap-2.5 text-sm font-semibold text-slate-800 dark:text-slate-100">
+        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm">
+          <Icon className="h-4 w-4" />
+        </span>
         {title}
       </h3>
       {children}
@@ -199,20 +201,20 @@ function Result({
   highlight?: string;
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-xl bg-slate-50 p-3 dark:bg-slate-800/60">
-      {highlight && <p className="text-center text-xl font-bold tabular-nums text-[#007261] dark:text-teal-300">{highlight}</p>}
+    <div className="flex flex-col gap-2 rounded-2xl bg-amber-50 p-3 dark:bg-amber-950/30">
+      {highlight && <p className="text-center text-xl font-bold tabular-nums text-orange-600 dark:text-amber-400">{highlight}</p>}
       {lines.map(([label, value]) => (
         <div key={label} className="flex items-center justify-between gap-2 text-sm">
           <span className="text-slate-500 dark:text-slate-400">{label}</span>
           <span className="font-semibold tabular-nums text-slate-900 dark:text-white">{value}</span>
         </div>
       ))}
-      <div className="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-        <div className="h-full rounded-full bg-gradient-to-r from-[#00c3ab] to-[#007261]" style={{ width: `${percent}%` }} />
+      <div className="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-amber-100 dark:bg-amber-950/60">
+        <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500" style={{ width: `${percent}%` }} />
       </div>
       <div className="flex items-center justify-between text-xs">
         <span className="text-slate-500 dark:text-slate-400">{footer}</span>
-        <span className="font-bold tabular-nums text-[#007261] dark:text-teal-300">{percent}%</span>
+        <span className="font-bold tabular-nums text-orange-600 dark:text-amber-400">{percent}%</span>
       </div>
     </div>
   );
@@ -233,7 +235,7 @@ function Table({ head, rows, highlightRow = -1 }: { head: string[]; rows: string
           key={r}
           className={cn(
             "grid grid-cols-3 border-t border-slate-100 px-3 py-2 text-sm tabular-nums dark:border-slate-800",
-            r === highlightRow && "bg-[#019c86]/5 font-semibold",
+            r === highlightRow && "bg-amber-50 font-semibold dark:bg-amber-950/30",
           )}
         >
           {row.map((cell, i) => (

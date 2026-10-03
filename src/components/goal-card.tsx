@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CalendarClock, Check, Pencil, Plus, Sparkles, Target, TrendingUp } from "lucide-react";
+import { CalendarClock, Check, ChevronRight, Pencil, Plus, Sparkles, Target, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import type { Goal } from "@/lib/types";
 import type { GoalProgress } from "@/lib/goals";
@@ -14,11 +14,73 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
+/** Progress ring around the goal's emoji: solid = in hand, light = with darets. */
+function GoalRing({
+  size,
+  stroke,
+  now,
+  projected,
+  emoji,
+  light = false,
+}: {
+  size: number;
+  stroke: number;
+  now: number;
+  projected: number;
+  emoji: string;
+  /** On a coloured background. */
+  light?: boolean;
+}) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90" aria-hidden>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          strokeWidth={stroke}
+          className={light ? "stroke-white/20" : "stroke-amber-100 dark:stroke-amber-950"}
+        />
+        {projected > now && (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={c}
+            strokeDashoffset={c * (1 - projected / 100)}
+            className={light ? "stroke-white/40" : "stroke-amber-300/60 dark:stroke-amber-700/60"}
+          />
+        )}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - now / 100)}
+          className={light ? "stroke-white" : "stroke-orange-500"}
+        />
+      </svg>
+      <span className="absolute inset-0 flex items-center justify-center" style={{ fontSize: size * 0.38 }}>
+        {emoji}
+      </span>
+    </div>
+  );
+}
+
 /**
- * One goal: progress today and once its darets have paid out, every step
- * (savings, each daret with its month and the % it brings the goal to), and
- * what's needed to finish (per month before the deadline, or the month the
- * planned saving gets there).
+ * One goal. In the list (`linkToDetail`): a short card with its ring, what's
+ * there and the %, opening the detail page. On the detail page: a hero card
+ * (ring, in hand / missing, + Versement, Modifier), the steps (savings,
+ * deposits, each daret with the % it brings) and what's needed to finish.
  */
 export function GoalCard({
   goal,
@@ -29,16 +91,202 @@ export function GoalCard({
   goal: Goal;
   progress: GoalProgress;
   currency: string;
-  /** In the list: a short card (no steps / insights); tapping it opens the
-   *  goal's detail page. */
   linkToDetail?: boolean;
 }) {
-  const refreshData = useRefreshData();
   const [adding, setAdding] = useState(false);
+  const p = progress;
+  const money = (n: number) => formatMoney(n, currency);
+
+  if (linkToDetail) {
+    return (
+      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <Link href={`/goals/${goal.id}`} className="flex items-center gap-3.5 p-4 active:bg-slate-50 dark:active:bg-slate-800/60">
+          <GoalRing size={60} stroke={5} now={p.percentNow} projected={p.percentProjected} emoji={goal.emoji} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="truncate text-base font-semibold text-slate-900 dark:text-white">{goal.name}</h3>
+              {p.completed && (
+                <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
+                  Atteint 🎉
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              <b className="font-semibold text-slate-800 dark:text-slate-100">{money(p.reachedNow)}</b> / {money(p.target)}
+            </p>
+            {p.percentProjected > p.percentNow ? (
+              <p className="mt-0.5 text-[11px] text-orange-600 dark:text-amber-400">Avec tes darets : {p.percentProjected}%</p>
+            ) : (
+              !p.completed && <p className="mt-0.5 text-[11px] text-slate-400">Il manque {money(p.remainingNow)}</p>
+            )}
+          </div>
+          <span className="shrink-0 text-xl font-bold tabular-nums text-orange-600 dark:text-amber-400">{p.percentNow}%</span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+        </Link>
+        <div className="grid grid-cols-2 border-t border-slate-100 dark:border-slate-800">
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-orange-600 active:bg-slate-50 dark:text-amber-400 dark:active:bg-slate-800"
+          >
+            <Plus className="h-4 w-4" />
+            Versement
+          </button>
+          <Link
+            href={`/goals/${goal.id}/edit`}
+            className="flex items-center justify-center gap-1.5 border-l border-slate-100 py-2.5 text-sm font-medium text-slate-600 active:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:active:bg-slate-800"
+          >
+            <Pencil className="h-4 w-4" />
+            Modifier
+          </Link>
+        </div>
+        <DepositDialog goal={goal} currency={currency} open={adding} onOpenChange={setAdding} />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Hero */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 p-5 text-white shadow-lg shadow-orange-500/20 dark:shadow-none">
+        <span aria-hidden className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10" />
+        <div className="relative flex items-center gap-4">
+          <GoalRing size={88} stroke={7} now={p.percentNow} projected={p.percentProjected} emoji={goal.emoji} light />
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">
+              {p.completed ? "Objectif atteint 🎉" : "Progression"}
+            </p>
+            <p className="text-4xl font-bold leading-tight tabular-nums">{p.percentNow}%</p>
+            <p className="text-sm text-white/85">sur {money(p.target)}</p>
+          </div>
+        </div>
+        <div className="relative mt-4 grid grid-cols-2 gap-2">
+          <div className="rounded-2xl bg-white/15 px-3 py-2">
+            <p className="text-[10px] uppercase tracking-wide text-white/75">Déjà là</p>
+            <p className="text-sm font-bold tabular-nums">{money(p.reachedNow)}</p>
+          </div>
+          <div className="rounded-2xl bg-white/15 px-3 py-2">
+            <p className="text-[10px] uppercase tracking-wide text-white/75">Il manque</p>
+            <p className="text-sm font-bold tabular-nums">{money(p.remainingNow)}</p>
+          </div>
+        </div>
+        {p.percentProjected > p.percentNow && (
+          <p className="relative mt-2 text-xs text-white/85">
+            Avec tes darets : <b>{p.percentProjected}%</b>
+          </p>
+        )}
+        <div className="relative mt-4 grid grid-cols-2 gap-2">
+          <Button type="button" onClick={() => setAdding(true)} className="bg-white text-orange-600 hover:bg-white/90 dark:bg-white dark:text-orange-600">
+            <Plus className="h-4 w-4" />
+            Versement
+          </Button>
+          <Button asChild className="bg-white/20 text-white hover:bg-white/30 dark:bg-white/20 dark:text-white">
+            <Link href={`/goals/${goal.id}/edit`}>
+              <Pencil className="h-4 w-4" />
+              Modifier
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      {/* Steps */}
+      {p.steps.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Étapes</h2>
+          <ol className="relative flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            {p.steps.map((step, i) => (
+              <li key={i} className="flex items-center gap-3 text-sm">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-base dark:bg-amber-950/40">
+                  {step.kind === "saved" ? "💰" : step.kind === "deposits" ? "💵" : "🤝🏻"}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium text-slate-800 dark:text-slate-100">{step.label}</span>
+                  <span className="block text-[11px] text-slate-400">
+                    {step.month ? (step.received ? `Reçue en ${monthLabelFr(step.month)}` : `En ${monthLabelFr(step.month)}`) : "Disponible"}
+                  </span>
+                </span>
+                <span className="text-right">
+                  <span className="block font-semibold tabular-nums text-slate-900 dark:text-white">+{money(step.amount)}</span>
+                  <span className="block text-[11px] font-semibold tabular-nums text-orange-600 dark:text-amber-400">→ {step.percent}%</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
+      {/* What's needed */}
+      {!p.completed && (
+        <div className="flex flex-col gap-2 rounded-3xl bg-amber-50 px-4 py-3.5 text-sm text-slate-700 dark:bg-amber-950/30 dark:text-slate-200">
+          {p.reachedByDaretsIn ? (
+            <Insight icon={Sparkles}>
+              Tes darets suffisent : objectif atteint en <b>{monthLabelFr(p.reachedByDaretsIn)}</b>.
+            </Insight>
+          ) : (
+            p.remainingAfterDarets < p.remainingNow && (
+              <Insight icon={Target}>
+                Après tes darets, il manquera <b>{money(p.remainingAfterDarets)}</b>.
+              </Insight>
+            )
+          )}
+          {p.deadline && p.monthlyNeeded != null && p.monthsToDeadline != null && (
+            <Insight icon={CalendarClock}>
+              {p.monthsToDeadline <= 0 ? (
+                <>
+                  Date limite ({monthLabelShortFr(p.deadline)}) dépassée — il manque <b>{money(p.monthlyNeeded)}</b>.
+                </>
+              ) : p.monthlyNeeded > 0 ? (
+                <>
+                  Pour {monthLabelFr(p.deadline)} : mets <b>{money(p.monthlyNeeded)}/mois</b> de côté ({p.monthsToDeadline} mois).
+                </>
+              ) : (
+                <>Atteint avant {monthLabelFr(p.deadline)} avec tes darets 👌</>
+              )}
+            </Insight>
+          )}
+          {goal.monthlySaving ? (
+            <Insight icon={TrendingUp}>
+              {p.estimatedMonth ? (
+                <>
+                  En mettant {money(goal.monthlySaving)}/mois : atteint en <b>{monthLabelFr(p.estimatedMonth)}</b>.
+                </>
+              ) : (
+                <>En mettant {money(goal.monthlySaving)}/mois, il faudrait plus de 50 ans.</>
+              )}
+            </Insight>
+          ) : (
+            !p.deadline &&
+            !p.reachedByDaretsIn &&
+            p.remainingAfterDarets >= p.remainingNow && (
+              <Insight icon={Target}>
+                Il manque <b>{money(p.remainingNow)}</b>. Ajoute une épargne par mois ou une date dans « Modifier ».
+              </Insight>
+            )
+          )}
+        </div>
+      )}
+
+      <DepositDialog goal={goal} currency={currency} open={adding} onOpenChange={setAdding} />
+    </>
+  );
+}
+
+/** "+ Versement": money put aside for the goal, with an optional label. */
+function DepositDialog({
+  goal,
+  currency,
+  open,
+  onOpenChange,
+}: {
+  goal: Goal;
+  currency: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const refreshData = useRefreshData();
   const [deposit, setDeposit] = useState("");
   const [depositName, setDepositName] = useState("");
   const [saving, setSaving] = useState(false);
-  const p = progress;
 
   async function addDeposit() {
     const value = parseDecimalInput(deposit);
@@ -52,214 +300,66 @@ export function GoalCard({
     setSaving(false);
     if (!res.ok) return toast.error("Versement impossible.");
     toast.success(`+${formatMoney(value, currency)} pour ${goal.name}`);
-    setAdding(false);
+    onOpenChange(false);
     setDeposit("");
     setDepositName("");
     await refreshData();
   }
 
-  const body = (
-    <div className="flex flex-col gap-3.5 p-4">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-50 to-emerald-100 text-2xl dark:from-teal-950 dark:to-emerald-900">
-            {goal.emoji}
-          </span>
-          <div className="min-w-0 flex-1">
-            <h3 className="truncate text-base font-semibold text-slate-900 dark:text-white">{goal.name}</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Objectif {formatMoney(p.target, currency)}</p>
-          </div>
-          {p.completed ? (
-            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
-              Atteint 🎉
-            </span>
-          ) : (
-            <span className="text-2xl font-bold tabular-nums text-[#007261] dark:text-teal-300">{p.percentNow}%</span>
-          )}
-        </div>
-
-        {/* Progress: solid = in hand today, light = once the darets have paid out */}
-        <div>
-          <div className="relative h-3 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-            {p.percentProjected > p.percentNow && (
-              <div
-                className="absolute inset-y-0 left-0 rounded-full bg-[repeating-linear-gradient(135deg,#99f6e4_0_6px,#ccfbf1_6px_12px)] dark:bg-[repeating-linear-gradient(135deg,#115e59_0_6px,#134e4a_6px_12px)]"
-                style={{ width: `${p.percentProjected}%` }}
-              />
-            )}
-            <div
-              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#00c3ab] to-[#007261]"
-              style={{ width: `${p.percentNow}%` }}
-            />
-          </div>
-          {p.percentProjected > p.percentNow && (
-            <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-              Avec tes darets : <span className="font-semibold text-[#007261] dark:text-teal-300">{p.percentProjected}%</span>
-            </p>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Déjà là</p>
-            <p className="font-bold tabular-nums text-slate-900 dark:text-white">{formatMoney(p.reachedNow, currency)}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-slate-500 dark:text-slate-400">Il manque</p>
-            <p className={cn("font-bold tabular-nums", p.remainingNow > 0 ? "text-rose-600" : "text-emerald-600")}>
-              {formatMoney(p.remainingNow, currency)}
-            </p>
-          </div>
-        </div>
-
-        {/* Steps and insights: on the detail page only, the list stays short */}
-        {!linkToDetail && p.steps.length > 0 && (
-          <ol className="flex flex-col gap-2 border-l-2 border-teal-200 pl-3 dark:border-teal-900">
-            {p.steps.map((step, i) => (
-              <li key={i} className="flex items-center gap-2 text-sm">
-                <span className="leading-none">{step.kind === "saved" ? "💰" : step.kind === "deposits" ? "💵" : "🤝🏻"}</span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium text-slate-700 dark:text-slate-200">{step.label}</span>
-                  <span className="block text-[11px] text-slate-400">
-                    {step.month ? (step.received ? `Reçue en ${monthLabelFr(step.month)}` : `En ${monthLabelFr(step.month)}`) : "Disponible"}
-                  </span>
-                </span>
-                <span className="text-right">
-                  <span className="block font-semibold tabular-nums text-slate-900 dark:text-white">
-                    +{formatMoney(step.amount, currency)}
-                  </span>
-                  <span className="block text-[11px] font-medium tabular-nums text-[#007261] dark:text-teal-300">
-                    → {step.percent}%
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ol>
-        )}
-
-        {!linkToDetail && !p.completed && (
-          <div className="flex flex-col gap-1.5 rounded-xl bg-slate-50 px-3 py-2.5 text-xs text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
-            {p.reachedByDaretsIn ? (
-              <Insight icon={Sparkles}>
-                Tes darets suffisent : objectif atteint en <b>{monthLabelFr(p.reachedByDaretsIn)}</b>.
-              </Insight>
-            ) : (
-              p.remainingAfterDarets < p.remainingNow && (
-                <Insight icon={Target}>
-                  Après tes darets, il manquera <b>{formatMoney(p.remainingAfterDarets, currency)}</b>.
-                </Insight>
-              )
-            )}
-            {p.deadline && p.monthlyNeeded != null && p.monthsToDeadline != null && (
-              <Insight icon={CalendarClock}>
-                {p.monthsToDeadline <= 0 ? (
-                  <>
-                    Date limite ({monthLabelShortFr(p.deadline)}) dépassée — il manque{" "}
-                    <b>{formatMoney(p.monthlyNeeded, currency)}</b>.
-                  </>
-                ) : p.monthlyNeeded > 0 ? (
-                  <>
-                    Pour {monthLabelFr(p.deadline)} : mets <b>{formatMoney(p.monthlyNeeded, currency)}/mois</b> de côté (
-                    {p.monthsToDeadline} mois).
-                  </>
-                ) : (
-                  <>Atteint avant {monthLabelFr(p.deadline)} avec tes darets 👌</>
-                )}
-              </Insight>
-            )}
-            {goal.monthlySaving && (
-              <Insight icon={TrendingUp}>
-                {p.estimatedMonth ? (
-                  <>
-                    En mettant {formatMoney(goal.monthlySaving, currency)}/mois : atteint en{" "}
-                    <b>{monthLabelFr(p.estimatedMonth)}</b>.
-                  </>
-                ) : (
-                  <>En mettant {formatMoney(goal.monthlySaving, currency)}/mois, il faudrait plus de 50 ans.</>
-                )}
-              </Insight>
-            )}
-          </div>
-        )}
-    </div>
-  );
-
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      {linkToDetail ? (
-        <Link href={`/goals/${goal.id}`} className="block active:bg-slate-50 dark:active:bg-slate-800/60">
-          {body}
-        </Link>
-      ) : (
-        body
-      )}
-
-      <div className="grid grid-cols-2 border-t border-slate-100 dark:border-slate-800">
-        <button
-          type="button"
-          onClick={() => setAdding(true)}
-          className="flex items-center justify-center gap-1.5 py-3 text-sm font-semibold text-[#007261] active:bg-slate-50 dark:text-teal-300 dark:active:bg-slate-800"
-        >
-          <Plus className="h-4 w-4" />
-          Versement
-        </button>
-        <Link
-          href={`/goals/${goal.id}/edit`}
-          className="flex items-center justify-center gap-1.5 border-l border-slate-100 py-3 text-sm font-medium text-slate-600 active:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:active:bg-slate-800"
-        >
-          <Pencil className="h-4 w-4" />
-          Modifier
-        </Link>
-      </div>
-
-      <Dialog open={adding} onOpenChange={setAdding}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              Versement · {goal.emoji} {goal.name}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor={`deposit-name-${goal.id}`}>Nom</Label>
-            <Input
-              id={`deposit-name-${goal.id}`}
-              value={depositName}
-              onChange={(e) => setDepositName(e.target.value)}
-              placeholder="Ex: Prime, reste du mois…"
-              maxLength={60}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor={`deposit-${goal.id}`}>Montant mis de côté (DH)</Label>
-            <Input
-              id={`deposit-${goal.id}`}
-              type="text"
-              inputMode="decimal"
-              autoComplete="off"
-              value={deposit}
-              onChange={(e) => setDeposit(cleanDecimalInput(e.target.value))}
-              placeholder="Ex: 500"
-            />
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setAdding(false)} disabled={saving}>
-              Annuler
-            </Button>
-            <Button type="button" onClick={addDeposit} disabled={saving || parseDecimalInput(deposit) <= 0}>
-              <Check className="h-4 w-4" />
-              {saving ? "Ajout…" : "Ajouter"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            Versement · {goal.emoji} {goal.name}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor={`deposit-${goal.id}`}>Montant mis de côté (DH)</Label>
+          <Input
+            id={`deposit-${goal.id}`}
+            type="text"
+            inputMode="decimal"
+            autoComplete="off"
+            value={deposit}
+            onChange={(e) => setDeposit(cleanDecimalInput(e.target.value))}
+            placeholder="Ex : 500"
+            className="text-lg font-semibold"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor={`deposit-name-${goal.id}`}>Nom (optionnel)</Label>
+          <Input
+            id={`deposit-name-${goal.id}`}
+            value={depositName}
+            onChange={(e) => setDepositName(e.target.value)}
+            placeholder="Ex : Prime, reste du mois…"
+            maxLength={60}
+          />
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+            Annuler
+          </Button>
+          <Button
+            type="button"
+            onClick={addDeposit}
+            disabled={saving || parseDecimalInput(deposit) <= 0}
+            className="bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-500 dark:text-white"
+          >
+            <Check className="h-4 w-4" />
+            {saving ? "Ajout…" : "Ajouter"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 function Insight({ icon: Icon, children }: { icon: typeof Target; children: React.ReactNode }) {
   return (
     <p className="flex items-start gap-2">
-      <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#019c86]" />
+      <Icon className={cn("mt-0.5 h-4 w-4 shrink-0 text-orange-500")} />
       <span>{children}</span>
     </p>
   );

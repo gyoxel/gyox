@@ -149,111 +149,153 @@ export function GoalForm({
     });
   }
 
+  const row = "flex items-center justify-between gap-3 border-t border-slate-100 px-4 py-2.5 first:border-t-0 dark:border-slate-800";
+  const rowInput =
+    "h-9 w-32 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-right text-sm font-semibold tabular-nums outline-none focus:border-orange-400 dark:border-slate-700 dark:bg-slate-800";
+
   return (
     <form onSubmit={submit} className="flex flex-col gap-5">
-      {(
-        <div className="flex flex-col gap-2">
-          <Label>Idées</Label>
-          <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-            {[...PRESETS.map((p) => ({ ...p, idea: null as GoalIdea | null })), ...ideas.map((i) => ({ emoji: i.emoji, name: i.name, idea: i }))].map(
-              (p) => (
-                <span
-                  key={p.idea?.id ?? p.name}
-                  className={cn(
-                    "flex shrink-0 items-center rounded-full border text-sm whitespace-nowrap",
-                    name === p.name
-                      ? "border-[#019c86] bg-[#019c86]/10 font-semibold text-[#007261] dark:text-teal-300"
-                      : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
-                  )}
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEmoji(p.emoji);
-                      setName(p.name);
-                    }}
-                    className={cn("flex items-center gap-1.5 py-2 pl-3.5", p.idea ? "pr-1" : "pr-3.5")}
-                  >
-                    <span className="text-base leading-none">{p.emoji}</span>
-                    {p.name}
-                  </button>
-                  {p.idea && (
-                    <button
-                      type="button"
-                      onClick={() => setIdeaToDelete(p.idea)}
-                      aria-label={`Retirer l'idée ${p.name}`}
-                      className="flex h-8 w-7 items-center justify-center text-rose-500"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </span>
-              ),
-            )}
-            <button
-              type="button"
-              onClick={() => setAddingIdea(true)}
-              className="flex shrink-0 items-center gap-1.5 rounded-full border border-dashed border-slate-300 px-3.5 py-2 text-sm whitespace-nowrap text-slate-500 dark:border-slate-600 dark:text-slate-400"
-            >
-              <Plus className="h-4 w-4" />
-              Ajouter
-            </button>
+      {/* Icon, target, and what's already covered */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 p-5 text-white shadow-lg shadow-orange-500/20 dark:shadow-none">
+        <span aria-hidden className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10" />
+        <div className="relative flex items-center gap-3">
+          <input
+            id="goal-emoji"
+            aria-label="Icône"
+            value={emoji}
+            onChange={(e) => setEmoji(e.target.value)}
+            maxLength={8}
+            className="h-16 w-16 shrink-0 rounded-2xl bg-white/20 text-center text-3xl outline-none focus:bg-white/30"
+          />
+          <div className="min-w-0 flex-1">
+            <label htmlFor="goal-target" className="text-xs text-white/80">
+              Objectif à atteindre
+            </label>
+            <div className="flex items-baseline gap-1.5">
+              <input
+                id="goal-target"
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                value={target}
+                onChange={(e) => setTarget(cleanDecimalInput(e.target.value))}
+                placeholder="0"
+                style={{ width: `${Math.max(1, target.length) + 0.3}ch` }}
+                className="max-w-[50vw] bg-transparent text-4xl font-bold text-white outline-none placeholder:text-white/40"
+              />
+              <span className="text-lg font-semibold text-white/70">DH</span>
+            </div>
           </div>
         </div>
-      )}
+        {targetValue > 0 && (
+          <div className="relative mt-4">
+            <div className="flex items-center justify-between text-xs text-white/85">
+              <span>Épargne + darets</span>
+              <span className="font-semibold tabular-nums">
+                {formatMoney(projected, currency)} · {projectedPct}%
+              </span>
+            </div>
+            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-white/25">
+              <div className="h-full rounded-full bg-white" style={{ width: `${projectedPct}%` }} />
+            </div>
+          </div>
+        )}
+      </div>
 
-      <div className="flex gap-3">
-        <div className="flex w-16 flex-col gap-1.5">
-          <Label htmlFor="goal-emoji">Icône</Label>
-          <Input id="goal-emoji" value={emoji} onChange={(e) => setEmoji(e.target.value)} maxLength={8} className="text-center text-xl" />
-        </div>
-        <div className="flex flex-1 flex-col gap-1.5">
-          <Label htmlFor="goal-name">Nom</Label>
-          <Input id="goal-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Voiture" maxLength={60} />
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="goal-name">Nom</Label>
+        <Input id="goal-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex : Voiture" maxLength={60} />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label>Idées</Label>
+        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+          {[...PRESETS.map((p) => ({ ...p, idea: null as GoalIdea | null })), ...ideas.map((i) => ({ emoji: i.emoji, name: i.name, idea: i }))].map(
+            (p) => (
+              <span
+                key={p.idea?.id ?? p.name}
+                className={cn(
+                  "flex shrink-0 items-center rounded-full border text-sm whitespace-nowrap",
+                  name === p.name
+                    ? "border-orange-400 bg-orange-50 font-semibold text-orange-700 dark:bg-orange-950/40 dark:text-amber-300"
+                    : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
+                )}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmoji(p.emoji);
+                    setName(p.name);
+                  }}
+                  className={cn("flex items-center gap-1.5 py-2 pl-3.5", p.idea ? "pr-1" : "pr-3.5")}
+                >
+                  <span className="text-base leading-none">{p.emoji}</span>
+                  {p.name}
+                </button>
+                {p.idea && (
+                  <button
+                    type="button"
+                    onClick={() => setIdeaToDelete(p.idea)}
+                    aria-label={`Retirer l'idée ${p.name}`}
+                    className="flex h-8 w-7 items-center justify-center text-rose-500"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </span>
+            ),
+          )}
+          <button
+            type="button"
+            onClick={() => setAddingIdea(true)}
+            className="flex shrink-0 items-center gap-1.5 rounded-full border border-dashed border-slate-300 px-3.5 py-2 text-sm whitespace-nowrap text-slate-500 dark:border-slate-600 dark:text-slate-400"
+          >
+            <Plus className="h-4 w-4" />
+            Ajouter
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="goal-target">Objectif (DH)</Label>
-          <Input
-            id="goal-target"
-            type="text"
-            inputMode="decimal"
-            autoComplete="off"
-            value={target}
-            onChange={(e) => setTarget(cleanDecimalInput(e.target.value))}
-            placeholder="Ex: 80000"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="goal-saved">Déjà épargné (DH)</Label>
-          <Input
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+        <label className={row} htmlFor="goal-saved">
+          <span>
+            <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Déjà épargné</span>
+            <span className="block text-[11px] text-slate-400">ce que tu as déjà de côté</span>
+          </span>
+          <input
             id="goal-saved"
             type="text"
             inputMode="decimal"
             autoComplete="off"
             value={saved}
             onChange={(e) => setSaved(cleanDecimalInput(e.target.value))}
-            placeholder="0"
+            placeholder="0 DH"
+            className={rowInput}
           />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="goal-monthly">Épargne / mois (DH)</Label>
-          <Input
+        </label>
+        <label className={row} htmlFor="goal-monthly">
+          <span>
+            <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Épargne / mois</span>
+            <span className="block text-[11px] text-slate-400">optionnel · donne la date d&apos;arrivée</span>
+          </span>
+          <input
             id="goal-monthly"
             type="text"
             inputMode="decimal"
             autoComplete="off"
             value={monthly}
             onChange={(e) => setMonthly(cleanDecimalInput(e.target.value))}
-            placeholder="Optionnel"
+            placeholder="— DH"
+            className={rowInput}
           />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="goal-deadline">Pour quand ?</Label>
-          <Input id="goal-deadline" type="month" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
-        </div>
+        </label>
+        <label className={row} htmlFor="goal-deadline">
+          <span>
+            <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Pour quand ?</span>
+            <span className="block text-[11px] text-slate-400">optionnel · combien par mois</span>
+          </span>
+          <input id="goal-deadline" type="month" value={deadline} onChange={(e) => setDeadline(e.target.value)} className={rowInput} />
+        </label>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -276,14 +318,14 @@ export function GoalForm({
                   className={cn(
                     "flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors",
                     checked
-                      ? "border-[#019c86] bg-[#019c86]/5"
+                      ? "border-orange-400 bg-orange-50 dark:bg-orange-950/30"
                       : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
                   )}
                 >
                   <span
                     className={cn(
                       "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2",
-                      checked ? "border-[#019c86] bg-[#019c86]" : "border-slate-300 dark:border-slate-600",
+                      checked ? "border-orange-500 bg-orange-500" : "border-slate-300 dark:border-slate-600",
                     )}
                   >
                     {checked && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
@@ -307,23 +349,13 @@ export function GoalForm({
         <p className="text-xs text-slate-400">Une daret ne compte que pour un seul objectif.</p>
       </div>
 
-      {targetValue > 0 && (
-        <div className="rounded-xl bg-slate-50 px-3.5 py-3 text-sm dark:bg-slate-800/60">
-          <div className="flex items-center justify-between">
-            <span className="text-slate-600 dark:text-slate-300">Épargne + darets</span>
-            <span className="font-semibold tabular-nums text-slate-900 dark:text-white">
-              {formatMoney(projected, currency)} · {projectedPct}%
-            </span>
-          </div>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-            <div className="h-full rounded-full bg-gradient-to-r from-[#00c3ab] to-[#007261]" style={{ width: `${projectedPct}%` }} />
-          </div>
-        </div>
-      )}
-
       {error && <p className="text-sm text-rose-600">{error}</p>}
 
-      <Button type="submit" disabled={isPending}>
+      <Button
+        type="submit"
+        disabled={isPending}
+        className="bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-500 dark:text-white"
+      >
         {isPending ? "Enregistrement…" : goal ? "Enregistrer" : "Ajouter l'objectif"}
       </Button>
 
