@@ -14,7 +14,6 @@ import { CategoryPicker } from "@/components/category-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 const MAX_MONTHS = 600;
@@ -252,13 +251,28 @@ export function ExpenseEditor({
     });
   }
 
+  const kinds: { key: "once" | RecurrenceKind; emoji: string; label: string; hint: string }[] = [
+    { key: "once", emoji: "1️⃣", label: "Une fois", hint: "Ce mois-ci" },
+    { key: "permanent", emoji: "🔁", label: "Chaque mois", hint: "Sans fin" },
+    { key: "months", emoji: "📅", label: "X mois", hint: "Pendant…" },
+    { key: "until", emoji: "🎯", label: "Jusqu'à", hint: "Un total" },
+  ];
+  function pickKind(key: "once" | RecurrenceKind) {
+    if (key === "once") return setRecurring(false);
+    setRecurring(true);
+    setRecurrenceKind(key);
+  }
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-      <div className="flex flex-col items-center gap-1 rounded-2xl bg-white px-4 py-5 shadow-sm dark:bg-slate-900">
-        <Label htmlFor="amount" className="text-xs text-slate-500">
+      {/* Amount */}
+      <div className="relative flex flex-col items-center gap-1 overflow-hidden rounded-3xl bg-gradient-to-br from-rose-400 via-rose-500 to-pink-700 px-4 py-5 text-white shadow-lg shadow-rose-500/20 dark:shadow-none">
+        <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
+        <Label htmlFor="amount" className="relative text-xs text-white/80">
           {recurring ? "Montant par mois" : "Montant"}
         </Label>
-        <div className="flex items-baseline gap-2">
+        <div className="relative flex items-baseline gap-2">
+          <span className="text-2xl font-bold text-white/80">−</span>
           <input
             id="amount"
             type="text"
@@ -269,15 +283,15 @@ export function ExpenseEditor({
             placeholder="0"
             // Grow with the digits so "DH" stays right next to the number.
             style={{ width: `${Math.max(1, amount.length) + 0.3}ch` }}
-            className="max-w-[70vw] [appearance:textfield] bg-transparent text-center text-4xl font-bold text-slate-900 outline-none placeholder:text-slate-300 dark:text-white [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            className="max-w-[60vw] bg-transparent text-center text-4xl font-bold text-white outline-none placeholder:text-white/40"
           />
-          <span className="text-lg font-semibold text-slate-400">DH</span>
+          <span className="text-lg font-semibold text-white/70">DH</span>
         </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="name">Nom</Label>
-        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Pizza, Loyer…" />
+        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex : Pizza, Loyer…" />
       </div>
 
       {(isEdit || !isCredit) && (
@@ -292,85 +306,89 @@ export function ExpenseEditor({
         </div>
       )}
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-3.5 dark:border-slate-800">
-        <div className="flex items-center justify-between gap-3">
-          <label htmlFor="recurring" className="text-sm font-medium text-slate-800 dark:text-slate-200">
-            Récurrent (+1 mois)
-          </label>
-          <Switch id="recurring" checked={recurring} onCheckedChange={setRecurring} />
+      {/* How often */}
+      <div className="flex flex-col gap-2">
+        <Label>Fréquence</Label>
+        <div role="radiogroup" aria-label="Fréquence" className="grid grid-cols-4 gap-2">
+          {kinds.map((k) => {
+            const selected = mode === k.key;
+            return (
+              <button
+                key={k.key}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => pickKind(k.key)}
+                className={cn(
+                  "flex flex-col items-center gap-0.5 rounded-xl border px-1 py-2.5 text-center transition-colors",
+                  selected
+                    ? "border-rose-500 bg-rose-50 text-rose-800 ring-1 ring-rose-500 dark:bg-rose-950/50 dark:text-rose-200"
+                    : "border-slate-200 bg-white text-slate-600 active:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
+                )}
+              >
+                <span className="text-lg leading-none">{k.emoji}</span>
+                <span className="text-xs font-semibold">{k.label}</span>
+                <span className="text-[10px] text-slate-400">{k.hint}</span>
+              </button>
+            );
+          })}
         </div>
-
-        {recurring && (
-          <>
-            <RecurrenceOption
-              label="Nombre de mois"
-              selected={recurrenceKind === "months"}
-              onSelect={() => setRecurrenceKind("months")}
-            >
-              <Input
-                id="months"
-                aria-label="Nombre de mois"
-                type="number"
-                inputMode="numeric"
-                min="1"
-                max={MAX_MONTHS}
-                step="1"
-                value={months}
-                onChange={(e) => setMonths(e.target.value)}
-                placeholder="Ex: 6"
-                onFocus={(e) => keepAboveKeyboard(e.currentTarget)}
-                tabIndex={recurrenceKind === "months" ? 0 : -1}
-                className="shadow-none"
-              />
-            </RecurrenceOption>
-            <RecurrenceOption
-              label="Jusqu'à atteindre"
-              selected={recurrenceKind === "until"}
-              onSelect={() => setRecurrenceKind("until")}
-            >
-              <Input
-                id="untilTotal"
-                aria-label="Montant à atteindre (DH)"
-                type="text"
-                inputMode="decimal"
-                autoComplete="off"
-                value={untilTotal}
-                onChange={(e) => setUntilTotal(cleanDecimalInput(e.target.value))}
-                placeholder="Ex: 3000 DH"
-                onFocus={(e) => keepAboveKeyboard(e.currentTarget)}
-                tabIndex={recurrenceKind === "until" ? 0 : -1}
-                className="shadow-none"
-              />
-            </RecurrenceOption>
-            <RecurrenceOption
-              label="Permanent (sans fin)"
-              selected={recurrenceKind === "permanent"}
-              onSelect={() => setRecurrenceKind("permanent")}
+        {mode === "months" && (
+          <div className="flex items-center gap-2">
+            <Input
+              id="months"
+              aria-label="Nombre de mois"
+              type="number"
+              inputMode="numeric"
+              min="1"
+              max={MAX_MONTHS}
+              step="1"
+              value={months}
+              onChange={(e) => setMonths(e.target.value)}
+              placeholder="Nombre de mois, ex : 6"
+              onFocus={(e) => keepAboveKeyboard(e.currentTarget)}
             />
-            {summary && <p className="text-xs text-[#007261] dark:text-teal-300">{summary}</p>}
-          </>
+            <span className="shrink-0 text-sm text-slate-500">mois</span>
+          </div>
+        )}
+        {mode === "until" && (
+          <div className="flex items-center gap-2">
+            <Input
+              id="untilTotal"
+              aria-label="Montant à atteindre (DH)"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              value={untilTotal}
+              onChange={(e) => setUntilTotal(cleanDecimalInput(e.target.value))}
+              placeholder="Total à atteindre, ex : 3000"
+              onFocus={(e) => keepAboveKeyboard(e.currentTarget)}
+            />
+            <span className="shrink-0 text-sm text-slate-500">DH</span>
+          </div>
+        )}
+        {summary && (
+          <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">{summary}</p>
         )}
       </div>
 
       {(!isEdit || paymentStatus) && (
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
           <Label>
             Statut de paiement
             {isEdit ? ` ${paymentStatus?.hint ?? ""}` : recurring ? " (1er mois)" : ""}
           </Label>
-          <div
-            role="radiogroup"
-            aria-label="Statut de paiement"
-            className="flex overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700"
-          >
+          <div role="radiogroup" aria-label="Statut de paiement" className="grid grid-cols-2 gap-2">
             <button
               type="button"
               role="radio"
               aria-checked={alreadyPaid}
               onClick={() => setAlreadyPaid(true)}
               className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition-colors duration-200",
-                alreadyPaid ? "bg-emerald-500 text-white" : "bg-white text-slate-500 dark:bg-slate-900 dark:text-slate-400",
+                "flex items-center justify-center gap-1.5 rounded-xl border py-3 text-sm font-semibold transition-colors",
+                alreadyPaid
+                  ? "border-transparent bg-emerald-500 text-white shadow-sm"
+                  : "border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400",
               )}
             >
               <Check className="h-4 w-4" />
@@ -382,8 +400,10 @@ export function ExpenseEditor({
               aria-checked={!alreadyPaid}
               onClick={() => setAlreadyPaid(false)}
               className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition-colors duration-200",
-                !alreadyPaid ? "bg-rose-500 text-white" : "bg-white text-slate-500 dark:bg-slate-900 dark:text-slate-400",
+                "flex items-center justify-center gap-1.5 rounded-xl border py-3 text-sm font-semibold transition-colors",
+                !alreadyPaid
+                  ? "border-transparent bg-rose-500 text-white shadow-sm"
+                  : "border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400",
               )}
             >
               <Clock className="h-4 w-4" />
@@ -405,8 +425,12 @@ export function ExpenseEditor({
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back()}>
           Annuler
         </Button>
-        <Button type="submit" className="flex-1" disabled={isPending}>
-          {isPending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter"}
+        <Button
+          type="submit"
+          className="flex-1 bg-rose-600 text-white hover:bg-rose-700 dark:bg-rose-600 dark:text-white"
+          disabled={isPending}
+        >
+          {isPending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter la dépense"}
         </Button>
       </div>
     </form>
@@ -476,52 +500,6 @@ export function keepAboveKeyboard(input: HTMLInputElement) {
       window.removeEventListener("scroll", onScroll);
     },
     { once: true },
-  );
-}
-
-/** One recurrence choice. When selected it turns green and, if it has an
- *  input, slides to the left half while the input opens on the right. */
-function RecurrenceOption({
-  label,
-  selected,
-  onSelect,
-  children,
-}: {
-  label: string;
-  selected: boolean;
-  onSelect: () => void;
-  children?: React.ReactNode;
-}) {
-  const expanded = selected && children != null;
-  return (
-    <div className="flex items-stretch">
-      <button
-        type="button"
-        role="radio"
-        aria-checked={selected}
-        onClick={onSelect}
-        className={cn(
-          "flex h-11 shrink-0 items-center justify-center rounded-xl border px-3 text-sm font-medium whitespace-nowrap transition-all duration-300 ease-out",
-          selected
-            ? "border-[#019c86] bg-[#019c86] text-white shadow-sm"
-            : "border-slate-200 bg-white text-slate-600 active:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
-          expanded ? "w-[calc(50%-0.25rem)]" : "w-full",
-        )}
-      >
-        {label}
-      </button>
-      {children != null && (
-        <div
-          aria-hidden={!expanded}
-          className={cn(
-            "overflow-hidden transition-all duration-300 ease-out",
-            expanded ? "ml-2 w-[calc(50%-0.25rem)] opacity-100" : "ml-0 w-0 opacity-0",
-          )}
-        >
-          {children}
-        </div>
-      )}
-    </div>
   );
 }
 
