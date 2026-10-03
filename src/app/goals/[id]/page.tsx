@@ -1,11 +1,10 @@
 import { notFound } from "next/navigation";
 import { getAllDarets, getAllPayments, getGoalById, getSettings } from "@/lib/repository";
-import { getGoalProgress, type GoalSimBase } from "@/lib/goals";
+import { getGoalProgress, isDepositPaid, type GoalSimBase } from "@/lib/goals";
 import { monthKey, monthLabelFr, monthsBetween, todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { GoalCard } from "@/components/goal-card";
-import { GoalDeposits } from "@/components/goal-deposits";
 import { GoalSimulator } from "@/components/goal-simulator";
 import { DeleteGoalButton } from "@/components/delete-goal-button";
 
@@ -35,12 +34,12 @@ export default async function GoalDetailPage({ params }: { params: Promise<{ id:
     <>
       <PageHeader title={goal.name} back />
       <main className="flex flex-col gap-5 px-4 py-5">
-        <GoalCard goal={goal} progress={progress} currency={settings.currency} />
-
-        <section className="flex flex-col gap-2.5">
-          <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Versements</h2>
-          <GoalDeposits goalId={goal.id} deposits={goal.deposits} currency={settings.currency} />
-        </section>
+        <GoalCard
+          goal={goal}
+          progress={progress}
+          currency={settings.currency}
+          depositsPaid={Object.fromEntries(goal.deposits.map((d) => [d.id, isDepositPaid(d, payments)]))}
+        />
 
         <section className="flex flex-col gap-2.5">
           <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Darets</h2>

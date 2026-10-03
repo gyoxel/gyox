@@ -12,6 +12,7 @@ import { useNavBack } from "@/lib/nav-history";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import { errorMessage } from "@/components/expense-editor";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { LockedDelete } from "@/components/locked-delete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,7 +23,14 @@ import { Textarea } from "@/components/ui/textarea";
  * (prime, freelance, cadeau…), name, cash or card and a note; dated today. It adds to the money
  * of the month it's received.
  */
-export function IncomeEditor({ income }: { income?: Income }) {
+export function IncomeEditor({
+  income,
+  source,
+}: {
+  income?: Income;
+  /** Created by something else (a credit): deleted from there only. */
+  source?: { label: string; href: string };
+}) {
   const isEdit = income != null;
   const nav = useNavBack();
   const refreshData = useRefreshData();
@@ -158,7 +166,11 @@ export function IncomeEditor({ income }: { income?: Income }) {
         </Button>
       </div>
 
-      {isEdit && (
+      {isEdit && source && (
+        <LockedDelete hint={`Ce revenu vient du ${source.label} : supprime-le depuis`} href={source.href} linkLabel="sa page" />
+      )}
+
+      {isEdit && !source && (
         <>
           <Button type="button" variant="destructive" onClick={() => setConfirmDelete(true)} disabled={isPending}>
             <Trash2 className="h-4 w-4" />

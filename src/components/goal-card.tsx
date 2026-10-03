@@ -6,6 +6,7 @@ import { CalendarClock, Check, ChevronRight, Pencil, Plus, Sparkles, Target, Tre
 import { toast } from "sonner";
 import type { Goal, PaymentMethod } from "@/lib/types";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
+import { METHOD_META } from "@/lib/payment-method";
 import type { GoalProgress } from "@/lib/goals";
 import { monthLabelFr, monthLabelShortFr } from "@/lib/date";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput } from "@/lib/utils";
@@ -88,11 +89,14 @@ export function GoalCard({
   progress,
   currency,
   linkToDetail = false,
+  depositsPaid,
 }: {
   goal: Goal;
   progress: GoalProgress;
   currency: string;
   linkToDetail?: boolean;
+  /** Detail page: whether each deposit is paid (ticked in Dépenses). */
+  depositsPaid?: Record<string, boolean>;
 }) {
   const [adding, setAdding] = useState(false);
   const p = progress;
@@ -146,6 +150,27 @@ export function GoalCard({
     );
   }
 
+  // The deposits step is shown as each deposit (oldest first), with the %
+  // the goal reaches after it; not paid ones stay listed but don't count.
+  type Row =
+    | { kind: "step"; key: string; step: GoalProgress["steps"][number] }
+    | { kind: "deposit"; key: string; deposit: Goal["deposits"][number]; paid: boolean; percent: number };
+  const stepRow = (step: GoalProgress["steps"][number], i: number): Row => ({ kind: "step", key: `step-${i}`, step });
+  const depositRows = [...goal.deposits].reverse().reduce<{ rows: Row[]; reached: number }>(
+    (acc, d) => {
+      const paid = depositsPaid?.[d.id] ?? true;
+      const reached = acc.reached + (paid ? d.amount : 0);
+      const percent = p.target > 0 ? Math.min(100, Math.round((reached / p.target) * 100)) : 0;
+      return { rows: [...acc.rows, { kind: "deposit", key: `deposit-${d.id}`, deposit: d, paid, percent }], reached };
+    },
+    { rows: [], reached: goal.savedAmount },
+  ).rows;
+  const stepRows: Row[] = [
+    ...p.steps.map(stepRow).filter((r) => r.kind === "step" && r.step.kind === "saved"),
+    ...depositRows,
+    ...p.steps.map(stepRow).filter((r) => r.kind === "step" && r.step.kind === "daret"),
+  ];
+
   return (
     <>
       {/* Hero */}
@@ -190,28 +215,69 @@ export function GoalCard({
         </div>
       </div>
 
-      {/* Steps */}
-      {p.steps.length > 0 && (
+      {/* Steps and deposits, in one list */}
+      {(p.steps.length > 0 || goal.deposits.length > 0) && (
         <section className="flex flex-col gap-2">
-          <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Étapes</h2>
-          <ol className="relative flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            {p.steps.map((step, i) => (
-              <li key={i} className="flex items-center gap-3 text-sm">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-base dark:bg-amber-950/40">
-                  {step.kind === "saved" ? "💰" : step.kind === "deposits" ? "💵" : "🤝🏻"}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium text-slate-800 dark:text-slate-100">{step.label}</span>
-                  <span className="block text-[11px] text-slate-400">
-                    {step.month ? (step.received ? `Reçue en ${monthLabelFr(step.month)}` : `En ${monthLabelFr(step.month)}`) : "Disponible"}
+          <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Étapes et versements</h2>
+          <ol className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            {stepRows.map((row) =>
+              row.kind === "deposit" ? (
+                <li key={row.key} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
+                  <Link
+                    href={`/goals/${goal.id}/deposits/${row.deposit.id}`}
+                    className="flex items-center gap-3 px-4 py-3 text-sm active:bg-slate-50 dark:active:bg-slate-800/60"
+                  >
+                    <StepIcon>💵</StepIcon>
+                    <span className="min-w-0 flex-1">
+                      <span className={cn("block truncate font-medium text-slate-800 dark:text-slate-100", !row.paid && "text-slate-400")}>
+                        {row.deposit.name}
+                      </span>
+                      <span className="block text-[11px] text-slate-400">
+                        {DEPOSIT_DATE.format(new Date(`${row.deposit.date}T12:00:00`))}
+                        {row.deposit.method && ` · ${METHOD_META[row.deposit.method].emoji}`}
+                        {!row.paid && <span className="ml-1 font-semibold text-rose-500">· Non payé</span>}
+                      </span>
+                    </span>
+                    <span className="text-right">
+                      <span
+                        className={cn(
+                          "block font-semibold tabular-nums",
+                          row.paid ? "text-slate-900 dark:text-white" : "text-slate-400 line-through",
+                        )}
+                      >
+                        +{money(row.deposit.amount)}
+                      </span>
+                      {row.paid && (
+                        <span className="block text-[11px] font-semibold tabular-nums text-orange-600 dark:text-amber-400">
+                          → {row.percent}%
+                        </span>
+                      )}
+                    </span>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+                  </Link>
+                </li>
+              ) : (
+                <li key={row.key} className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm first:border-t-0 dark:border-slate-800">
+                  <StepIcon>{row.step.kind === "saved" ? "💰" : "🤝🏻"}</StepIcon>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium text-slate-800 dark:text-slate-100">{row.step.label}</span>
+                    <span className="block text-[11px] text-slate-400">
+                      {row.step.month
+                        ? row.step.received
+                          ? `Reçue en ${monthLabelFr(row.step.month)}`
+                          : `En ${monthLabelFr(row.step.month)}`
+                        : "Disponible"}
+                    </span>
                   </span>
-                </span>
-                <span className="text-right">
-                  <span className="block font-semibold tabular-nums text-slate-900 dark:text-white">+{money(step.amount)}</span>
-                  <span className="block text-[11px] font-semibold tabular-nums text-orange-600 dark:text-amber-400">→ {step.percent}%</span>
-                </span>
-              </li>
-            ))}
+                  <span className="text-right">
+                    <span className="block font-semibold tabular-nums text-slate-900 dark:text-white">+{money(row.step.amount)}</span>
+                    <span className="block text-[11px] font-semibold tabular-nums text-orange-600 dark:text-amber-400">
+                      → {row.step.percent}%
+                    </span>
+                  </span>
+                </li>
+              ),
+            )}
           </ol>
         </section>
       )}
@@ -357,6 +423,16 @@ function DepositDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+const DEPOSIT_DATE = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+
+function StepIcon({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-base dark:bg-amber-950/40">
+      {children}
+    </span>
   );
 }
 

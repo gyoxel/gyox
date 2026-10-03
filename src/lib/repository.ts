@@ -701,6 +701,72 @@ export async function addGoalDeposit(
   return mapDeposit(deposit);
 }
 
+/** The goal deposit an expense stands for, if any. */
+export async function getDepositOfExpense(
+  expenseId: string,
+): Promise<{ deposit: GoalDeposit; goal: { id: string; name: string; emoji: string } } | null> {
+  const row = await prisma.goalDeposit.findFirst({ where: { expenseId }, include: { goal: true } });
+  if (!row) return null;
+  const { goal, ...deposit } = row;
+  return { deposit: mapDeposit(deposit), goal: { id: goal.id, name: goal.name, emoji: goal.emoji } };
+}
+
+export async function getGoalDeposit(goalId: string, depositId: string): Promise<GoalDeposit | null> {
+  const row = await prisma.goalDeposit.findFirst({ where: { id: depositId, goalId } });
+  return row ? mapDeposit(row) : null;
+}
+
+/**
+ * Edits a deposit; for a newer one, its expense in Dépenses follows (amount,
+ * note) and so does its payment: paid (cash / card) or not paid.
+ */
+export async function updateGoalDeposit(
+  goalId: string,
+  depositId: string,
+  input: { name: string; amount: number; method: PaymentMethod | null; paid: boolean },
+): Promise<GoalDeposit | null> {
+  const deposit = await prisma.goalDeposit.findFirst({ where: { id: depositId, goalId } });
+  if (!deposit) return null;
+  const now = new Date().toISOString();
+  const name = input.name || "Versement";
+  if (deposit.expenseId) {
+    const expenseId = deposit.expenseId;
+    const monthKeyValue = deposit.date.slice(0, 7);
+    const expenseUpdate = prisma.expense.update({
+      where: { id: expenseId },
+      data: { amount: input.amount, notes: name !== "Versement" ? name : null, updatedAt: now },
+    });
+    if (input.paid && input.method) {
+      await prisma.$transaction([
+        expenseUpdate,
+        prisma.payment.upsert({
+          where: { expenseId_monthKey: { expenseId, monthKey: monthKeyValue } },
+          update: { amountDue: input.amount, amountPaid: input.amount, method: input.method },
+          create: {
+            id: randomUUID(),
+            expenseId,
+            monthKey: monthKeyValue,
+            slotIndex: null,
+            amountDue: input.amount,
+            amountPaid: input.amount,
+            paidAt: now,
+            method: input.method,
+            createdAt: now,
+          },
+        }),
+      ]);
+    } else {
+      await prisma.$transaction([expenseUpdate, prisma.payment.deleteMany({ where: { expenseId } })]);
+    }
+  }
+  return mapDeposit(
+    await prisma.goalDeposit.update({
+      where: { id: depositId },
+      data: { name, amount: input.amount, method: input.method },
+    }),
+  );
+}
+
 /** Removes a deposit — with its expense in Dépenses, when it has one. */
 export async function deleteGoalDeposit(goalId: string, depositId: string): Promise<boolean> {
   const deposit = await prisma.goalDeposit.findFirst({ where: { id: depositId, goalId } });

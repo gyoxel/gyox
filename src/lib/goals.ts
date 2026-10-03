@@ -3,7 +3,7 @@
 // counted in that daret's turn month, plus an optional planned monthly saving.
 import { type MonthId, addMonths, compareMonths, monthsBetween, parseMonthKey } from "./date";
 import { getDaretState } from "./daret";
-import type { DaretWithExpense, Goal, Payment } from "./types";
+import type { DaretWithExpense, Goal, GoalDeposit, Payment } from "./types";
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -47,6 +47,12 @@ export interface GoalProgress {
 
 const pct = (amount: number, target: number) => (target > 0 ? Math.min(100, Math.round((amount / target) * 100)) : 0);
 
+/** Whether a deposit counts: always for older ones, while its expense in
+ *  Dépenses is ticked for the newer ones. */
+export function isDepositPaid(deposit: GoalDeposit, payments: Payment[]): boolean {
+  return !deposit.expenseId || payments.some((p) => p.expenseId === deposit.expenseId && p.amountPaid > 0);
+}
+
 export function getGoalProgress(
   goal: Goal,
   darets: DaretWithExpense[],
@@ -62,7 +68,9 @@ export function getGoalProgress(
     })
     .sort((a, b) => compareMonths(a.turn, b.turn));
 
-  const depositsTotal = round2(goal.deposits.reduce((s, d) => s + d.amount, 0));
+  // A deposit shown in Dépenses counts only while it's ticked there (paid).
+  const counted = goal.deposits.filter((d) => isDepositPaid(d, payments));
+  const depositsTotal = round2(counted.reduce((s, d) => s + d.amount, 0));
   const savedTotal = round2(goal.savedAmount + depositsTotal);
 
   const steps: GoalStep[] = [];
@@ -82,7 +90,7 @@ export function getGoalProgress(
     cumulative = savedTotal;
     steps.push({
       kind: "deposits",
-      label: goal.deposits.length === 1 ? "1 versement" : `${goal.deposits.length} versements`,
+      label: counted.length === 1 ? "1 versement" : `${counted.length} versements`,
       amount: depositsTotal,
       month: null,
       received: true,

@@ -203,7 +203,7 @@ export function CreditEditor({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: `Crédit · ${name.trim()}`,
-            amount: fullTotal,
+            amount: totalValue,
             category: "credit",
             date: todayDateStr(),
             method: receivedMethod,
@@ -311,7 +311,8 @@ export function CreditEditor({
             <span>
               <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">J&apos;ai reçu cet argent</span>
               <span className="block text-[11px] text-slate-500 dark:text-slate-400">
-                {fullTotal > 0 ? `+${money(fullTotal)} ` : ""}ajouté à ton solde comme revenu, aujourd&apos;hui
+                {totalValue > 0 ? `+${money(totalValue)} ` : ""}ajouté à ton solde comme revenu, aujourd&apos;hui
+                {priorValue > 0 ? " (total − déjà remboursé)" : ""}
               </span>
             </span>
             <Switch checked={received} onCheckedChange={setReceived} aria-label="J'ai reçu cet argent" />
