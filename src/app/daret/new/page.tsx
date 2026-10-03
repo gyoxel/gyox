@@ -8,7 +8,7 @@ export default async function NewDaretPage() {
   const settings = await getSettings();
   return (
     <>
-      <PageHeader title="Ajouter une daret" back />
+      <PageHeader title="Nouvelle daret" back />
       <main className="px-4 py-5">
         <DaretForm currency={settings.currency} />
       </main>

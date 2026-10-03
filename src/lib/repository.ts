@@ -441,6 +441,37 @@ export async function setDaretPayout(id: string, method: PaymentMethod | null): 
   return count > 0;
 }
 
+/** Edits a daret and its backing expense together (contributions already
+ *  ticked stay, by month). */
+export async function updateDaret(
+  id: string,
+  input: { name: string; amount: number; members: number; startDate: string; endDate: string; turnMonth: string },
+): Promise<DaretWithExpense | null> {
+  const daret = await prisma.daret.findUnique({ where: { id } });
+  if (!daret) return null;
+  const [expense, updated] = await prisma.$transaction([
+    prisma.expense.update({
+      where: { id: daret.expenseId },
+      data: {
+        name: input.name,
+        amount: input.amount,
+        startDate: input.startDate,
+        endDate: input.endDate,
+        updatedAt: new Date().toISOString(),
+      },
+    }),
+    prisma.daret.update({ where: { id }, data: { members: input.members, turnMonth: input.turnMonth } }),
+  ]);
+  return { ...mapDaret(updated), expense: mapExpense(expense) };
+}
+
+export async function getDaretById(id: string): Promise<DaretWithExpense | null> {
+  const row = await prisma.daret.findUnique({ where: { id }, include: { expense: true } });
+  if (!row) return null;
+  const { expense, ...daret } = row;
+  return { ...mapDaret(daret), expense: mapExpense(expense) };
+}
+
 /** Deleting the backing expense cascades to the daret and its payments. */
 export async function deleteDaret(id: string): Promise<boolean> {
   const daret = await prisma.daret.findUnique({ where: { id } });

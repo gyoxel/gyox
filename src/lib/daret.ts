@@ -35,6 +35,8 @@ export interface DaretState {
   round: number | null;
   /** Rounds whose contribution has been confirmed paid. */
   paidRounds: number;
+  /** "YYYY-MM" of the months whose contribution is paid. */
+  paidMonths: string[];
   /** Whether the given month's contribution is paid (null outside range). */
   paidThisMonth: boolean | null;
   turnStatus: "upcoming" | "now" | "received";
@@ -66,6 +68,7 @@ export function getDaretState(daret: DaretWithExpense, payments: Payment[], curr
     phase,
     round: phase === "running" ? monthsBetween(start, currentMonth) + 1 : null,
     paidRounds: [...paidKeys].filter((k) => k != null && inRange(k)).length,
+    paidMonths: [...paidKeys].filter((k): k is string => k != null && inRange(k)),
     paidThisMonth: phase === "running" ? paidKeys.has(monthKey(currentMonth)) : null,
     turnStatus: cmpTurn < 0 ? "upcoming" : cmpTurn === 0 ? "now" : "received",
   };
