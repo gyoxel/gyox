@@ -537,6 +537,9 @@ export function SalaryPanel({
           )}
         </div>
       </div>
+      <h3 className="mb-3 border-t border-slate-100 pt-4 text-sm font-semibold text-slate-700 dark:border-slate-800 dark:text-slate-200">
+        Réglages du salaire
+      </h3>
       <SalaryForm key={`${settings.salary}-${payDay}`} settings={settings} plain onSaved={onDone} />
       <ConfirmDialog
         open={toDelete != null}

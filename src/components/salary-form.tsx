@@ -86,7 +86,11 @@ export function SalaryForm({
 
       {error && <p className="text-sm text-rose-600">{error}</p>}
 
-      <Button type="submit" disabled={isPending}>
+      <Button
+        type="submit"
+        disabled={isPending}
+        className="bg-teal-600 text-white hover:bg-teal-700 dark:bg-teal-600 dark:text-white"
+      >
         {isPending ? "Enregistrement…" : "Enregistrer"}
       </Button>
     </>

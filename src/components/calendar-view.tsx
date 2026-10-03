@@ -91,6 +91,9 @@ export function CalendarView({
   const sum = (list: CalendarEvent[], kind: CalendarEvent["kind"]) =>
     list.filter((e) => e.kind === kind).reduce((s, e) => s + e.amount, 0);
   const dayKey = (d: number) => `${month}-${String(d).padStart(2, "0")}`;
+  const monthEvents = [...byDay.values()].flat();
+  const monthIn = sum(monthEvents, "in");
+  const monthOut = sum(monthEvents, "out");
   const [selected, setSelected] = useState<string | null>(today.startsWith(month) ? today : null);
   const selectedEvents = selected ? (byDay.get(selected) ?? []) : [];
   const selectedInfos = selected ? (infosByDay.get(selected) ?? []) : [];
@@ -113,20 +116,40 @@ export function CalendarView({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Month navigation: arrows or swipe on the grid */}
-      <div className="flex items-center justify-between gap-2">
-        <NavArrow href={prevHref} label="Mois précédent">
-          <ChevronLeft className="h-4 w-4" />
-        </NavArrow>
-        <div className="text-lg font-semibold text-slate-900 dark:text-white">{monthLabel}</div>
-        <NavArrow href={nextHref} label="Mois suivant">
-          <ChevronRight className="h-4 w-4" />
-        </NavArrow>
+      {/* Month, its totals, arrows (or swipe on the grid) */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-rose-400 via-pink-500 to-fuchsia-600 px-4 pb-4 pt-3.5 text-white shadow-lg shadow-pink-500/20 dark:shadow-none">
+        <span aria-hidden className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10" />
+        <div className="relative flex items-center justify-between gap-2">
+          <NavArrow href={prevHref} label="Mois précédent">
+            <ChevronLeft className="h-4 w-4" />
+          </NavArrow>
+          <div className="text-lg font-bold capitalize">{monthLabel}</div>
+          <NavArrow href={nextHref} label="Mois suivant">
+            <ChevronRight className="h-4 w-4" />
+          </NavArrow>
+        </div>
+        <div className="relative mt-3 grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-2xl bg-white/15 px-2 py-2">
+            <p className="text-[10px] uppercase tracking-wide text-white/75">Entrées</p>
+            <p className="text-sm font-bold tabular-nums">+{formatMoney(monthIn, currency)}</p>
+          </div>
+          <div className="rounded-2xl bg-white/15 px-2 py-2">
+            <p className="text-[10px] uppercase tracking-wide text-white/75">Sorties</p>
+            <p className="text-sm font-bold tabular-nums">−{formatMoney(monthOut, currency)}</p>
+          </div>
+          <div className="rounded-2xl bg-white/15 px-2 py-2">
+            <p className="text-[10px] uppercase tracking-wide text-white/75">Reste</p>
+            <p className="text-sm font-bold tabular-nums">
+              {monthIn - monthOut < 0 ? "−" : ""}
+              {formatMoney(Math.abs(monthIn - monthOut), currency)}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Grid */}
       <div
-        className="touch-pan-y rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+        className="touch-pan-y rounded-3xl border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
@@ -161,7 +184,7 @@ export function CalendarView({
                 className={cn(
                   "flex min-h-[58px] flex-col items-center rounded-xl px-0.5 pb-1 pt-1.5 transition-colors",
                   isSelected
-                    ? "bg-[#019c86]/10 ring-2 ring-[#019c86]"
+                    ? "bg-pink-50 ring-2 ring-pink-500 dark:bg-pink-950/40"
                     : list.length > 0
                       ? "bg-slate-50 active:bg-slate-100 dark:bg-slate-800/60 dark:active:bg-slate-800"
                       : "active:bg-slate-50 dark:active:bg-slate-800/60",
@@ -171,7 +194,7 @@ export function CalendarView({
                   className={cn(
                     "flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold",
                     isToday
-                      ? "bg-[#019c86] text-white"
+                      ? "bg-gradient-to-br from-rose-400 to-pink-600 text-white shadow-sm"
                       : future
                         ? "text-slate-400 dark:text-slate-500"
                         : "text-slate-700 dark:text-slate-200",
@@ -203,7 +226,8 @@ export function CalendarView({
       {/* Selected day */}
       {selected && (
         <section className="flex flex-col gap-2">
-          <h2 className="px-1 text-sm font-semibold capitalize text-slate-600 dark:text-slate-300">
+          <h2 className="flex items-center gap-2 px-1 text-sm font-semibold capitalize text-slate-700 dark:text-slate-200">
+            <span className="h-2 w-2 rounded-full bg-pink-500" />
             {DAY_TITLE.format(new Date(`${selected}T12:00:00Z`))}
           </h2>
           {selectedInfos.length > 0 && (
@@ -224,7 +248,7 @@ export function CalendarView({
             </ul>
           )}
           {selectedEvents.length > 0 ? (
-            <ul className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
               {selectedEvents.map((e) => (
                 <li key={e.id} className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 first:border-t-0 dark:border-slate-800">
                   <span className="text-lg leading-none">{e.icon}</span>
@@ -278,8 +302,7 @@ function Legend({ className, children }: { className: string; children: React.Re
 }
 
 function NavArrow({ href, label, children }: { href: string | null; label: string; children: React.ReactNode }) {
-  const className =
-    "flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200";
+  const className = "flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white transition-colors active:bg-white/30";
   return href ? (
     <Link href={href} prefetch replace scroll={false} aria-label={label} className={className}>
       {children}

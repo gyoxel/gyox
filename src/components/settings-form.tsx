@@ -2,13 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRefreshData } from "@/lib/use-refresh-data";
-import { Download, Monitor, Moon, Sun, Upload } from "lucide-react";
+import Link from "next/link";
+import { Banknote, ChevronRight, Download, Monitor, Moon, Sun, Tags, Upload } from "lucide-react";
 import { toast } from "sonner";
 import type { Settings } from "@/lib/types";
 import { THEME_STORAGE_KEY, applyTheme, type ThemeChoice } from "@/lib/theme";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 
 const THEMES: { value: ThemeChoice; label: string; icon: typeof Sun }[] = [
@@ -84,80 +83,148 @@ export function SettingsForm({ settings }: { settings: Settings }) {
     }
   }
 
+  const section = "overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900";
+  const rowClass =
+    "flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3.5 text-left first:border-t-0 active:bg-slate-50 dark:border-slate-800 dark:active:bg-slate-800/60";
+
   return (
     <div className="flex flex-col gap-5">
-      <Card>
-        <CardContent className="flex flex-col gap-3 pt-4">
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Thème</h2>
-          <div role="radiogroup" aria-label="Thème" className="grid grid-cols-3 gap-2">
-            {THEMES.map(({ value, label, icon: Icon }) => (
+      <section className="flex flex-col gap-2">
+        <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Apparence</h2>
+        <div role="radiogroup" aria-label="Thème" className="grid grid-cols-3 gap-2.5">
+          {THEMES.map(({ value, label, icon: Icon }) => {
+            const selected = theme === value;
+            return (
               <button
                 key={value}
                 type="button"
                 role="radio"
-                aria-checked={theme === value}
+                aria-checked={selected}
+                aria-label={label}
                 onClick={() => chooseTheme(value)}
                 className={cn(
-                  "flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-sm font-medium transition-colors",
-                  theme === value
-                    ? "border-[#019c86] bg-[#019c86]/10 text-[#007261] dark:text-teal-300"
-                    : "border-slate-200 text-slate-600 active:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:active:bg-slate-800",
+                  "flex flex-col items-center gap-2 rounded-2xl border bg-white p-2.5 transition-colors dark:bg-slate-900",
+                  selected ? "border-slate-500 ring-2 ring-slate-500 dark:border-slate-300 dark:ring-slate-300" : "border-slate-200 dark:border-slate-700",
                 )}
               >
-                <Icon className="h-5 w-5" />
-                {label}
+                <ThemePreview kind={value} />
+                <span className="flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                  <Icon className="h-3.5 w-3.5" />
+                  {label}
+                </span>
               </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            );
+          })}
+        </div>
+      </section>
 
-      <Card>
-        <CardContent className="flex flex-col gap-3 pt-4">
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Sauvegarde des données</h2>
-          <Button asChild variant="outline">
-            <a href="/api/export" download>
+      <section className="flex flex-col gap-2">
+        <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Raccourcis</h2>
+        <div className={section}>
+          <Link href="/salary" className={rowClass}>
+            <RowIcon className="from-emerald-400 to-teal-600">
+              <Banknote className="h-4 w-4" />
+            </RowIcon>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Salaire</span>
+              <span className="block text-xs text-slate-400">Montant, jour de paie, cash ou carte</span>
+            </span>
+            <ChevronRight className="h-4 w-4 text-slate-300" />
+          </Link>
+          <Link href="/categories" className={rowClass}>
+            <RowIcon className="from-violet-400 to-purple-600">
+              <Tags className="h-4 w-4" />
+            </RowIcon>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Catégories</span>
+              <span className="block text-xs text-slate-400">Ajouter, renommer, ordonner</span>
+            </span>
+            <ChevronRight className="h-4 w-4 text-slate-300" />
+          </Link>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Sauvegarde des données</h2>
+        <div className={section}>
+          <a href="/api/export" download className={rowClass}>
+            <RowIcon className="from-sky-400 to-blue-600">
               <Download className="h-4 w-4" />
-              Exporter (JSON)
-            </a>
-          </Button>
-          <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-            <Upload className="h-4 w-4" />
-            Importer un fichier JSON
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) setPendingImport(file);
-              e.target.value = "";
-            }}
-          />
-          <p className="text-xs text-slate-400">
-            L&apos;import remplace toutes les données actuelles par celles du fichier.
-          </p>
-          <ConfirmDialog
-            open={pendingImport != null}
-            onOpenChange={(open) => !open && setPendingImport(null)}
-            title="Remplacer toutes les données ?"
-            description={
-              <>
-                Toutes les données actuelles (dépenses, crédits, darets, objectifs…) seront remplacées par celles de «{" "}
-                {pendingImport?.name} ». Cette action est irréversible.
-              </>
-            }
-            confirmLabel="Importer"
-            onConfirm={() => {
-              const file = pendingImport;
-              setPendingImport(null);
-              if (file) void handleImportFile(file);
-            }}
-          />
-        </CardContent>
-      </Card>
+            </RowIcon>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Exporter</span>
+              <span className="block text-xs text-slate-400">Télécharger toutes tes données (JSON)</span>
+            </span>
+          </a>
+          <button type="button" onClick={() => fileInputRef.current?.click()} className={rowClass}>
+            <RowIcon className="from-amber-400 to-orange-500">
+              <Upload className="h-4 w-4" />
+            </RowIcon>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Importer</span>
+              <span className="block text-xs text-slate-400">Remplace toutes les données actuelles</span>
+            </span>
+          </button>
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) setPendingImport(file);
+            e.target.value = "";
+          }}
+        />
+        <ConfirmDialog
+          open={pendingImport != null}
+          onOpenChange={(open) => !open && setPendingImport(null)}
+          title="Remplacer toutes les données ?"
+          description={
+            <>
+              Toutes les données actuelles (dépenses, crédits, darets, objectifs…) seront remplacées par celles de «{" "}
+              {pendingImport?.name} ». Cette action est irréversible.
+            </>
+          }
+          confirmLabel="Importer"
+          onConfirm={() => {
+            const file = pendingImport;
+            setPendingImport(null);
+            if (file) void handleImportFile(file);
+          }}
+        />
+      </section>
     </div>
+  );
+}
+
+function RowIcon({ className, children }: { className: string; children: React.ReactNode }) {
+  return (
+    <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-sm", className)}>
+      {children}
+    </span>
+  );
+}
+
+/** A tiny phone screen in that theme (system: half light, half dark). */
+function ThemePreview({ kind }: { kind: ThemeChoice }) {
+  const screen = (dark: boolean) => (
+    <span className={cn("flex h-full flex-1 flex-col gap-1 p-1.5", dark ? "bg-slate-900" : "bg-slate-50")}>
+      <span className="h-3 rounded bg-gradient-to-r from-emerald-400 to-cyan-500" />
+      <span className={cn("h-2 rounded", dark ? "bg-slate-700" : "bg-white shadow-sm")} />
+      <span className={cn("h-2 rounded", dark ? "bg-slate-700" : "bg-white shadow-sm")} />
+      <span className={cn("h-2 w-2/3 rounded", dark ? "bg-slate-700" : "bg-white shadow-sm")} />
+    </span>
+  );
+  return (
+    <span className="flex h-20 w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+      {kind === "dark" ? screen(true) : kind === "light" ? screen(false) : (
+        <>
+          {screen(false)}
+          {screen(true)}
+        </>
+      )}
+    </span>
   );
 }

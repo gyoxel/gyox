@@ -10,8 +10,7 @@ import { BudgetDonut, type DonutSegment } from "@/components/budget-donut";
 import { MonthSwitcher } from "@/components/month-switcher";
 import { getWallet } from "@/lib/wallet-data";
 import { PageHeader } from "@/components/page-header";
-import { Card, CardContent } from "@/components/ui/card";
-import { formatMoney } from "@/lib/utils";
+import { cn, formatMoney } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -83,87 +82,104 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
     }
   }
 
+  const maxForecast = Math.max(1, ...forecast.map((f) => Math.max(f.salary, f.totalExpenses)));
+
   return (
     <>
-      <PageHeader title="Statistiques et prévisions" back />
+      <PageHeader title="Statistiques" back />
       <main className="flex flex-col gap-5 px-4 py-5">
-        <Card>
-          <CardContent className="pt-4">
-            <p className="text-sm text-slate-500 dark:text-slate-400">Salaire · {monthLabelFr(currentMonth)}</p>
-            <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-              <div className="h-full rounded-full bg-rose-400" style={{ width: `${percentUsed}%` }} />
+        {/* This month, for real */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-sky-400 via-blue-600 to-indigo-700 px-5 pb-4 pt-5 text-white shadow-lg shadow-blue-600/20 dark:shadow-none">
+          <span aria-hidden className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10" />
+          <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">
+            Salaire · {monthLabelFr(currentMonth)}
+          </p>
+          <div className="relative mt-1 flex items-baseline justify-between gap-2">
+            <span className="text-4xl font-bold tabular-nums">{percentUsed}%</span>
+            <span className="text-sm text-white/85">consommé</span>
+          </div>
+          <div className="relative mt-2 h-2.5 w-full overflow-hidden rounded-full bg-white/25">
+            <div className="h-full rounded-full bg-white" style={{ width: `${percentUsed}%` }} />
+          </div>
+          <div className="relative mt-4 grid grid-cols-2 gap-2">
+            <div className="rounded-2xl bg-white/15 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-white/75">Dépensé</p>
+              <p className="text-sm font-bold tabular-nums">{formatMoney(paidThisMonth, currency)}</p>
             </div>
-            <p className="mt-1.5 text-center text-xs text-slate-400">{percentUsed}% consommé</p>
-            <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <p className="text-slate-500 dark:text-slate-400">Dépensé</p>
-                <p className="font-semibold text-rose-600">{formatMoney(paidThisMonth, currency)}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-slate-500 dark:text-slate-400">Disponible</p>
-                <p className="font-semibold text-emerald-600">{formatMoney(available, currency)}</p>
-              </div>
+            <div className="rounded-2xl bg-white/15 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-white/75">Disponible</p>
+              <p className="text-sm font-bold tabular-nums">{formatMoney(available, currency)}</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
+        {/* Planned budget of any month */}
         <section className="flex flex-col gap-2.5">
+          <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Budget prévu</h2>
           <MonthSwitcher month={viewMonth} basePath="/stats" />
-          <Card>
-            <CardContent className="pt-5">
-              <BudgetDonut segments={segments} salary={summary.salary} currency={currency} />
-            </CardContent>
-          </Card>
+          <div className="rounded-3xl border border-slate-200 bg-white p-4 pt-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <BudgetDonut segments={segments} salary={summary.salary} currency={currency} />
+          </div>
         </section>
 
         {transition && (
-          <Card className="border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/30">
-            <CardContent className="flex gap-3 pt-4">
-              <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-              <div className="text-sm text-emerald-900 dark:text-emerald-200">
-                <p className="font-semibold">Dès {transition.monthLabel}</p>
-                <p className="mt-1 text-emerald-800/90 dark:text-emerald-300/90">
-                  Vos crédits et obligations temporaires seront terminés. Dépenses permanentes:{" "}
-                  {formatMoney(transition.totalPermanent, currency)} — Reste estimé:{" "}
-                  <span className="font-semibold">{formatMoney(transition.remaining, currency)}</span>
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex gap-3 rounded-3xl bg-gradient-to-br from-emerald-50 to-teal-50 px-4 py-3.5 dark:from-emerald-950/40 dark:to-teal-950/40">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow-sm">
+              <Sparkles className="h-4 w-4" />
+            </span>
+            <div className="text-sm text-emerald-900 dark:text-emerald-200">
+              <p className="font-semibold">Dès {transition.monthLabel}</p>
+              <p className="mt-0.5 text-emerald-800/90 dark:text-emerald-300/90">
+                Crédits et obligations temporaires terminés. Dépenses permanentes :{" "}
+                {formatMoney(transition.totalPermanent, currency)} — reste estimé :{" "}
+                <b>{formatMoney(transition.remaining, currency)}</b>
+              </p>
+            </div>
+          </div>
         )}
 
+        {/* Forecast: expenses against the salary, month by month */}
         <section className="flex flex-col gap-2.5">
-          <h2 className="px-1 text-sm font-semibold text-slate-500 dark:text-slate-400">Prévisions</h2>
-          <Card>
-            <CardContent className="divide-y divide-slate-100 pt-2 dark:divide-slate-800">
-              {forecast.map((s) => (
+          <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Prévisions</h2>
+          <div className="flex flex-col gap-1 rounded-3xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            {forecast.map((f) => {
+              const selected = compareMonths(f.month, viewMonth) === 0;
+              return (
                 <Link
-                  key={s.monthKey}
-                  href={`/stats?month=${s.monthKey}`}
+                  key={f.monthKey}
+                  href={`/stats?month=${f.monthKey}`}
                   replace
-                  className="flex items-center justify-between py-2.5 text-sm first:pt-1 last:pb-1"
+                  scroll={false}
+                  className={cn(
+                    "flex flex-col gap-1.5 rounded-2xl px-3 py-2.5 transition-colors active:bg-slate-50 dark:active:bg-slate-800/60",
+                    selected && "bg-blue-50 dark:bg-blue-950/40",
+                  )}
                 >
-                  <span
-                    className={
-                      compareMonths(s.month, viewMonth) === 0
-                        ? "font-semibold text-slate-900 dark:text-white"
-                        : "text-slate-600 dark:text-slate-300"
-                    }
-                  >
-                    {s.label}
-                  </span>
-                  <span className="flex items-center gap-3">
-                    <span className="text-slate-400">{formatMoney(s.totalExpenses, currency)}</span>
-                    <span className={`font-medium ${s.remaining < 0 ? "text-rose-600" : "text-emerald-600"}`}>
-                      {formatMoney(s.remaining, currency)}
+                  <span className="flex items-center justify-between text-sm">
+                    <span className={cn("capitalize", selected ? "font-semibold text-slate-900 dark:text-white" : "text-slate-600 dark:text-slate-300")}>
+                      {f.label}
+                    </span>
+                    <span className={cn("font-semibold tabular-nums", f.remaining < 0 ? "text-rose-600" : "text-emerald-600")}>
+                      {f.remaining < 0 ? "" : "+"}
+                      {formatMoney(f.remaining, currency)}
                     </span>
                   </span>
+                  <span className="relative h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                    <span
+                      className="absolute inset-y-0 left-0 rounded-full bg-emerald-200 dark:bg-emerald-900/60"
+                      style={{ width: `${(f.salary / maxForecast) * 100}%` }}
+                    />
+                    <span
+                      className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-sky-400 to-blue-600"
+                      style={{ width: `${(Math.min(f.totalExpenses, maxForecast) / maxForecast) * 100}%` }}
+                    />
+                  </span>
+                  <span className="text-[11px] text-slate-400">Dépenses {formatMoney(f.totalExpenses, currency)}</span>
                 </Link>
-              ))}
-            </CardContent>
-          </Card>
+              );
+            })}
+          </div>
         </section>
-
       </main>
     </>
   );

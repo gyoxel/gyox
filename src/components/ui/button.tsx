@@ -14,6 +14,8 @@ const buttonVariants = cva(
         ghost: "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
         destructive: "bg-rose-600 text-white hover:bg-rose-700",
         subtle: "bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100",
+        /** Colours come from className only (see below). */
+        plain: "",
       },
       size: {
         default: "h-11 px-4 py-2",
@@ -38,7 +40,10 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
-    return <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />;
+    // A button given its own background keeps it in dark mode too: the
+    // default variant's dark: colours would otherwise win over it.
+    const resolved = variant ?? (className && /(^|\s)bg-[a-z]/.test(className) ? "plain" : undefined);
+    return <Comp className={cn(buttonVariants({ variant: resolved, size, className }))} ref={ref} {...props} />;
   },
 );
 Button.displayName = "Button";
