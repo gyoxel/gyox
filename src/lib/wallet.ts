@@ -8,6 +8,7 @@ import { incomeCategory } from "./income";
 import type {
   DaretWithExpense,
   Expense,
+  Goal,
   Income,
   Payment,
   PaymentMethod,
@@ -16,7 +17,16 @@ import type {
   WalletOp,
 } from "./types";
 
-export type EntryKind = "salary" | "advance" | "income" | "daret" | "expense" | "credit" | "transfer" | "adjust";
+export type EntryKind =
+  | "salary"
+  | "advance"
+  | "income"
+  | "daret"
+  | "expense"
+  | "credit"
+  | "goal"
+  | "transfer"
+  | "adjust";
 
 export interface WalletEntry {
   id: string;
@@ -69,6 +79,8 @@ export function buildWallet(input: {
   payments: Payment[];
   expenses: Expense[];
   ops: WalletOp[];
+  /** Their deposits taken from cash / the card come off the Solde. */
+  goals?: Goal[];
   categoryEmoji: Map<string, string>;
   month: string;
 }): WalletSummary {
@@ -132,6 +144,20 @@ export function buildWallet(input: {
       lines: [{ account: p.method, amount: -p.amountPaid }],
       href: `/expenses/${e.id}`,
     });
+  }
+  for (const g of input.goals ?? []) {
+    for (const d of g.deposits) {
+      if (!d.method || !(d.amount > 0)) continue;
+      entries.push({
+        id: `goal-${d.id}`,
+        kind: "goal",
+        at: d.createdAt,
+        emoji: g.emoji,
+        label: `Versement · ${g.name}`,
+        lines: [{ account: d.method, amount: -d.amount }],
+        href: `/goals/${g.id}`,
+      });
+    }
   }
   for (const o of input.ops) {
     if (!o.toAccount) continue;

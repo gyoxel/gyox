@@ -40,12 +40,6 @@ export function todayMonth(): MonthId {
   return { year: d.getFullYear(), month: d.getMonth() + 1 };
 }
 
-// The app is used to plan the *upcoming* month's budget, so it opens on
-// next month by default (e.g. if it's September, it opens on October).
-export function defaultViewMonth(): MonthId {
-  return addMonths(todayMonth(), 1);
-}
-
 const MONTHS_FR = [
   "Janvier",
   "Février",

@@ -70,6 +70,9 @@ export function CreditEditor({
   const [alreadyPaid, setAlreadyPaid] = useState(isEdit ? (paymentStatus?.paid ?? false) : false);
   const [method, setMethod] = useState<PaymentMethod>(paymentStatus?.method ?? "cash");
   const [notes, setNotes] = useState(expense?.notes ?? "");
+  // Repaid before the credit was added here (display only, not in the Solde).
+  const [priorPaid, setPriorPaid] = useState(toDecimalInput(expense?.creditPriorPaid || null));
+  const [priorOpen, setPriorOpen] = useState((expense?.creditPriorPaid ?? 0) > 0);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -134,6 +137,12 @@ export function CreditEditor({
     if (!name.trim()) return setError("Indique un nom.");
     if (mode === "months" && (monthsValue < 1 || monthsValue > MAX_MONTHS)) return setError("Indique le nombre de mois.");
     if (!(monthlyValue > 0)) return setError("Indique le montant par mois.");
+    // (An older credit saved that way keeps it until its plan is changed.)
+    const planChanged = !isEdit || monthlyValue !== expense.amount || totalValue !== expense.creditInitialAmount;
+    if (planChanged && monthlyValue > totalValue) {
+      return setError("Le montant par mois ne peut pas dépasser le total du crédit.");
+    }
+    const priorValue = priorOpen ? parseDecimalInput(priorPaid) : 0;
 
     const fields = {
       name: name.trim(),
@@ -144,6 +153,7 @@ export function CreditEditor({
       color: "blue",
       endDate: null,
       creditInitialAmount: totalValue,
+      creditPriorPaid: priorValue > 0 ? priorValue : null,
     };
 
     startTransition(async () => {
@@ -170,7 +180,6 @@ export function CreditEditor({
           ...fields,
           startDate,
           active: true,
-          creditPriorPaid: null,
           icon: null,
           categoryId: null,
           linkedExpenseId: null,
@@ -213,9 +222,6 @@ export function CreditEditor({
           />
           <span className="text-lg font-semibold text-white/70">DH</span>
         </div>
-        {isEdit && (expense.creditPriorPaid ?? 0) > 0 && (
-          <p className="text-[11px] text-white/75">+ {money(expense.creditPriorPaid ?? 0)} déjà remboursés avant</p>
-        )}
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -223,8 +229,57 @@ export function CreditEditor({
         <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Dnya, Banque…" />
       </div>
 
+      {/* Already repaid before it was added here */}
+      {priorOpen ? (
+        <div className="flex flex-col gap-1.5 rounded-2xl border border-sky-200 bg-sky-50/60 p-3 dark:border-sky-900 dark:bg-sky-950/30">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="priorPaid">Montant déjà remboursé</Label>
+            <button
+              type="button"
+              onClick={() => {
+                setPriorOpen(false);
+                setPriorPaid("");
+              }}
+              aria-label="Retirer le montant déjà remboursé"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-white dark:hover:bg-slate-800"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              id="priorPaid"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              value={priorPaid}
+              onChange={(e) => setPriorPaid(cleanDecimalInput(e.target.value))}
+              placeholder="Ex : 4000"
+            />
+            <span className="shrink-0 text-sm text-slate-500">DH</span>
+          </div>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            Remboursé avant d&apos;ajouter ce crédit ici : compte dans la progression, pas dans ton solde.
+          </p>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setPriorOpen(true)}
+          className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-sky-200 py-3 text-sm font-semibold text-sky-700 active:bg-sky-50 dark:border-sky-900 dark:text-sky-300 dark:active:bg-sky-950/30"
+        >
+          <Plus className="h-4 w-4" />
+          Montant déjà remboursé
+        </button>
+      )}
+
       {/* Per month OR number of months */}
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-3.5 dark:border-slate-800">
+        {totalValue > 0 && monthlyValue > totalValue && (
+          <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+            Le montant par mois ({money(monthlyValue)}) dépasse le total du crédit ({money(totalValue)}).
+          </p>
+        )}
         {/* Live result, on top */}
         {plan ? (
           <div className="grid grid-cols-3 gap-2 rounded-xl bg-sky-50 p-3 text-center dark:bg-sky-950/40">
@@ -384,7 +439,16 @@ export function CreditEditor({
               Pas encore
             </button>
           </div>
-          {alreadyPaid && <PaymentMethodPicker value={method} onChange={setMethod} />}
+          {/* Always shown: picking cash / card also marks it paid. */}
+          <div className={cn("transition-opacity", !alreadyPaid && "opacity-60")}>
+            <PaymentMethodPicker
+              value={method}
+              onChange={(m) => {
+                setMethod(m);
+                setAlreadyPaid(true);
+              }}
+            />
+          </div>
         </div>
       )}
 

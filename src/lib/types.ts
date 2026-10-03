@@ -173,6 +173,8 @@ export interface GoalDeposit {
   amount: number;
   /** "YYYY-MM-DD" */
   date: string;
+  /** Taken from cash or the card (null for older deposits: not in the Solde). */
+  method: PaymentMethod | null;
   createdAt: string;
 }
 

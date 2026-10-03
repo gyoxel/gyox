@@ -5,6 +5,7 @@ import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { GoalDeposit } from "@/lib/types";
 import { formatMoney } from "@/lib/utils";
+import { METHOD_META } from "@/lib/payment-method";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 
@@ -42,7 +43,10 @@ export function GoalDeposits({ goalId, deposits, currency }: { goalId: string; d
           <span className="text-lg leading-none">💵</span>
           <span className="flex min-w-0 flex-1 items-baseline gap-2">
             <span className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">{d.name}</span>
-            <span className="shrink-0 text-[11px] text-slate-400">{DATE_FMT.format(new Date(`${d.date}T12:00:00`))}</span>
+            <span className="shrink-0 text-[11px] text-slate-400">
+              {DATE_FMT.format(new Date(`${d.date}T12:00:00`))}
+              {d.method && ` · ${METHOD_META[d.method].emoji}`}
+            </span>
           </span>
           <span className="text-sm font-semibold tabular-nums text-emerald-600">+{formatMoney(d.amount, currency)}</span>
           <button

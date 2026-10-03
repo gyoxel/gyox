@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { CalendarClock, Check, ChevronRight, Pencil, Plus, Sparkles, Target, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
-import type { Goal } from "@/lib/types";
+import type { Goal, PaymentMethod } from "@/lib/types";
+import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import type { GoalProgress } from "@/lib/goals";
 import { monthLabelFr, monthLabelShortFr } from "@/lib/date";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput } from "@/lib/utils";
@@ -286,6 +287,7 @@ function DepositDialog({
   const refreshData = useRefreshData();
   const [deposit, setDeposit] = useState("");
   const [depositName, setDepositName] = useState("");
+  const [method, setMethod] = useState<PaymentMethod>("cash");
   const [saving, setSaving] = useState(false);
 
   async function addDeposit() {
@@ -295,11 +297,11 @@ function DepositDialog({
     const res = await fetch(`/api/goals/${goal.id}/deposits`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: value, name: depositName.trim() }),
+      body: JSON.stringify({ amount: value, name: depositName.trim(), method }),
     });
     setSaving(false);
     if (!res.ok) return toast.error("Versement impossible.");
-    toast.success(`+${formatMoney(value, currency)} pour ${goal.name}`);
+    toast.success(`+${formatMoney(value, currency)} pour ${goal.name} (retiré du solde)`);
     onOpenChange(false);
     setDeposit("");
     setDepositName("");
@@ -327,6 +329,7 @@ function DepositDialog({
             className="text-lg font-semibold"
           />
         </div>
+        <PaymentMethodPicker value={method} onChange={setMethod} label="Pris en" />
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`deposit-name-${goal.id}`}>Nom (optionnel)</Label>
           <Input
@@ -337,6 +340,7 @@ function DepositDialog({
             maxLength={60}
           />
         </div>
+        <p className="text-[11px] text-slate-400">Il sort de ton solde (cash ou carte) et s&apos;ajoute à l&apos;objectif.</p>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Annuler

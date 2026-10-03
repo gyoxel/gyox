@@ -574,10 +574,15 @@ export async function reorderCategories(ids: string[]): Promise<void> {
 
 export type GoalInput = Omit<Goal, "id" | "position" | "createdAt" | "deposits">;
 
-type GoalRow = Omit<Goal, "deposits"> & { deposits?: GoalDeposit[] };
+type GoalRow = Omit<Goal, "deposits"> & { deposits?: (Omit<GoalDeposit, "method"> & { method: string | null })[] };
+
+const mapDeposit = (d: Omit<GoalDeposit, "method"> & { method: string | null }): GoalDeposit => ({
+  ...d,
+  method: d.method === "cash" || d.method === "card" ? d.method : null,
+});
 
 function mapGoal(row: GoalRow): Goal {
-  const deposits = [...(row.deposits ?? [])].sort(
+  const deposits = (row.deposits ?? []).map(mapDeposit).sort(
     (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
   );
   return { ...row, daretIds: row.daretIds ?? [], deposits };
@@ -636,11 +641,13 @@ export async function deleteGoal(id: string): Promise<boolean> {
 
 export async function addGoalDeposit(
   goalId: string,
-  input: { name: string; amount: number; date: string },
+  input: { name: string; amount: number; date: string; method: PaymentMethod | null },
 ): Promise<GoalDeposit> {
-  return prisma.goalDeposit.create({
-    data: { id: randomUUID(), goalId, ...input, createdAt: new Date().toISOString() },
-  });
+  return mapDeposit(
+    await prisma.goalDeposit.create({
+      data: { id: randomUUID(), goalId, ...input, createdAt: new Date().toISOString() },
+    }),
+  );
 }
 
 export async function deleteGoalDeposit(goalId: string, depositId: string): Promise<boolean> {

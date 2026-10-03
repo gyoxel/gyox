@@ -61,6 +61,7 @@ const backupSchema = z.object({
         name: z.string(),
         amount: z.number().positive(),
         date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        method: z.enum(["cash", "card"]).nullable().default(null),
         createdAt: z.string(),
       }),
     )

@@ -164,6 +164,8 @@ model GoalDeposit {
   amount    Float
   /// "YYYY-MM-DD"
   date      String
+  /// Taken from cash or the card ("cash" / "card"); null for older deposits.
+  method    String?
   createdAt String
 
   goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)

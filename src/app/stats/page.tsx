@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { getAllCategories, getAllExpenses, getAllIncomes, getAllPayments, getAllSalaryAdvances, getSettings } from "@/lib/repository";
 import { incomesIn } from "@/lib/income";
-import { addMonths, compareMonths, defaultViewMonth, monthFromSearchParams, monthKey, monthLabelFr, todayMonth } from "@/lib/date";
+import { addMonths, compareMonths, monthFromSearchParams, monthKey, monthLabelFr, todayMonth } from "@/lib/date";
 import { salaryForMonth } from "@/lib/salary";
 import { getExpenseDisplayColor, getForecast, getMonthSummary, getPaidThisMonth, type DisplayColor } from "@/lib/engine";
 import { displayIcon } from "@/lib/category";
@@ -52,8 +52,8 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   const available = wallet.total;
   const percentUsed = salaryNow > 0 ? Math.min(100, Math.round((paidThisMonth / salaryNow) * 100)) : 0;
 
-  // Planned budget of the viewed month (next month by default).
-  const viewMonth = monthFromSearchParams(sp.month, defaultViewMonth());
+  // Planned budget of the viewed month (this month by default).
+  const viewMonth = monthFromSearchParams(sp.month, currentMonth);
   const summary = getMonthSummary(
     expenses,
     viewMonth,
@@ -66,7 +66,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
       .sort((a, b) => b.amount - a.amount);
     return { color, label, amount: Math.round(items.reduce((s, i) => s + i.amount, 0) * 100) / 100, items };
   });
-  const forecast = getForecast(expenses, settings.salary, defaultViewMonth(), FORECAST_MONTHS);
+  const forecast = getForecast(expenses, settings.salary, currentMonth, FORECAST_MONTHS);
 
   // The moment credits and temporary obligations are all over.
   let transition: { monthLabel: string; totalPermanent: number; remaining: number } | null = null;
