@@ -10,6 +10,7 @@ import { useNavBack } from "@/lib/nav-history";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import { errorMessage, keepAboveKeyboard, syncPaymentStatus, type PaymentStatusInit } from "@/components/expense-editor";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
+import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,7 +59,10 @@ export function CreditEditor({
   const refreshData = useRefreshData();
   const startDate = expense?.startDate ?? todayDateStr();
 
-  const [total, setTotal] = useState(toDecimalInput(expense?.creditInitialAmount ?? null));
+  // The credit's full amount; what's already repaid comes off it.
+  const [total, setTotal] = useState(
+    toDecimalInput(expense ? Math.round(((expense.creditInitialAmount ?? 0) + (expense.creditPriorPaid ?? 0)) * 100) / 100 || null : null),
+  );
   const [name, setName] = useState(expense?.name ?? "");
   const [mode, setMode] = useState<Mode>("monthly");
   const [monthly, setMonthly] = useState(toDecimalInput(expense?.amount ?? null));
@@ -73,10 +77,16 @@ export function CreditEditor({
   // Repaid before the credit was added here (display only, not in the Solde).
   const [priorPaid, setPriorPaid] = useState(toDecimalInput(expense?.creditPriorPaid || null));
   const [priorOpen, setPriorOpen] = useState((expense?.creditPriorPaid ?? 0) > 0);
+  // New credit: the money borrowed comes in (an income, cash or card).
+  const [received, setReceived] = useState(true);
+  const [receivedMethod, setReceivedMethod] = useState<PaymentMethod>("cash");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const totalValue = parseDecimalInput(total);
+  const fullTotal = parseDecimalInput(total);
+  const priorValue = priorOpen ? parseDecimalInput(priorPaid) : 0;
+  // Still to repay: the plan, suggestions and limits all work on this.
+  const totalValue = Math.max(0, Math.round((fullTotal - priorValue) * 100) / 100);
   const monthsValue = Math.floor(Number(months) || 0);
   // The amount per month actually saved: typed, or derived from the months.
   const monthlyValue =
@@ -133,16 +143,16 @@ export function CreditEditor({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!(totalValue > 0)) return setError("Indique le montant total du crédit.");
+    if (!(fullTotal > 0)) return setError("Indique le montant total du crédit.");
+    if (!(totalValue > 0)) return setError("Le montant déjà remboursé doit être inférieur au total.");
     if (!name.trim()) return setError("Indique un nom.");
     if (mode === "months" && (monthsValue < 1 || monthsValue > MAX_MONTHS)) return setError("Indique le nombre de mois.");
     if (!(monthlyValue > 0)) return setError("Indique le montant par mois.");
     // (An older credit saved that way keeps it until its plan is changed.)
     const planChanged = !isEdit || monthlyValue !== expense.amount || totalValue !== expense.creditInitialAmount;
     if (planChanged && monthlyValue > totalValue) {
-      return setError("Le montant par mois ne peut pas dépasser le total du crédit.");
+      return setError("Le montant par mois ne peut pas dépasser ce qu'il reste à rembourser.");
     }
-    const priorValue = priorOpen ? parseDecimalInput(priorPaid) : 0;
 
     const fields = {
       name: name.trim(),
@@ -187,6 +197,22 @@ export function CreditEditor({
       });
       if (!res.ok) return setError(await errorMessage(res));
       const created: { id: string } = await res.json();
+      if (received) {
+        const incomeRes = await fetch("/api/incomes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: `Crédit · ${name.trim()}`,
+            amount: fullTotal,
+            category: "credit",
+            date: todayDateStr(),
+            method: receivedMethod,
+            notes: null,
+            expenseId: created.id,
+          }),
+        });
+        if (!incomeRes.ok) toast.error("Crédit ajouté, mais l'argent reçu n'a pas pu être enregistré.");
+      }
       if (alreadyPaid) {
         const paidRes = await fetch(`/api/expenses/${created.id}/payments`, {
           method: "POST",
@@ -258,8 +284,13 @@ export function CreditEditor({
             />
             <span className="shrink-0 text-sm text-slate-500">DH</span>
           </div>
+          {fullTotal > 0 && priorValue > 0 && (
+            <p className="text-sm text-sky-800 dark:text-sky-200">
+              Reste à rembourser : <b>{money(totalValue)}</b>
+            </p>
+          )}
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Remboursé avant d&apos;ajouter ce crédit ici : compte dans la progression, pas dans ton solde.
+            Déjà remboursé avant d&apos;ajouter ce crédit ici : retiré du total, pas de ton solde.
           </p>
         </div>
       ) : (
@@ -273,11 +304,28 @@ export function CreditEditor({
         </button>
       )}
 
+      {/* The money borrowed comes in (new credit only) */}
+      {!isEdit && (
+        <div className="flex flex-col gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3 dark:border-emerald-900 dark:bg-emerald-950/30">
+          <label className="flex items-center justify-between gap-3">
+            <span>
+              <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">J&apos;ai reçu cet argent</span>
+              <span className="block text-[11px] text-slate-500 dark:text-slate-400">
+                {fullTotal > 0 ? `+${money(fullTotal)} ` : ""}ajouté à ton solde comme revenu, aujourd&apos;hui
+              </span>
+            </span>
+            <Switch checked={received} onCheckedChange={setReceived} aria-label="J'ai reçu cet argent" />
+          </label>
+          {received && <PaymentMethodPicker value={receivedMethod} onChange={setReceivedMethod} label="Reçu en" />}
+        </div>
+      )}
+
       {/* Per month OR number of months */}
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-3.5 dark:border-slate-800">
         {totalValue > 0 && monthlyValue > totalValue && (
           <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
-            Le montant par mois ({money(monthlyValue)}) dépasse le total du crédit ({money(totalValue)}).
+            Le montant par mois ({money(monthlyValue)}) dépasse {priorValue > 0 ? "le reste à rembourser" : "le total du crédit"} (
+            {money(totalValue)}).
           </p>
         )}
         {/* Live result, on top */}

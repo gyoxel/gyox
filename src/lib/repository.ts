@@ -211,6 +211,7 @@ export async function importData(data: BackupData): Promise<void> {
     (data.categories ?? (await getAllCategories())).map((c) => c.id),
   );
   const now = new Date().toISOString();
+  const expenseIds = new Set(data.expenses.map((e) => e.id));
   await prisma.$transaction([
     prisma.expense.deleteMany({}),
     ...(data.categories
@@ -248,7 +249,9 @@ export async function importData(data: BackupData): Promise<void> {
       ? [
           prisma.goal.deleteMany({}),
           prisma.goal.createMany({ data: data.goals }),
-          prisma.goalDeposit.createMany({ data: data.goalDeposits ?? [] }),
+          prisma.goalDeposit.createMany({
+            data: (data.goalDeposits ?? []).map((d) => ({ ...d, expenseId: d.expenseId && expenseIds.has(d.expenseId) ? d.expenseId : null })),
+          }),
         ]
       : []),
     ...(data.goalIdeas ? [prisma.goalIdea.deleteMany({}), prisma.goalIdea.createMany({ data: data.goalIdeas })] : []),
@@ -256,7 +259,14 @@ export async function importData(data: BackupData): Promise<void> {
     ...(data.salaryAdvances
       ? [prisma.salaryAdvance.deleteMany({}), prisma.salaryAdvance.createMany({ data: data.salaryAdvances })]
       : []),
-    ...(data.incomes ? [prisma.income.deleteMany({}), prisma.income.createMany({ data: data.incomes })] : []),
+    ...(data.incomes
+      ? [
+          prisma.income.deleteMany({}),
+          prisma.income.createMany({
+            data: data.incomes.map((i) => ({ ...i, expenseId: i.expenseId && expenseIds.has(i.expenseId) ? i.expenseId : null })),
+          }),
+        ]
+      : []),
     ...(data.salaryReceipts
       ? [prisma.salaryReceipt.deleteMany({}), prisma.salaryReceipt.createMany({ data: data.salaryReceipts })]
       : []),
@@ -643,16 +653,61 @@ export async function addGoalDeposit(
   goalId: string,
   input: { name: string; amount: number; date: string; method: PaymentMethod | null },
 ): Promise<GoalDeposit> {
-  return mapDeposit(
-    await prisma.goalDeposit.create({
-      data: { id: randomUUID(), goalId, ...input, createdAt: new Date().toISOString() },
+  const now = new Date().toISOString();
+  const goal = await prisma.goal.findUniqueOrThrow({ where: { id: goalId } });
+  if (!input.method) {
+    return mapDeposit(await prisma.goalDeposit.create({ data: { id: randomUUID(), goalId, ...input, createdAt: now } }));
+  }
+  // Taken from cash / the card: it also shows in Dépenses as a paid one-time
+  // expense (that payment is what comes off the Solde).
+  const expenseId = randomUUID();
+  const [, , deposit] = await prisma.$transaction([
+    prisma.expense.create({
+      data: {
+        id: expenseId,
+        name: `Versement · ${goal.name}`,
+        amount: input.amount,
+        type: "temporary",
+        frequency: "one-time",
+        startDate: input.date,
+        endDate: null,
+        active: true,
+        color: "yellow",
+        notes: input.name && input.name !== "Versement" ? input.name : null,
+        creditInitialAmount: null,
+        creditPriorPaid: null,
+        linkedExpenseId: null,
+        icon: goal.emoji,
+        categoryId: null,
+        createdAt: now,
+        updatedAt: now,
+      },
     }),
-  );
+    prisma.payment.create({
+      data: {
+        id: randomUUID(),
+        expenseId,
+        monthKey: input.date.slice(0, 7),
+        slotIndex: null,
+        amountDue: input.amount,
+        amountPaid: input.amount,
+        paidAt: now,
+        method: input.method,
+        createdAt: now,
+      },
+    }),
+    prisma.goalDeposit.create({ data: { id: randomUUID(), goalId, ...input, expenseId, createdAt: now } }),
+  ]);
+  return mapDeposit(deposit);
 }
 
+/** Removes a deposit — with its expense in Dépenses, when it has one. */
 export async function deleteGoalDeposit(goalId: string, depositId: string): Promise<boolean> {
-  const { count } = await prisma.goalDeposit.deleteMany({ where: { id: depositId, goalId } });
-  return count > 0;
+  const deposit = await prisma.goalDeposit.findFirst({ where: { id: depositId, goalId } });
+  if (!deposit) return false;
+  if (deposit.expenseId) await prisma.expense.deleteMany({ where: { id: deposit.expenseId } });
+  await prisma.goalDeposit.deleteMany({ where: { id: depositId } });
+  return true;
 }
 
 export async function getAllGoalIdeas(): Promise<GoalIdea[]> {

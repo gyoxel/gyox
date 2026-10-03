@@ -147,7 +147,8 @@ export function buildWallet(input: {
   }
   for (const g of input.goals ?? []) {
     for (const d of g.deposits) {
-      if (!d.method || !(d.amount > 0)) continue;
+      // (Newer deposits are a paid expense: that payment already counts.)
+      if (!d.method || d.expenseId || !(d.amount > 0)) continue;
       entries.push({
         id: `goal-${d.id}`,
         kind: "goal",

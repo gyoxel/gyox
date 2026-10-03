@@ -39,9 +39,13 @@ model Expense {
   createdAt           String
   updatedAt           String
 
-  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  payments Payment[]
-  daret    Daret?
+  category     Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  payments     Payment[]
+  daret        Daret?
+  /// A goal deposit recorded as this (paid, one-time) expense.
+  goalDeposits GoalDeposit[]
+  /// A credit's money received when it was taken.
+  incomes      Income[]
 
   @@map("expenses")
 }
@@ -158,7 +162,7 @@ model Goal {
 
 /// Money put aside for a goal ("+ Versement"), with an optional label.
 model GoalDeposit {
-  id        String @id @default(uuid())
+  id        String  @id @default(uuid())
   goalId    String
   name      String
   amount    Float
@@ -166,9 +170,12 @@ model GoalDeposit {
   date      String
   /// Taken from cash or the card ("cash" / "card"); null for older deposits.
   method    String?
+  /// The paid one-time expense it shows as in Dépenses (deleted with it).
+  expenseId String?
   createdAt String
 
-  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  goal    Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  expense Expense? @relation(fields: [expenseId], references: [id], onDelete: Cascade)
 
   @@index([goalId])
   @@map("goal_deposits")
@@ -250,7 +257,11 @@ model Income {
   /// How it was received: "cash" or "card".
   method    String  @default("cash")
   notes     String?
+  /// The credit this money came from (deleted with it).
+  expenseId String?
   createdAt String
+
+  expense Expense? @relation(fields: [expenseId], references: [id], onDelete: Cascade)
 
   @@map("incomes")
 }

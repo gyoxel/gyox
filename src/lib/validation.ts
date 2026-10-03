@@ -147,4 +147,6 @@ export const incomeInputSchema = z.object({
   category: z.string().min(1),
   method: z.enum(["cash", "card"]).default("cash"),
   notes: z.string().trim().max(500).nullable().default(null),
+  /** The credit this money came from (set when a credit is taken). */
+  expenseId: z.string().min(1).nullable().optional(),
 });

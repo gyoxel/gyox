@@ -10,6 +10,7 @@ export const INCOME_CATEGORIES = [
   { key: "remboursement", label: "Remboursement", emoji: "↩️" },
   { key: "loyer", label: "Loyer reçu", emoji: "🏠" },
   { key: "investissement", label: "Investissement", emoji: "📈" },
+  { key: "credit", label: "Crédit / prêt", emoji: "🏦" },
   { key: "autre", label: "Autre", emoji: "✨" },
 ] as const;
 
@@ -19,7 +20,12 @@ export function incomeCategory(key: string) {
   return INCOME_CATEGORIES.find((c) => c.key === key) ?? INCOME_CATEGORIES[INCOME_CATEGORIES.length - 1];
 }
 
-/** Total received in `month` ("YYYY-MM"). */
+/** Total earned in `month` ("YYYY-MM"). Money borrowed (a credit taken)
+ *  isn't earned: it's in the Solde, not in the month's income. */
 export function incomesIn(incomes: Income[], month: string): number {
-  return Math.round(incomes.filter((i) => i.date.startsWith(month)).reduce((s, i) => s + i.amount, 0) * 100) / 100;
+  return (
+    Math.round(
+      incomes.filter((i) => i.date.startsWith(month) && i.category !== "credit").reduce((s, i) => s + i.amount, 0) * 100,
+    ) / 100
+  );
 }

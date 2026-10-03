@@ -62,6 +62,7 @@ const backupSchema = z.object({
         amount: z.number().positive(),
         date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
         method: z.enum(["cash", "card"]).nullable().default(null),
+        expenseId: z.string().nullable().default(null),
         createdAt: z.string(),
       }),
     )
@@ -82,6 +83,7 @@ const backupSchema = z.object({
         category: z.string().min(1),
         method: z.enum(["cash", "card"]).default("cash"),
         notes: z.string().nullable().default(null),
+        expenseId: z.string().nullable().default(null),
         createdAt: z.string(),
       }),
     )

@@ -301,7 +301,7 @@ function DepositDialog({
     });
     setSaving(false);
     if (!res.ok) return toast.error("Versement impossible.");
-    toast.success(`+${formatMoney(value, currency)} pour ${goal.name} (retiré du solde)`);
+    toast.success(`+${formatMoney(value, currency)} pour ${goal.name} · ajouté aux dépenses`);
     onOpenChange(false);
     setDeposit("");
     setDepositName("");
@@ -340,7 +340,7 @@ function DepositDialog({
             maxLength={60}
           />
         </div>
-        <p className="text-[11px] text-slate-400">Il sort de ton solde (cash ou carte) et s&apos;ajoute à l&apos;objectif.</p>
+        <p className="text-[11px] text-slate-400">Il s&apos;ajoute à l&apos;objectif et à tes dépenses (payé), et sort de ton solde.</p>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Annuler

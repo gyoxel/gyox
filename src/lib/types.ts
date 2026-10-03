@@ -175,6 +175,8 @@ export interface GoalDeposit {
   date: string;
   /** Taken from cash or the card (null for older deposits: not in the Solde). */
   method: PaymentMethod | null;
+  /** The paid one-time expense it shows as in Dépenses (newer deposits). */
+  expenseId?: string | null;
   createdAt: string;
 }
 
@@ -237,5 +239,7 @@ export interface Income {
   /** How it was received. */
   method: PaymentMethod;
   notes: string | null;
+  /** The credit this money came from, if any. */
+  expenseId?: string | null;
   createdAt: string;
 }
