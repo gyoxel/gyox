@@ -1,18 +1,11 @@
 import { getAllCategories, getAllExpenses, getAllPayments, getAllSalaryAdvances, getSettings } from "@/lib/repository";
 import { todayMonth } from "@/lib/date";
 import { getWallet } from "@/lib/wallet-data";
-import { PageHeader } from "@/components/page-header";
+import { HomeHeader } from "@/components/home-header";
 import { CountdownNextSalary } from "@/components/countdown-next-salary";
 import { HomeDashboard } from "@/components/home-dashboard";
 
 export const dynamic = "force-dynamic";
-
-function todayShortDate(): string {
-  const now = new Date();
-  const day = String(now.getDate()).padStart(2, "0");
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  return `${day}/${month}/${now.getFullYear()}`;
-}
 
 export default async function HomePage() {
   const [settings, expenses, payments, categories, advances, wallet] = await Promise.all([
@@ -28,7 +21,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <PageHeader title="GX Salaire" action={<span className="text-xs text-slate-400">{todayShortDate()}</span>} />
+      <HomeHeader />
 
       <main className="flex flex-col gap-4 px-4 py-5">
         <HomeDashboard

@@ -2,7 +2,12 @@ import Link from "next/link";
 import { Settings } from "lucide-react";
 import type { ReactNode } from "react";
 import { BackButton } from "@/components/back-button";
+import { HEADER_BUTTON } from "@/components/header-button";
 
+/**
+ * Page header: blends with the page (blurred when content scrolls under
+ * it), a bold title, and round buttons for back and settings.
+ */
 export function PageHeader({
   title,
   back = false,
@@ -16,24 +21,17 @@ export function PageHeader({
   hideSettings?: boolean;
 }) {
   return (
-    <div className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
-      <div className="flex items-center gap-2">
+    <header className="sticky top-0 z-30 bg-slate-50/85 px-4 pb-2 pt-3 backdrop-blur-xl dark:bg-slate-950/85">
+      <div className="flex h-11 items-center gap-3">
         {back && <BackButton />}
-        <h1 className="text-base font-semibold text-slate-900 dark:text-white">{title}</h1>
-      </div>
-      <div className="flex items-center gap-1">
+        <h1 className="min-w-0 flex-1 truncate text-xl font-bold tracking-tight text-slate-900 dark:text-white">{title}</h1>
         {action}
         {!hideSettings && (
-          <Link
-            href="/settings"
-            prefetch
-            aria-label="Paramètres"
-            className="-mr-1.5 flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
-          >
-            <Settings className="h-5 w-5" />
+          <Link href="/settings" prefetch aria-label="Paramètres" className={HEADER_BUTTON}>
+            <Settings className="h-[18px] w-[18px]" />
           </Link>
         )}
       </div>
-    </div>
+    </header>
   );
 }

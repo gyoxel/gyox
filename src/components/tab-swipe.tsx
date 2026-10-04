@@ -62,7 +62,7 @@ function snapshotCurrent(path: string) {
 /** Stand-in while a tab has no snapshot yet: its header and a skeleton. */
 function placeholder(path: string): string {
   const block = (h: string) => `<div class="${h} animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800/70"></div>`;
-  return `<div class="sticky top-0 z-30 flex items-center border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-950"><h1 class="text-base font-semibold text-slate-900 dark:text-white">${TITLES[path] ?? ""}</h1></div><div class="flex flex-col gap-4 px-4 py-5">${block("h-28")}${block("h-20")}${block("h-14")}${block("h-14")}${block("h-14")}</div>`;
+  return `<div class="sticky top-0 z-30 flex h-16 items-center bg-slate-50/85 px-4 pb-2 pt-3 dark:bg-slate-950/85"><h1 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">${TITLES[path] ?? ""}</h1></div><div class="flex flex-col gap-4 px-4 py-5">${block("h-28")}${block("h-20")}${block("h-14")}${block("h-14")}${block("h-14")}</div>`;
 }
 
 /** Loads the other tabs in a hidden frame, once per visit, to snapshot them
