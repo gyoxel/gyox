@@ -1,4 +1,5 @@
 import type { MonthId } from "./date";
+import type { ThemeChoice } from "./theme";
 
 export type ExpenseType = "permanent" | "temporary" | "credit";
 export type Frequency = "monthly" | "one-time";
@@ -51,7 +52,7 @@ export interface Settings {
   savingsTarget: number;
   /** "YYYY-MM" earliest navigable month */
   startMonth: string;
-  theme: "light" | "dark" | "system" | "simple";
+  theme: ThemeChoice;
   /** Day of the month the salary arrives (1-31). */
   payDay: number;
   /** "YYYY-MM" of the last pay day whose salary was confirmed received. */

@@ -6,21 +6,22 @@ import Link from "next/link";
 import { Banknote, ChevronRight, Download, Leaf, Monitor, Moon, Sun, Tags, Upload } from "lucide-react";
 import { toast } from "sonner";
 import type { Settings } from "@/lib/types";
-import { THEME_STORAGE_KEY, applyTheme, type ThemeChoice } from "@/lib/theme";
+import { THEME_STORAGE_KEY, applyTheme, composeTheme, parseTheme, type ThemeBase, type ThemeChoice } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { Switch } from "@/components/ui/switch";
 
-const THEMES: { value: ThemeChoice; label: string; icon: typeof Sun }[] = [
+const THEMES: { value: ThemeBase; label: string; icon: typeof Sun }[] = [
   { value: "system", label: "Système", icon: Monitor },
   { value: "light", label: "Clair", icon: Sun },
   { value: "dark", label: "Sombre", icon: Moon },
-  { value: "simple", label: "Simple", icon: Leaf },
 ];
 
 /** Paramètres: theme (applied instantly) and data backup. */
 export function SettingsForm({ settings }: { settings: Settings }) {
   const refreshData = useRefreshData();
   const [theme, setTheme] = useState<ThemeChoice>(settings.theme);
+  const { base, simple } = parseTheme(theme);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingImport, setPendingImport] = useState<File | null>(null);
 
@@ -92,9 +93,9 @@ export function SettingsForm({ settings }: { settings: Settings }) {
     <div className="flex flex-col gap-5">
       <section className="flex flex-col gap-2">
         <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Apparence</h2>
-        <div role="radiogroup" aria-label="Thème" className="grid grid-cols-4 gap-2">
+        <div role="radiogroup" aria-label="Thème" className="grid grid-cols-3 gap-2.5">
           {THEMES.map(({ value, label, icon: Icon }) => {
-            const selected = theme === value;
+            const selected = base === value;
             return (
               <button
                 key={value}
@@ -102,13 +103,13 @@ export function SettingsForm({ settings }: { settings: Settings }) {
                 role="radio"
                 aria-checked={selected}
                 aria-label={label}
-                onClick={() => chooseTheme(value)}
+                onClick={() => chooseTheme(composeTheme(value, simple))}
                 className={cn(
-                  "flex flex-col items-center gap-2 rounded-2xl border bg-white p-2 transition-colors dark:bg-slate-900",
+                  "flex flex-col items-center gap-2 rounded-2xl border bg-white p-2.5 transition-colors dark:bg-slate-900",
                   selected ? "border-slate-500 ring-2 ring-slate-500 dark:border-slate-300 dark:ring-slate-300" : "border-slate-200 dark:border-slate-700",
                 )}
               >
-                <ThemePreview kind={value} />
+                <ThemePreview kind={value} simple={simple} />
                 <span className="flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
                   <Icon className="h-3.5 w-3.5" />
                   {label}
@@ -117,9 +118,16 @@ export function SettingsForm({ settings }: { settings: Settings }) {
             );
           })}
         </div>
-        {theme === "simple" && (
-          <p className="px-1 text-xs text-slate-400">Clair ou sombre comme ton téléphone, avec moins de couleurs.</p>
-        )}
+        <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+            <Leaf className="h-4 w-4" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Mode simple</span>
+            <span className="block text-xs text-slate-400">Moins de couleurs, plus doux pour les yeux</span>
+          </span>
+          <Switch checked={simple} onCheckedChange={(on) => chooseTheme(composeTheme(base, on))} aria-label="Mode simple" />
+        </label>
       </section>
 
       <section className="flex flex-col gap-2">
@@ -213,13 +221,13 @@ function RowIcon({ className, children }: { className: string; children: React.R
 
 /** A tiny phone screen in that theme (system: half light, half dark;
  *  simple: grey header instead of a coloured one). */
-function ThemePreview({ kind }: { kind: ThemeChoice }) {
+function ThemePreview({ kind, simple }: { kind: ThemeBase; simple: boolean }) {
   const screen = (dark: boolean) => (
     <span className={cn("flex h-full flex-1 flex-col gap-1 p-1.5", dark ? "bg-slate-900" : "bg-slate-50")}>
       <span
         className={cn(
           "h-3 rounded",
-          kind === "simple" ? "bg-slate-300" : "bg-gradient-to-r from-emerald-400 to-cyan-500",
+          simple ? (dark ? "bg-slate-700" : "bg-slate-300") : "bg-gradient-to-r from-emerald-400 to-cyan-500",
         )}
       />
       <span className={cn("h-2 rounded", dark ? "bg-slate-700" : "bg-white shadow-sm")} />
@@ -229,7 +237,7 @@ function ThemePreview({ kind }: { kind: ThemeChoice }) {
   );
   return (
     <span className="flex h-20 w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
-      {kind === "dark" ? screen(true) : kind === "light" || kind === "simple" ? screen(false) : (
+      {kind === "dark" ? screen(true) : kind === "light" ? screen(false) : (
         <>
           {screen(false)}
           {screen(true)}

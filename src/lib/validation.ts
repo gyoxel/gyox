@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { THEME_CHOICES } from "./theme";
 
 export const expenseTypeEnum = z.enum(["permanent", "temporary", "credit"]);
 export const frequencyEnum = z.enum(["monthly", "one-time"]);
@@ -114,7 +115,7 @@ export const settingsInputSchema = z.object({
   currency: z.string().min(1, "La devise est requise."),
   savingsTarget: z.coerce.number().nonnegative("L'objectif d'épargne ne peut pas être négatif."),
   startMonth: z.string().regex(/^\d{4}-\d{2}$/, "Mois de départ invalide."),
-  theme: z.enum(["light", "dark", "system", "simple"]),
+  theme: z.enum(THEME_CHOICES),
   payDay: z.coerce.number().int().min(1, "Jour invalide.").max(31, "Jour invalide.").default(1),
   salaryReceivedMonth: z
     .string()
