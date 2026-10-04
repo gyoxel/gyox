@@ -216,7 +216,7 @@ export function DueNowList({
               {left > 0 && (
                 <>
                   {" "}
-                  · reste <b className="font-semibold text-rose-600 dark:text-rose-400">{formatMoney(left, currency)}</b>
+                  · à payer <b className="font-semibold text-rose-600 dark:text-rose-400">{formatMoney(left, currency)}</b>
                 </>
               )}
             </p>
