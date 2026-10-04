@@ -82,7 +82,7 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
       setConfirmDelete(false);
       await refreshData();
       toast.success("Daret supprimée.");
-      nav.back("/daret");
+      nav.leave([`/daret/${daret.id}`], "/daret");
     });
   }
 

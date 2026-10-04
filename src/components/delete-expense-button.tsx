@@ -31,7 +31,7 @@ export function DeleteExpenseButton({ id, name }: { id: string; name: string }) 
       }
       setOpen(false);
       await refreshData();
-      nav.back();
+      nav.leave([`/expenses/${id}`]);
     });
   }
 

@@ -81,7 +81,7 @@ export function IncomeEditor({
       setConfirmDelete(false);
       await refreshData();
       toast.success("Revenu supprimé.");
-      nav.back("/incomes");
+      nav.leave([`/incomes/${income.id}`], "/incomes");
     });
   }
 

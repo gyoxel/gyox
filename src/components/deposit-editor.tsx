@@ -71,7 +71,10 @@ export function DepositEditor({
       setConfirmDelete(false);
       await refreshData();
       toast.success("Versement supprimé.");
-      nav.back(`/goals/${goal.id}`);
+      // Its expense went with it: don't land back on that page.
+      const gone = [`/goals/${goal.id}/deposits/${deposit.id}`];
+      if (deposit.expenseId) gone.push(`/expenses/${deposit.expenseId}`);
+      nav.leave(gone, `/goals/${goal.id}`);
     });
   }
 

@@ -64,6 +64,14 @@ function onPop() {
   write(s);
 }
 
+/** Several steps back at once: the mirror moves first, so the popstate
+ *  finds itself in place instead of starting over. */
+function jump(s: NavState, to: number) {
+  const by = to - s.pos;
+  write({ ...s, pos: to });
+  history.go(by);
+}
+
 /** Mounted once in the root layout. */
 export function NavHistoryTracker() {
   const pathname = usePathname();
@@ -86,6 +94,9 @@ export function NavHistoryTracker() {
  *   when this is the first page of the session.
  * - `backTo(path)`: return to the latest `path` in the history (skipping the
  *   pages in between, e.g. a deleted item's page), or replace with it.
+ * - `leave(gone, fallback)`: after a delete, back to the latest page that
+ *   still exists — skipping every page under one of the `gone` paths (the
+ *   deleted item's pages and those of what went with it) — or `fallback`.
  */
 export function useNavBack() {
   const router = useRouter();
@@ -102,8 +113,16 @@ export function useNavBack() {
     backTo(path: string) {
       const s = read();
       const i = s ? s.stack.lastIndexOf(path, s.pos - 1) : -1;
-      if (s && i >= 0 && s.pos > 0) history.go(i - s.pos);
+      if (s && i >= 0 && s.pos > 0) jump(s, i);
       else replace(path);
+    },
+    leave(gone: string[], fallback = "/") {
+      const s = read();
+      const dead = (p: string) => gone.some((g) => p === g || p.startsWith(`${g}/`));
+      let i = s ? s.pos - 1 : -1;
+      while (s && i >= 0 && dead(s.stack[i])) i -= 1;
+      if (s && i >= 0) jump(s, i);
+      else replace(fallback);
     },
   };
 }
