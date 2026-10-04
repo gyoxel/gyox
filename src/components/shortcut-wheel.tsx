@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, ChartNoAxesCombined, ChevronRight, HandCoins, Handshake, PiggyBank, Target, TrendingUp, Wallet, type LucideIcon } from "lucide-react";
+import { CalendarDays, ChartNoAxesCombined, ChevronRight, HandCoins, Handshake, PiggyBank, Settings, Target, TrendingUp, Wallet, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ITEMS: { href: string; label: string; hint: string; icon: LucideIcon; tint: string }[] = [
@@ -14,6 +14,7 @@ const ITEMS: { href: string; label: string; hint: string; icon: LucideIcon; tint
   { href: "/goals", label: "Objectifs", hint: "Voiture, maison, voyage…", icon: Target, tint: "from-amber-400 to-orange-500" },
   { href: "/stats", label: "Statistiques", hint: "Répartition, prévisions", icon: ChartNoAxesCombined, tint: "from-sky-400 to-blue-600" },
   { href: "/calendar", label: "Calendrier", hint: "Jour par jour", icon: CalendarDays, tint: "from-rose-400 to-pink-600" },
+  { href: "/settings", label: "Paramètres", hint: "Thème, sauvegarde", icon: Settings, tint: "from-slate-400 to-slate-600" },
 ];
 const N = ITEMS.length;
 
