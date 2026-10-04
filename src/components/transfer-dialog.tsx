@@ -21,6 +21,7 @@ export const ACCOUNT_META: Record<Account, { emoji: string; label: string }> = {
 };
 
 const ACCOUNTS: Account[] = ["cash", "card", "savings"];
+const METHODS: Account[] = ["cash", "card"];
 
 /**
  * Moves money between cash, the card and the savings. Into the savings it
@@ -35,6 +36,7 @@ export function TransferDialog({
   money,
   initialFrom = "card",
   initialTo = "cash",
+  mode = "any",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -43,6 +45,9 @@ export function TransferDialog({
   money: (n: number) => string;
   initialFrom?: Account;
   initialTo?: Account;
+  /** From the Épargne page: "in" only asks where it's taken from, "out" only
+   *  where it goes (the other side is the savings). */
+  mode?: "any" | "in" | "out";
 }) {
   const refreshData = useRefreshData();
   const [from, setFrom] = useState<Account>(initialFrom);
@@ -111,12 +116,16 @@ export function TransferDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Transférer</DialogTitle>
+          <DialogTitle>{mode === "in" ? "Mettre de côté" : mode === "out" ? "Retirer de l'épargne" : "Transférer"}</DialogTitle>
           <DialogDescription>{hint}</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="flex flex-col gap-4">
-          <AccountRow label="De" value={from} onPick={pickFrom} />
-          <AccountRow label="Vers" value={to} onPick={pickTo} />
+          {mode !== "out" && (
+            <AccountRow label={mode === "in" ? "Pris de" : "De"} value={from} onPick={pickFrom} accounts={mode === "in" ? METHODS : ACCOUNTS} />
+          )}
+          {mode !== "in" && (
+            <AccountRow label="Vers" value={to} onPick={pickTo} accounts={mode === "out" ? METHODS : ACCOUNTS} />
+          )}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="transfer-amount">Montant</Label>
             <Input
@@ -152,7 +161,7 @@ export function TransferDialog({
           {error && <p className="text-sm text-rose-600">{error}</p>}
           <Button type="submit" className="bg-indigo-600 text-white hover:bg-indigo-700" disabled={pending || !(value > 0)}>
             <ArrowLeftRight className="h-4 w-4" />
-            {pending ? "Transfert…" : "Transférer"}
+            {pending ? "Enregistrement…" : mode === "in" ? "Mettre de côté" : mode === "out" ? "Retirer" : "Transférer"}
           </Button>
         </form>
       </DialogContent>
@@ -160,12 +169,22 @@ export function TransferDialog({
   );
 }
 
-function AccountRow({ label, value, onPick }: { label: string; value: Account; onPick: (a: Account) => void }) {
+function AccountRow({
+  label,
+  value,
+  onPick,
+  accounts,
+}: {
+  label: string;
+  value: Account;
+  onPick: (a: Account) => void;
+  accounts: Account[];
+}) {
   return (
     <div className="flex flex-col gap-1.5">
       <Label>{label}</Label>
-      <div role="radiogroup" aria-label={label} className="grid grid-cols-3 gap-2">
-        {ACCOUNTS.map((a) => (
+      <div role="radiogroup" aria-label={label} className={cn("grid gap-2", accounts.length === 3 ? "grid-cols-3" : "grid-cols-2")}>
+        {accounts.map((a) => (
           <button
             key={a}
             type="button"

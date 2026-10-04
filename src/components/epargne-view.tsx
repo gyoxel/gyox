@@ -134,6 +134,7 @@ export function EpargneView({
           money={money}
           initialFrom={dialog.from}
           initialTo={dialog.to}
+          mode={dialog.to === "savings" ? "in" : "out"}
         />
       )}
     </>
