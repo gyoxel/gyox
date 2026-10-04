@@ -139,7 +139,7 @@ export async function pagesGoneWithExpenses(ids: string[]): Promise<string[]> {
 export async function deleteExpense(id: string): Promise<boolean> {
   try {
     await prisma.$transaction([
-      // Any expense linked to this one (e.g. Zineb -> Dnya) loses its link
+      // Any expense linked to this one (e.g. a credit ending with another) loses its link
       // rather than being deleted, so it doesn't silently vanish.
       prisma.expense.updateMany({
         where: { linkedExpenseId: id },

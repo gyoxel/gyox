@@ -185,7 +185,7 @@ export function ExpenseEditor({
     startTransition(async () => {
       if (isEdit) {
         // Only rewrite the recurrence when it was actually changed, so
-        // settings this form doesn't show (a link like "ends with Dnya",
+        // settings this form doesn't show (a link like "ends with another credit",
         // an amount already repaid before tracking…) are preserved.
         const init = recurrenceInit;
         const recurrenceChanged =

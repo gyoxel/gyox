@@ -7,13 +7,13 @@ async function main() {
   const expenseCount = await prisma.expense.count();
   if (expenseCount === 0) {
     const now = new Date().toISOString();
-    const dnyaId = randomUUID();
+    const bankLoanId = randomUUID();
 
     await prisma.expense.createMany({
       data: [
         {
-          id: dnyaId,
-          name: "Dnya",
+          id: bankLoanId,
+          name: "Prêt banque",
           amount: 1500,
           type: "credit",
           frequency: "monthly",
@@ -31,7 +31,7 @@ async function main() {
         },
         {
           id: randomUUID(),
-          name: "Zineb",
+          name: "Téléphone",
           amount: 500,
           type: "credit",
           frequency: "monthly",
