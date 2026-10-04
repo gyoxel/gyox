@@ -274,6 +274,20 @@ model Income {
   @@map("incomes")
 }
 
+/// Categories of the extra incomes (Revenus), like the expenses' ones:
+/// the defaults plus the user's own. An income keeps the id in `category`
+/// (the default ones' ids are their old keys: "prime", "vente"…).
+model IncomeCategory {
+  id        String @id @default(uuid())
+  name      String
+  emoji     String
+  /// Display order, ascending.
+  position  Int
+  createdAt String
+
+  @@map("income_categories")
+}
+
 /// Épargne: money put aside ("in": leaves cash / the card, shows in Dépenses
 /// as a paid expense) or taken back ("out": comes into cash / the card,
 /// shows in Revenus). The savings = what's in (paid) − what's out.

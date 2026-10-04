@@ -139,6 +139,9 @@ const backupSchema = z.object({
       }),
     )
     .optional(),
+  incomeCategories: z
+    .array(z.object({ id: z.string().min(1), name: z.string().min(1), emoji: z.string().min(1), position: z.number().int() }))
+    .optional(),
   savingsMoves: z
     .array(
       z.object({

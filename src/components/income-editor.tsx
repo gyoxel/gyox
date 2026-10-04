@@ -2,11 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import type { Income, PaymentMethod } from "@/lib/types";
+import type { Category, Income, PaymentMethod } from "@/lib/types";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
-import { INCOME_CATEGORIES } from "@/lib/income";
+import { incomeCategory } from "@/lib/income";
+import { CategoryPicker } from "@/components/category-picker";
 import { todayDateStr } from "@/lib/date";
-import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
+import { cleanDecimalInput, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { useNavBack } from "@/lib/nav-history";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import { errorMessage } from "@/components/expense-editor";
@@ -26,8 +27,11 @@ import { Textarea } from "@/components/ui/textarea";
 export function IncomeEditor({
   income,
   source,
+  categories: initialCategories,
 }: {
   income?: Income;
+  /** The income categories (defaults and the user's own). */
+  categories: Category[];
   /** Created by something else (a credit): deleted from there only. */
   source?: { label: string; href: string };
 }) {
@@ -35,7 +39,8 @@ export function IncomeEditor({
   const nav = useNavBack();
   const refreshData = useRefreshData();
   const [amount, setAmount] = useState(toDecimalInput(income?.amount ?? null));
-  const [category, setCategory] = useState(income?.category ?? INCOME_CATEGORIES[0].key);
+  const [categories, setCategories] = useState(initialCategories);
+  const [category, setCategory] = useState(income?.category ?? initialCategories[0]?.id ?? "autre");
   const [name, setName] = useState(income?.name ?? "");
   const [nameTouched, setNameTouched] = useState(isEdit);
   // Received today (an edit keeps its own date).
@@ -46,7 +51,7 @@ export function IncomeEditor({
   const [isPending, startTransition] = useTransition();
 
   const amountValue = parseDecimalInput(amount);
-  const selected = INCOME_CATEGORIES.find((c) => c.key === category) ?? INCOME_CATEGORIES[0];
+  const selected = incomeCategory(category, categories);
   // Until a name is typed, the category's label is the name.
   const finalName = (nameTouched ? name : name || selected.label).trim();
 
@@ -110,26 +115,17 @@ export function IncomeEditor({
       {/* Category */}
       <div className="flex flex-col gap-2">
         <Label>Catégorie</Label>
-        <div role="radiogroup" aria-label="Type de revenu" className="grid grid-cols-3 gap-2">
-          {INCOME_CATEGORIES.map((c) => (
-            <button
-              key={c.key}
-              type="button"
-              role="radio"
-              aria-checked={category === c.key}
-              onClick={() => setCategory(c.key)}
-              className={cn(
-                "flex flex-col items-center gap-1 rounded-xl border px-1 py-2.5 text-xs font-medium transition-colors",
-                category === c.key
-                  ? "border-emerald-500 bg-emerald-50 text-emerald-800 ring-1 ring-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-200"
-                  : "border-slate-200 bg-white text-slate-600 active:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
-              )}
-            >
-              <span className="text-xl leading-none">{c.emoji}</span>
-              <span className="truncate">{c.label}</span>
-            </button>
-          ))}
-        </div>
+        <CategoryPicker
+          categories={categories}
+          value={category}
+          onChange={setCategory}
+          // (Like the server: before "Autre", which stays last.)
+          onCreated={(c) =>
+            setCategories((prev) => (prev.at(-1)?.id === "autre" ? [...prev.slice(0, -1), c, prev.at(-1)!] : [...prev, c]))
+          }
+          endpoint="/api/income-categories"
+          placeholder="Ex: Location voiture"
+        />
       </div>
 
       <PaymentMethodPicker value={method} onChange={setMethod} label="Reçu en" />

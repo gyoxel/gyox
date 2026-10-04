@@ -7,6 +7,7 @@ import { daretPayout } from "./daret";
 import { incomeCategory } from "./income";
 import { savingsBalance } from "./savings";
 import type {
+  Category,
   DaretWithExpense,
   Expense,
   Goal,
@@ -92,6 +93,8 @@ export function buildWallet(input: {
   /** Épargne and Prêts: their expenses / incomes open their own page. */
   savingsMoves?: SavingsMove[];
   loans?: Loan[];
+  /** For the incomes' emoji (the user's own categories). */
+  incomeCategories?: Category[];
   categoryEmoji: Map<string, string>;
   month: string;
 }): WalletSummary {
@@ -137,7 +140,7 @@ export function buildWallet(input: {
       id: `income-${i.id}`,
       kind: source.get(i.id)?.kind ?? "income",
       at: i.createdAt,
-      emoji: incomeCategory(i.category).emoji,
+      emoji: incomeCategory(i.category, input.incomeCategories).emoji,
       label: i.name,
       lines: [{ account: i.method, amount: i.amount }],
       href: source.get(i.id)?.href ?? `/incomes/${i.id}`,

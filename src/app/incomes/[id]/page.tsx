@@ -7,6 +7,7 @@ import { LockedDeleteIcon } from "@/components/locked-delete";
 import { incomeDelete } from "@/lib/delete-specs";
 import { getSavingsMoveOfIncome } from "@/lib/savings-repo";
 import { getLoanOfIncome } from "@/lib/loans-repo";
+import { getIncomeCategories } from "@/lib/income-categories-repo";
 import { pageColor } from "@/lib/page-theme";
 import { METHOD_META } from "@/lib/payment-method";
 import { formatMoney } from "@/lib/utils";
@@ -16,11 +17,12 @@ export const dynamic = "force-dynamic";
 
 export default async function EditIncomePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [income, expenses, move, loan] = await Promise.all([
+  const [income, expenses, move, loan, categories] = await Promise.all([
     getIncomeById(id),
     getAllExpenses(),
     getSavingsMoveOfIncome(id),
     getLoanOfIncome(id),
+    getIncomeCategories(),
   ]);
   if (!income) notFound();
   const received = `${METHOD_META[income.method].emoji} ${METHOD_META[income.method].label}`;
@@ -75,6 +77,7 @@ export default async function EditIncomePage({ params }: { params: Promise<{ id:
       <main className="px-4 py-5">
         <IncomeEditor
           income={income}
+          categories={categories}
           source={credit ? { label: `crédit « ${credit.name} »`, href: `/expenses/${credit.id}` } : undefined}
         />
       </main>

@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { getAllDarets, getAllIncomes, getSettings } from "@/lib/repository";
 import { daretPayout } from "@/lib/daret";
 import { incomeCategory, incomesIn } from "@/lib/income";
+import { getIncomeCategories } from "@/lib/income-categories-repo";
 import { monthKey, monthLabelFr, parseMonthKey, todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
 import type { Income } from "@/lib/types";
@@ -14,7 +15,12 @@ export const dynamic = "force-dynamic";
 
 /** Revenus: extra money received on top of the salary, month by month. */
 export default async function IncomesPage() {
-  const [incomes, settings, darets] = await Promise.all([getAllIncomes(), getSettings(), getAllDarets()]);
+  const [incomes, settings, darets, incomeCategories] = await Promise.all([
+    getAllIncomes(),
+    getSettings(),
+    getAllDarets(),
+    getIncomeCategories(),
+  ]);
   const money = (n: number) => formatMoney(n, settings.currency);
   const current = monthKey(todayMonth());
   const thisMonth = incomesIn(incomes, current);
@@ -36,9 +42,9 @@ export default async function IncomesPage() {
     ...incomes.map((i) => ({
       id: i.id,
       href: `/incomes/${i.id}`,
-      emoji: incomeCategory(i.category).emoji,
+      emoji: incomeCategory(i.category, incomeCategories).emoji,
       name: i.name,
-      sub: incomeCategory(i.category).label,
+      sub: incomeCategory(i.category, incomeCategories).label,
       date: i.date,
       method: i.method,
       amount: i.amount,

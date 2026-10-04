@@ -11,6 +11,7 @@ import {
 } from "@/lib/repository";
 import { advancesOn } from "@/lib/salary";
 import { incomeCategory } from "@/lib/income";
+import { getIncomeCategories } from "@/lib/income-categories-repo";
 import { addMonths, compareMonths, monthFromSearchParams, monthKey, monthLabelFr, todayMonth, type MonthId } from "@/lib/date";
 import { displayIcon } from "@/lib/category";
 import { getCreditRealState } from "@/lib/engine";
@@ -37,7 +38,7 @@ const dueDayOf = (startDate: string) => Number(startDate.slice(8, 10)) || 1;
  * daret payout, goal reached, deadlines, next salary) and a free note per day.
  */
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
-  const [sp, settings, expenses, payments, categories, goals, darets, dayNotes, advances, incomes] = await Promise.all([
+  const [sp, settings, expenses, payments, categories, goals, darets, dayNotes, advances, incomes, incomeCategories] = await Promise.all([
     searchParams,
     getSettings(),
     getAllExpenses(),
@@ -48,6 +49,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     getAllDayNotes(),
     getAllSalaryAdvances(),
     getAllIncomes(),
+    getIncomeCategories(),
   ]);
   const current = todayMonth();
 
@@ -98,7 +100,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       id: i.id,
       kind: "in",
       label: i.name,
-      icon: incomeCategory(i.category).emoji,
+      icon: incomeCategory(i.category, incomeCategories).emoji,
       amount: i.amount,
       at: i.date,
       method: i.method,

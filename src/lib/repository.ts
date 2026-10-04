@@ -3,6 +3,7 @@ import { prisma } from "./prisma";
 import { DEFAULT_CATEGORIES } from "./default-categories";
 import { getAllSavingsMoves } from "./savings-repo";
 import { getAllLoanRepayments, getAllLoans } from "./loans-repo";
+import { getIncomeCategories } from "./income-categories-repo";
 import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote, SalaryAdvance, Income, PaymentMethod, SalaryReceipt, WalletOp, SavingsMove, Loan, LoanRepayment } from "./types";
 
 function mapExpense(row: {
@@ -204,6 +205,7 @@ export interface BackupData {
   salaryReceipts?: SalaryReceipt[];
   walletOps?: WalletOp[];
   savingsMoves?: SavingsMove[];
+  incomeCategories?: Category[];
   loans?: (Omit<Loan, "repayments"> & { repayments?: undefined })[];
   loanRepayments?: LoanRepayment[];
 }
@@ -235,6 +237,7 @@ export async function exportData(): Promise<BackupData> {
     salaryReceipts: await getAllSalaryReceipts(),
     walletOps: await getAllWalletOps(),
     savingsMoves: await getAllSavingsMoves(),
+    incomeCategories: await getIncomeCategories(),
     loans: (await getAllLoans()).map((loan) => ({ ...loan, repayments: undefined })),
     loanRepayments: await getAllLoanRepayments(),
   };
@@ -329,6 +332,12 @@ export async function importData(data: BackupData): Promise<void> {
       ? [prisma.salaryReceipt.deleteMany({}), prisma.salaryReceipt.createMany({ data: data.salaryReceipts })]
       : []),
     ...(data.walletOps ? [prisma.walletOp.deleteMany({}), prisma.walletOp.createMany({ data: data.walletOps })] : []),
+    ...(data.incomeCategories
+      ? [
+          prisma.incomeCategory.deleteMany({}),
+          prisma.incomeCategory.createMany({ data: data.incomeCategories.map((c) => ({ ...c, createdAt: now })) }),
+        ]
+      : []),
     ...(data.savingsMoves
       ? [
           prisma.savingsMove.deleteMany({}),

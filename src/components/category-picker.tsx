@@ -16,8 +16,13 @@ export function CategoryPicker({
   value,
   onChange,
   onCreated,
+  endpoint = "/api/categories",
+  placeholder = "Ex: Cadeaux",
 }: {
   categories: Category[];
+  /** Where new categories are created (expenses' or incomes'). */
+  endpoint?: string;
+  placeholder?: string;
   value: string | null;
   onChange: (id: string) => void;
   onCreated: (category: Category) => void;
@@ -44,7 +49,7 @@ export function CategoryPicker({
       return;
     }
     setSaving(true);
-    const res = await fetch("/api/categories", {
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: name.trim(), emoji: emoji.trim() || "🏷️" }),
@@ -138,7 +143,7 @@ export function CategoryPicker({
                 id="new-cat-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ex: Cadeaux"
+                placeholder={placeholder}
                 maxLength={40}
                 autoFocus
               />

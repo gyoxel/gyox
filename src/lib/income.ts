@@ -1,7 +1,9 @@
 // Extra incomes (on top of the salary): categories and month totals.
-import type { Income } from "./types";
+import type { Category, Income } from "./types";
 
-export const INCOME_CATEGORIES = [
+/** The default categories (also in the database, with these keys as ids):
+ *  used when a list isn't at hand, or for an id no longer in it. */
+const DEFAULT_INCOME_CATEGORIES = [
   { key: "prime", label: "Prime", emoji: "🏆" },
   { key: "freelance", label: "Freelance", emoji: "💻" },
   { key: "heures-sup", label: "Heures sup", emoji: "⏱️" },
@@ -10,24 +12,25 @@ export const INCOME_CATEGORIES = [
   { key: "remboursement", label: "Remboursement", emoji: "↩️" },
   { key: "loyer", label: "Loyer reçu", emoji: "🏠" },
   { key: "investissement", label: "Investissement", emoji: "📈" },
-  { key: "credit", label: "Crédit / prêt", emoji: "🏦" },
   { key: "autre", label: "Autre", emoji: "✨" },
-] as const;
+];
 
-export type IncomeCategoryKey = (typeof INCOME_CATEGORIES)[number]["key"];
-
-/** Set by the app only (not offered in the form): money taken back from
- *  the savings, a loan's repayment. */
+/** Set by the app only (not offered in the form): a credit's money, money
+ *  taken back from the savings, a loan's repayment. */
 const SYSTEM_CATEGORIES = [
+  { key: "credit", label: "Crédit / prêt", emoji: "🏦" },
   { key: "epargne", label: "Épargne", emoji: "🐷" },
   { key: "pret", label: "Prêt rendu", emoji: "🤝" },
-] as const;
+];
 
-export function incomeCategory(key: string): { key: string; label: string; emoji: string } {
+/** Label and emoji of an income's category (from `list` when given). */
+export function incomeCategory(key: string, list?: Category[]): { key: string; label: string; emoji: string } {
+  const own = list?.find((c) => c.id === key);
+  if (own) return { key: own.id, label: own.name, emoji: own.emoji };
   return (
-    INCOME_CATEGORIES.find((c) => c.key === key) ??
     SYSTEM_CATEGORIES.find((c) => c.key === key) ??
-    INCOME_CATEGORIES[INCOME_CATEGORIES.length - 1]
+    DEFAULT_INCOME_CATEGORIES.find((c) => c.key === key) ??
+    DEFAULT_INCOME_CATEGORIES[DEFAULT_INCOME_CATEGORIES.length - 1]
   );
 }
 
