@@ -1,7 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Pencil } from "lucide-react";
-import { getAllCategories, getAllExpenses, getAllPayments, getDepositOfExpense, getSettings } from "@/lib/repository";
+import {
+  getAllCategories,
+  getAllExpenses,
+  getAllPayments,
+  getDaretOfExpense,
+  getDepositOfExpense,
+  getSettings,
+} from "@/lib/repository";
 import { LockedDelete } from "@/components/locked-delete";
 import { Button } from "@/components/ui/button";
 import { METHOD_META } from "@/lib/payment-method";
@@ -11,6 +18,7 @@ import { PageHeader } from "@/components/page-header";
 import { CREDIT_COLOR, pageColor } from "@/lib/page-theme";
 
 const GOALS_COLOR = pageColor("/goals");
+const DARET_COLOR = pageColor("/daret");
 import { ExpenseEditor, type PaymentStatusInit, type RecurrenceInit } from "@/components/expense-editor";
 import { DeleteExpenseButton } from "@/components/delete-expense-button";
 import { CreditEditor } from "@/components/credit-editor";
@@ -22,12 +30,13 @@ export const dynamic = "force-dynamic";
 
 export default async function ExpenseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [settings, allExpenses, payments, categories, linkedDeposit] = await Promise.all([
+  const [settings, allExpenses, payments, categories, linkedDeposit, linkedDaret] = await Promise.all([
     getSettings(),
     getAllExpenses(),
     getAllPayments(),
     getAllCategories(),
     getDepositOfExpense(id),
+    getDaretOfExpense(id),
   ]);
   const expense = allExpenses.find((e) => e.id === id);
   if (!expense) notFound();
@@ -69,6 +78,43 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
       </>
     );
   }
+  // A daret's monthly contribution: edited and deleted from the daret only.
+  if (linkedDaret) {
+    return (
+      <>
+        <PageHeader title={expense.name} back tone={DARET_COLOR} />
+        <main className="flex flex-col gap-4 px-4 py-5">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-400 via-emerald-500 to-[#007261] p-5 text-white shadow-lg shadow-emerald-600/20 dark:shadow-none">
+            <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
+            <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Cotisation · daret</p>
+            <p className="relative mt-1 text-4xl font-bold tabular-nums">
+              {formatMoney(expense.amount, settings.currency)}
+              <span className="text-lg font-semibold text-white/80">/mois</span>
+            </p>
+            <p className="relative mt-1 text-sm text-white/90">
+              {expense.icon ?? "🤝🏻"} {expense.name} · {linkedDaret.members} membres
+            </p>
+          </div>
+          <p className="px-1 text-sm text-slate-500 dark:text-slate-400">
+            Cette cotisation vient de la daret « {expense.name} ». Tu peux la cocher ou la décocher dans tes dépenses ;
+            pour la modifier ou la supprimer, c&apos;est depuis la daret.
+          </p>
+          <Button asChild className="bg-[#019c86] text-white hover:bg-[#007261]">
+            <Link href={`/daret/${linkedDaret.id}`}>
+              <Pencil className="h-4 w-4" />
+              Modifier la daret
+            </Link>
+          </Button>
+          <LockedDelete
+            hint={`Cette cotisation vient de la daret « ${expense.name} » : supprime-la depuis`}
+            href={`/daret/${linkedDaret.id}`}
+            linkLabel="la daret"
+          />
+        </main>
+      </>
+    );
+  }
+
   const byId = new Map(allExpenses.map((e) => [e.id, e]));
   const recurrenceInit = getRecurrenceInit(expense, byId);
   const paymentStatus = getPaymentStatusInit(expense, payments, byId);

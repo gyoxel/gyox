@@ -482,6 +482,14 @@ export async function getDaretById(id: string): Promise<DaretWithExpense | null>
   return { ...mapDaret(daret), expense: mapExpense(expense) };
 }
 
+/** The daret an expense backs (its monthly contribution), if any. */
+export async function getDaretOfExpense(expenseId: string): Promise<DaretWithExpense | null> {
+  const row = await prisma.daret.findFirst({ where: { expenseId }, include: { expense: true } });
+  if (!row) return null;
+  const { expense, ...daret } = row;
+  return { ...mapDaret(daret), expense: mapExpense(expense) };
+}
+
 /** Deleting the backing expense cascades to the daret and its payments. */
 export async function deleteDaret(id: string): Promise<boolean> {
   const daret = await prisma.daret.findUnique({ where: { id } });

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { deleteIncome, updateIncome } from "@/lib/repository";
+import { deleteIncome, getIncomeById, updateIncome } from "@/lib/repository";
 import { incomeInputSchema } from "@/lib/validation";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -13,6 +13,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const income = await getIncomeById(id);
+  if (income?.expenseId) return NextResponse.json({ error: "Ce revenu vient d'un crédit : supprime le crédit." }, { status: 409 });
   const ok = await deleteIncome(id);
   if (!ok) return NextResponse.json({ error: "Revenu introuvable." }, { status: 404 });
   return NextResponse.json({ ok: true });

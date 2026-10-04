@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { deleteExpense, getExpenseById, updateExpense } from "@/lib/repository";
+import { deleteExpense, getDaretOfExpense, getDepositOfExpense, getExpenseById, updateExpense } from "@/lib/repository";
 import { expenseInputSchema, partialExpenseSchema } from "@/lib/validation";
 
 interface Params {
@@ -36,6 +36,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const { id } = await params;
+  // Only its source deletes what it created: a daret, a goal deposit.
+  const [daret, deposit] = await Promise.all([getDaretOfExpense(id), getDepositOfExpense(id)]);
+  if (daret) return NextResponse.json({ error: "Cette dépense vient d'une daret : supprime la daret." }, { status: 409 });
+  if (deposit) return NextResponse.json({ error: "Cette dépense vient d'un versement : supprime le versement." }, { status: 409 });
   const ok = await deleteExpense(id);
   if (!ok) return NextResponse.json({ error: "Dépense introuvable." }, { status: 404 });
   return NextResponse.json({ ok: true });
