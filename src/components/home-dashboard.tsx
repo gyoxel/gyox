@@ -10,6 +10,7 @@ import { cn, formatMoney } from "@/lib/utils";
 import { mutationsSettled } from "@/lib/use-refresh-data";
 import { CountdownNextSalary } from "@/components/countdown-next-salary";
 import { DueNowList } from "@/components/due-now-list";
+import { DueRepayments, type DueRepayment } from "@/components/due-repayments";
 import { ShortcutWheel } from "@/components/shortcut-wheel";
 
 /**
@@ -30,6 +31,7 @@ export function HomeDashboard({
   categoryEmoji,
   settings,
   advances,
+  dueRepayments,
 }: {
   /** Solde of each account (cash, card) as of the server's payments. */
   solde: Record<PaymentMethod, number>;
@@ -41,6 +43,8 @@ export function HomeDashboard({
   /** For the countdown to the next salary. */
   settings: Settings;
   advances: SalaryAdvance[];
+  /** Loans' installments whose month has come, not received yet. */
+  dueRepayments: DueRepayment[];
 }) {
   const [localPayments, setLocalPayments] = useState<Payment[]>(payments);
   const [seenPayments, setSeenPayments] = useState(payments);
@@ -115,6 +119,8 @@ export function HomeDashboard({
           </div>
         </div>
       </Link>
+
+      <DueRepayments items={dueRepayments} currency={currency} />
 
       <CountdownNextSalary settings={settings} advances={advances} />
 

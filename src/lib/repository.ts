@@ -1,7 +1,9 @@
 import { randomUUID } from "crypto";
 import { prisma } from "./prisma";
 import { DEFAULT_CATEGORIES } from "./default-categories";
-import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote, SalaryAdvance, Income, PaymentMethod, SalaryReceipt, WalletOp } from "./types";
+import { getAllSavingsMoves } from "./savings-repo";
+import { getAllLoanRepayments, getAllLoans } from "./loans-repo";
+import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote, SalaryAdvance, Income, PaymentMethod, SalaryReceipt, WalletOp, SavingsMove, Loan, LoanRepayment } from "./types";
 
 function mapExpense(row: {
   id: string;
@@ -117,16 +119,20 @@ export async function updateExpense(
  */
 export async function pagesGoneWithExpenses(ids: string[]): Promise<string[]> {
   if (ids.length === 0) return [];
-  const [incomes, darets, deposits] = await Promise.all([
+  const [incomes, darets, deposits, moves, loans] = await Promise.all([
     prisma.income.findMany({ where: { expenseId: { in: ids } }, select: { id: true } }),
     prisma.daret.findMany({ where: { expenseId: { in: ids } }, select: { id: true } }),
     prisma.goalDeposit.findMany({ where: { expenseId: { in: ids } }, select: { id: true, goalId: true } }),
+    prisma.savingsMove.findMany({ where: { expenseId: { in: ids } }, select: { id: true } }),
+    prisma.loan.findMany({ where: { expenseId: { in: ids } }, select: { id: true } }),
   ]);
   return [
     ...ids.map((id) => `/expenses/${id}`),
     ...incomes.map((i) => `/incomes/${i.id}`),
     ...darets.map((d) => `/daret/${d.id}`),
     ...deposits.map((d) => `/goals/${d.goalId}/deposits/${d.id}`),
+    ...moves.map((m) => `/epargne/${m.id}`),
+    ...loans.map((l) => `/prets/${l.id}`),
   ];
 }
 
@@ -197,6 +203,9 @@ export interface BackupData {
   incomes?: Income[];
   salaryReceipts?: SalaryReceipt[];
   walletOps?: WalletOp[];
+  savingsMoves?: SavingsMove[];
+  loans?: (Omit<Loan, "repayments"> & { repayments?: undefined })[];
+  loanRepayments?: LoanRepayment[];
 }
 
 export async function exportData(): Promise<BackupData> {
@@ -225,6 +234,9 @@ export async function exportData(): Promise<BackupData> {
     incomes: await getAllIncomes(),
     salaryReceipts: await getAllSalaryReceipts(),
     walletOps: await getAllWalletOps(),
+    savingsMoves: await getAllSavingsMoves(),
+    loans: (await getAllLoans()).map((loan) => ({ ...loan, repayments: undefined })),
+    loanRepayments: await getAllLoanRepayments(),
   };
 }
 
@@ -236,6 +248,12 @@ export async function importData(data: BackupData): Promise<void> {
   );
   const now = new Date().toISOString();
   const expenseIds = new Set(data.expenses.map((e) => e.id));
+  // Incomes kept when the backup has none; savings / loans may point at them.
+  const incomeIds = new Set(
+    data.incomes ? data.incomes.map((i) => i.id) : (await prisma.income.findMany({ select: { id: true } })).map((i) => i.id),
+  );
+  const loanIds = new Set((data.loans ?? []).map((l) => l.id));
+  const known = (id: string | null | undefined, ids: Set<string>) => (id && ids.has(id) ? id : null);
   await prisma.$transaction([
     prisma.expense.deleteMany({}),
     ...(data.categories
@@ -311,6 +329,28 @@ export async function importData(data: BackupData): Promise<void> {
       ? [prisma.salaryReceipt.deleteMany({}), prisma.salaryReceipt.createMany({ data: data.salaryReceipts })]
       : []),
     ...(data.walletOps ? [prisma.walletOp.deleteMany({}), prisma.walletOp.createMany({ data: data.walletOps })] : []),
+    ...(data.savingsMoves
+      ? [
+          prisma.savingsMove.deleteMany({}),
+          prisma.savingsMove.createMany({
+            data: data.savingsMoves
+              .map((m) => ({ ...m, expenseId: known(m.expenseId, expenseIds), incomeId: known(m.incomeId, incomeIds) }))
+              // A move whose expense / income isn't there would count with nothing behind it.
+              .filter((m) => (m.kind === "in" ? m.expenseId : m.incomeId)),
+          }),
+        ]
+      : []),
+    ...(data.loans
+      ? [
+          prisma.loan.deleteMany({}),
+          prisma.loan.createMany({ data: data.loans.map((l) => ({ ...l, expenseId: known(l.expenseId, expenseIds) })) }),
+          prisma.loanRepayment.createMany({
+            data: (data.loanRepayments ?? [])
+              .filter((r) => loanIds.has(r.loanId))
+              .map((r) => ({ ...r, incomeId: known(r.incomeId, incomeIds) })),
+          }),
+        ]
+      : []),
     prisma.settings.update({ where: { id: 1 }, data: data.settings }),
   ]);
 }

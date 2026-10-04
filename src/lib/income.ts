@@ -16,16 +16,30 @@ export const INCOME_CATEGORIES = [
 
 export type IncomeCategoryKey = (typeof INCOME_CATEGORIES)[number]["key"];
 
-export function incomeCategory(key: string) {
-  return INCOME_CATEGORIES.find((c) => c.key === key) ?? INCOME_CATEGORIES[INCOME_CATEGORIES.length - 1];
+/** Set by the app only (not offered in the form): money taken back from
+ *  the savings, a loan's repayment. */
+const SYSTEM_CATEGORIES = [
+  { key: "epargne", label: "Épargne", emoji: "🐷" },
+  { key: "pret", label: "Prêt rendu", emoji: "🤝" },
+] as const;
+
+export function incomeCategory(key: string): { key: string; label: string; emoji: string } {
+  return (
+    INCOME_CATEGORIES.find((c) => c.key === key) ??
+    SYSTEM_CATEGORIES.find((c) => c.key === key) ??
+    INCOME_CATEGORIES[INCOME_CATEGORIES.length - 1]
+  );
 }
 
-/** Total earned in `month` ("YYYY-MM"). Money borrowed (a credit taken)
- *  isn't earned: it's in the Solde, not in the month's income. */
+/** Not earned, only moved: money borrowed (a credit), taken back from the
+ *  savings, or a loan given back. In the Solde, not in the month's income. */
+const NOT_EARNED = new Set(["credit", "epargne", "pret"]);
+
+/** Total earned in `month` ("YYYY-MM"). */
 export function incomesIn(incomes: Income[], month: string): number {
   return (
     Math.round(
-      incomes.filter((i) => i.date.startsWith(month) && i.category !== "credit").reduce((s, i) => s + i.amount, 0) * 100,
+      incomes.filter((i) => i.date.startsWith(month) && !NOT_EARNED.has(i.category)).reduce((s, i) => s + i.amount, 0) * 100,
     ) / 100
   );
 }

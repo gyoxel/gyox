@@ -244,3 +244,58 @@ export interface Income {
   expenseId?: string | null;
   createdAt: string;
 }
+
+/** Épargne: money put aside ("in") or taken back ("out"). */
+export interface SavingsMove {
+  id: string;
+  kind: "in" | "out";
+  amount: number;
+  /** The account it leaves ("in") or goes to ("out"). */
+  method: PaymentMethod;
+  note: string | null;
+  /** "YYYY-MM-DD" */
+  date: string;
+  /** "in": the paid expense it shows as in Dépenses. */
+  expenseId: string | null;
+  /** "out": the income it shows as in Revenus. */
+  incomeId: string | null;
+  createdAt: string;
+}
+
+/** One installment of a loan, received. */
+export interface LoanRepayment {
+  id: string;
+  loanId: string;
+  /** 1-based installment number. */
+  slot: number;
+  amount: number;
+  method: PaymentMethod;
+  /** "YYYY-MM-DD" received. */
+  date: string;
+  incomeId: string | null;
+  createdAt: string;
+}
+
+/** Prêts: money lent to someone, coming back in installments. */
+export interface Loan {
+  id: string;
+  /** Who it was lent to. */
+  name: string;
+  amount: number;
+  /** Already given back before the loan was added here (not in the Solde). */
+  priorRepaid: number | null;
+  /** "YYYY-MM-DD" lent. */
+  date: string;
+  /** Taken from cash / the card; null when it didn't leave the Solde. */
+  method: PaymentMethod | null;
+  /** Planned installment (the last one takes what's left). */
+  monthly: number;
+  months: number;
+  /** "YYYY-MM" of the first repayment. */
+  startMonth: string;
+  note: string | null;
+  /** The paid expense it shows as in Dépenses. */
+  expenseId: string | null;
+  createdAt: string;
+  repayments: LoanRepayment[];
+}

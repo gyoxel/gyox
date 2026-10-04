@@ -11,6 +11,7 @@ import { useRefreshData } from "@/lib/use-refresh-data";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { TransferDialog } from "@/components/transfer-dialog";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -123,7 +124,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
     <>
       {/* Total */}
       <div className="rounded-3xl bg-gradient-to-br from-slate-800 to-slate-950 px-5 pb-4 pt-5 text-white shadow-md dark:from-slate-800 dark:to-slate-900 dark:ring-1 dark:ring-white/10">
-        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">Solde total</p>
+        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">Solde actuel</p>
         <p className={cn("mt-1 text-center text-4xl font-bold tabular-nums", wallet.total < 0 && "text-rose-300")}>
           {money(wallet.total)}
         </p>
@@ -150,7 +151,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
       {/* Accounts */}
       <section className="flex flex-col gap-2.5">
         <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-          2 comptes
+          Mes comptes
         </h2>
         {ACCOUNTS.map((a) => {
           const active = filter === a.key;
@@ -203,6 +204,21 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
             </button>
           );
         })}
+        <Link
+          href="/epargne"
+          prefetch
+          className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm active:scale-[0.99] dark:border-slate-800 dark:bg-slate-900"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-lime-50 text-2xl dark:bg-lime-950/50">
+            🐷
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-base font-semibold text-slate-900 dark:text-white">Épargne</span>
+            <span className="block text-[11px] text-slate-400">Mise de côté, hors solde actuel</span>
+          </span>
+          <span className="text-lg font-bold tabular-nums text-lime-700 dark:text-lime-400">{money(wallet.savings)}</span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+        </Link>
         <p className="px-1 text-[11px] text-slate-400">
           Entrées et sorties de ce mois · touche un compte pour filtrer l&apos;historique.
         </p>
@@ -286,7 +302,13 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
         )}
       </section>
 
-      <TransferDialog open={transferOpen} onOpenChange={setTransferOpen} balance={wallet.balance} money={money} />
+      <TransferDialog
+        open={transferOpen}
+        onOpenChange={setTransferOpen}
+        balance={wallet.balance}
+        savings={wallet.savings}
+        money={money}
+      />
       <AdjustDialog open={adjustOpen} onOpenChange={setAdjustOpen} balance={wallet.balance} money={money} />
       <ConfirmDialog
         open={toDelete != null}
@@ -378,126 +400,6 @@ function EntryRow({
         <Trash2 className="h-4 w-4" />
       </button>
     </div>
-  );
-}
-
-/** Cash → card (deposit) or card → cash (withdrawal). */
-function TransferDialog({
-  open,
-  onOpenChange,
-  balance,
-  money,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  balance: Record<PaymentMethod, number>;
-  money: (n: number) => string;
-}) {
-  const refreshData = useRefreshData();
-  const [from, setFrom] = useState<PaymentMethod>("card");
-  const [amount, setAmount] = useState("");
-  const [note, setNote] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
-  const to: PaymentMethod = from === "cash" ? "card" : "cash";
-  const value = parseDecimalInput(amount);
-
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    if (!(value > 0)) return setError("Indique un montant.");
-    startTransition(async () => {
-      const res = await fetch("/api/wallet", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          kind: "transfer",
-          fromAccount: from,
-          toAccount: to,
-          amount: value,
-          note: note.trim() || null,
-        }),
-      });
-      if (!res.ok) return setError(await errorMessage(res));
-      onOpenChange(false);
-      setAmount("");
-      setNote("");
-      toast.success(`${money(value)} : ${METHOD_META[from].label} → ${METHOD_META[to].label}`);
-      await refreshData();
-    });
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Transférer</DialogTitle>
-          <DialogDescription>Retrait au guichet ou versement sur la carte.</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={submit} className="flex flex-col gap-4">
-          <div role="radiogroup" aria-label="Sens du transfert" className="grid grid-cols-2 gap-2">
-            {(["card", "cash"] as const).map((f) => {
-              const t = f === "cash" ? "card" : "cash";
-              return (
-                <button
-                  key={f}
-                  type="button"
-                  role="radio"
-                  aria-checked={from === f}
-                  onClick={() => setFrom(f)}
-                  className={cn(
-                    "flex flex-col items-center gap-1 rounded-xl border px-2 py-2.5 text-xs font-medium transition-colors",
-                    from === f
-                      ? "border-indigo-500 bg-indigo-50 text-indigo-800 ring-1 ring-indigo-500 dark:bg-indigo-950/50 dark:text-indigo-200"
-                      : "border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300",
-                  )}
-                >
-                  <span className="text-xl leading-none">
-                    {METHOD_META[f].emoji} → {METHOD_META[t].emoji}
-                  </span>
-                  {f === "card" ? "Retrait en cash" : "Versement sur la carte"}
-                </button>
-              );
-            })}
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="transfer-amount">Montant</Label>
-            <Input
-              id="transfer-amount"
-              type="text"
-              inputMode="decimal"
-              autoComplete="off"
-              placeholder="0"
-              value={amount}
-              onChange={(e) => setAmount(cleanDecimalInput(e.target.value))}
-            />
-            <p className="text-[11px] text-slate-400">
-              {METHOD_META[from].label} : {money(balance[from])}
-              {value > 0 && <> → {money(balance[from] - value)}</>}
-            </p>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="transfer-note">Note (optionnel)</Label>
-            <Input
-              id="transfer-note"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              maxLength={80}
-              placeholder="Ex. Guichet Attijari"
-            />
-          </div>
-          {error && <p className="text-sm text-rose-600">{error}</p>}
-          <Button
-            type="submit"
-            className="bg-indigo-600 text-white hover:bg-indigo-700"
-            disabled={pending || !(value > 0)}
-          >
-            <ArrowLeftRight className="h-4 w-4" />
-            {pending ? "Transfert…" : "Transférer"}
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 }
 

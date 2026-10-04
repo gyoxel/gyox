@@ -5,15 +5,18 @@
 import { displayIcon } from "./category";
 import { daretPayout } from "./daret";
 import { incomeCategory } from "./income";
+import { savingsBalance } from "./savings";
 import type {
   DaretWithExpense,
   Expense,
   Goal,
   Income,
+  Loan,
   Payment,
   PaymentMethod,
   SalaryAdvance,
   SalaryReceipt,
+  SavingsMove,
   WalletOp,
 } from "./types";
 
@@ -25,6 +28,8 @@ export type EntryKind =
   | "expense"
   | "credit"
   | "goal"
+  | "savings"
+  | "loan"
   | "transfer"
   | "adjust";
 
@@ -45,7 +50,10 @@ export interface WalletEntry {
 
 export interface WalletSummary {
   balance: Record<PaymentMethod, number>;
+  /** Solde actuel: cash + card (the savings aren't in it). */
   total: number;
+  /** Épargne: put aside, outside the Solde. */
+  savings: number;
   /** In / out of each account during `month` ("YYYY-MM"), transfers excluded. */
   monthIn: Record<PaymentMethod, number>;
   monthOut: Record<PaymentMethod, number>;
@@ -81,11 +89,26 @@ export function buildWallet(input: {
   ops: WalletOp[];
   /** Their deposits taken from cash / the card come off the Solde. */
   goals?: Goal[];
+  /** Épargne and Prêts: their expenses / incomes open their own page. */
+  savingsMoves?: SavingsMove[];
+  loans?: Loan[];
   categoryEmoji: Map<string, string>;
   month: string;
 }): WalletSummary {
   const byId = new Map(input.expenses.map((e) => [e.id, e]));
   const entries: WalletEntry[] = [];
+  // Expense / income id → the savings move or loan behind it.
+  const source = new Map<string, { kind: EntryKind; href: string }>();
+  for (const m of input.savingsMoves ?? []) {
+    const link = { kind: "savings" as const, href: `/epargne/${m.id}` };
+    if (m.expenseId) source.set(m.expenseId, link);
+    if (m.incomeId) source.set(m.incomeId, link);
+  }
+  for (const l of input.loans ?? []) {
+    const link = { kind: "loan" as const, href: `/prets/${l.id}` };
+    if (l.expenseId) source.set(l.expenseId, link);
+    for (const r of l.repayments) if (r.incomeId) source.set(r.incomeId, link);
+  }
 
   for (const r of input.receipts) {
     entries.push({
@@ -112,12 +135,12 @@ export function buildWallet(input: {
   for (const i of input.incomes) {
     entries.push({
       id: `income-${i.id}`,
-      kind: "income",
+      kind: source.get(i.id)?.kind ?? "income",
       at: i.createdAt,
       emoji: incomeCategory(i.category).emoji,
       label: i.name,
       lines: [{ account: i.method, amount: i.amount }],
-      href: `/incomes/${i.id}`,
+      href: source.get(i.id)?.href ?? `/incomes/${i.id}`,
     });
   }
   for (const d of input.darets) {
@@ -137,12 +160,12 @@ export function buildWallet(input: {
     if (!e || !p.method || !countsInWallet(p, byId)) continue;
     entries.push({
       id: `payment-${p.id}`,
-      kind: e.type === "credit" ? "credit" : "expense",
+      kind: source.get(e.id)?.kind ?? (e.type === "credit" ? "credit" : "expense"),
       at: p.paidAt,
       emoji: displayIcon(e, input.categoryEmoji),
       label: e.name,
       lines: [{ account: p.method, amount: -p.amountPaid }],
-      href: `/expenses/${e.id}`,
+      href: source.get(e.id)?.href ?? `/expenses/${e.id}`,
     });
   }
   for (const g of input.goals ?? []) {
@@ -202,6 +225,7 @@ export function buildWallet(input: {
   return {
     balance: r2(balance),
     total: round(balance.cash + balance.card),
+    savings: savingsBalance(input.savingsMoves ?? [], input.payments),
     monthIn: r2(monthIn),
     monthOut: r2(monthOut),
     entries,

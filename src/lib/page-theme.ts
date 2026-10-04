@@ -9,6 +9,8 @@ const PAGE_COLORS: [prefix: string, color: string][] = [
   ["/menu", "#7c3aed"],
   ["/incomes", "#059669"],
   ["/solde", "#4f46e5"],
+  ["/epargne", "#65a30d"],
+  ["/prets", "#b45309"],
   ["/daret", "#0d9488"],
   ["/goals", "#ea580c"],
   ["/stats", "#0284c7"],

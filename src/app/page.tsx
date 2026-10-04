@@ -1,5 +1,7 @@
 import { getAllCategories, getAllExpenses, getAllPayments, getAllSalaryAdvances, getSettings } from "@/lib/repository";
-import { todayMonth } from "@/lib/date";
+import { monthLabelFr, todayMonth } from "@/lib/date";
+import { getAllLoans } from "@/lib/loans-repo";
+import { loanState } from "@/lib/loans";
 import { getWallet } from "@/lib/wallet-data";
 import { HomeHeader } from "@/components/home-header";
 import { HomeDashboard } from "@/components/home-dashboard";
@@ -7,16 +9,26 @@ import { HomeDashboard } from "@/components/home-dashboard";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [settings, expenses, payments, categories, advances, wallet] = await Promise.all([
+  const [settings, expenses, payments, categories, advances, wallet, loans] = await Promise.all([
     getSettings(),
     getAllExpenses(),
     getAllPayments(),
     getAllCategories(),
     getAllSalaryAdvances(),
     getWallet(),
+    getAllLoans(),
   ]);
   const categoryEmoji = Object.fromEntries(categories.map((c) => [c.id, c.emoji]));
   const currentMonth = todayMonth();
+  const dueRepayments = loans.flatMap((loan) =>
+    loanState(loan, currentMonth).due.map((s) => ({
+      loanId: loan.id,
+      name: loan.name,
+      slot: s.slot,
+      amount: s.amount,
+      monthLabel: monthLabelFr(s.month),
+    })),
+  );
 
   return (
     <>
@@ -32,6 +44,7 @@ export default async function HomePage() {
           categoryEmoji={categoryEmoji}
           settings={settings}
           advances={advances}
+          dueRepayments={dueRepayments}
         />
       </main>
     </>

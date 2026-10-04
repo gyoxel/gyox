@@ -1,6 +1,6 @@
 // What each delete says and calls — shared by the red button at the bottom
 // of an edit page and the bin in its header (DeleteButton).
-import type { DaretWithExpense, Expense, GoalDeposit, Income } from "./types";
+import type { DaretWithExpense, Expense, GoalDeposit, Income, Loan, SavingsMove } from "./types";
 import { formatMoney } from "./utils";
 
 /** Deleting an expense or a credit. */
@@ -63,5 +63,32 @@ export function goalDelete(goal: { id: string; emoji: string; name: string }) {
     description: `« ${goal.emoji} ${goal.name} » et tous ses versements seront supprimés. Tes darets ne sont pas touchées.`,
     success: "Objectif supprimé.",
     fallback: "/goals",
+  };
+}
+
+/** Deleting a savings move (its expense / income goes with it). */
+export function savingsDelete(move: SavingsMove) {
+  return {
+    label: move.kind === "in" ? "Supprimer cette épargne" : "Supprimer ce retrait",
+    endpoint: `/api/savings/${move.id}`,
+    title: move.kind === "in" ? "Supprimer cette épargne ?" : "Supprimer ce retrait ?",
+    description:
+      move.kind === "in"
+        ? `${formatMoney(move.amount)} retirés de l'épargne et de tes dépenses : ils reviennent dans ton solde.`
+        : `${formatMoney(move.amount)} retirés de tes revenus : ils reviennent dans l'épargne.`,
+    success: move.kind === "in" ? "Épargne supprimée." : "Retrait supprimé.",
+    fallback: "/epargne",
+  };
+}
+
+/** Deleting a loan (its expense and the repayments received go with it). */
+export function loanDelete(loan: Pick<Loan, "id" | "name">) {
+  return {
+    label: "Supprimer ce prêt",
+    endpoint: `/api/loans/${loan.id}`,
+    title: "Supprimer ce prêt ?",
+    description: `Le prêt à « ${loan.name} », sa sortie dans tes dépenses et les remboursements reçus seront définitivement supprimés.`,
+    success: "Prêt supprimé.",
+    fallback: "/prets",
   };
 }

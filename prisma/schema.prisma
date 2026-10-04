@@ -46,6 +46,10 @@ model Expense {
   goalDeposits GoalDeposit[]
   /// A credit's money received when it was taken.
   incomes      Income[]
+  /// Money put into the savings (Épargne), shown in Dépenses.
+  savingsMove  SavingsMove?
+  /// Money lent (Prêts), shown in Dépenses.
+  loan         Loan?
 
   @@map("expenses")
 }
@@ -262,6 +266,81 @@ model Income {
   createdAt String
 
   expense Expense? @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  /// Money taken out of the savings, shown in Revenus.
+  savingsMove   SavingsMove?
+  /// A loan's repayment received, shown in Revenus.
+  loanRepayment LoanRepayment?
 
   @@map("incomes")
+}
+
+/// Épargne: money put aside ("in": leaves cash / the card, shows in Dépenses
+/// as a paid expense) or taken back ("out": comes into cash / the card,
+/// shows in Revenus). The savings = what's in (paid) − what's out.
+model SavingsMove {
+  id        String  @id @default(uuid())
+  kind      String
+  amount    Float
+  /// The account it leaves ("in") or goes to ("out"): "cash" / "card".
+  method    String
+  note      String?
+  /// "YYYY-MM-DD"
+  date      String
+  expenseId String? @unique
+  incomeId  String? @unique
+  createdAt String
+
+  expense Expense? @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  income  Income?  @relation(fields: [incomeId], references: [id], onDelete: Cascade)
+
+  @@map("savings_moves")
+}
+
+/// Prêts: money lent to someone (the reverse of a credit). It leaves cash /
+/// the card (a paid expense in Dépenses) and comes back in installments,
+/// each confirmed received as an income.
+model Loan {
+  id          String  @id @default(uuid())
+  /// Who it was lent to.
+  name        String
+  amount      Float
+  /// Already given back before the loan was added here (not in the Solde).
+  priorRepaid Float?
+  /// "YYYY-MM-DD" lent.
+  date        String
+  /// Taken from "cash" / "card"; null when it didn't leave the Solde.
+  method      String?
+  /// Planned installment (the last one takes what's left).
+  monthly     Float
+  months      Int
+  /// "YYYY-MM" of the first repayment.
+  startMonth  String
+  note        String?
+  expenseId   String? @unique
+  createdAt   String
+
+  expense    Expense?        @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  repayments LoanRepayment[]
+
+  @@map("loans")
+}
+
+/// One installment of a loan, received in cash or on the card.
+model LoanRepayment {
+  id        String  @id @default(uuid())
+  loanId    String
+  /// 1-based installment number.
+  slot      Int
+  amount    Float
+  method    String
+  /// "YYYY-MM-DD" received.
+  date      String
+  incomeId  String? @unique
+  createdAt String
+
+  loan   Loan    @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  income Income? @relation(fields: [incomeId], references: [id], onDelete: Cascade)
+
+  @@unique([loanId, slot])
+  @@map("loan_repayments")
 }

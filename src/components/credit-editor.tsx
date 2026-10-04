@@ -7,6 +7,7 @@ import type { Expense, PaymentMethod } from "@/lib/types";
 import { addMonths, monthKey, monthLabelShortFr, monthOfDateStr, todayDateStr } from "@/lib/date";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { useNavBack } from "@/lib/nav-history";
+import { monthlyFor } from "@/lib/plan";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import { errorMessage, keepAboveKeyboard, syncPaymentStatus, type PaymentStatusInit } from "@/components/expense-editor";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
@@ -28,27 +29,6 @@ function schedule(total: number, monthly: number, startDate: string) {
   const count = Math.ceil(total / monthly - 1e-9);
   const last = Math.round((total - (count - 1) * monthly) * 100) / 100;
   return { count, last, end: addMonths(monthOfDateStr(startDate), count - 1) };
-}
-
-/**
- * Monthly amount to repay `total` in exactly `months` installments, the
- * last one taking what's left: the roundest amount that fits — to the
- * hundred if possible (2000 in 3 → 700, last 600), else to 50, 10, 1
- * (2000 in 6 → 350, last 250) — keeping the last one at least half of it.
- */
-function monthlyFor(total: number, months: number): number {
-  if (months <= 1) return Math.round(total * 100) / 100;
-  const exact = total / months;
-  const fits = (m: number) => m > 0 && m <= total && (months - 1) * m < total - 1e-9 && months * m >= total - 1e-9;
-  let firstFit: number | null = null;
-  for (const step of [100, 50, 10, 1]) {
-    for (const m of [Math.round(exact / step) * step, Math.ceil(exact / step) * step]) {
-      if (!fits(m)) continue;
-      firstFit ??= m;
-      if (total - (months - 1) * m >= m / 2) return m;
-    }
-  }
-  return firstFit ?? Math.ceil(exact * 100) / 100;
 }
 
 /**

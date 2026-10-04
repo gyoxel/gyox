@@ -10,6 +10,9 @@ import {
   getSettings,
 } from "@/lib/repository";
 import { LockedDelete, LockedDeleteIcon } from "@/components/locked-delete";
+import { LinkedSourcePage } from "@/components/linked-source";
+import { getSavingsMoveOfExpense } from "@/lib/savings-repo";
+import { getLoanOfExpense } from "@/lib/loans-repo";
 import { DeleteButton } from "@/components/delete-button";
 import { expenseDelete } from "@/lib/delete-specs";
 import { Button } from "@/components/ui/button";
@@ -31,13 +34,15 @@ export const dynamic = "force-dynamic";
 
 export default async function ExpenseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [settings, allExpenses, payments, categories, linkedDeposit, linkedDaret] = await Promise.all([
+  const [settings, allExpenses, payments, categories, linkedDeposit, linkedDaret, linkedMove, linkedLoan] = await Promise.all([
     getSettings(),
     getAllExpenses(),
     getAllPayments(),
     getAllCategories(),
     getDepositOfExpense(id),
     getDaretOfExpense(id),
+    getSavingsMoveOfExpense(id),
+    getLoanOfExpense(id),
   ]);
   const expense = allExpenses.find((e) => e.id === id);
   if (!expense) notFound();
@@ -84,6 +89,42 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
       </>
     );
   }
+  const paidWith = payments.find((p) => p.expenseId === expense.id && p.amountPaid > 0)?.method;
+  if (linkedMove) {
+    return (
+      <LinkedSourcePage
+        title={expense.name}
+        tone={pageColor("/epargne")}
+        gradient="from-lime-400 via-green-500 to-emerald-700"
+        eyebrow="Épargne 🐷"
+        amount={formatMoney(expense.amount, settings.currency)}
+        subtitle={`${linkedMove.note ?? "Mis de côté"} · ${paidWith ? `Payé ${METHOD_META[paidWith].emoji}` : "Pas encore payé"}`}
+        text="Cet argent a été mis dans ton épargne. Tu peux le cocher ou le décocher dans tes dépenses ; pour le modifier ou le supprimer, c'est depuis l'épargne."
+        href={`/epargne/${linkedMove.id}`}
+        editLabel="Modifier l'épargne"
+        buttonClass="bg-lime-600 text-white hover:bg-lime-700"
+        sourceLabel="l'épargne"
+      />
+    );
+  }
+  if (linkedLoan) {
+    return (
+      <LinkedSourcePage
+        title={expense.name}
+        tone={pageColor("/prets")}
+        gradient="from-amber-400 via-orange-500 to-amber-700"
+        eyebrow="Prêt 🤝"
+        amount={formatMoney(expense.amount, settings.currency)}
+        subtitle={`Prêté à ${linkedLoan.name}${paidWith ? ` · ${METHOD_META[paidWith].emoji} ${METHOD_META[paidWith].label}` : ""}`}
+        text={`Cet argent a été prêté à ${linkedLoan.name}. Pour le modifier ou le supprimer, c'est depuis le prêt — où tu confirmes aussi chaque remboursement reçu.`}
+        href={`/prets/${linkedLoan.id}`}
+        editLabel="Voir le prêt"
+        buttonClass="bg-amber-600 text-white hover:bg-amber-700"
+        sourceLabel="le prêt"
+      />
+    );
+  }
+
   // A daret's monthly contribution: edited and deleted from the daret only.
   if (linkedDaret) {
     return (

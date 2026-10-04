@@ -42,7 +42,7 @@ export default async function IncomesPage() {
       date: i.date,
       method: i.method,
       amount: i.amount,
-      badge: i.expenseId ? "Crédit" : undefined,
+      badge: i.expenseId ? "Crédit" : i.category === "epargne" ? "Épargne" : i.category === "pret" ? "Prêt" : undefined,
     })),
     ...darets
       .filter((d) => d.payoutMethod && d.payoutReceivedAt)

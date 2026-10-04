@@ -139,6 +139,53 @@ const backupSchema = z.object({
       }),
     )
     .optional(),
+  savingsMoves: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        kind: z.enum(["in", "out"]),
+        amount: z.number().positive(),
+        method: z.enum(["cash", "card"]),
+        note: z.string().nullable(),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        expenseId: z.string().nullable(),
+        incomeId: z.string().nullable(),
+        createdAt: z.string(),
+      }),
+    )
+    .optional(),
+  loans: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        name: z.string().min(1),
+        amount: z.number().positive(),
+        priorRepaid: z.number().nonnegative().nullable(),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        method: z.enum(["cash", "card"]).nullable(),
+        monthly: z.number().positive(),
+        months: z.number().int().positive(),
+        startMonth: z.string().regex(/^\d{4}-\d{2}$/),
+        note: z.string().nullable(),
+        expenseId: z.string().nullable(),
+        createdAt: z.string(),
+      }),
+    )
+    .optional(),
+  loanRepayments: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        loanId: z.string().min(1),
+        slot: z.number().int().positive(),
+        amount: z.number().positive(),
+        method: z.enum(["cash", "card"]),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        incomeId: z.string().nullable(),
+        createdAt: z.string(),
+      }),
+    )
+    .optional(),
 });
 
 export async function POST(req: NextRequest) {

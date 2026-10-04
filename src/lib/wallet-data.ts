@@ -11,11 +11,13 @@ import {
   getAllSalaryReceipts,
   getAllWalletOps,
 } from "./repository";
+import { getAllSavingsMoves } from "./savings-repo";
+import { getAllLoans } from "./loans-repo";
 import { monthKey, todayMonth } from "./date";
 import { buildWallet, type WalletSummary } from "./wallet";
 
 export async function getWallet(): Promise<WalletSummary> {
-  const [receipts, advances, incomes, darets, payments, expenses, ops, categories, goals] = await Promise.all([
+  const [receipts, advances, incomes, darets, payments, expenses, ops, categories, goals, savingsMoves, loans] = await Promise.all([
     getAllSalaryReceipts(),
     getAllSalaryAdvances(),
     getAllIncomes(),
@@ -25,6 +27,8 @@ export async function getWallet(): Promise<WalletSummary> {
     getAllWalletOps(),
     getAllCategories(),
     getAllGoals(),
+    getAllSavingsMoves(),
+    getAllLoans(),
   ]);
   return buildWallet({
     receipts,
@@ -35,6 +39,8 @@ export async function getWallet(): Promise<WalletSummary> {
     expenses,
     ops,
     goals,
+    savingsMoves,
+    loans,
     categoryEmoji: new Map(categories.map((c) => [c.id, c.emoji])),
     month: monthKey(todayMonth()),
   });
