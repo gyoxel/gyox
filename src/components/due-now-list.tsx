@@ -216,7 +216,7 @@ export function DueNowList({
               {left > 0 && (
                 <>
                   {" "}
-                  · à payer <b className="font-semibold text-rose-600 dark:text-rose-400">{formatMoney(left, currency)}</b>
+                  · <b className="font-semibold text-rose-600 dark:text-rose-400">{formatMoney(left, currency)}</b> à payer
                 </>
               )}
             </p>
@@ -231,15 +231,6 @@ export function DueNowList({
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
-
-      <Link
-        href="/expenses/new"
-        prefetch
-        className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-rose-200 py-3 text-sm font-semibold text-rose-600 active:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:active:bg-rose-950/30"
-      >
-        <Plus className="h-4 w-4" />
-        Ajouter une dépense
-      </Link>
 
       {items.length === 0 ? (
         <div className="flex items-center justify-center gap-2 rounded-3xl border border-emerald-200 bg-emerald-50/60 py-5 text-sm font-medium text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-300">
@@ -336,6 +327,15 @@ export function DueNowList({
           })}
         </ul>
       )}
+
+      <Link
+        href="/expenses/new"
+        prefetch
+        className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-rose-200 py-3 text-sm font-semibold text-rose-600 active:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:active:bg-rose-950/30"
+      >
+        <Plus className="h-4 w-4" />
+        Ajouter une dépense
+      </Link>
     </div>
   );
 }
