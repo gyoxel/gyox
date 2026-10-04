@@ -4,7 +4,7 @@ import { useState, useTransition, type ReactNode } from "react";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { pagesGone, useNavBack } from "@/lib/nav-history";
-import { useRefreshData } from "@/lib/use-refresh-data";
+import { mutate } from "@/lib/use-refresh-data";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 
@@ -41,11 +41,10 @@ export function DeleteButton({
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const nav = useNavBack();
-  const refreshData = useRefreshData();
 
   function remove() {
     startTransition(async () => {
-      const res = await fetch(endpoint, { method: "DELETE" });
+      const res = await mutate({ method: "DELETE", path: endpoint });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: unknown } | null;
         toast.error(typeof body?.error === "string" ? body.error : "Suppression impossible.");
@@ -53,7 +52,6 @@ export function DeleteButton({
       }
       const gone = await pagesGone(res);
       setOpen(false);
-      await refreshData();
       toast.success(success);
       nav.leave(gone, fallback);
     });

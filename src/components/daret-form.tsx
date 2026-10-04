@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useNavBack } from "@/lib/nav-history";
-import { useRefreshData } from "@/lib/use-refresh-data";
+import { mutate } from "@/lib/use-refresh-data";
 import { addMonths, monthKey, monthLabelFr, monthLabelShortFr, parseMonthKey, todayMonth } from "@/lib/date";
 import type { DaretWithExpense } from "@/lib/types";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
@@ -26,7 +26,6 @@ const MAX_MEMBERS = 60;
 export function DaretForm({ currency, daret }: { currency: string; daret?: DaretWithExpense }) {
   const isEdit = daret != null;
   const nav = useNavBack();
-  const refreshData = useRefreshData();
   const [name, setName] = useState(daret?.expense.name ?? "");
   const [amount, setAmount] = useState(toDecimalInput(daret?.expense.amount ?? null));
   const [members, setMembers] = useState(daret?.members ?? 10);
@@ -53,19 +52,18 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
     setError(null);
     if (!(amountValue > 0)) return setError("Indique la cotisation par mois.");
     startTransition(async () => {
-      const res = await fetch(isEdit ? `/api/darets/${daret.id}` : "/api/darets", {
+      const res = await mutate({
         method: isEdit ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        path: isEdit ? `/api/darets/${daret.id}` : "/api/darets",
+        body: {
           name: name.trim() || "Daret",
           amount: amountValue,
           members,
           startMonth,
           turnMonth: monthKey(effectiveTurn),
-        }),
+        },
       });
       if (!res.ok) return setError(await errorMessage(res));
-      await refreshData();
       toast.success(isEdit ? "Daret modifiée." : "Daret ajoutée.");
       nav.back("/daret");
     });

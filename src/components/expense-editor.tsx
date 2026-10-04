@@ -9,7 +9,8 @@ import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import { addMonths, monthKey, monthLabelFr, monthOfDateStr, todayDateStr } from "@/lib/date";
 import { lastDayOfMonth } from "@/lib/daret";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
-import { useRefreshData } from "@/lib/use-refresh-data";
+import { mutate, mutateAll } from "@/lib/use-refresh-data";
+import type { ApiCall } from "@/app/api-actions";
 import { CategoryPicker } from "@/components/category-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,28 +41,23 @@ export interface PaymentStatusInit {
 }
 
 /**
- * After an edit: applies the "Payé / Pas encore" choice and the cash/card
- * method to the period's payment. Returns false when that failed.
+ * After an edit: the request applying the "Payé / Pas encore" choice and the
+ * cash/card method to the period's payment (null: nothing changed).
  */
-export async function syncPaymentStatus(
+export function paymentStatusCall(
   expenseId: string,
   status: PaymentStatusInit,
   paid: boolean,
   method: PaymentMethod,
-): Promise<boolean> {
+): ApiCall | null {
   const base = `/api/expenses/${expenseId}/payments`;
-  const json = { "Content-Type": "application/json" };
   if (paid !== status.paid) {
-    const res = paid
-      ? await fetch(base, { method: "POST", headers: json, body: JSON.stringify({ monthKey: status.monthKey, method }) })
-      : await fetch(`${base}?monthKey=${status.monthKey}`, { method: "DELETE" });
-    return res.ok;
+    return paid
+      ? { method: "POST", path: base, body: { monthKey: status.monthKey, method } }
+      : { method: "DELETE", path: `${base}?monthKey=${status.monthKey}` };
   }
-  if (paid && method !== status.method) {
-    const res = await fetch(base, { method: "PATCH", headers: json, body: JSON.stringify({ monthKey: status.monthKey, method }) });
-    return res.ok;
-  }
-  return true;
+  if (paid && method !== status.method) return { method: "PATCH", path: base, body: { monthKey: status.monthKey, method } };
+  return null;
 }
 
 /**
@@ -90,7 +86,6 @@ export function ExpenseEditor({
 }) {
   const isEdit = expense != null;
   const nav = useNavBack();
-  const refreshData = useRefreshData();
   const [categories, setCategories] = useState(initialCategories);
 
   const [amount, setAmount] = useState(expense ? toDecimalInput(expense.amount) : "");
@@ -195,33 +190,34 @@ export function ExpenseEditor({
             (recurrenceKind !== init.kind ||
               (recurrenceKind === "months" && months !== init.months) ||
               (recurrenceKind === "until" && untilValue !== (Number(init.until) || 0))));
-        const res = await fetch(`/api/expenses/${expense.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: name.trim(),
-            amount: amountValue,
-            notes: notes.trim() || null,
-            categoryId,
-            ...(recurrenceChanged ? recurrenceFields : {}),
-          }),
-        });
+        // The edit and its payment change go in one round trip.
+        const payCall = paymentStatus && paymentStatusCall(expense.id, paymentStatus, alreadyPaid, method);
+        const [res, pay] = await mutateAll([
+          {
+            method: "PATCH",
+            path: `/api/expenses/${expense.id}`,
+            body: {
+              name: name.trim(),
+              amount: amountValue,
+              notes: notes.trim() || null,
+              categoryId,
+              ...(recurrenceChanged ? recurrenceFields : {}),
+            },
+          },
+          ...(payCall ? [payCall] : []),
+        ]);
         if (!res.ok) return setError(await errorMessage(res));
+        if (payCall && !pay?.ok) toast.error("Enregistré, mais le statut de paiement n'a pas pu être mis à jour.");
 
-        if (paymentStatus && !(await syncPaymentStatus(expense.id, paymentStatus, alreadyPaid, method))) {
-          toast.error("Enregistré, mais le statut de paiement n'a pas pu être mis à jour.");
-        }
-
-        await refreshData();
         toast.success("Modifications enregistrées.");
         nav.back();
         return;
       }
 
-      const res = await fetch("/api/expenses", {
+      const res = await mutate({
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        path: "/api/expenses",
+        body: {
           name: name.trim(),
           amount: amountValue,
           startDate: date,
@@ -231,21 +227,14 @@ export function ExpenseEditor({
           icon: null,
           categoryId,
           ...recurrenceFields,
-        }),
+          // Paid in the same request: one round trip.
+          paid: alreadyPaid ? { monthKey: monthKey(start), method } : undefined,
+        },
       });
       if (!res.ok) return setError(await errorMessage(res));
-      const created: { id: string } = await res.json();
+      const created: { problems?: string[] } = await res.json();
+      if (created.problems?.includes("paid")) toast.error("Ajoutée, mais le paiement n'a pas pu être enregistré.");
 
-      if (alreadyPaid) {
-        const paidRes = await fetch(`/api/expenses/${created.id}/payments`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ monthKey: monthKey(start), method }),
-        });
-        if (!paidRes.ok) toast.error("Ajoutée, mais le paiement n'a pas pu être enregistré.");
-      }
-
-      await refreshData();
       toast.success(isCredit ? "Crédit ajouté." : "Dépense ajoutée.");
       nav.back();
     });

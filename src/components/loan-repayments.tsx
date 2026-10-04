@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import type { PaymentMethod } from "@/lib/types";
 import { METHOD_META } from "@/lib/payment-method";
-import { useRefreshData } from "@/lib/use-refresh-data";
+import { mutate } from "@/lib/use-refresh-data";
 import { cn, formatMoney } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
 
@@ -20,24 +20,18 @@ export function ReceiveRepayment({
   amount: number;
   className?: string;
 }) {
-  const refreshData = useRefreshData();
   const [busy, setBusy] = useState(false);
 
   async function receive(method: PaymentMethod) {
     if (busy) return;
     setBusy(true);
-    const res = await fetch(`/api/loans/${loanId}/repayments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slot, method }),
-    });
+    const res = await mutate({ method: "POST", path: `/api/loans/${loanId}/repayments`, body: { slot, method } });
     if (!res.ok) {
       toast.error(await errorMessage(res));
       setBusy(false);
       return;
     }
     toast.success(`+${formatMoney(amount)} ajouté à ton solde (${METHOD_META[method].label}).`);
-    await refreshData();
     setBusy(false);
   }
 
@@ -62,7 +56,6 @@ export function ReceiveRepayment({
 
 /** Undo a received installment (its income goes with it). */
 export function CancelRepayment({ loanId, slot }: { loanId: string; slot: number }) {
-  const refreshData = useRefreshData();
   const [busy, setBusy] = useState(false);
   return (
     <button
@@ -70,9 +63,8 @@ export function CancelRepayment({ loanId, slot }: { loanId: string; slot: number
       disabled={busy}
       onClick={async () => {
         setBusy(true);
-        const res = await fetch(`/api/loans/${loanId}/repayments/${slot}`, { method: "DELETE" });
+        const res = await mutate({ method: "DELETE", path: `/api/loans/${loanId}/repayments/${slot}` });
         if (!res.ok) toast.error("Impossible d'annuler.");
-        await refreshData();
         setBusy(false);
       }}
       className="text-xs font-medium text-slate-500 underline underline-offset-2 disabled:opacity-60 dark:text-slate-400"

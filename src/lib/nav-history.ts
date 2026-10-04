@@ -64,12 +64,24 @@ function onPop() {
   write(s);
 }
 
+// Run once the router has actually shown `path` (see NavHistoryTracker):
+// on popstate alone it may still be busy with the page being left (e.g.
+// finishing a Server Action's refresh), and a router.refresh() then would
+// reload that page instead of the one arrived on.
+let arrival: { path: string; run: () => void } | null = null;
+
 /** Several steps back at once: the mirror moves first, so the popstate
  *  finds itself in place instead of starting over. */
 function jump(s: NavState, to: number, onArrive?: () => void) {
   const by = to - s.pos;
   write({ ...s, pos: to });
-  if (onArrive) window.addEventListener("popstate", () => setTimeout(onArrive, 0), { once: true });
+  if (onArrive) {
+    const entry = { path: s.stack[to], run: onArrive };
+    arrival = entry;
+    setTimeout(() => {
+      if (arrival === entry) arrival = null;
+    }, 5000);
+  }
   history.go(by);
 }
 
@@ -86,6 +98,11 @@ export function NavHistoryTracker() {
     // must not write their page into the tab's history.
     if (window.self !== window.top) return;
     record(pathname);
+    if (arrival?.path === pathname) {
+      const { run } = arrival;
+      arrival = null;
+      run();
+    }
   }, [pathname]);
   return null;
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Check, Pencil } from "lucide-react";
-import { useRefreshData } from "@/lib/use-refresh-data";
+import { mutate } from "@/lib/use-refresh-data";
 import type { DaretState } from "@/lib/daret";
 import { addMonths, monthKey, monthLabelFr, monthLabelShortFr } from "@/lib/date";
 import type { DaretWithExpense, PaymentMethod } from "@/lib/types";
@@ -32,7 +32,6 @@ export function DaretCard({
   /** Days from today until the 1st of the turn month (only when upcoming). */
   daysToTurn: number | null;
 }) {
-  const refreshData = useRefreshData();
   const [paid, setPaid] = useState(state.paidThisMonth);
   const [paidMonths, setPaidMonths] = useState(() => new Set(state.paidMonths));
   const [busy, setBusy] = useState(false);
@@ -59,18 +58,17 @@ export function DaretCard({
     flip(next);
     setBusy(true);
     const res = next
-      ? await fetch(`/api/expenses/${daret.expenseId}/payments`, {
+      ? await mutate({
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ monthKey: currentMonthKey, method }),
+          path: `/api/expenses/${daret.expenseId}/payments`,
+          body: { monthKey: currentMonthKey, method },
         })
-      : await fetch(`/api/expenses/${daret.expenseId}/payments?monthKey=${currentMonthKey}`, { method: "DELETE" });
+      : await mutate({ method: "DELETE", path: `/api/expenses/${daret.expenseId}/payments?monthKey=${currentMonthKey}` });
     if (!res.ok) {
       setPaid(!next);
       flip(!next);
     }
     setBusy(false);
-    await refreshData();
   }
 
   /** The pot collected on the turn, in cash or card (null: undo). */
@@ -78,14 +76,9 @@ export function DaretCard({
     if (busy) return;
     setChoosing(null);
     setBusy(true);
-    const res = await fetch(`/api/darets/${daret.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ payoutMethod: method }),
-    });
+    const res = await mutate({ method: "PATCH", path: `/api/darets/${daret.id}`, body: { payoutMethod: method } });
     setBusy(false);
     if (!res.ok) return;
-    await refreshData();
   }
 
   const turnReached = state.turnStatus !== "upcoming";

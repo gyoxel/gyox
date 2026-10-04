@@ -8,7 +8,7 @@ import { addMonths, monthKey, monthLabelFr, monthLabelShortFr, parseMonthKey, to
 import { monthlyFor, planFor } from "@/lib/plan";
 import { loanDelete } from "@/lib/delete-specs";
 import { useNavBack } from "@/lib/nav-history";
-import { useRefreshData } from "@/lib/use-refresh-data";
+import { mutate } from "@/lib/use-refresh-data";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { errorMessage, keepAboveKeyboard } from "@/components/expense-editor";
 import { DeleteButton } from "@/components/delete-button";
@@ -31,7 +31,6 @@ const MONTH_STEPS = [1, 2, 3, 4, 6, 10, 12];
 export function LoanEditor({ loan }: { loan?: Loan }) {
   const isEdit = loan != null;
   const nav = useNavBack();
-  const refreshData = useRefreshData();
   const [amount, setAmount] = useState(toDecimalInput(loan?.amount ?? null));
   const [name, setName] = useState(loan?.name ?? "");
   const [priorOpen, setPriorOpen] = useState((loan?.priorRepaid ?? 0) > 0);
@@ -80,13 +79,12 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
       note: note.trim() || null,
     };
     startTransition(async () => {
-      const res = await fetch(isEdit ? `/api/loans/${loan.id}` : "/api/loans", {
+      const res = await mutate({
         method: isEdit ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        path: isEdit ? `/api/loans/${loan.id}` : "/api/loans",
+        body,
       });
       if (!res.ok) return setError(await errorMessage(res));
-      await refreshData();
       toast.success(isEdit ? "Prêt enregistré." : "Prêt ajouté.");
       nav.back("/prets");
     });

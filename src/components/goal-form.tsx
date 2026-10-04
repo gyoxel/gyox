@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import type { Goal, GoalIdea } from "@/lib/types";
 import { monthLabelFr, parseMonthKey } from "@/lib/date";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
-import { useRefreshData } from "@/lib/use-refresh-data";
+import { mutate } from "@/lib/use-refresh-data";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DeleteButton } from "@/components/delete-button";
 import { goalDelete } from "@/lib/delete-specs";
@@ -53,7 +53,6 @@ export function GoalForm({
   ideas?: GoalIdea[];
 }) {
   const nav = useNavBack();
-  const refreshData = useRefreshData();
   const [emoji, setEmoji] = useState(goal?.emoji ?? "🎯");
   const [name, setName] = useState(goal?.name ?? "");
   const [target, setTarget] = useState(toDecimalInput(goal?.targetAmount));
@@ -121,16 +120,15 @@ export function GoalForm({
       daretIds,
     };
     startTransition(async () => {
-      const res = await fetch(goal ? `/api/goals/${goal.id}` : "/api/goals", {
+      const res = await mutate({
         method: goal ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        path: goal ? `/api/goals/${goal.id}` : "/api/goals",
+        body: payload,
       });
       if (!res.ok) {
         setError("Enregistrement impossible. Vérifie les champs.");
         return;
       }
-      await refreshData();
       toast.success(goal ? "Objectif modifié." : "Objectif ajouté.");
       nav.back(goal ? `/goals/${goal.id}` : "/goals");
     });

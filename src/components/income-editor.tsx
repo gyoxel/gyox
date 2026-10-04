@@ -9,7 +9,7 @@ import { CategoryPicker } from "@/components/category-picker";
 import { todayDateStr } from "@/lib/date";
 import { cleanDecimalInput, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { useNavBack } from "@/lib/nav-history";
-import { useRefreshData } from "@/lib/use-refresh-data";
+import { mutate } from "@/lib/use-refresh-data";
 import { errorMessage } from "@/components/expense-editor";
 import { DeleteButton } from "@/components/delete-button";
 import { incomeDelete } from "@/lib/delete-specs";
@@ -37,7 +37,6 @@ export function IncomeEditor({
 }) {
   const isEdit = income != null;
   const nav = useNavBack();
-  const refreshData = useRefreshData();
   const [amount, setAmount] = useState(toDecimalInput(income?.amount ?? null));
   const [categories, setCategories] = useState(initialCategories);
   const [category, setCategory] = useState(income?.category ?? initialCategories[0]?.id ?? "autre");
@@ -60,15 +59,14 @@ export function IncomeEditor({
     setError(null);
     if (!(amountValue > 0)) return setError("Indique un montant.");
     if (!finalName) return setError("Indique un nom.");
-    const body = JSON.stringify({ name: finalName, amount: amountValue, category, date, method, notes: notes.trim() || null });
+    const body = { name: finalName, amount: amountValue, category, date, method, notes: notes.trim() || null };
     startTransition(async () => {
-      const res = await fetch(isEdit ? `/api/incomes/${income.id}` : "/api/incomes", {
+      const res = await mutate({
         method: isEdit ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
+        path: isEdit ? `/api/incomes/${income.id}` : "/api/incomes",
         body,
       });
       if (!res.ok) return setError(await errorMessage(res));
-      await refreshData();
       toast.success(isEdit ? "Revenu modifié." : `+${formatMoney(amountValue)} ajouté à ton solde.`);
       nav.back("/incomes");
     });

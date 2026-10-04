@@ -5,7 +5,7 @@ import { Check, Clock } from "lucide-react";
 import { toast } from "sonner";
 import type { GoalDeposit, PaymentMethod } from "@/lib/types";
 import { useNavBack } from "@/lib/nav-history";
-import { useRefreshData } from "@/lib/use-refresh-data";
+import { mutate } from "@/lib/use-refresh-data";
 import { cleanDecimalInput, cn, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
 import { DeleteButton } from "@/components/delete-button";
@@ -34,7 +34,6 @@ export function DepositEditor({
   currency: string;
 }) {
   const nav = useNavBack();
-  const refreshData = useRefreshData();
   const [amount, setAmount] = useState(toDecimalInput(deposit.amount));
   const [name, setName] = useState(deposit.name === "Versement" ? "" : deposit.name);
   const [method, setMethod] = useState<PaymentMethod>(deposit.method ?? "cash");
@@ -49,13 +48,12 @@ export function DepositEditor({
     setError(null);
     if (!(value > 0)) return setError("Indique un montant.");
     startTransition(async () => {
-      const res = await fetch(`/api/goals/${goal.id}/deposits/${deposit.id}`, {
+      const res = await mutate({
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), amount: value, method, paid: linked ? paid : true }),
+        path: `/api/goals/${goal.id}/deposits/${deposit.id}`,
+        body: { name: name.trim(), amount: value, method, paid: linked ? paid : true },
       });
       if (!res.ok) return setError(await errorMessage(res));
-      await refreshData();
       toast.success("Versement modifié.");
       nav.back(`/goals/${goal.id}`);
     });

@@ -8,8 +8,8 @@ import { addMonths, monthKey, monthLabelShortFr, monthOfDateStr, todayDateStr } 
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { useNavBack } from "@/lib/nav-history";
 import { monthlyFor } from "@/lib/plan";
-import { useRefreshData } from "@/lib/use-refresh-data";
-import { errorMessage, keepAboveKeyboard, syncPaymentStatus, type PaymentStatusInit } from "@/components/expense-editor";
+import { mutate, mutateAll } from "@/lib/use-refresh-data";
+import { errorMessage, keepAboveKeyboard, paymentStatusCall, type PaymentStatusInit } from "@/components/expense-editor";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,6 @@ export function CreditEditor({
 }) {
   const isEdit = expense != null;
   const nav = useNavBack();
-  const refreshData = useRefreshData();
   const startDate = expense?.startDate ?? todayDateStr();
 
   // The credit's full amount; what's already repaid comes off it.
@@ -158,60 +157,46 @@ export function CreditEditor({
 
     startTransition(async () => {
       if (isEdit) {
-        const res = await fetch(`/api/expenses/${expense.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(fields),
-        });
+        const payCall = paymentStatus && paymentStatusCall(expense.id, paymentStatus, alreadyPaid, method);
+        const [res, pay] = await mutateAll([
+          { method: "PATCH", path: `/api/expenses/${expense.id}`, body: fields },
+          ...(payCall ? [payCall] : []),
+        ]);
         if (!res.ok) return setError(await errorMessage(res));
-        if (paymentStatus && !(await syncPaymentStatus(expense.id, paymentStatus, alreadyPaid, method))) {
-          toast.error("Enregistré, mais le statut de paiement n'a pas pu être mis à jour.");
-        }
-        await refreshData();
+        if (payCall && !pay?.ok) toast.error("Enregistré, mais le statut de paiement n'a pas pu être mis à jour.");
         toast.success("Crédit enregistré.");
         nav.back();
         return;
       }
 
-      const res = await fetch("/api/expenses", {
+      // The money received and the first payment go in the same request.
+      const res = await mutate({
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        path: "/api/expenses",
+        body: {
           ...fields,
           startDate,
           active: true,
           icon: null,
           categoryId: null,
           linkedExpenseId: null,
-        }),
+          income: received
+            ? {
+                name: `Crédit · ${name.trim()}`,
+                amount: totalValue,
+                category: "credit",
+                date: todayDateStr(),
+                method: receivedMethod,
+                notes: null,
+              }
+            : undefined,
+          paid: alreadyPaid ? { monthKey: monthKey(monthOfDateStr(startDate)), method } : undefined,
+        },
       });
       if (!res.ok) return setError(await errorMessage(res));
-      const created: { id: string } = await res.json();
-      if (received) {
-        const incomeRes = await fetch("/api/incomes", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: `Crédit · ${name.trim()}`,
-            amount: totalValue,
-            category: "credit",
-            date: todayDateStr(),
-            method: receivedMethod,
-            notes: null,
-            expenseId: created.id,
-          }),
-        });
-        if (!incomeRes.ok) toast.error("Crédit ajouté, mais l'argent reçu n'a pas pu être enregistré.");
-      }
-      if (alreadyPaid) {
-        const paidRes = await fetch(`/api/expenses/${created.id}/payments`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ monthKey: monthKey(monthOfDateStr(startDate)), method }),
-        });
-        if (!paidRes.ok) toast.error("Ajouté, mais le paiement n'a pas pu être enregistré.");
-      }
-      await refreshData();
+      const created: { problems?: string[] } = await res.json();
+      if (created.problems?.includes("income")) toast.error("Crédit ajouté, mais l'argent reçu n'a pas pu être enregistré.");
+      if (created.problems?.includes("paid")) toast.error("Ajouté, mais le paiement n'a pas pu être enregistré.");
       toast.success("Crédit ajouté.");
       nav.back();
     });

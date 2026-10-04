@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import type { PaymentMethod, SalaryAdvance, Settings } from "@/lib/types";
 import { METHOD_META } from "@/lib/payment-method";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
-import { useRefreshData } from "@/lib/use-refresh-data";
+import { mutate } from "@/lib/use-refresh-data";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -224,11 +224,7 @@ function todayStr(): string {
 
 /** Records the salary of `period` ("YYYY-MM") as received. */
 async function markReceived(period: string): Promise<boolean> {
-  const res = await fetch("/api/settings", {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ salaryReceivedMonth: period }),
-  });
+  const res = await mutate({ method: "PATCH", path: "/api/settings", body: { salaryReceivedMonth: period } });
   if (!res.ok) {
     toast.error("Impossible d'enregistrer.");
     return false;
@@ -243,7 +239,6 @@ function useSalaryState(settings: Settings) {
 }
 
 export function CountdownNextSalary({ settings, advances }: { settings: Settings; advances: SalaryAdvance[] }) {
-  const refreshData = useRefreshData();
   const [editing, setEditing] = useState(false);
   const [saving, startSaving] = useTransition();
   const state = useSalaryState(settings);
@@ -253,7 +248,6 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
     startSaving(async () => {
       if (!(await markReceived(state.period))) return;
       toast.success("Salaire reçu ✅ Le compte à rebours repart pour le mois prochain.");
-      await refreshData();
     });
   }
 
@@ -356,7 +350,6 @@ export function SalaryPanel({
   onDone?: () => void;
 }) {
   const { payDay, salaryReceivedMonth } = settings;
-  const refreshData = useRefreshData();
   const [advanceInput, setAdvanceInput] = useState("");
   const [advanceOpen, setAdvanceOpen] = useState(false);
   const [advanceMethod, setAdvanceMethod] = useState<PaymentMethod>(settings.salaryMethod);
@@ -375,7 +368,6 @@ export function SalaryPanel({
       toast.success(
         early ? "Salaire reçu en avance ✅" : "Salaire reçu ✅ Le compte à rebours repart pour le mois prochain.",
       );
-      await refreshData();
     });
   }
 
@@ -385,11 +377,7 @@ export function SalaryPanel({
     const [y, m] = salaryReceivedMonth.split("-").map(Number);
     const previous = periodKey(new Date(y, m - 2, 1));
     startSaving(async () => {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ salaryReceivedMonth: previous }),
-      });
+      const res = await mutate({ method: "PATCH", path: "/api/settings", body: { salaryReceivedMonth: previous } });
       if (!res.ok) {
         toast.error("Impossible d'annuler.");
         return;
@@ -397,7 +385,6 @@ export function SalaryPanel({
       writeLate(null);
       onDone?.();
       toast.success(`Annulé : salaire ${ofMonth(salaryReceivedMonth)} pas encore reçu.`);
-      await refreshData();
     });
   }
 
@@ -411,10 +398,10 @@ export function SalaryPanel({
     const amount = parseDecimalInput(advanceInput);
     if (!(amount > 0) || !advancePeriod) return;
     startSaving(async () => {
-      const res = await fetch("/api/salary-advances", {
+      const res = await mutate({
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount, date: todayStr(), period: advancePeriod, method: advanceMethod }),
+        path: "/api/salary-advances",
+        body: { amount, date: todayStr(), period: advancePeriod, method: advanceMethod },
       });
       if (!res.ok) {
         toast.error("Avance non enregistrée.");
@@ -423,20 +410,18 @@ export function SalaryPanel({
       setAdvanceInput("");
       setAdvanceOpen(false);
       toast.success(`Avance de ${money(amount)} ajoutée au solde.`);
-      await refreshData();
     });
   }
 
   function deleteAdvance(advance: SalaryAdvance) {
     startSaving(async () => {
-      const res = await fetch(`/api/salary-advances/${advance.id}`, { method: "DELETE" });
+      const res = await mutate({ method: "DELETE", path: `/api/salary-advances/${advance.id}` });
       if (!res.ok) {
         toast.error("Suppression impossible.");
         return;
       }
       setToDelete(null);
       toast.success("Avance supprimée.");
-      await refreshData();
     });
   }
 

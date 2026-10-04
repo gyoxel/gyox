@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import type { PaymentMethod, SavingsMove } from "@/lib/types";
 import { savingsDelete } from "@/lib/delete-specs";
 import { useNavBack } from "@/lib/nav-history";
-import { useRefreshData } from "@/lib/use-refresh-data";
+import { mutate } from "@/lib/use-refresh-data";
 import { cleanDecimalInput, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
 import { DeleteButton } from "@/components/delete-button";
@@ -23,7 +23,6 @@ const DATE_FMT = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long
  */
 export function SavingsEditor({ move, counted, currency }: { move: SavingsMove; counted: boolean; currency: string }) {
   const nav = useNavBack();
-  const refreshData = useRefreshData();
   const [amount, setAmount] = useState(toDecimalInput(move.amount));
   const [note, setNote] = useState(move.note ?? "");
   const [method, setMethod] = useState<PaymentMethod>(move.method);
@@ -37,13 +36,12 @@ export function SavingsEditor({ move, counted, currency }: { move: SavingsMove; 
     setError(null);
     if (!(value > 0)) return setError("Indique un montant.");
     startTransition(async () => {
-      const res = await fetch(`/api/savings/${move.id}`, {
+      const res = await mutate({
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: value, method, note: note.trim() || null }),
+        path: `/api/savings/${move.id}`,
+        body: { amount: value, method, note: note.trim() || null },
       });
       if (!res.ok) return setError(await errorMessage(res));
-      await refreshData();
       toast.success("Enregistré.");
       nav.back("/epargne");
     });

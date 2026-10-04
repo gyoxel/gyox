@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRefreshData } from "@/lib/use-refresh-data";
+import { mutate, useRefreshData } from "@/lib/use-refresh-data";
 import Link from "next/link";
 import { Banknote, ChevronRight, Download, Leaf, Monitor, Moon, Sun, Tags, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -50,19 +50,13 @@ export function SettingsForm({ settings }: { settings: Settings }) {
     const previous = theme;
     setTheme(choice);
     applyTheme(choice);
-    const res = await fetch("/api/settings", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ theme: choice }),
-    });
+    // Also drops cached pages so none of them comes back with the old theme.
+    const res = await mutate({ method: "PATCH", path: "/api/settings", body: { theme: choice } });
     if (!res.ok) {
       setTheme(previous);
       applyTheme(previous);
       toast.error("Impossible d'enregistrer le thème.");
-      return;
     }
-    // Drop cached pages so none of them comes back with the old theme.
-    await refreshData();
   }
 
   async function handleImportFile(file: File) {

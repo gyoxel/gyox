@@ -10,7 +10,7 @@ import { METHOD_META } from "@/lib/payment-method";
 import type { GoalProgress } from "@/lib/goals";
 import { monthLabelFr, monthLabelShortFr } from "@/lib/date";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput } from "@/lib/utils";
-import { useRefreshData } from "@/lib/use-refresh-data";
+import { mutate } from "@/lib/use-refresh-data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -350,7 +350,6 @@ function DepositDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const refreshData = useRefreshData();
   const [deposit, setDeposit] = useState("");
   const [depositName, setDepositName] = useState("");
   const [method, setMethod] = useState<PaymentMethod>("cash");
@@ -360,10 +359,10 @@ function DepositDialog({
     const value = parseDecimalInput(deposit);
     if (value <= 0) return;
     setSaving(true);
-    const res = await fetch(`/api/goals/${goal.id}/deposits`, {
+    const res = await mutate({
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: value, name: depositName.trim(), method }),
+      path: `/api/goals/${goal.id}/deposits`,
+      body: { amount: value, name: depositName.trim(), method },
     });
     setSaving(false);
     if (!res.ok) return toast.error("Versement impossible.");
@@ -371,7 +370,6 @@ function DepositDialog({
     onOpenChange(false);
     setDeposit("");
     setDepositName("");
-    await refreshData();
   }
 
   return (

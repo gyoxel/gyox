@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { ArrowLeftRight } from "lucide-react";
 import { toast } from "sonner";
 import type { PaymentMethod } from "@/lib/types";
-import { useRefreshData } from "@/lib/use-refresh-data";
+import { mutate } from "@/lib/use-refresh-data";
 import { cleanDecimalInput, cn, parseDecimalInput } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,6 @@ export function TransferDialog({
    *  where it goes (the other side is the savings). */
   mode?: "any" | "in" | "out";
 }) {
-  const refreshData = useRefreshData();
   const [from, setFrom] = useState<Account>(initialFrom);
   const [to, setTo] = useState<Account>(initialTo);
   const [amount, setAmount] = useState("");
@@ -81,17 +80,12 @@ export function TransferDialog({
           ? { url: "/api/savings", body: { kind: "out", amount: value, method: to, note: cleanNote } }
           : { url: "/api/wallet", body: { kind: "transfer", fromAccount: from, toAccount: to, amount: value, note: cleanNote } };
     startTransition(async () => {
-      const res = await fetch(request.url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(request.body),
-      });
+      const res = await mutate({ method: "POST", path: request.url, body: request.body });
       if (!res.ok) return setError(await errorMessage(res));
       onOpenChange(false);
       setAmount("");
       setNote("");
       toast.success(`${money(value)} : ${ACCOUNT_META[from].label} → ${ACCOUNT_META[to].label}`);
-      await refreshData();
     });
   }
 

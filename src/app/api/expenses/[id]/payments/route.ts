@@ -1,16 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { monthKey as toMonthKey, parseMonthKey, todayMonth } from "@/lib/date";
-import { getCreditRealState, getOccurrenceForMonth, getUnpaidMonths } from "@/lib/engine";
-import {
-  getAllExpenses,
-  getExpenseById,
-  getPaymentsForExpense,
-  markCreditSlotPaid,
-  markMonthPaid,
-  markMonthUnpaid,
-  setPaymentMethod,
-  undoLastCreditSlot,
-} from "@/lib/repository";
+import { monthKey as toMonthKey, todayMonth } from "@/lib/date";
+import { getExpenseById, markMonthUnpaid, setPaymentMethod, undoLastCreditSlot } from "@/lib/repository";
+import { payExpense } from "@/lib/pay-expense";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -28,61 +19,11 @@ interface Params {
  */
 export async function POST(req: NextRequest, { params }: Params) {
   const { id } = await params;
-  // Only this expense's payments are needed (the engine filters by id
-  // anyway); loading the whole table on every tap made quick successive
-  // ticks needlessly heavy for the database.
-  const [expense, payments, body] = await Promise.all([
-    getExpenseById(id),
-    getPaymentsForExpense(id),
-    req.json().catch(() => ({}) as { monthKey?: string; method?: string }),
-  ]);
+  const body = (await req.json().catch(() => ({}))) as { monthKey?: string; method?: string };
   const method = body.method === "cash" || body.method === "card" ? body.method : null;
-  if (!expense) return NextResponse.json({ error: "Dépense introuvable." }, { status: 404 });
-
-  if (expense.type === "credit") {
-    const evalMonth = body.monthKey ? parseMonthKey(body.monthKey) : todayMonth();
-    const state = getCreditRealState(expense, payments, evalMonth);
-    if (state.pendingAmount <= 0) {
-      return NextResponse.json({ error: "Aucune mensualité en attente pour ce crédit." }, { status: 400 });
-    }
-    const payment = await markCreditSlotPaid(
-      expense.id,
-      state.pendingAmount,
-      state.pendingAmount,
-      toMonthKey(evalMonth),
-      method,
-    );
-    return NextResponse.json(payment, { status: 201 });
-  }
-
-  const currentMonth = todayMonth();
-  const allExpenses = await getAllExpenses();
-  const byId = new Map(allExpenses.map((e) => [e.id, e]));
-  const unpaid = getUnpaidMonths(expense, payments, currentMonth, byId);
-
-  let targetMonthKey: string;
-  let amountDue: number;
-  if (body.monthKey) {
-    const match = unpaid.find((u) => u.monthKey === body.monthKey);
-    if (match) {
-      targetMonthKey = match.monthKey;
-      amountDue = match.amountDue;
-    } else {
-      // Month not in the unpaid ledger (already settled, or outside the
-      // usual range) — fall back to the actual occurrence amount for it.
-      const occ = getOccurrenceForMonth(expense, parseMonthKey(body.monthKey), byId);
-      if (!occ) return NextResponse.json({ error: "Aucune échéance pour ce mois." }, { status: 400 });
-      targetMonthKey = body.monthKey;
-      amountDue = occ.amount;
-    }
-  } else {
-    if (!unpaid[0]) return NextResponse.json({ error: "Rien à payer pour cette dépense." }, { status: 400 });
-    targetMonthKey = unpaid[0].monthKey;
-    amountDue = unpaid[0].amountDue;
-  }
-
-  const payment = await markMonthPaid(expense.id, targetMonthKey, amountDue, amountDue, method);
-  return NextResponse.json(payment, { status: 201 });
+  const result = await payExpense(id, body.monthKey, method);
+  if ("error" in result) return NextResponse.json({ error: result.error }, { status: result.status });
+  return NextResponse.json(result.payment, { status: 201 });
 }
 
 /**

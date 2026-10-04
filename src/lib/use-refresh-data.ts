@@ -1,6 +1,7 @@
 "use client";
 
 import { invalidateAll } from "@/app/actions";
+import { callApi, type ApiCall } from "@/app/api-actions";
 
 export const DATA_CHANGED_EVENT = "gx:data-changed";
 
@@ -16,6 +17,33 @@ async function refreshNow() {
  */
 export function useRefreshData() {
   return refreshNow;
+}
+
+function toResponse(r: { status: number; body: string }) {
+  const empty = r.status === 204 || r.status === 205 || r.status === 304 || !r.body;
+  return new Response(empty ? null : r.body, { status: r.status, headers: { "Content-Type": "application/json" } });
+}
+
+/**
+ * A mutation and the refresh that follows in ONE round trip (instead of a
+ * fetch() then refreshData()). Resolves once the page shows fresh data.
+ */
+export async function mutate(call: ApiCall): Promise<Response> {
+  const [res] = await mutateAll([call]);
+  return res;
+}
+
+/** Several mutations in order, stopping at the first failure, plus one
+ *  refresh — still one round trip. Gives the responses of those that ran. */
+export async function mutateAll(calls: ApiCall[]): Promise<Response[]> {
+  let results;
+  try {
+    results = await callApi(calls);
+  } catch {
+    results = [{ status: 503, body: JSON.stringify({ error: "Connexion impossible. Réessaie." }) }];
+  }
+  if (results.some((r) => r.status < 400)) window.dispatchEvent(new Event(DATA_CHANGED_EVENT));
+  return results.map(toResponse);
 }
 
 // Coalesced refresh for bursts of quick mutations (e.g. ticking several

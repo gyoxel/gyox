@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import type { PaymentMethod } from "@/lib/types";
 import type { WalletEntry, WalletSummary } from "@/lib/wallet";
 import { METHOD_META } from "@/lib/payment-method";
-import { useRefreshData } from "@/lib/use-refresh-data";
+import { mutate } from "@/lib/use-refresh-data";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -87,7 +87,6 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [toDelete, setToDelete] = useState<WalletEntry | null>(null);
   const [deleting, startDelete] = useTransition();
-  const refreshData = useRefreshData();
 
   const monthInTotal = wallet.monthIn.cash + wallet.monthIn.card;
   const monthOutTotal = wallet.monthOut.cash + wallet.monthOut.card;
@@ -107,16 +106,13 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
   function remove(entry: WalletEntry) {
     if (!entry.opId) return;
     startDelete(async () => {
-      const res = await fetch(`/api/wallet/${entry.opId}`, {
-        method: "DELETE",
-      });
+      const res = await mutate({ method: "DELETE", path: `/api/wallet/${entry.opId}` });
       if (!res.ok) {
         toast.error("Suppression impossible.");
         return;
       }
       setToDelete(null);
       toast.success("Opération supprimée.");
-      await refreshData();
     });
   }
 
@@ -413,7 +409,6 @@ function AdjustDialog({
   balance: Record<PaymentMethod, number>;
   money: (n: number) => string;
 }) {
-  const refreshData = useRefreshData();
   const [account, setAccount] = useState<PaymentMethod>("cash");
   const [real, setReal] = useState(() => toDecimalInput(Math.max(0, balance.cash)));
   const [error, setError] = useState<string | null>(null);
@@ -432,20 +427,14 @@ function AdjustDialog({
     if (!Number.isFinite(target)) return setError("Indique le montant réel.");
     if (delta === 0) return onOpenChange(false);
     startTransition(async () => {
-      const res = await fetch("/api/wallet", {
+      const res = await mutate({
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          kind: "adjust",
-          toAccount: account,
-          amount: delta,
-          note: null,
-        }),
+        path: "/api/wallet",
+        body: { kind: "adjust", toAccount: account, amount: delta, note: null },
       });
       if (!res.ok) return setError(await errorMessage(res));
       onOpenChange(false);
       toast.success(`${METHOD_META[account].label} : ${money(target)}`);
-      await refreshData();
     });
   }
 

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { useRefreshData } from "@/lib/use-refresh-data";
+import { mutate } from "@/lib/use-refresh-data";
 import type { PaymentMethod, Settings } from "@/lib/types";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import { cleanDecimalInput, parseDecimalInput, toDecimalInput } from "@/lib/utils";
@@ -26,7 +26,6 @@ export function SalaryForm({
   plain?: boolean;
   onSaved?: () => void;
 }) {
-  const refreshData = useRefreshData();
   const [salary, setSalary] = useState(toDecimalInput(settings.salary));
   const [payDay, setPayDay] = useState(String(settings.payDay));
   const [salaryMethod, setSalaryMethod] = useState<PaymentMethod>(settings.salaryMethod);
@@ -37,10 +36,10 @@ export function SalaryForm({
     e.preventDefault();
     setError(null);
     startTransition(async () => {
-      const res = await fetch("/api/settings", {
+      const res = await mutate({
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ salary: parseDecimalInput(salary), payDay: Number(payDay), salaryMethod }),
+        path: "/api/settings",
+        body: { salary: parseDecimalInput(salary), payDay: Number(payDay), salaryMethod },
       });
       if (!res.ok) {
         setError("Impossible d'enregistrer. Vérifie le montant.");
@@ -48,7 +47,6 @@ export function SalaryForm({
       }
       toast.success("Salaire enregistré. Tous les calculs sont mis à jour.");
       onSaved?.();
-      await refreshData();
     });
   }
 

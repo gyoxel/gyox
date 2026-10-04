@@ -3,14 +3,13 @@
 import { useState } from "react";
 import { Check, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useRefreshData } from "@/lib/use-refresh-data";
+import { mutate } from "@/lib/use-refresh-data";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 
 /** The free note of one calendar day: write, save, or delete (confirmed). */
 export function DayNoteEditor({ date, text }: { date: string; text: string }) {
-  const refreshData = useRefreshData();
   const [draft, setDraft] = useState(text);
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -18,16 +17,11 @@ export function DayNoteEditor({ date, text }: { date: string; text: string }) {
 
   async function save(value: string) {
     setSaving(true);
-    const res = await fetch(`/api/day-notes/${date}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: value }),
-    });
+    const res = await mutate({ method: "PUT", path: `/api/day-notes/${date}`, body: { text: value } });
     setSaving(false);
     if (!res.ok) return toast.error("Note non enregistrée.");
     setConfirming(false);
     toast.success(value.trim() ? "Note enregistrée." : "Note supprimée.");
-    await refreshData();
   }
 
   return (
