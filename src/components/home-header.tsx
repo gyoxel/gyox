@@ -18,7 +18,7 @@ export function HomeHeader() {
   const part = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("fr-FR", { timeZone: TIME_ZONE, ...o }).format(now);
 
   return (
-    <header className="sticky top-0 z-30 rounded-b-[28px] px-4 pb-3 pt-3 text-white shadow-sm" style={{ backgroundColor: HOME_COLOR }}>
+    <header data-tone className="sticky top-0 z-30 rounded-b-[28px] px-4 pb-3 pt-3 text-white shadow-sm" style={{ backgroundColor: HOME_COLOR }}>
       <ThemeColor color={HOME_COLOR} />
       <div className="flex h-12 items-center gap-3">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-[15px] font-black tracking-tight text-[#007261] shadow-md">

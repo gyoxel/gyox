@@ -32,7 +32,7 @@ export function PageHeader({
   const pathname = usePathname();
   const color = tone ?? pageColor(pathname);
   return (
-    <header className="sticky top-0 z-30 rounded-b-[28px] px-4 pb-3 pt-3 text-white shadow-sm" style={{ backgroundColor: color }}>
+    <header data-tone className="sticky top-0 z-30 rounded-b-[28px] px-4 pb-3 pt-3 text-white shadow-sm" style={{ backgroundColor: color }}>
       <ThemeColor color={color} />
       <div className="flex h-11 items-center gap-3">
         {back && <BackButton />}

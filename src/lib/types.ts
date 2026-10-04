@@ -51,7 +51,7 @@ export interface Settings {
   savingsTarget: number;
   /** "YYYY-MM" earliest navigable month */
   startMonth: string;
-  theme: "light" | "dark" | "system";
+  theme: "light" | "dark" | "system" | "simple";
   /** Day of the month the salary arrives (1-31). */
   payDay: number;
   /** "YYYY-MM" of the last pay day whose salary was confirmed received. */

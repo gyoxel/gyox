@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import Link from "next/link";
-import { Banknote, ChevronRight, Download, Monitor, Moon, Sun, Tags, Upload } from "lucide-react";
+import { Banknote, ChevronRight, Download, Leaf, Monitor, Moon, Sun, Tags, Upload } from "lucide-react";
 import { toast } from "sonner";
 import type { Settings } from "@/lib/types";
 import { THEME_STORAGE_KEY, applyTheme, type ThemeChoice } from "@/lib/theme";
@@ -14,6 +14,7 @@ const THEMES: { value: ThemeChoice; label: string; icon: typeof Sun }[] = [
   { value: "system", label: "Système", icon: Monitor },
   { value: "light", label: "Clair", icon: Sun },
   { value: "dark", label: "Sombre", icon: Moon },
+  { value: "simple", label: "Simple", icon: Leaf },
 ];
 
 /** Paramètres: theme (applied instantly) and data backup. */
@@ -91,7 +92,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
     <div className="flex flex-col gap-5">
       <section className="flex flex-col gap-2">
         <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Apparence</h2>
-        <div role="radiogroup" aria-label="Thème" className="grid grid-cols-3 gap-2.5">
+        <div role="radiogroup" aria-label="Thème" className="grid grid-cols-4 gap-2">
           {THEMES.map(({ value, label, icon: Icon }) => {
             const selected = theme === value;
             return (
@@ -103,7 +104,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
                 aria-label={label}
                 onClick={() => chooseTheme(value)}
                 className={cn(
-                  "flex flex-col items-center gap-2 rounded-2xl border bg-white p-2.5 transition-colors dark:bg-slate-900",
+                  "flex flex-col items-center gap-2 rounded-2xl border bg-white p-2 transition-colors dark:bg-slate-900",
                   selected ? "border-slate-500 ring-2 ring-slate-500 dark:border-slate-300 dark:ring-slate-300" : "border-slate-200 dark:border-slate-700",
                 )}
               >
@@ -116,6 +117,9 @@ export function SettingsForm({ settings }: { settings: Settings }) {
             );
           })}
         </div>
+        {theme === "simple" && (
+          <p className="px-1 text-xs text-slate-400">Clair ou sombre comme ton téléphone, avec moins de couleurs.</p>
+        )}
       </section>
 
       <section className="flex flex-col gap-2">
@@ -207,11 +211,17 @@ function RowIcon({ className, children }: { className: string; children: React.R
   );
 }
 
-/** A tiny phone screen in that theme (system: half light, half dark). */
+/** A tiny phone screen in that theme (system: half light, half dark;
+ *  simple: grey header instead of a coloured one). */
 function ThemePreview({ kind }: { kind: ThemeChoice }) {
   const screen = (dark: boolean) => (
     <span className={cn("flex h-full flex-1 flex-col gap-1 p-1.5", dark ? "bg-slate-900" : "bg-slate-50")}>
-      <span className="h-3 rounded bg-gradient-to-r from-emerald-400 to-cyan-500" />
+      <span
+        className={cn(
+          "h-3 rounded",
+          kind === "simple" ? "bg-slate-300" : "bg-gradient-to-r from-emerald-400 to-cyan-500",
+        )}
+      />
       <span className={cn("h-2 rounded", dark ? "bg-slate-700" : "bg-white shadow-sm")} />
       <span className={cn("h-2 rounded", dark ? "bg-slate-700" : "bg-white shadow-sm")} />
       <span className={cn("h-2 w-2/3 rounded", dark ? "bg-slate-700" : "bg-white shadow-sm")} />
@@ -219,7 +229,7 @@ function ThemePreview({ kind }: { kind: ThemeChoice }) {
   );
   return (
     <span className="flex h-20 w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
-      {kind === "dark" ? screen(true) : kind === "light" ? screen(false) : (
+      {kind === "dark" ? screen(true) : kind === "light" || kind === "simple" ? screen(false) : (
         <>
           {screen(false)}
           {screen(true)}

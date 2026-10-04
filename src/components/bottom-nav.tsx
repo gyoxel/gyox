@@ -102,6 +102,7 @@ function NavLink({
       className="flex flex-1 touch-manipulation select-none flex-col items-center gap-0.5 pb-2 pt-2 active:opacity-70"
     >
       <span
+        data-tint
         className={cn(
           "flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-200",
           active ? cn("-translate-y-1 bg-gradient-to-br text-white shadow-md", gradient) : cn(tint, "opacity-70"),
@@ -110,6 +111,7 @@ function NavLink({
         <Icon className="h-5 w-5" strokeWidth={active ? 2.2 : 1.8} />
       </span>
       <span
+        data-tint
         className={cn(
           "text-[11px] transition-colors duration-200",
           active ? cn("font-bold", tint) : "font-medium text-slate-400 dark:text-slate-500",

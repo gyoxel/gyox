@@ -21,6 +21,52 @@
   --foreground: #f1f5f9;
 }
 
+/* Thème simple: the coloured headers, hero cards and tiles (white text on a
+   gradient) turn into plain surfaces; their white text, tints and bars take
+   the text colour instead (Tailwind's white is var(--color-white)). */
+:root {
+  --simple-surface: #ffffff;
+  --simple-line: #e2e8f0;
+  --simple-chip: #f1f5f9;
+  --simple-ink: #0f172a;
+}
+:root.dark {
+  --simple-surface: #0f172a;
+  --simple-line: #1e293b;
+  --simple-chip: #1e293b;
+  --simple-ink: #e2e8f0;
+}
+.simple :is([data-tone], .text-white[class*="bg-gradient-to"]) {
+  --color-white: var(--simple-ink);
+  background-image: none !important;
+  background-color: var(--simple-surface) !important;
+  box-shadow: none !important;
+  border: 1px solid var(--simple-line);
+}
+.simple [data-tone] {
+  border-width: 0 0 1px;
+}
+.simple :is([data-tone], .text-white[class*="bg-gradient-to"]) :is(.bg-white:not(.h-full), [class*="bg-gradient-to"]) {
+  background-image: none;
+  background-color: var(--simple-chip);
+}
+.simple :is([data-tone], .text-white[class*="bg-gradient-to"]) :is(.text-slate-900, [class*="text-[#"]) {
+  color: var(--simple-ink);
+}
+.simple [data-tone] [class*="bg-white/"] {
+  background-color: var(--simple-chip);
+}
+/* Their decorative circles / glows go, light tinted labels turn grey. */
+.simple :is([data-tone], .text-white[class*="bg-gradient-to"]) > [aria-hidden].absolute {
+  display: none;
+}
+.simple :is([data-tone], .text-white[class*="bg-gradient-to"]) :is([class*="text-"][class*="-100"], [class*="text-"][class*="-200"], [class*="text-"][class*="-300"]):not([class*="text-rose"]) {
+  color: color-mix(in oklab, var(--simple-ink) 60%, transparent);
+}
+.simple [data-tint][class*="-600"] {
+  color: var(--simple-ink);
+}
+
 body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
