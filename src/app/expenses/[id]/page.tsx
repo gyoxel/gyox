@@ -8,6 +8,9 @@ import { METHOD_META } from "@/lib/payment-method";
 import { getCreditDisplayProgress, getCreditRealState, getEffectiveEndMonth, getOccurrenceForMonth } from "@/lib/engine";
 import { compareMonths, monthKey, monthLabelFr, monthOfDateStr, monthsBetween, todayMonth } from "@/lib/date";
 import { PageHeader } from "@/components/page-header";
+import { CREDIT_COLOR, pageColor } from "@/lib/page-theme";
+
+const GOALS_COLOR = pageColor("/goals");
 import { ExpenseEditor, type PaymentStatusInit, type RecurrenceInit } from "@/components/expense-editor";
 import { DeleteExpenseButton } from "@/components/delete-expense-button";
 import { CreditEditor } from "@/components/credit-editor";
@@ -36,7 +39,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
     const payment = payments.find((p) => p.expenseId === expense.id && p.amountPaid > 0);
     return (
       <>
-        <PageHeader title={expense.name} back />
+        <PageHeader title={expense.name} back tone={GOALS_COLOR} />
         <main className="flex flex-col gap-4 px-4 py-5">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 p-5 text-white shadow-lg shadow-orange-500/20 dark:shadow-none">
             <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
@@ -72,7 +75,12 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
 
   return (
     <>
-      <PageHeader title={expense.name} back action={<DeleteExpenseButton id={expense.id} name={expense.name} />} />
+      <PageHeader
+        title={expense.name}
+        back
+        tone={expense.type === "credit" ? CREDIT_COLOR : undefined}
+        action={<DeleteExpenseButton id={expense.id} name={expense.name} />}
+      />
       <main className="flex flex-col gap-5 px-4 py-5">
         {expense.type === "credit" && (
           <CreditInfo expense={expense} payments={payments} currency={settings.currency} />

@@ -37,7 +37,8 @@ export const viewport: Viewport = {
   // can be scrolled right above the keyboard reliably (the bottom bar hides
   // while typing, see BottomNav).
   interactiveWidget: "resizes-content",
-  themeColor: "#ffffff",
+  // Accueil's colour; each page sets its own (see ThemeColor).
+  themeColor: "#019c86",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

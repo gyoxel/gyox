@@ -42,7 +42,7 @@ export default async function CreditsPage() {
       <PageHeader
         title="Crédits"
         action={
-          <Button asChild size="sm">
+          <Button asChild size="sm" className="h-10 rounded-full bg-white px-3.5 text-blue-600 shadow-sm hover:bg-white/90">
             <Link href="/expenses/new?type=credit">
               <Plus className="h-4 w-4" />
               Crédit

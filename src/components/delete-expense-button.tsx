@@ -37,10 +37,14 @@ export function DeleteExpenseButton({ id, name }: { id: string; name: string }) 
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <Button type="button" variant="destructive" onClick={() => setOpen(true)}>
-        <Trash2 className="h-4 w-4" />
-        Supprimer
-      </Button>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Supprimer cette dépense"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-rose-600 shadow-sm transition-transform active:scale-95"
+      >
+        <Trash2 className="h-[18px] w-[18px]" />
+      </button>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Supprimer cette dépense ?</DialogTitle>
