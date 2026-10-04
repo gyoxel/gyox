@@ -5,7 +5,6 @@ import { getMonthSummary } from "@/lib/engine";
 import { monthKey, monthLabelFr, todayMonth } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
-import { HeaderAdd } from "@/components/header-add";
 import { CategoryManager, type CategoryStats } from "@/components/category-manager";
 
 export const dynamic = "force-dynamic";
@@ -50,7 +49,7 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
 
   return (
     <>
-      <PageHeader title="Catégories" back action={<HeaderAdd label="Ajouter une catégorie" />} />
+      <PageHeader title="Catégories" back />
       <main className="flex flex-col gap-5 px-4 py-5">
         <nav aria-label="Type de catégories" className="flex gap-1 rounded-full bg-slate-100 p-1 dark:bg-slate-800">
           <Link href="/categories" replace scroll={false} aria-current={!income ? "page" : undefined} className={tab(!income)}>
