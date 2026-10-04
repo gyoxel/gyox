@@ -2,12 +2,14 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, ChartNoAxesCombined, ChevronRight, HandCoins, Target, TrendingUp, Wallet, type LucideIcon } from "lucide-react";
+import { CalendarDays, ChartNoAxesCombined, ChevronRight, HandCoins, Handshake, PiggyBank, Target, TrendingUp, Wallet, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ITEMS: { href: string; label: string; hint: string; icon: LucideIcon; tint: string }[] = [
-  { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau…", icon: TrendingUp, tint: "from-lime-400 to-green-600" },
+  { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau…", icon: TrendingUp, tint: "from-emerald-400 to-green-600" },
   { href: "/solde", label: "Solde", hint: "Cash, carte, historique", icon: Wallet, tint: "from-indigo-400 to-violet-600" },
+  { href: "/epargne", label: "Épargne", hint: "Argent mis de côté", icon: PiggyBank, tint: "from-lime-400 to-green-600" },
+  { href: "/prets", label: "Prêts", hint: "Ce qu'on doit te rendre", icon: Handshake, tint: "from-amber-500 to-orange-700" },
   { href: "/daret", label: "Daret", hint: "Tes darets et ton tour", icon: HandCoins, tint: "from-teal-400 to-emerald-600" },
   { href: "/goals", label: "Objectifs", hint: "Voiture, maison, voyage…", icon: Target, tint: "from-amber-400 to-orange-500" },
   { href: "/stats", label: "Statistiques", hint: "Répartition, prévisions", icon: ChartNoAxesCombined, tint: "from-sky-400 to-blue-600" },

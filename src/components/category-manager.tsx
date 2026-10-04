@@ -51,13 +51,18 @@ export function CategoryManager({
   stats,
   monthLabel,
   currency,
+  kind = "expense",
 }: {
+  /** The expenses' categories or the incomes'. */
+  kind?: "expense" | "income";
   categories: Category[];
   stats: Record<string, CategoryStats>;
   monthLabel: string;
   currency: string;
 }) {
   const refreshData = useRefreshData();
+  const income = kind === "income";
+  const base = income ? "/api/income-categories" : "/api/categories";
   const [categories, setCategories] = useState(initial);
   const [editing, setEditing] = useState<Editing | null>(null);
   const [emoji, setEmoji] = useState("🏷️");
@@ -81,12 +86,12 @@ export function CategoryManager({
     setBusy(true);
     const res =
       editing.mode === "new"
-        ? await fetch("/api/categories", {
+        ? await fetch(base, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(clean),
           })
-        : await fetch(`/api/categories/${editing.category.id}`, {
+        : await fetch(`${base}/${editing.category.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(clean),
@@ -96,7 +101,7 @@ export function CategoryManager({
     const saved: Category = await res.json();
     if (editing.mode === "new") {
       // The server files it before Santé / Autres (kept last): take its order.
-      const list = await fetch("/api/categories").then((r) => (r.ok ? (r.json() as Promise<Category[]>) : null));
+      const list = await fetch(base).then((r) => (r.ok ? (r.json() as Promise<Category[]>) : null));
       const nextList = list ?? [...categories, saved];
       setCategories(nextList);
       setSavedOrder(nextList.map((c) => c.id));
@@ -301,7 +306,7 @@ export function CategoryManager({
   async function saveOrder() {
     setBusy(true);
     const ids = categories.map((c) => c.id);
-    const res = await fetch("/api/categories/order", {
+    const res = await fetch(`${base}/order`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ids }),
@@ -319,7 +324,7 @@ export function CategoryManager({
 
   async function resetAll() {
     setBusy(true);
-    const res = await fetch("/api/categories/reset", { method: "POST" });
+    const res = await fetch(`${base}/reset`, { method: "POST" });
     setBusy(false);
     if (!res.ok) return toast.error("Réinitialisation impossible.");
     const list: Category[] = await res.json();
@@ -333,7 +338,7 @@ export function CategoryManager({
   async function confirmDelete() {
     if (!toDelete) return;
     setBusy(true);
-    const res = await fetch(`/api/categories/${toDelete.id}`, { method: "DELETE" });
+    const res = await fetch(`${base}/${toDelete.id}`, { method: "DELETE" });
     setBusy(false);
     if (!res.ok) return toast.error("Suppression impossible.");
     setCategories((prev) => prev.filter((c) => c.id !== toDelete.id));
@@ -358,7 +363,17 @@ export function CategoryManager({
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-semibold text-slate-900 dark:text-white">{c.name}</span>
             <span className="block truncate text-[11px] text-slate-500 dark:text-slate-400">
-              {st.count === 0 ? "Aucune dépense" : st.count === 1 ? "1 dépense" : `${st.count} dépenses`}
+              {income
+                ? st.count === 0
+                  ? "Aucun revenu"
+                  : st.count === 1
+                    ? "1 revenu"
+                    : `${st.count} revenus`
+                : st.count === 0
+                  ? "Aucune dépense"
+                  : st.count === 1
+                    ? "1 dépense"
+                    : `${st.count} dépenses`}
             </span>
           </span>
         </span>
@@ -399,10 +414,17 @@ export function CategoryManager({
       )}
 
       {/* Summary */}
-      <div className="rounded-2xl bg-gradient-to-br from-violet-500 to-purple-700 px-4 py-4 text-white shadow-sm">
+      <div
+        className={cn(
+          "rounded-2xl bg-gradient-to-br px-4 py-4 text-white shadow-sm",
+          income ? "from-emerald-500 to-green-700" : "from-violet-500 to-purple-700",
+        )}
+      >
         <p className="text-xs font-medium text-white/80">{categories.length} catégories</p>
         <p className="mt-0.5 text-2xl font-bold tabular-nums">{money(totalMonth)}</p>
-        <p className="text-[11px] text-white/80">Dépenses classées · {monthLabel}</p>
+        <p className="text-[11px] text-white/80">
+          {income ? "Revenus classés" : "Dépenses classées"} · {monthLabel}
+        </p>
       </div>
 
       <p className="-mb-2 px-1 text-[11px] text-slate-400">
@@ -479,7 +501,8 @@ export function CategoryManager({
         description={
           <>
             Les catégories d&apos;origine reviennent avec leurs noms, leurs icônes et leur ordre. Celles que tu as
-            ajoutées sont supprimées (leurs dépenses sont gardées, sans catégorie).
+            ajoutées sont supprimées{" "}
+            {income ? "(leurs revenus passent dans « Autre »)." : "(leurs dépenses sont gardées, sans catégorie)."}
           </>
         }
         confirmLabel="Réinitialiser"
@@ -560,7 +583,7 @@ export function CategoryManager({
               <Check className="h-4 w-4" />
               {editing?.mode === "new" ? "Ajouter" : "Enregistrer"}
             </Button>
-            {editing?.mode === "edit" && (
+            {editing?.mode === "edit" && !(income && editing.category.id === "autre") && (
               <Button type="button" variant="destructive" onClick={() => setToDelete(editing.category)} disabled={busy}>
                 <Trash2 className="h-4 w-4" />
                 Supprimer la catégorie
@@ -576,8 +599,10 @@ export function CategoryManager({
         title="Supprimer cette catégorie ?"
         description={
           <>
-            « {toDelete?.emoji} {toDelete?.name} » sera supprimée. Les dépenses de cette catégorie sont gardées, sans
-            catégorie.
+            « {toDelete?.emoji} {toDelete?.name} » sera supprimée.{" "}
+            {income
+              ? "Ses revenus sont gardés et passent dans « Autre »."
+              : "Les dépenses de cette catégorie sont gardées, sans catégorie."}
           </>
         }
         pending={busy}
