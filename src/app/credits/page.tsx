@@ -1,14 +1,12 @@
-import Link from "next/link";
-import { Plus } from "lucide-react";
 import { getAllCategories, getAllDarets, getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
 import { TimelineSection } from "@/components/timeline-section";
 import { displayIcon } from "@/lib/category";
 import { PageHeader } from "@/components/page-header";
+import { AddLink } from "@/components/add-link";
 import { CreditCard } from "@/components/credit-card";
 import { getCreditEndMonth, getCreditRealState, getExpenseDisplayColor } from "@/lib/engine";
 import { compareMonths, todayMonth } from "@/lib/date";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
@@ -39,19 +37,11 @@ export default async function CreditsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Crédits"
-        action={
-          <Button asChild size="sm" className="h-10 rounded-full bg-white px-3.5 text-blue-600 shadow-sm hover:bg-white/90">
-            <Link href="/expenses/new?type=credit">
-              <Plus className="h-4 w-4" />
-              Crédit
-            </Link>
-          </Button>
-        }
-      />
+      <PageHeader title="Crédits" />
       <main className="flex flex-col gap-3 px-4 py-5">
         <TimelineSection expenses={expenses} darets={darets} payments={payments} currency={settings.currency} categoryEmoji={categoryEmoji} />
+
+        <AddLink href="/expenses/new?type=credit" label="Ajouter un crédit" className="mt-1 border-blue-200 text-blue-600 active:bg-blue-50 dark:border-blue-900 dark:text-blue-400 dark:active:bg-blue-950/30" />
 
         <h2 className="mt-3 flex items-baseline justify-between px-1 text-sm font-semibold text-slate-500 dark:text-slate-400">
           <span>Crédits</span>
@@ -73,7 +63,6 @@ export default async function CreditsPage() {
             />
           ))
         )}
-
       </main>
     </>
   );

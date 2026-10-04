@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { getAllDarets, getAllIncomes, getSettings } from "@/lib/repository";
 import { daretPayout } from "@/lib/daret";
 import { incomeCategory, incomesIn } from "@/lib/income";
@@ -7,7 +7,7 @@ import { monthKey, monthLabelFr, parseMonthKey, todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
 import type { Income } from "@/lib/types";
 import { PageHeader } from "@/components/page-header";
-import { Button } from "@/components/ui/button";
+import { AddLink } from "@/components/add-link";
 import { METHOD_META } from "@/lib/payment-method";
 
 export const dynamic = "force-dynamic";
@@ -72,12 +72,7 @@ export default async function IncomesPage() {
           </p>
         </div>
 
-        <Button asChild className="bg-emerald-600 text-white hover:bg-emerald-700">
-          <Link href="/incomes/new">
-            <Plus className="h-4 w-4" />
-            Ajouter un revenu
-          </Link>
-        </Button>
+        <AddLink href="/incomes/new" label="Ajouter un revenu" className="border-emerald-200 text-emerald-600 active:bg-emerald-50 dark:border-emerald-900 dark:text-emerald-400 dark:active:bg-emerald-950/30" />
 
         {months.length === 0 ? (
           <p className="rounded-xl border border-dashed border-slate-200 px-3 py-6 text-center text-sm text-slate-400 dark:border-slate-700">

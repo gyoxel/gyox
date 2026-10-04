@@ -1,10 +1,9 @@
-import Link from "next/link";
-import { Plus } from "lucide-react";
 import { getAllDarets, getAllPayments, getSettings } from "@/lib/repository";
 import { getDaretState } from "@/lib/daret";
 import { compareMonths, monthKey, monthLabelFr, todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
+import { AddLink } from "@/components/add-link";
 import { DaretCard } from "@/components/daret-card";
 
 export const dynamic = "force-dynamic";
@@ -60,6 +59,9 @@ export default async function DaretPage() {
           </div>
         )}
 
+        <AddLink href="/daret/new" label="Ajouter une daret" className="border-teal-200 text-[#007261] active:bg-teal-50 dark:border-teal-900 dark:text-teal-300 dark:active:bg-teal-950/30" />
+
+
         {items.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-slate-200 px-4 py-10 text-center dark:border-slate-700">
             <span className="text-4xl">🤝🏻</span>
@@ -78,15 +80,6 @@ export default async function DaretPage() {
             />
           ))
         )}
-
-        <Link
-          href="/daret/new"
-          prefetch
-          className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-teal-200 py-3.5 text-sm font-semibold text-[#007261] active:bg-teal-50 dark:border-teal-900 dark:text-teal-300 dark:active:bg-teal-950/30"
-        >
-          <Plus className="h-4 w-4" />
-          Ajouter une daret
-        </Link>
       </main>
     </>
   );

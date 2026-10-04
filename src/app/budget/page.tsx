@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Check, ChevronRight, Clock, Plus } from "lucide-react";
+import { Check, ChevronRight, Clock } from "lucide-react";
 import { getAllCategories, getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
 import { monthFromSearchParams, monthKey, monthLabelFr, monthLabelShortFr, todayMonth } from "@/lib/date";
 import { getEffectiveEndMonth, getMonthPaymentStatus, getMonthSummary } from "@/lib/engine";
 import { METHOD_META } from "@/lib/payment-method";
 import { MonthSwitcher } from "@/components/month-switcher";
 import { PageHeader } from "@/components/page-header";
+import { AddLink } from "@/components/add-link";
 import { displayIcon } from "@/lib/category";
 import { cn, formatMoney } from "@/lib/utils";
 import type { Expense, PaymentMethod, PaymentStatus } from "@/lib/types";
@@ -112,6 +113,9 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
           </p>
         </div>
 
+        <AddLink href="/expenses/new" label="Ajouter une dépense" className="border-rose-200 text-rose-600 active:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:active:bg-rose-950/30" />
+
+
         {groups.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-slate-200 px-3 py-8 text-center text-sm text-slate-400 dark:border-slate-700">
             Aucune dépense prévue pour ce mois.
@@ -192,15 +196,6 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
             </section>
           ))
         )}
-
-        <Link
-          href="/expenses/new"
-          prefetch
-          className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-rose-200 py-3.5 text-sm font-semibold text-rose-600 active:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:active:bg-rose-950/30"
-        >
-          <Plus className="h-4 w-4" />
-          Ajouter une dépense
-        </Link>
       </main>
     </>
   );

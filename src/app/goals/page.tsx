@@ -1,10 +1,10 @@
-import Link from "next/link";
-import { Plus, Target } from "lucide-react";
+import { Target } from "lucide-react";
 import { getAllDarets, getAllGoals, getAllPayments, getSettings } from "@/lib/repository";
 import { getGoalProgress } from "@/lib/goals";
 import { todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
+import { AddLink } from "@/components/add-link";
 import { GoalCard } from "@/components/goal-card";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +43,9 @@ export default async function GoalsPage() {
           </div>
         )}
 
+        <AddLink href="/goals/new" label="Ajouter un objectif" className="border-amber-200 text-orange-600 active:bg-amber-50 dark:border-amber-900 dark:text-amber-400 dark:active:bg-amber-950/30" />
+
+
         {rows.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-slate-200 px-6 py-10 text-center dark:border-slate-700">
             <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm">
@@ -58,15 +61,6 @@ export default async function GoalsPage() {
             <GoalCard key={goal.id} goal={goal} progress={progress} currency={settings.currency} linkToDetail />
           ))
         )}
-
-        <Link
-          href="/goals/new"
-          prefetch
-          className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-amber-200 py-3.5 text-sm font-semibold text-orange-600 active:bg-amber-50 dark:border-amber-900 dark:text-amber-400 dark:active:bg-amber-950/30"
-        >
-          <Plus className="h-4 w-4" />
-          Ajouter un objectif
-        </Link>
       </main>
     </>
   );
