@@ -3,6 +3,7 @@ import { Banknote, CalendarDays, ChartNoAxesCombined, ChevronRight, HandCoins, H
 import { PageHeader } from "@/components/page-header";
 
 const GROUPS: { href: string; label: string; hint: string; icon: LucideIcon; tint: string }[][] = [
+  [{ href: "/settings", label: "Paramètres", hint: "Thème, sauvegarde", icon: Settings, tint: "from-slate-400 to-slate-600" }],
   [
     { href: "/salary", label: "Salaire", hint: "Montant, jour de paie, avances", icon: Banknote, tint: "from-emerald-400 to-teal-600" },
     { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau, vente…", icon: TrendingUp, tint: "from-emerald-400 to-green-600" },
@@ -23,7 +24,6 @@ const GROUPS: { href: string; label: string; hint: string; icon: LucideIcon; tin
     },
     { href: "/categories", label: "Catégories", hint: "Ajouter, renommer, ordonner", icon: Tags, tint: "from-violet-400 to-purple-600" },
   ],
-  [{ href: "/settings", label: "Paramètres", hint: "Thème, sauvegarde", icon: Settings, tint: "from-slate-400 to-slate-600" }],
 ];
 
 /** Menu tab: everything that isn't a daily screen. */
