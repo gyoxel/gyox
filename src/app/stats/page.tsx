@@ -170,11 +170,11 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
                       style={{ width: `${(f.salary / maxForecast) * 100}%` }}
                     />
                     <span
-                      className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-sky-400 to-blue-600"
+                      className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-rose-400 to-rose-600"
                       style={{ width: `${(Math.min(f.totalExpenses, maxForecast) / maxForecast) * 100}%` }}
                     />
                   </span>
-                  <span className="text-[11px] text-slate-400">Dépenses {formatMoney(f.totalExpenses, currency)}</span>
+                  <span className="text-[11px] text-rose-500 dark:text-rose-400">Dépenses {formatMoney(f.totalExpenses, currency)}</span>
                 </Link>
               );
             })}
