@@ -25,7 +25,7 @@ export default async function GoalsPage() {
   return (
     <>
       <PageHeader title="Objectifs" back />
-      <main className="flex flex-col gap-4 px-4 py-5">
+      <main className="flex flex-col gap-5 px-4 py-5">
         {rows.length > 0 && (
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 px-5 py-4 text-white shadow-lg shadow-orange-500/20 dark:shadow-none">
             <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />

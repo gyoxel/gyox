@@ -76,7 +76,7 @@ export function EpargneView({
           const list = moves.filter((x) => x.date.startsWith(m));
           return (
             <section key={m} className="flex flex-col gap-2">
-              <h2 className="px-1 text-sm font-semibold capitalize text-slate-500 dark:text-slate-400">{monthLabelFr(parseMonthKey(m))}</h2>
+              <h2 className="px-1 text-sm font-semibold capitalize text-slate-600 dark:text-slate-300">{monthLabelFr(parseMonthKey(m))}</h2>
               <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 {list.map((x) => (
                   <li key={x.id} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">

@@ -70,8 +70,8 @@ export default async function IncomesPage() {
     <>
       <PageHeader title="Revenus" back />
       <main className="flex flex-col gap-5 px-4 py-5">
-        <div className="rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 px-4 py-4 text-white shadow-sm">
-          <p className="text-xs font-medium text-white/80">Revenus en plus ce mois-ci</p>
+        <div className="rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-600 px-5 pb-4 pt-5 text-white shadow-lg shadow-emerald-600/20 dark:shadow-none">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Revenus en plus ce mois-ci</p>
           <p className="mt-0.5 text-3xl font-bold tabular-nums">+{money(thisMonth)}</p>
           <p className="mt-1 text-[11px] text-white/80">
             En plus du salaire ({money(settings.salary)}), ajoutés à ton solde du mois.
@@ -89,7 +89,7 @@ export default async function IncomesPage() {
             const list = rows.filter((r) => r.date.startsWith(m));
             return (
               <section key={m} className="flex flex-col gap-2">
-                <h2 className="flex items-center justify-between px-1 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                <h2 className="flex items-center justify-between px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">
                   <span className="capitalize">{monthLabelFr(parseMonthKey(m))}</span>
                   <span className="tabular-nums text-emerald-600">+{money(list.reduce((sum, r) => sum + r.amount, 0))}</span>
                 </h2>

@@ -416,11 +416,11 @@ export function CategoryManager({
       {/* Summary */}
       <div
         className={cn(
-          "rounded-2xl bg-gradient-to-br px-4 py-4 text-white shadow-sm",
+          "rounded-3xl bg-gradient-to-br px-5 pb-4 pt-5 text-white shadow-lg dark:shadow-none",
           income ? "from-emerald-500 to-green-700" : "from-violet-500 to-purple-700",
         )}
       >
-        <p className="text-xs font-medium text-white/80">{categories.length} catégories</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">{categories.length} catégories</p>
         <p className="mt-0.5 text-2xl font-bold tabular-nums">{money(totalMonth)}</p>
         <p className="text-[11px] text-white/80">
           {income ? "Revenus classés" : "Dépenses classées"} · {monthLabel}

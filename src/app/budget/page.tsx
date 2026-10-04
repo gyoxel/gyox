@@ -92,8 +92,8 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
         <MonthSwitcher month={viewMonth} basePath="/budget" />
 
         {/* Summary */}
-        <div className="rounded-2xl bg-gradient-to-br from-rose-500 to-pink-700 px-4 pb-4 pt-3.5 text-white shadow-sm">
-          <p className="text-xs font-medium capitalize text-white/80">Dépenses · {monthLabelFr(viewMonth)}</p>
+        <div className="rounded-3xl bg-gradient-to-br from-rose-500 to-pink-700 px-5 pb-4 pt-5 text-white shadow-lg shadow-rose-500/20 dark:shadow-none">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Dépenses · {monthLabelFr(viewMonth)}</p>
           <p className="mt-0.5 text-3xl font-bold tabular-nums">{money(total)}</p>
           <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/25">
             <div className="h-full rounded-full bg-white" style={{ width: `${percent}%` }} />

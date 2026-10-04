@@ -60,7 +60,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
           tone={GOALS_COLOR}
           action={<LockedDeleteIcon hint={`Ce versement vient de l'objectif « ${goal.name} » : supprime-le depuis le versement.`} />}
         />
-        <main className="flex flex-col gap-4 px-4 py-5">
+        <main className="flex flex-col gap-5 px-4 py-5">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 p-5 text-white shadow-lg shadow-orange-500/20 dark:shadow-none">
             <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
             <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Versement · objectif</p>
@@ -135,7 +135,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
           tone={DARET_COLOR}
           action={<LockedDeleteIcon hint={`Cette cotisation vient de la daret « ${expense.name} » : supprime-la depuis la daret.`} />}
         />
-        <main className="flex flex-col gap-4 px-4 py-5">
+        <main className="flex flex-col gap-5 px-4 py-5">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-400 via-emerald-500 to-[#007261] p-5 text-white shadow-lg shadow-emerald-600/20 dark:shadow-none">
             <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
             <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Cotisation · daret</p>
@@ -174,27 +174,25 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
   return (
     <>
       <PageHeader
-        title={expense.name}
+        title={`Modifier · ${expense.name}`}
         back
         tone={expense.type === "credit" ? CREDIT_COLOR : undefined}
         action={<DeleteButton variant="icon" {...expenseDelete(expense)} />}
       />
       <main className="flex flex-col gap-5 px-4 py-5">
-        {expense.type === "credit" && (
-          <CreditInfo expense={expense} payments={payments} currency={settings.currency} />
-        )}
-        {expense.type !== "credit" && expense.frequency === "monthly" && (
-          <EndInfo expense={expense} allExpenses={allExpenses} />
-        )}
-
         {expense.type === "credit" ? (
-          <CreditEditor expense={expense} paymentStatus={paymentStatus} />
+          <CreditEditor
+            expense={expense}
+            paymentStatus={paymentStatus}
+            info={<CreditInfo expense={expense} payments={payments} currency={settings.currency} />}
+          />
         ) : (
           <ExpenseEditor
             expense={expense}
             categories={categories}
             recurrenceInit={recurrenceInit}
             paymentStatus={paymentStatus}
+            info={expense.frequency === "monthly" ? <EndInfo expense={expense} allExpenses={allExpenses} /> : undefined}
           />
         )}
 

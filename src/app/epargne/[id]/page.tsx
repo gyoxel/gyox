@@ -17,7 +17,7 @@ export default async function EditSavingsPage({ params }: { params: Promise<{ id
   return (
     <>
       <PageHeader
-        title={move.kind === "in" ? "Épargne" : "Retrait d'épargne"}
+        title={move.kind === "in" ? "Modifier · Épargne" : "Modifier · Retrait"}
         back
         action={<DeleteButton variant="icon" {...savingsDelete(move)} />}
       />

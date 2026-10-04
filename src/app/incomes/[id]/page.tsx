@@ -64,7 +64,7 @@ export default async function EditIncomePage({ params }: { params: Promise<{ id:
   return (
     <>
       <PageHeader
-        title={income.name}
+        title={`Modifier · ${income.name}`}
         back
         action={
           credit ? (

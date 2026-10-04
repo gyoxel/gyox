@@ -148,11 +148,25 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
         </div>
       </div>
 
+      {/* Actions */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <Button
+          type="button"
+          className="h-12 bg-indigo-600 text-white hover:bg-indigo-700"
+          onClick={() => setTransferOpen(true)}
+        >
+          <ArrowLeftRight className="h-4 w-4" />
+          Transférer
+        </Button>
+        <Button type="button" variant="outline" className="h-12" onClick={() => setAdjustOpen(true)}>
+          <PencilLine className="h-4 w-4" />
+          Ajuster
+        </Button>
+      </div>
+
       {/* Accounts */}
       <section className="flex flex-col gap-2.5">
-        <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-          Mes comptes
-        </h2>
+        <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Mes comptes</h2>
         {ACCOUNTS.map((a) => {
           const active = filter === a.key;
           return (
@@ -224,26 +238,10 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
         </p>
       </section>
 
-      {/* Actions */}
-      <div className="grid grid-cols-2 gap-2.5">
-        <Button
-          type="button"
-          className="h-12 bg-indigo-600 text-white hover:bg-indigo-700"
-          onClick={() => setTransferOpen(true)}
-        >
-          <ArrowLeftRight className="h-4 w-4" />
-          Transférer
-        </Button>
-        <Button type="button" variant="outline" className="h-12" onClick={() => setAdjustOpen(true)}>
-          <PencilLine className="h-4 w-4" />
-          Ajuster
-        </Button>
-      </div>
-
       {/* History */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2 px-1">
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Historique</h2>
+          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">Historique</h2>
           <div
             role="radiogroup"
             aria-label="Filtrer l'historique"

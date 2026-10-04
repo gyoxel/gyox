@@ -226,7 +226,7 @@ export function CalendarView({
       {/* Selected day */}
       {selected && (
         <section className="flex flex-col gap-2">
-          <h2 className="flex items-center gap-2 px-1 text-sm font-semibold capitalize text-slate-700 dark:text-slate-200">
+          <h2 className="flex items-center gap-2 px-1 text-sm font-semibold capitalize text-slate-600 dark:text-slate-300">
             <span className="h-2 w-2 rounded-full bg-pink-500" />
             {DAY_TITLE.format(new Date(`${selected}T12:00:00Z`))}
           </h2>

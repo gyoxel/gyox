@@ -21,7 +21,7 @@ export default async function EditDepositPage({ params }: { params: Promise<{ id
   return (
     <>
       <PageHeader
-        title="Modifier le versement"
+        title="Modifier · Versement"
         back
         action={<DeleteButton variant="icon" {...depositDelete(goal.id, deposit, settings.currency)} />}
       />

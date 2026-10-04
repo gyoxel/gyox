@@ -125,7 +125,7 @@ export function TimelineSection({
 
   return (
     <section className="flex flex-col gap-2.5">
-      <h2 className="px-1 text-sm font-semibold text-slate-500 dark:text-slate-400">Timeline</h2>
+      <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Timeline</h2>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         {/* Summary */}

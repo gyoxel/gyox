@@ -94,7 +94,7 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-5">
-      <div className="flex flex-col items-center gap-1 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-700 px-4 py-5 text-white shadow-sm">
+      <div className="relative flex flex-col items-center gap-1 overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500 to-orange-700 px-4 py-5 text-white shadow-lg dark:shadow-none">
         <Label htmlFor="amount" className="text-xs text-white/80">
           Montant prêté
         </Label>

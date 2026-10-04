@@ -41,7 +41,7 @@ export function LinkedSourcePage({
   return (
     <>
       <PageHeader title={title} back tone={tone} action={<LockedDeleteIcon hint={`Supprime-le depuis ${sourceLabel}.`} />} />
-      <main className="flex flex-col gap-4 px-4 py-5">
+      <main className="flex flex-col gap-5 px-4 py-5">
         <div className={cn("relative overflow-hidden rounded-3xl bg-gradient-to-br p-5 text-white shadow-lg dark:shadow-none", gradient)}>
           <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
           <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">{eyebrow}</p>

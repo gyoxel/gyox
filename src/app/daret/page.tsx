@@ -29,7 +29,7 @@ export default async function DaretPage() {
   return (
     <>
       <PageHeader title="Daret" back />
-      <main className="flex flex-col gap-4 px-4 py-5">
+      <main className="flex flex-col gap-5 px-4 py-5">
         {items.length > 0 && (
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-400 via-emerald-500 to-[#007261] px-5 py-4 text-white shadow-lg shadow-emerald-600/20 dark:shadow-none">
             <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />

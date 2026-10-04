@@ -25,7 +25,7 @@ export default async function LoansPage() {
   return (
     <>
       <PageHeader title="Prêts" back />
-      <main className="flex flex-col gap-4 px-4 py-5">
+      <main className="flex flex-col gap-5 px-4 py-5">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-amber-700 px-5 py-4 text-white shadow-lg shadow-orange-600/20 dark:shadow-none">
           <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
           <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">À récupérer</p>

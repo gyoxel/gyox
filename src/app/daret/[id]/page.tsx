@@ -13,7 +13,7 @@ export default async function EditDaretPage({ params }: { params: Promise<{ id: 
   if (!daret) notFound();
   return (
     <>
-      <PageHeader title="Modifier la daret" back action={<DeleteButton variant="icon" {...daretDelete(daret)} />} />
+      <PageHeader title={`Modifier · ${daret.expense.name}`} back action={<DeleteButton variant="icon" {...daretDelete(daret)} />} />
       <main className="px-4 py-5">
         <DaretForm currency={settings.currency} daret={daret} />
       </main>

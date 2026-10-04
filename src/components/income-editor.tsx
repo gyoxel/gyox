@@ -77,7 +77,7 @@ export function IncomeEditor({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {/* Amount */}
-      <div className="flex flex-col items-center gap-1 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 px-4 py-5 text-white shadow-sm">
+      <div className="relative flex flex-col items-center gap-1 overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-600 px-4 py-5 text-white shadow-lg dark:shadow-none">
         <Label htmlFor="amount" className="text-xs text-white/80">
           Montant reçu
         </Label>

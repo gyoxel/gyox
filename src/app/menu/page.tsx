@@ -31,7 +31,7 @@ export default function MenuPage() {
   return (
     <>
       <PageHeader title="Menu" hideSettings />
-      <main className="flex flex-col gap-4 px-4 py-5">
+      <main className="flex flex-col gap-5 px-4 py-5">
         {GROUPS.map((group, i) => (
           <div
             key={i}

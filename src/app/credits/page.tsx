@@ -38,12 +38,12 @@ export default async function CreditsPage() {
   return (
     <>
       <PageHeader title="Crédits" />
-      <main className="flex flex-col gap-3 px-4 py-5">
+      <main className="flex flex-col gap-5 px-4 py-5">
         <TimelineSection expenses={expenses} darets={darets} payments={payments} currency={settings.currency} categoryEmoji={categoryEmoji} />
 
         <AddLink href="/expenses/new?type=credit" label="Ajouter un crédit" className="mt-1 border-blue-200 text-blue-600 active:bg-blue-50 dark:border-blue-900 dark:text-blue-400 dark:active:bg-blue-950/30" />
 
-        <h2 className="mt-3 flex items-baseline justify-between px-1 text-sm font-semibold text-slate-500 dark:text-slate-400">
+        <h2 className="-mb-2 flex items-baseline justify-between px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">
           <span>Crédits</span>
           <span className="text-xs font-normal">{credits.length} en tout</span>
         </h2>

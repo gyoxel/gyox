@@ -39,7 +39,10 @@ function schedule(total: number, monthly: number, startDate: string) {
 export function CreditEditor({
   expense,
   paymentStatus,
+  info,
 }: {
+  /** Shown right under the total (paid, remaining, end). */
+  info?: React.ReactNode;
   /** Present when editing. */
   expense?: Expense;
   paymentStatus?: PaymentStatusInit | null;
@@ -220,7 +223,7 @@ export function CreditEditor({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {/* Total */}
-      <div className="flex flex-col items-center gap-1 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-700 px-4 py-5 text-white shadow-sm">
+      <div className="relative flex flex-col items-center gap-1 overflow-hidden rounded-3xl bg-gradient-to-br from-sky-500 to-blue-700 px-4 py-5 text-white shadow-lg dark:shadow-none">
         <Label htmlFor="total" className="text-xs text-white/80">
           Montant total du crédit
         </Label>
@@ -239,6 +242,8 @@ export function CreditEditor({
           <span className="text-lg font-semibold text-white/70">DH</span>
         </div>
       </div>
+
+      {info}
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="name">Nom</Label>
