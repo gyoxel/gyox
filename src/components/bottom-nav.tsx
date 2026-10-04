@@ -4,21 +4,46 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { DATA_CHANGED_EVENT } from "@/lib/use-refresh-data";
-import { ArrowDownToLine, ArrowUpFromLine, CalendarRange, Home, LayoutGrid, Plus, Wallet } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, House, Landmark, LayoutGrid, Plus, ReceiptText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Each tab in its section's colour (the active one on a gradient tile).
 const LEFT_ITEMS = [
-  { href: "/", label: "Accueil", icon: Home },
-  { href: "/budget", label: "Dépenses", icon: CalendarRange },
+  {
+    href: "/",
+    label: "Accueil",
+    icon: House,
+    gradient: "from-emerald-400 to-teal-600 shadow-teal-500/30",
+    tint: "text-teal-600 dark:text-teal-400",
+  },
+  {
+    href: "/budget",
+    label: "Dépenses",
+    icon: ReceiptText,
+    gradient: "from-rose-400 to-pink-600 shadow-rose-500/30",
+    tint: "text-rose-600 dark:text-rose-400",
+  },
 ];
 
 const RIGHT_ITEMS = [
-  { href: "/credits", label: "Crédits", icon: Wallet },
-  { href: "/menu", label: "Menu", icon: LayoutGrid },
+  {
+    href: "/credits",
+    label: "Crédits",
+    icon: Landmark,
+    gradient: "from-sky-400 to-blue-600 shadow-blue-500/30",
+    tint: "text-blue-600 dark:text-sky-400",
+  },
+  {
+    href: "/menu",
+    label: "Menu",
+    icon: LayoutGrid,
+    gradient: "from-violet-400 to-purple-600 shadow-violet-500/30",
+    tint: "text-violet-600 dark:text-violet-400",
+  },
 ];
 
 // Pages opened from the Menu tab keep it highlighted.
-const MENU_PATHS = ["/menu", "/daret", "/goals", "/calendar", "/stats", "/categories", "/salary", "/incomes", "/settings"];
+const MENU_PATHS = ["/menu", "/daret", "/goals", "/calendar", "/stats", "/categories", "/salary", "/incomes", "/solde", "/settings"];
 
 // Fan-out positions (px) of each option's circle center relative to the
 // + button's center: left, top, right — like a radial speed-dial.
@@ -51,19 +76,20 @@ const ACTIONS = [
 
 const ACTION_SIZE = 60;
 
-const TEAL = "#019c86";
-const GRADIENT_ID = "nav-active-gradient";
-
 function NavLink({
   href,
   label,
   icon: Icon,
+  gradient,
+  tint,
   active,
   onNavigate,
 }: {
   href: string;
   label: string;
-  icon: typeof Home;
+  icon: typeof House;
+  gradient: string;
+  tint: string;
   active: boolean;
   onNavigate: (href: string) => void;
 }) {
@@ -72,19 +98,25 @@ function NavLink({
       href={href}
       prefetch
       onClick={() => !active && onNavigate(href)}
-      className={cn(
-        "flex flex-1 touch-manipulation select-none flex-col items-center gap-1 pb-2.5 pt-3 text-[11px] font-medium transition-colors duration-150 active:opacity-70",
-        active ? "text-[#019c86]" : "text-[#b3b3b3] dark:text-slate-500",
-      )}
+      aria-current={active ? "page" : undefined}
+      className="flex flex-1 touch-manipulation select-none flex-col items-center gap-0.5 pb-2 pt-2 active:opacity-70"
     >
-      <Icon
-        className={cn("h-6 w-6 transition-transform duration-200", active && "scale-110")}
-        strokeWidth={1.5}
-        stroke={active ? `url(#${GRADIENT_ID})` : "currentColor"}
-        fill={active ? TEAL : "none"}
-        fillOpacity={active ? 0.15 : 0}
-      />
-      {label}
+      <span
+        className={cn(
+          "flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-200",
+          active ? cn("-translate-y-1 bg-gradient-to-br text-white shadow-md", gradient) : cn(tint, "opacity-70"),
+        )}
+      >
+        <Icon className="h-5 w-5" strokeWidth={active ? 2.2 : 1.8} />
+      </span>
+      <span
+        className={cn(
+          "text-[11px] transition-colors duration-200",
+          active ? cn("font-bold", tint) : "font-medium text-slate-400 dark:text-slate-500",
+        )}
+      >
+        {label}
+      </span>
     </Link>
   );
 }
@@ -197,15 +229,6 @@ export function BottomNav() {
         )}
       />
 
-      <svg width="0" height="0" className="absolute" aria-hidden>
-        <defs>
-          <linearGradient id={GRADIENT_ID} gradientUnits="userSpaceOnUse" x1="0" y1="2" x2="0" y2="22">
-            <stop offset="0%" stopColor="#00c3ab" />
-            <stop offset="100%" stopColor="#007261" />
-          </linearGradient>
-        </defs>
-      </svg>
-
       <nav
         className={cn(
           "fixed inset-x-0 bottom-0 z-50 rounded-t-3xl bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_30px_rgba(15,23,42,0.08)] dark:bg-slate-900",
@@ -261,17 +284,17 @@ export function BottomNav() {
               onClick={toggle}
               aria-expanded={open}
               aria-label={open ? "Fermer le menu d'ajout" : "Ajouter"}
-              className="relative -mt-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-b from-[#00c3ab] to-[#007261] text-white ring-[6px] ring-white transition-[transform,box-shadow] duration-200 active:scale-95 active:shadow-[0_4px_16px_rgba(0,195,171,0.28)] dark:ring-slate-900"
+              className="relative -mt-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#00c3ab] to-[#007261] text-white shadow-lg shadow-teal-500/30 ring-4 ring-white transition-[transform,box-shadow] duration-200 active:scale-95 dark:ring-slate-900"
             >
               <span
                 aria-hidden
                 className={cn(
-                  "absolute inset-0 rounded-full bg-slate-400 transition-opacity duration-300 dark:bg-slate-600",
+                  "absolute inset-0 rounded-2xl bg-slate-400 transition-opacity duration-300 dark:bg-slate-600",
                   open ? "opacity-100" : "opacity-0",
                 )}
               />
               <Plus
-                className={cn("relative h-8 w-8 transition-transform duration-300", open && "rotate-[135deg]")}
+                className={cn("relative h-7 w-7 transition-transform duration-300", open && "rotate-[135deg]")}
                 strokeWidth={2}
               />
             </button>
