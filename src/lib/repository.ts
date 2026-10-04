@@ -181,6 +181,9 @@ export interface BackupData {
   exportedAt: string;
   settings: Settings;
   expenses: Expense[];
+  /** What was paid (ticks, credit installments, with cash / card).
+   *  Optional: backups made before it was saved still import. */
+  payments?: Payment[];
   /** Optional so backups made before darets existed still import. */
   darets?: Daret[];
   /** Optional so backups made before categories existed still import. */
@@ -203,6 +206,7 @@ export async function exportData(): Promise<BackupData> {
     exportedAt: new Date().toISOString(),
     settings: await getSettings(),
     expenses: await getAllExpenses(),
+    payments: await getAllPayments(),
     darets: (await getAllDarets()).map((d) => ({
       id: d.id,
       expenseId: d.expenseId,
@@ -263,8 +267,24 @@ export async function importData(data: BackupData): Promise<void> {
         updatedAt: e.updatedAt ?? new Date().toISOString(),
       })),
     }),
+    // (Deleting the expenses removed their payments.)
+    prisma.payment.createMany({
+      data: (data.payments ?? [])
+        .filter((p) => expenseIds.has(p.expenseId))
+        .map((p) => ({
+          id: p.id,
+          expenseId: p.expenseId,
+          monthKey: p.monthKey,
+          slotIndex: p.slotIndex,
+          amountDue: p.amountDue,
+          amountPaid: p.amountPaid,
+          paidAt: p.paidAt,
+          method: p.method ?? null,
+          createdAt: p.createdAt,
+        })),
+    }),
     prisma.daret.deleteMany({}),
-    prisma.daret.createMany({ data: data.darets ?? [] }),
+    prisma.daret.createMany({ data: (data.darets ?? []).filter((d) => expenseIds.has(d.expenseId)) }),
     ...(data.goals
       ? [
           prisma.goal.deleteMany({}),

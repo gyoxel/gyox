@@ -6,7 +6,7 @@ export async function GET() {
   return new NextResponse(JSON.stringify(data, null, 2), {
     headers: {
       "Content-Type": "application/json",
-      "Content-Disposition": `attachment; filename="budget-backup-${data.exportedAt.slice(0, 10)}.json"`,
+      "Content-Disposition": `attachment; filename="gx-salaire-sauvegarde-${data.exportedAt.slice(0, 10)}.json"`,
     },
   });
 }

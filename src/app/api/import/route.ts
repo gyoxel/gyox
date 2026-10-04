@@ -14,6 +14,21 @@ const backupSchema = z.object({
       updatedAt: z.string().optional(),
     }),
   ),
+  payments: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        expenseId: z.string().min(1),
+        monthKey: z.string().regex(/^\d{4}-\d{2}$/).nullable(),
+        slotIndex: z.number().int().positive().nullable(),
+        amountDue: z.number(),
+        amountPaid: z.number(),
+        paidAt: z.string(),
+        method: z.enum(["cash", "card"]).nullable().default(null),
+        createdAt: z.string(),
+      }),
+    )
+    .optional(),
   darets: z
     .array(
       z.object({
