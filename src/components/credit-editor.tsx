@@ -242,7 +242,7 @@ export function CreditEditor({
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="name">Nom</Label>
-        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Banque, voiture, téléphone…" />
+        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Ahmed, Louza, Solaih…" />
       </div>
 
       {/* Already repaid before it was added here */}
