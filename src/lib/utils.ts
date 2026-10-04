@@ -15,11 +15,6 @@ export function formatMoney(amount: number, currency = "MAD"): string {
   return `${formatted} ${suffix}`;
 }
 
-export function formatSignedMoney(amount: number, currency = "MAD"): string {
-  const sign = amount > 0 ? "+" : "";
-  return `${sign}${formatMoney(amount, currency)}`;
-}
-
 /**
  * Money typed by hand: keeps digits and a single decimal separator — a
  * comma (French keyboards) or a dot — with at most 2 decimals. Used with

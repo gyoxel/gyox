@@ -27,17 +27,6 @@ export const CATEGORY_META: Record<
   },
 };
 
-export const TYPE_LABELS_FR: Record<string, string> = {
-  permanent: "Permanent",
-  temporary: "Temporaire",
-  credit: "Crédit",
-};
-
-export const FREQUENCY_LABELS_FR: Record<string, string> = {
-  monthly: "Mensuel",
-  "one-time": "Une seule fois",
-};
-
 const FALLBACK_ICON_BY_TYPE: Record<string, string> = {
   credit: "💳",
   permanent: "🏠",

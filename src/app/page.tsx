@@ -2,7 +2,6 @@ import { getAllCategories, getAllExpenses, getAllPayments, getAllSalaryAdvances,
 import { todayMonth } from "@/lib/date";
 import { getWallet } from "@/lib/wallet-data";
 import { HomeHeader } from "@/components/home-header";
-import { CountdownNextSalary } from "@/components/countdown-next-salary";
 import { HomeDashboard } from "@/components/home-dashboard";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +30,8 @@ export default async function HomePage() {
           payments={payments}
           currentMonth={currentMonth}
           categoryEmoji={categoryEmoji}
-          countdown={<CountdownNextSalary settings={settings} advances={advances} />}
+          settings={settings}
+          advances={advances}
         />
       </main>
     </>

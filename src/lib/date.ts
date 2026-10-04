@@ -66,10 +66,6 @@ export function monthLabelShortFr(m: MonthId): string {
   return `${MONTHS_SHORT_FR[m.month - 1]} ${m.year}`;
 }
 
-export function monthToDateStr(m: MonthId): string {
-  return `${monthKey(m)}-01`;
-}
-
 export function monthFromSearchParams(value: string | undefined, fallback: MonthId): MonthId {
   if (!value) return fallback;
   const parsed = parseMonthKey(value);

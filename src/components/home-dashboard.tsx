@@ -1,13 +1,14 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import type { MonthId } from "@/lib/date";
-import type { Expense, Payment, PaymentMethod } from "@/lib/types";
+import type { Expense, Payment, PaymentMethod, SalaryAdvance, Settings } from "@/lib/types";
 import { walletPaidOut } from "@/lib/wallet";
 import { cn, formatMoney } from "@/lib/utils";
 import { mutationsSettled } from "@/lib/use-refresh-data";
+import { CountdownNextSalary } from "@/components/countdown-next-salary";
 import { DueNowList } from "@/components/due-now-list";
 import { ShortcutWheel } from "@/components/shortcut-wheel";
 
@@ -27,7 +28,8 @@ export function HomeDashboard({
   payments,
   currentMonth,
   categoryEmoji,
-  countdown,
+  settings,
+  advances,
 }: {
   /** Solde of each account (cash, card) as of the server's payments. */
   solde: Record<PaymentMethod, number>;
@@ -36,7 +38,9 @@ export function HomeDashboard({
   payments: Payment[];
   currentMonth: MonthId;
   categoryEmoji: Record<string, string>;
-  countdown: ReactNode;
+  /** For the countdown to the next salary. */
+  settings: Settings;
+  advances: SalaryAdvance[];
 }) {
   const [localPayments, setLocalPayments] = useState<Payment[]>(payments);
   const [seenPayments, setSeenPayments] = useState(payments);
@@ -112,7 +116,7 @@ export function HomeDashboard({
         </div>
       </Link>
 
-      {countdown}
+      <CountdownNextSalary settings={settings} advances={advances} />
 
       <ShortcutWheel />
 

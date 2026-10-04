@@ -3,13 +3,7 @@ import { cn } from "@/lib/utils";
 
 /** One palette for every place an expense's color shows (checked for
  *  colorblind separation): see getExpenseDisplayColor. */
-export const COLOR_HEX: Record<DisplayColor, string> = {
-  orange: "#f97316",
-  red: "#e11d48",
-  blue: "#2563eb",
-};
-
-export const DOT_CLASS: Record<DisplayColor, string> = {
+const DOT_CLASS: Record<DisplayColor, string> = {
   orange: "bg-[#f97316]",
   red: "bg-[#e11d48]",
   blue: "bg-[#2563eb]",
