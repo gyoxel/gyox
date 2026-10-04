@@ -79,10 +79,7 @@ export function ExpenseEditor({
   expense,
   recurrenceInit,
   paymentStatus,
-  info,
 }: {
-  /** Shown right under the amount (e.g. when it ends). */
-  info?: React.ReactNode;
   categories: Category[];
   preset?: "credit";
   /** Present when editing. */
@@ -291,8 +288,6 @@ export function ExpenseEditor({
           <span className="text-lg font-semibold text-white/70">DH</span>
         </div>
       </div>
-
-      {info}
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="name">Nom</Label>

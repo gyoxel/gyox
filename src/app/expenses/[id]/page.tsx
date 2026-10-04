@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { CalendarClock, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import {
   getAllCategories,
   getAllExpenses,
@@ -17,7 +17,7 @@ import { DeleteButton } from "@/components/delete-button";
 import { expenseDelete } from "@/lib/delete-specs";
 import { Button } from "@/components/ui/button";
 import { METHOD_META } from "@/lib/payment-method";
-import { getCreditDisplayProgress, getCreditRealState, getEffectiveEndMonth, getOccurrenceForMonth } from "@/lib/engine";
+import { getCreditRealState, getEffectiveEndMonth, getOccurrenceForMonth } from "@/lib/engine";
 import { compareMonths, monthKey, monthLabelFr, monthOfDateStr, monthsBetween, todayMonth } from "@/lib/date";
 import { PageHeader } from "@/components/page-header";
 import { CREDIT_COLOR, pageColor } from "@/lib/page-theme";
@@ -183,7 +183,6 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
           <CreditEditor
             expense={expense}
             paymentStatus={paymentStatus}
-            info={<CreditInfo expense={expense} payments={payments} currency={settings.currency} />}
           />
         ) : (
           <ExpenseEditor
@@ -191,53 +190,12 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
             categories={categories}
             recurrenceInit={recurrenceInit}
             paymentStatus={paymentStatus}
-            info={expense.frequency === "monthly" ? <EndInfo expense={expense} allExpenses={allExpenses} /> : undefined}
           />
         )}
 
         <DeleteButton variant="full" {...expenseDelete(expense)} />
       </main>
     </>
-  );
-}
-
-function CreditInfo({ expense, payments, currency }: { expense: Expense; payments: Payment[]; currency: string }) {
-  const state = getCreditRealState(expense, payments, todayMonth());
-  const paid = getCreditDisplayProgress(expense, state).paid;
-  const percent = paid + state.remaining > 0 ? Math.round((paid / (paid + state.remaining)) * 100) : 0;
-  const tile = (label: string, value: string, tone = "text-slate-900 dark:text-white") => (
-    <div className="rounded-2xl bg-slate-50 px-3 py-2 dark:bg-slate-800/60">
-      <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className={`text-sm font-bold tabular-nums ${tone}`}>{value}</p>
-    </div>
-  );
-  return (
-    <div className="flex flex-col gap-2.5 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div className="flex items-center gap-2 px-1 pt-0.5">
-        <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-          <div className="h-full rounded-full bg-gradient-to-r from-sky-400 to-blue-600" style={{ width: `${percent}%` }} />
-        </div>
-        <span className="text-xs font-semibold tabular-nums text-blue-600 dark:text-sky-400">{percent}%</span>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        {tile("Payé", formatMoney(paid, currency), "text-emerald-600")}
-        {tile("Restant", formatMoney(state.remaining, currency))}
-        {tile("En attente", state.pendingAmount > 0 ? formatMoney(state.pendingAmount, currency) : "—", state.pendingAmount > 0 ? "text-rose-600" : undefined)}
-        {tile("Fin prévue", state.projectedEndMonth ? monthLabelFr(state.projectedEndMonth) : "—")}
-      </div>
-    </div>
-  );
-}
-
-function EndInfo({ expense, allExpenses }: { expense: Expense; allExpenses: Expense[] }) {
-  const byId = new Map(allExpenses.map((e) => [e.id, e]));
-  const end = getEffectiveEndMonth(expense, byId);
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <CalendarClock className="h-4 w-4 shrink-0 text-rose-500" />
-      <span className="flex-1 text-sm text-slate-500 dark:text-slate-400">Fin calculée</span>
-      <span className="text-sm font-semibold capitalize text-slate-900 dark:text-white">{end ? monthLabelFr(end) : "Permanent"}</span>
-    </div>
   );
 }
 

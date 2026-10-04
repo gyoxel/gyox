@@ -39,10 +39,7 @@ function schedule(total: number, monthly: number, startDate: string) {
 export function CreditEditor({
   expense,
   paymentStatus,
-  info,
 }: {
-  /** Shown right under the total (paid, remaining, end). */
-  info?: React.ReactNode;
   /** Present when editing. */
   expense?: Expense;
   paymentStatus?: PaymentStatusInit | null;
@@ -242,8 +239,6 @@ export function CreditEditor({
           <span className="text-lg font-semibold text-white/70">DH</span>
         </div>
       </div>
-
-      {info}
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="name">Nom</Label>
