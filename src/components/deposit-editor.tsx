@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, Clock, Trash2 } from "lucide-react";
+import { Check, Clock } from "lucide-react";
 import { toast } from "sonner";
 import type { GoalDeposit, PaymentMethod } from "@/lib/types";
-import { pagesGone, useNavBack } from "@/lib/nav-history";
+import { useNavBack } from "@/lib/nav-history";
 import { useRefreshData } from "@/lib/use-refresh-data";
-import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
+import { cleanDecimalInput, cn, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
-import { ConfirmDialog } from "@/components/confirm-dialog";
+import { DeleteButton } from "@/components/delete-button";
+import { depositDelete } from "@/lib/delete-specs";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +40,6 @@ export function DepositEditor({
   const [method, setMethod] = useState<PaymentMethod>(deposit.method ?? "cash");
   const [paid, setPaid] = useState(initialPaid);
   const [error, setError] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [pending, startTransition] = useTransition();
   const linked = deposit.expenseId != null;
   const value = parseDecimalInput(amount);
@@ -58,22 +58,6 @@ export function DepositEditor({
       await refreshData();
       toast.success("Versement modifié.");
       nav.back(`/goals/${goal.id}`);
-    });
-  }
-
-  function remove() {
-    startTransition(async () => {
-      const res = await fetch(`/api/goals/${goal.id}/deposits/${deposit.id}`, { method: "DELETE" });
-      if (!res.ok) {
-        toast.error("Suppression impossible.");
-        return;
-      }
-      const gone = await pagesGone(res);
-      setConfirmDelete(false);
-      await refreshData();
-      toast.success("Versement supprimé.");
-      // Its expense went with it: don't land back on that page.
-      nav.leave(gone, `/goals/${goal.id}`);
     });
   }
 
@@ -150,22 +134,7 @@ export function DepositEditor({
         </Button>
       </div>
 
-      <Button type="button" variant="destructive" onClick={() => setConfirmDelete(true)} disabled={pending}>
-        <Trash2 className="h-4 w-4" />
-        Supprimer ce versement
-      </Button>
-      <ConfirmDialog
-        open={confirmDelete}
-        onOpenChange={setConfirmDelete}
-        title="Supprimer ce versement ?"
-        description={
-          <>
-            {formatMoney(deposit.amount, currency)} sera retiré de l&apos;objectif{linked ? " et de tes dépenses" : ""}.
-          </>
-        }
-        pending={pending}
-        onConfirm={remove}
-      />
+      <DeleteButton variant="full" {...depositDelete(goal.id, deposit, currency)} />
     </form>
   );
 }
@@ -198,3 +167,4 @@ function StatusButton({
     </button>
   );
 }
+

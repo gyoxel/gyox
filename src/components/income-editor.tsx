@@ -1,17 +1,17 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Income, PaymentMethod } from "@/lib/types";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import { INCOME_CATEGORIES } from "@/lib/income";
 import { todayDateStr } from "@/lib/date";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
-import { pagesGone, useNavBack } from "@/lib/nav-history";
+import { useNavBack } from "@/lib/nav-history";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import { errorMessage } from "@/components/expense-editor";
-import { ConfirmDialog } from "@/components/confirm-dialog";
+import { DeleteButton } from "@/components/delete-button";
+import { incomeDelete } from "@/lib/delete-specs";
 import { LockedDelete } from "@/components/locked-delete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +43,6 @@ export function IncomeEditor({
   const [method, setMethod] = useState<PaymentMethod>(income?.method ?? "cash");
   const [notes, setNotes] = useState(income?.notes ?? "");
   const [error, setError] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const amountValue = parseDecimalInput(amount);
@@ -67,22 +66,6 @@ export function IncomeEditor({
       await refreshData();
       toast.success(isEdit ? "Revenu modifié." : `+${formatMoney(amountValue)} ajouté à ton solde.`);
       nav.back("/incomes");
-    });
-  }
-
-  function remove() {
-    if (!income) return;
-    startTransition(async () => {
-      const res = await fetch(`/api/incomes/${income.id}`, { method: "DELETE" });
-      if (!res.ok) {
-        toast.error("Suppression impossible.");
-        return;
-      }
-      const gone = await pagesGone(res);
-      setConfirmDelete(false);
-      await refreshData();
-      toast.success("Revenu supprimé.");
-      nav.leave(gone, "/incomes");
     });
   }
 
@@ -171,26 +154,8 @@ export function IncomeEditor({
         <LockedDelete hint={`Ce revenu vient du ${source.label} : supprime-le depuis`} href={source.href} linkLabel="sa page" />
       )}
 
-      {isEdit && !source && (
-        <>
-          <Button type="button" variant="destructive" onClick={() => setConfirmDelete(true)} disabled={isPending}>
-            <Trash2 className="h-4 w-4" />
-            Supprimer ce revenu
-          </Button>
-          <ConfirmDialog
-            open={confirmDelete}
-            onOpenChange={setConfirmDelete}
-            title="Supprimer ce revenu ?"
-            description={
-              <>
-                « {income.name} » ({formatMoney(income.amount)}) sera supprimé.
-              </>
-            }
-            pending={isPending}
-            onConfirm={remove}
-          />
-        </>
-      )}
+      {isEdit && !source && <DeleteButton variant="full" {...incomeDelete(income)} />}
     </form>
   );
 }
+

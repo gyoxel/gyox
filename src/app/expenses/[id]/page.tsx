@@ -9,7 +9,9 @@ import {
   getDepositOfExpense,
   getSettings,
 } from "@/lib/repository";
-import { LockedDelete } from "@/components/locked-delete";
+import { LockedDelete, LockedDeleteIcon } from "@/components/locked-delete";
+import { DeleteButton } from "@/components/delete-button";
+import { expenseDelete } from "@/lib/delete-specs";
 import { Button } from "@/components/ui/button";
 import { METHOD_META } from "@/lib/payment-method";
 import { getCreditDisplayProgress, getCreditRealState, getEffectiveEndMonth, getOccurrenceForMonth } from "@/lib/engine";
@@ -20,7 +22,6 @@ import { CREDIT_COLOR, pageColor } from "@/lib/page-theme";
 const GOALS_COLOR = pageColor("/goals");
 const DARET_COLOR = pageColor("/daret");
 import { ExpenseEditor, type PaymentStatusInit, type RecurrenceInit } from "@/components/expense-editor";
-import { DeleteExpenseButton } from "@/components/delete-expense-button";
 import { CreditEditor } from "@/components/credit-editor";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatMoney } from "@/lib/utils";
@@ -48,7 +49,12 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
     const payment = payments.find((p) => p.expenseId === expense.id && p.amountPaid > 0);
     return (
       <>
-        <PageHeader title={expense.name} back tone={GOALS_COLOR} />
+        <PageHeader
+          title={expense.name}
+          back
+          tone={GOALS_COLOR}
+          action={<LockedDeleteIcon hint={`Ce versement vient de l'objectif « ${goal.name} » : supprime-le depuis le versement.`} />}
+        />
         <main className="flex flex-col gap-4 px-4 py-5">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 p-5 text-white shadow-lg shadow-orange-500/20 dark:shadow-none">
             <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
@@ -82,7 +88,12 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
   if (linkedDaret) {
     return (
       <>
-        <PageHeader title={expense.name} back tone={DARET_COLOR} />
+        <PageHeader
+          title={expense.name}
+          back
+          tone={DARET_COLOR}
+          action={<LockedDeleteIcon hint={`Cette cotisation vient de la daret « ${expense.name} » : supprime-la depuis la daret.`} />}
+        />
         <main className="flex flex-col gap-4 px-4 py-5">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-400 via-emerald-500 to-[#007261] p-5 text-white shadow-lg shadow-emerald-600/20 dark:shadow-none">
             <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
@@ -125,7 +136,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
         title={expense.name}
         back
         tone={expense.type === "credit" ? CREDIT_COLOR : undefined}
-        action={<DeleteExpenseButton id={expense.id} name={expense.name} />}
+        action={<DeleteButton variant="icon" {...expenseDelete(expense)} />}
       />
       <main className="flex flex-col gap-5 px-4 py-5">
         {expense.type === "credit" && (
@@ -145,6 +156,8 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
             paymentStatus={paymentStatus}
           />
         )}
+
+        <DeleteButton variant="full" {...expenseDelete(expense)} />
       </main>
     </>
   );

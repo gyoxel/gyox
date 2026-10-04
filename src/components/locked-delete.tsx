@@ -1,10 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 /**
  * Delete button for something created elsewhere (a credit's income, a goal
- * deposit's expense…): greyed out, with where to delete it — only its
- * source can remove it.
+ * deposit's expense, a daret's contribution…): greyed out, with where to
+ * delete it — only its source can remove it.
  */
 export function LockedDelete({ hint, href, linkLabel }: { hint: string; href: string; linkLabel: string }) {
   return (
@@ -25,5 +28,20 @@ export function LockedDelete({ hint, href, linkLabel }: { hint: string; href: st
         </Link>
       </p>
     </div>
+  );
+}
+
+/** The header's bin for such a page: greyed, tapping it says where to delete. */
+export function LockedDeleteIcon({ hint }: { hint: string }) {
+  return (
+    <button
+      type="button"
+      aria-label="Supprimer (depuis sa source)"
+      aria-disabled
+      onClick={() => toast(hint)}
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/40 text-slate-400 shadow-sm"
+    >
+      <Trash2 className="h-[18px] w-[18px]" />
+    </button>
   );
 }

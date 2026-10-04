@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { pagesGone, useNavBack } from "@/lib/nav-history";
-import { Check, Plus, Trash2, X } from "lucide-react";
+import { useNavBack } from "@/lib/nav-history";
+import { Check, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import type { Goal, GoalIdea } from "@/lib/types";
 import { monthLabelFr, parseMonthKey } from "@/lib/date";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { DeleteButton } from "@/components/delete-button";
+import { goalDelete } from "@/lib/delete-specs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,7 +62,6 @@ export function GoalForm({
   const [deadline, setDeadline] = useState(goal?.deadline ?? "");
   const [daretIds, setDaretIds] = useState<string[]>(goal?.daretIds ?? []);
   const [error, setError] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [ideas, setIdeas] = useState(initialIdeas);
   const [addingIdea, setAddingIdea] = useState(false);
@@ -132,21 +133,6 @@ export function GoalForm({
       await refreshData();
       toast.success(goal ? "Objectif modifié." : "Objectif ajouté.");
       nav.back(goal ? `/goals/${goal.id}` : "/goals");
-    });
-  }
-
-  function remove() {
-    if (!goal) return;
-    startTransition(async () => {
-      const res = await fetch(`/api/goals/${goal.id}`, { method: "DELETE" });
-      if (!res.ok) {
-        toast.error("Suppression impossible.");
-        return;
-      }
-      const gone = await pagesGone(res);
-      await refreshData();
-      toast.success("Objectif supprimé.");
-      nav.leave(gone, "/goals");
     });
   }
 
@@ -396,32 +382,8 @@ export function GoalForm({
         </DialogContent>
       </Dialog>
 
-      {goal && (
-        <>
-          <Button type="button" variant="destructive" onClick={() => setConfirmDelete(true)} disabled={isPending}>
-            <Trash2 className="h-4 w-4" />
-            Supprimer l&apos;objectif
-          </Button>
-          <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Supprimer cet objectif ?</DialogTitle>
-                <DialogDescription>
-                  « {goal.emoji} {goal.name} » sera supprimé. Tes darets ne sont pas touchées.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setConfirmDelete(false)}>
-                  Annuler
-                </Button>
-                <Button type="button" variant="destructive" onClick={remove} disabled={isPending}>
-                  Supprimer
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </>
-      )}
+      {goal && <DeleteButton variant="full" {...goalDelete(goal)} />}
     </form>
   );
 }
+

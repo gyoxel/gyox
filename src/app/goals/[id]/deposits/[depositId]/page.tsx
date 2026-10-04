@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { getAllPayments, getGoalById, getGoalDeposit, getSettings } from "@/lib/repository";
 import { PageHeader } from "@/components/page-header";
 import { DepositEditor } from "@/components/deposit-editor";
+import { DeleteButton } from "@/components/delete-button";
+import { depositDelete } from "@/lib/delete-specs";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +20,11 @@ export default async function EditDepositPage({ params }: { params: Promise<{ id
   const payment = deposit.expenseId ? payments.find((p) => p.expenseId === deposit.expenseId && p.amountPaid > 0) : undefined;
   return (
     <>
-      <PageHeader title="Modifier le versement" back />
+      <PageHeader
+        title="Modifier le versement"
+        back
+        action={<DeleteButton variant="icon" {...depositDelete(goal.id, deposit, settings.currency)} />}
+      />
       <main className="px-4 py-5">
         <DepositEditor
           goal={{ id: goal.id, name: goal.name, emoji: goal.emoji }}

@@ -3,6 +3,8 @@ import { getAllDarets, getAllGoalIdeas, getAllGoals, getSettings } from "@/lib/r
 import { daretOptions } from "@/lib/goal-options";
 import { PageHeader } from "@/components/page-header";
 import { GoalForm } from "@/components/goal-form";
+import { DeleteButton } from "@/components/delete-button";
+import { goalDelete } from "@/lib/delete-specs";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +20,7 @@ export default async function EditGoalPage({ params }: { params: Promise<{ id: s
   if (!goal) notFound();
   return (
     <>
-      <PageHeader title={`Modifier · ${goal.name}`} back />
+      <PageHeader title={`Modifier · ${goal.name}`} back action={<DeleteButton variant="icon" {...goalDelete(goal)} />} />
       <main className="px-4 py-5">
         <GoalForm goal={goal} darets={daretOptions(darets, goals, goal.id)} currency={settings.currency} ideas={ideas} />
       </main>

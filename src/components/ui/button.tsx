@@ -42,7 +42,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const Comp = asChild ? Slot : "button";
     // A button given its own background keeps it in dark mode too: the
     // default variant's dark: colours would otherwise win over it.
-    const resolved = variant ?? (className && /(^|\s)bg-[a-z]/.test(className) ? "plain" : undefined);
+    const resolved = variant ?? (className && /(^|\s)bg-(\[|[a-z])/.test(className) ? "plain" : undefined);
     return <Comp className={cn(buttonVariants({ variant: resolved, size, className }))} ref={ref} {...props} />;
   },
 );

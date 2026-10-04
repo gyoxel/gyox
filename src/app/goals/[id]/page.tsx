@@ -6,7 +6,8 @@ import { formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { GoalCard } from "@/components/goal-card";
 import { GoalSimulator } from "@/components/goal-simulator";
-import { DeleteGoalButton } from "@/components/delete-goal-button";
+import { DeleteButton } from "@/components/delete-button";
+import { goalDelete } from "@/lib/delete-specs";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,7 @@ export default async function GoalDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <>
-      <PageHeader title={goal.name} back />
+      <PageHeader title={goal.name} back action={<DeleteButton variant="icon" {...goalDelete(goal)} />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         <GoalCard
           goal={goal}
@@ -80,7 +81,7 @@ export default async function GoalDetailPage({ params }: { params: Promise<{ id:
         </section>
 
         <div className="mt-2">
-          <DeleteGoalButton id={goal.id} label={`${goal.emoji} ${goal.name}`} />
+          <DeleteButton variant="full" {...goalDelete(goal)} />
         </div>
       </main>
     </>

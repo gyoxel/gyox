@@ -1,15 +1,16 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { ChevronLeft, ChevronRight, Minus, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { pagesGone, useNavBack } from "@/lib/nav-history";
+import { useNavBack } from "@/lib/nav-history";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import { addMonths, monthKey, monthLabelFr, monthLabelShortFr, parseMonthKey, todayMonth } from "@/lib/date";
 import type { DaretWithExpense } from "@/lib/types";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
-import { ConfirmDialog } from "@/components/confirm-dialog";
+import { DeleteButton } from "@/components/delete-button";
+import { daretDelete } from "@/lib/delete-specs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,7 +33,6 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
   const [startMonth, setStartMonth] = useState(() => daret?.expense.startDate.slice(0, 7) ?? monthKey(todayMonth()));
   const [turnMonth, setTurnMonth] = useState(() => daret?.turnMonth ?? monthKey(todayMonth()));
   const [error, setError] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [isPending, startTransition] = useTransition();
   const money = (n: number) => formatMoney(n, currency);
 
@@ -68,22 +68,6 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
       await refreshData();
       toast.success(isEdit ? "Daret modifiée." : "Daret ajoutée.");
       nav.back("/daret");
-    });
-  }
-
-  function remove() {
-    if (!daret) return;
-    startTransition(async () => {
-      const res = await fetch(`/api/darets/${daret.id}`, { method: "DELETE" });
-      if (!res.ok) {
-        toast.error("Suppression impossible.");
-        return;
-      }
-      const gone = await pagesGone(res);
-      setConfirmDelete(false);
-      await refreshData();
-      toast.success("Daret supprimée.");
-      nav.leave(gone, "/daret");
     });
   }
 
@@ -207,22 +191,7 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
         </Button>
       </div>
 
-      {isEdit && (
-        <>
-          <Button type="button" variant="destructive" onClick={() => setConfirmDelete(true)} disabled={isPending}>
-            <Trash2 className="h-4 w-4" />
-            Supprimer cette daret
-          </Button>
-          <ConfirmDialog
-            open={confirmDelete}
-            onOpenChange={setConfirmDelete}
-            title="Supprimer cette daret ?"
-            description={<>« {daret.expense.name} » et ses cotisations enregistrées seront définitivement supprimées.</>}
-            pending={isPending}
-            onConfirm={remove}
-          />
-        </>
-      )}
+      {isEdit && <DeleteButton variant="full" {...daretDelete(daret)} />}
     </form>
   );
 }
@@ -250,3 +219,4 @@ function StepButton({
     </button>
   );
 }
+
