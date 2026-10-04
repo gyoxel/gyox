@@ -5,11 +5,22 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { addMonths, monthKey, monthLabelFr, type MonthId } from "@/lib/date";
-import { Button } from "@/components/ui/button";
+import type { ReactNode } from "react";
 
 const SWIPE_THRESHOLD_PX = 40;
+const ARROW =
+  "flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 active:bg-slate-100 dark:text-slate-400 dark:active:bg-slate-800";
 
-export function MonthSwitcher({ month, basePath = "/" }: { month: MonthId; basePath?: string }) {
+/** ‹ month › as a card (like the Accueil's), with an optional line under the month. */
+export function MonthSwitcher({
+  month,
+  basePath = "/",
+  caption,
+}: {
+  month: MonthId;
+  basePath?: string;
+  caption?: ReactNode;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const touchStartX = useRef<number | null>(null);
@@ -40,21 +51,20 @@ export function MonthSwitcher({ month, basePath = "/" }: { month: MonthId; baseP
   return (
     <div
       data-no-tab-swipe
-      className="flex items-center justify-between gap-2 touch-pan-y"
+      className="flex items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm touch-pan-y dark:border-slate-800 dark:bg-slate-900"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      <Button asChild variant="outline" size="icon">
-        <Link href={prevHref} prefetch replace scroll={false} aria-label="Mois précédent">
-          <ChevronLeft className="h-4 w-4" />
-        </Link>
-      </Button>
-      <div className="text-lg font-semibold text-slate-900 dark:text-white">{monthLabelFr(month)}</div>
-      <Button asChild variant="outline" size="icon">
-        <Link href={nextHref} prefetch replace scroll={false} aria-label="Mois suivant">
-          <ChevronRight className="h-4 w-4" />
-        </Link>
-      </Button>
+      <Link href={prevHref} prefetch replace scroll={false} aria-label="Mois précédent" className={ARROW}>
+        <ChevronLeft className="h-4 w-4" />
+      </Link>
+      <div className="min-w-0 text-center">
+        <p className="text-[15px] font-semibold capitalize text-slate-900 dark:text-white">{monthLabelFr(month)}</p>
+        {caption && <p className="text-[11px] text-slate-400">{caption}</p>}
+      </div>
+      <Link href={nextHref} prefetch replace scroll={false} aria-label="Mois suivant" className={ARROW}>
+        <ChevronRight className="h-4 w-4" />
+      </Link>
     </div>
   );
 }

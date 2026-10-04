@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Pencil } from "lucide-react";
+import { CalendarClock, Pencil } from "lucide-react";
 import {
   getAllCategories,
   getAllExpenses,
@@ -26,7 +26,6 @@ const GOALS_COLOR = pageColor("/goals");
 const DARET_COLOR = pageColor("/daret");
 import { ExpenseEditor, type PaymentStatusInit, type RecurrenceInit } from "@/components/expense-editor";
 import { CreditEditor } from "@/components/credit-editor";
-import { Card, CardContent } from "@/components/ui/card";
 import { formatMoney } from "@/lib/utils";
 import type { Expense, Payment } from "@/lib/types";
 
@@ -204,31 +203,29 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
 
 function CreditInfo({ expense, payments, currency }: { expense: Expense; payments: Payment[]; currency: string }) {
   const state = getCreditRealState(expense, payments, todayMonth());
+  const paid = getCreditDisplayProgress(expense, state).paid;
+  const percent = paid + state.remaining > 0 ? Math.round((paid / (paid + state.remaining)) * 100) : 0;
+  const tile = (label: string, value: string, tone = "text-slate-900 dark:text-white") => (
+    <div className="rounded-2xl bg-slate-50 px-3 py-2 dark:bg-slate-800/60">
+      <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">{label}</p>
+      <p className={`text-sm font-bold tabular-nums ${tone}`}>{value}</p>
+    </div>
+  );
   return (
-    <Card className="border-sky-200 bg-sky-50/50 dark:border-sky-900 dark:bg-sky-950/20">
-      <CardContent className="grid grid-cols-2 gap-3 pt-4 text-sm">
-        <div>
-          <p className="text-xs text-slate-500">Payé</p>
-          <p className="font-semibold text-slate-900 dark:text-white">{formatMoney(getCreditDisplayProgress(expense, state).paid, currency)}</p>
+    <div className="flex flex-col gap-2.5 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex items-center gap-2 px-1 pt-0.5">
+        <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+          <div className="h-full rounded-full bg-gradient-to-r from-sky-400 to-blue-600" style={{ width: `${percent}%` }} />
         </div>
-        <div className="text-right">
-          <p className="text-xs text-slate-500">Restant</p>
-          <p className="font-semibold text-slate-900 dark:text-white">{formatMoney(state.remaining, currency)}</p>
-        </div>
-        <div>
-          <p className="text-xs text-slate-500">En attente</p>
-          <p className="font-medium text-slate-800 dark:text-slate-200">
-            {state.pendingAmount > 0 ? formatMoney(state.pendingAmount, currency) : "—"}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs text-slate-500">Fin prévue</p>
-          <p className="font-medium text-slate-800 dark:text-slate-200">
-            {state.projectedEndMonth ? monthLabelFr(state.projectedEndMonth) : "—"}
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+        <span className="text-xs font-semibold tabular-nums text-blue-600 dark:text-sky-400">{percent}%</span>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {tile("Payé", formatMoney(paid, currency), "text-emerald-600")}
+        {tile("Restant", formatMoney(state.remaining, currency))}
+        {tile("En attente", state.pendingAmount > 0 ? formatMoney(state.pendingAmount, currency) : "—", state.pendingAmount > 0 ? "text-rose-600" : undefined)}
+        {tile("Fin prévue", state.projectedEndMonth ? monthLabelFr(state.projectedEndMonth) : "—")}
+      </div>
+    </div>
   );
 }
 
@@ -236,14 +233,11 @@ function EndInfo({ expense, allExpenses }: { expense: Expense; allExpenses: Expe
   const byId = new Map(allExpenses.map((e) => [e.id, e]));
   const end = getEffectiveEndMonth(expense, byId);
   return (
-    <Card>
-      <CardContent className="flex items-center justify-between pt-4 text-sm">
-        <span className="text-slate-500 dark:text-slate-400">Fin calculée</span>
-        <span className="font-semibold text-slate-900 dark:text-white">
-          {end ? monthLabelFr(end) : "Permanent"}
-        </span>
-      </CardContent>
-    </Card>
+    <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <CalendarClock className="h-4 w-4 shrink-0 text-rose-500" />
+      <span className="flex-1 text-sm text-slate-500 dark:text-slate-400">Fin calculée</span>
+      <span className="text-sm font-semibold capitalize text-slate-900 dark:text-white">{end ? monthLabelFr(end) : "Permanent"}</span>
+    </div>
   );
 }
 

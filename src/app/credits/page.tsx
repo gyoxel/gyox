@@ -6,7 +6,6 @@ import { AddLink } from "@/components/add-link";
 import { CreditCard } from "@/components/credit-card";
 import { getCreditEndMonth, getCreditRealState, getExpenseDisplayColor } from "@/lib/engine";
 import { compareMonths, todayMonth } from "@/lib/date";
-import { Card, CardContent } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 
@@ -48,9 +47,9 @@ export default async function CreditsPage() {
           <span className="text-xs font-normal">{credits.length} en tout</span>
         </h2>
         {credits.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center text-sm text-slate-500">Aucun crédit en cours.</CardContent>
-          </Card>
+          <p className="rounded-3xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-400 dark:border-slate-700">
+            Aucun crédit en cours.
+          </p>
         ) : (
           credits.map((c) => (
             <CreditCard

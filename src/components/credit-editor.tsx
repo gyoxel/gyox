@@ -507,7 +507,7 @@ export function CreditEditor({
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back()}>
           Annuler
         </Button>
-        <Button type="submit" className="flex-1" disabled={isPending}>
+        <Button type="submit" className="flex-1 bg-blue-600 text-white hover:bg-blue-700" disabled={isPending}>
           {isPending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter"}
         </Button>
       </div>
