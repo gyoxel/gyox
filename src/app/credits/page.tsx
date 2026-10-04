@@ -2,6 +2,7 @@ import { getAllCategories, getAllDarets, getAllExpenses, getAllPayments, getSett
 import { TimelineSection } from "@/components/timeline-section";
 import { displayIcon } from "@/lib/category";
 import { PageHeader } from "@/components/page-header";
+import { HeaderAdd } from "@/components/header-add";
 import { AddLink } from "@/components/add-link";
 import { CreditCard } from "@/components/credit-card";
 import { getCreditEndMonth, getCreditRealState, getExpenseDisplayColor } from "@/lib/engine";
@@ -36,7 +37,7 @@ export default async function CreditsPage() {
 
   return (
     <>
-      <PageHeader title="Crédits" />
+      <PageHeader title="Crédits" action={<HeaderAdd href="/expenses/new?type=credit" label="Ajouter un crédit" />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         <TimelineSection expenses={expenses} darets={darets} payments={payments} currency={settings.currency} categoryEmoji={categoryEmoji} />
 

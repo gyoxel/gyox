@@ -6,6 +6,7 @@ import { getEffectiveEndMonth, getMonthPaymentStatus, getMonthSummary } from "@/
 import { METHOD_META } from "@/lib/payment-method";
 import { MonthSwitcher } from "@/components/month-switcher";
 import { PageHeader } from "@/components/page-header";
+import { HeaderAdd } from "@/components/header-add";
 import { AddLink } from "@/components/add-link";
 import { displayIcon } from "@/lib/category";
 import { cn, formatMoney } from "@/lib/utils";
@@ -87,7 +88,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
 
   return (
     <>
-      <PageHeader title="Dépenses" />
+      <PageHeader title="Dépenses" action={<HeaderAdd href="/expenses/new" label="Ajouter une dépense" />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         <MonthSwitcher month={viewMonth} basePath="/budget" />
 

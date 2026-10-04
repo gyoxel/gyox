@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { HEADER_ADD_EVENT } from "@/components/header-add";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export interface CategoryStats {
@@ -78,6 +79,17 @@ export function CategoryManager({
     setEmoji(next.mode === "edit" ? next.category.emoji : "🏷️");
     setName(next.mode === "edit" ? next.category.name : "");
   }
+
+  // The header's "+": a new category.
+  useEffect(() => {
+    const add = () => {
+      setEditing({ mode: "new" });
+      setEmoji("🏷️");
+      setName("");
+    };
+    window.addEventListener(HEADER_ADD_EVENT, add);
+    return () => window.removeEventListener(HEADER_ADD_EVENT, add);
+  }, []);
 
   async function submit() {
     if (!editing) return;

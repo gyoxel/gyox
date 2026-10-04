@@ -4,6 +4,7 @@ import { getGoalProgress } from "@/lib/goals";
 import { todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
+import { HeaderAdd } from "@/components/header-add";
 import { AddLink } from "@/components/add-link";
 import { GoalCard } from "@/components/goal-card";
 
@@ -24,7 +25,7 @@ export default async function GoalsPage() {
 
   return (
     <>
-      <PageHeader title="Objectifs" back />
+      <PageHeader title="Objectifs" back action={<HeaderAdd href="/goals/new" label="Ajouter un objectif" />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         {rows.length > 0 && (
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 px-5 py-4 text-white shadow-lg shadow-orange-500/20 dark:shadow-none">

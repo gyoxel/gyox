@@ -8,6 +8,7 @@ import { monthKey, monthLabelFr, parseMonthKey, todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
 import type { Income } from "@/lib/types";
 import { PageHeader } from "@/components/page-header";
+import { HeaderAdd } from "@/components/header-add";
 import { AddLink } from "@/components/add-link";
 import { METHOD_META } from "@/lib/payment-method";
 
@@ -68,7 +69,7 @@ export default async function IncomesPage() {
 
   return (
     <>
-      <PageHeader title="Revenus" back />
+      <PageHeader title="Revenus" back action={<HeaderAdd href="/incomes/new" label="Ajouter un revenu" />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         <div className="rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-600 px-5 pb-4 pt-5 text-white shadow-lg shadow-emerald-600/20 dark:shadow-none">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Revenus en plus ce mois-ci</p>

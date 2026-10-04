@@ -3,6 +3,7 @@ import { getDaretState } from "@/lib/daret";
 import { compareMonths, monthKey, monthLabelFr, todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
+import { HeaderAdd } from "@/components/header-add";
 import { AddLink } from "@/components/add-link";
 import { DaretCard } from "@/components/daret-card";
 
@@ -28,7 +29,7 @@ export default async function DaretPage() {
 
   return (
     <>
-      <PageHeader title="Daret" back />
+      <PageHeader title="Daret" back action={<HeaderAdd href="/daret/new" label="Ajouter une daret" />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         {items.length > 0 && (
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-400 via-emerald-500 to-[#007261] px-5 py-4 text-white shadow-lg shadow-emerald-600/20 dark:shadow-none">

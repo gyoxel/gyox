@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowDownToLine, ArrowUpFromLine, ChevronRight } from "lucide-react";
 import type { PaymentMethod, SavingsMove } from "@/lib/types";
@@ -8,6 +8,7 @@ import { monthKey, monthLabelFr, parseMonthKey, todayMonth } from "@/lib/date";
 import { METHOD_META } from "@/lib/payment-method";
 import { cn, formatMoney } from "@/lib/utils";
 import { TransferDialog, type Account } from "@/components/transfer-dialog";
+import { HEADER_ADD_EVENT } from "@/components/header-add";
 import { Button } from "@/components/ui/button";
 
 type Move = SavingsMove & { counted: boolean };
@@ -30,6 +31,12 @@ export function EpargneView({
 }) {
   const money = (n: number) => formatMoney(n, currency);
   const [dialog, setDialog] = useState<{ from: Account; to: Account } | null>(null);
+  // The header's "+": put money aside.
+  useEffect(() => {
+    const open = () => setDialog({ from: "card", to: "savings" });
+    window.addEventListener(HEADER_ADD_EVENT, open);
+    return () => window.removeEventListener(HEADER_ADD_EVENT, open);
+  }, []);
   const month = monthKey(todayMonth());
   const thisMonth = moves.filter((m) => m.counted && m.date.startsWith(month));
   const inMonth = thisMonth.filter((m) => m.kind === "in").reduce((s, m) => s + m.amount, 0);
