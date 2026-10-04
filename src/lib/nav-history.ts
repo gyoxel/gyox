@@ -66,9 +66,10 @@ function onPop() {
 
 /** Several steps back at once: the mirror moves first, so the popstate
  *  finds itself in place instead of starting over. */
-function jump(s: NavState, to: number) {
+function jump(s: NavState, to: number, onArrive?: () => void) {
   const by = to - s.pos;
   write({ ...s, pos: to });
+  if (onArrive) window.addEventListener("popstate", () => setTimeout(onArrive, 0), { once: true });
   history.go(by);
 }
 
@@ -87,6 +88,12 @@ export function NavHistoryTracker() {
     record(pathname);
   }, [pathname]);
   return null;
+}
+
+/** The pages a DELETE response says went away (for `leave`). */
+export async function pagesGone(res: Response): Promise<string[]> {
+  const body = (await res.json().catch(() => null)) as { gone?: unknown } | null;
+  return Array.isArray(body?.gone) ? body.gone.filter((g): g is string => typeof g === "string") : [];
 }
 
 /**
@@ -121,7 +128,9 @@ export function useNavBack() {
       const dead = (p: string) => gone.some((g) => p === g || p.startsWith(`${g}/`));
       let i = s ? s.pos - 1 : -1;
       while (s && i >= 0 && dead(s.stack[i])) i -= 1;
-      if (s && i >= 0) jump(s, i);
+      // Back / forward shows the page as it was cached: reload its data so
+      // what was just deleted isn't listed there anymore.
+      if (s && i >= 0) jump(s, i, () => router.refresh());
       else replace(fallback);
     },
   };

@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { deleteGoalDeposit, updateGoalDeposit } from "@/lib/repository";
+import { deleteGoalDeposit, getGoalDeposit, pagesGoneWithExpenses, updateGoalDeposit } from "@/lib/repository";
 
 interface Params {
   params: Promise<{ id: string; depositId: string }>;
@@ -25,7 +25,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
 export async function DELETE(_req: Request, { params }: Params) {
   const { id, depositId } = await params;
+  const deposit = await getGoalDeposit(id, depositId);
+  const gone = [
+    `/goals/${id}/deposits/${depositId}`,
+    ...(await pagesGoneWithExpenses(deposit?.expenseId ? [deposit.expenseId] : [])),
+  ];
   const ok = await deleteGoalDeposit(id, depositId);
   if (!ok) return NextResponse.json({ error: "Versement introuvable." }, { status: 404 });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, gone });
 }

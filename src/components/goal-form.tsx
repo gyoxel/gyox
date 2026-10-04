@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useNavBack } from "@/lib/nav-history";
+import { pagesGone, useNavBack } from "@/lib/nav-history";
 import { Check, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import type { Goal, GoalIdea } from "@/lib/types";
@@ -143,9 +143,10 @@ export function GoalForm({
         toast.error("Suppression impossible.");
         return;
       }
+      const gone = await pagesGone(res);
       await refreshData();
       toast.success("Objectif supprimé.");
-      nav.backTo("/goals");
+      nav.leave(gone, "/goals");
     });
   }
 

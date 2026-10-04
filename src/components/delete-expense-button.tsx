@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useNavBack } from "@/lib/nav-history";
+import { pagesGone, useNavBack } from "@/lib/nav-history";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,9 +29,10 @@ export function DeleteExpenseButton({ id, name }: { id: string; name: string }) 
         setError("La suppression a échoué. Réessayez.");
         return;
       }
+      const gone = await pagesGone(res);
       setOpen(false);
       await refreshData();
-      nav.leave([`/expenses/${id}`]);
+      nav.leave(gone);
     });
   }
 

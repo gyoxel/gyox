@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { deleteExpense, getDaretOfExpense, getDepositOfExpense, getExpenseById, updateExpense } from "@/lib/repository";
+import { deleteExpense, getDaretOfExpense, pagesGoneWithExpenses, getDepositOfExpense, getExpenseById, updateExpense } from "@/lib/repository";
 import { expenseInputSchema, partialExpenseSchema } from "@/lib/validation";
 
 interface Params {
@@ -40,7 +40,8 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const [daret, deposit] = await Promise.all([getDaretOfExpense(id), getDepositOfExpense(id)]);
   if (daret) return NextResponse.json({ error: "Cette dépense vient d'une daret : supprime la daret." }, { status: 409 });
   if (deposit) return NextResponse.json({ error: "Cette dépense vient d'un versement : supprime le versement." }, { status: 409 });
+  const gone = await pagesGoneWithExpenses([id]);
   const ok = await deleteExpense(id);
   if (!ok) return NextResponse.json({ error: "Dépense introuvable." }, { status: 404 });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, gone });
 }

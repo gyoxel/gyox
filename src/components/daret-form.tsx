@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { ChevronLeft, ChevronRight, Minus, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useNavBack } from "@/lib/nav-history";
+import { pagesGone, useNavBack } from "@/lib/nav-history";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import { addMonths, monthKey, monthLabelFr, monthLabelShortFr, parseMonthKey, todayMonth } from "@/lib/date";
 import type { DaretWithExpense } from "@/lib/types";
@@ -79,10 +79,11 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
         toast.error("Suppression impossible.");
         return;
       }
+      const gone = await pagesGone(res);
       setConfirmDelete(false);
       await refreshData();
       toast.success("Daret supprimée.");
-      nav.leave([`/daret/${daret.id}`], "/daret");
+      nav.leave(gone, "/daret");
     });
   }
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { deleteGoal, getGoalById, updateGoal } from "@/lib/repository";
+import { deleteGoal, getGoalById, pagesGoneWithExpenses, updateGoal } from "@/lib/repository";
 import { goalInputSchema } from "@/lib/validation";
 
 interface Params {
@@ -29,7 +29,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const { id } = await params;
+  const goal = await getGoalById(id);
+  const expenseIds = (goal?.deposits ?? []).flatMap((d) => (d.expenseId ? [d.expenseId] : []));
+  const gone = [`/goals/${id}`, ...(await pagesGoneWithExpenses(expenseIds))];
   const ok = await deleteGoal(id);
   if (!ok) return NextResponse.json({ error: "Objectif introuvable." }, { status: 404 });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, gone });
 }

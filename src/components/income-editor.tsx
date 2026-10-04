@@ -8,7 +8,7 @@ import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import { INCOME_CATEGORIES } from "@/lib/income";
 import { todayDateStr } from "@/lib/date";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
-import { useNavBack } from "@/lib/nav-history";
+import { pagesGone, useNavBack } from "@/lib/nav-history";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import { errorMessage } from "@/components/expense-editor";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -78,10 +78,11 @@ export function IncomeEditor({
         toast.error("Suppression impossible.");
         return;
       }
+      const gone = await pagesGone(res);
       setConfirmDelete(false);
       await refreshData();
       toast.success("Revenu supprimé.");
-      nav.leave([`/incomes/${income.id}`], "/incomes");
+      nav.leave(gone, "/incomes");
     });
   }
 

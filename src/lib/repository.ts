@@ -110,6 +110,26 @@ export async function updateExpense(
   return mapExpense(row);
 }
 
+/**
+ * The app pages that go away with these expenses: theirs, and those of what
+ * they take along (a credit's income, the daret or goal deposit they back).
+ * Read before deleting, so the app doesn't go back to one of them.
+ */
+export async function pagesGoneWithExpenses(ids: string[]): Promise<string[]> {
+  if (ids.length === 0) return [];
+  const [incomes, darets, deposits] = await Promise.all([
+    prisma.income.findMany({ where: { expenseId: { in: ids } }, select: { id: true } }),
+    prisma.daret.findMany({ where: { expenseId: { in: ids } }, select: { id: true } }),
+    prisma.goalDeposit.findMany({ where: { expenseId: { in: ids } }, select: { id: true, goalId: true } }),
+  ]);
+  return [
+    ...ids.map((id) => `/expenses/${id}`),
+    ...incomes.map((i) => `/incomes/${i.id}`),
+    ...darets.map((d) => `/daret/${d.id}`),
+    ...deposits.map((d) => `/goals/${d.goalId}/deposits/${d.id}`),
+  ];
+}
+
 export async function deleteExpense(id: string): Promise<boolean> {
   try {
     await prisma.$transaction([
@@ -648,8 +668,12 @@ export async function updateGoal(id: string, input: Partial<GoalInput>): Promise
   }
 }
 
+/** Removes a goal with its deposits — and their expenses in Dépenses. */
 export async function deleteGoal(id: string): Promise<boolean> {
   try {
+    const deposits = await prisma.goalDeposit.findMany({ where: { goalId: id, expenseId: { not: null } } });
+    const expenseIds = deposits.map((d) => d.expenseId!);
+    if (expenseIds.length > 0) await prisma.expense.deleteMany({ where: { id: { in: expenseIds } } });
     await prisma.goal.delete({ where: { id } });
     return true;
   } catch {

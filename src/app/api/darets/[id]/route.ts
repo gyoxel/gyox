@@ -1,13 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { deleteDaret, setDaretPayout, updateDaret } from "@/lib/repository";
+import { deleteDaret, getDaretById, pagesGoneWithExpenses, setDaretPayout, updateDaret } from "@/lib/repository";
 import { daretDates, daretInputSchema } from "@/lib/daret-input";
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const daret = await getDaretById(id);
+  const gone = daret ? await pagesGoneWithExpenses([daret.expenseId]) : [];
   const ok = await deleteDaret(id);
   if (!ok) return NextResponse.json({ error: "Daret introuvable." }, { status: 404 });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, gone });
 }
 
 const patchSchema = z.object({

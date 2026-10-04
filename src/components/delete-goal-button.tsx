@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useNavBack } from "@/lib/nav-history";
+import { pagesGone, useNavBack } from "@/lib/nav-history";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRefreshData } from "@/lib/use-refresh-data";
@@ -22,10 +22,11 @@ export function DeleteGoalButton({ id, label }: { id: string; label: string }) {
         toast.error("Suppression impossible.");
         return;
       }
+      const gone = await pagesGone(res);
       setOpen(false);
       await refreshData();
       toast.success("Objectif supprimé.");
-      nav.backTo("/goals");
+      nav.leave(gone, "/goals");
     });
   }
 

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Check, Clock, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { GoalDeposit, PaymentMethod } from "@/lib/types";
-import { useNavBack } from "@/lib/nav-history";
+import { pagesGone, useNavBack } from "@/lib/nav-history";
 import { useRefreshData } from "@/lib/use-refresh-data";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
@@ -68,12 +68,11 @@ export function DepositEditor({
         toast.error("Suppression impossible.");
         return;
       }
+      const gone = await pagesGone(res);
       setConfirmDelete(false);
       await refreshData();
       toast.success("Versement supprimé.");
       // Its expense went with it: don't land back on that page.
-      const gone = [`/goals/${goal.id}/deposits/${deposit.id}`];
-      if (deposit.expenseId) gone.push(`/expenses/${deposit.expenseId}`);
       nav.leave(gone, `/goals/${goal.id}`);
     });
   }

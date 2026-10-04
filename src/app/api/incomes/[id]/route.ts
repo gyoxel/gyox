@@ -17,5 +17,5 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (income?.expenseId) return NextResponse.json({ error: "Ce revenu vient d'un crédit : supprime le crédit." }, { status: 409 });
   const ok = await deleteIncome(id);
   if (!ok) return NextResponse.json({ error: "Revenu introuvable." }, { status: 404 });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, gone: [`/incomes/${id}`] });
 }
