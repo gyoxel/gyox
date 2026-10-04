@@ -93,9 +93,23 @@ export function IncomeEditor({
         </div>
       </div>
 
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="name">Nom</Label>
+        <Input
+          id="name"
+          value={name}
+          onChange={(e) => {
+            setNameTouched(true);
+            setName(e.target.value);
+          }}
+          placeholder={selected.label}
+          maxLength={60}
+        />
+      </div>
+
       {/* Category */}
       <div className="flex flex-col gap-2">
-        <Label>Type de revenu</Label>
+        <Label>Catégorie</Label>
         <div role="radiogroup" aria-label="Type de revenu" className="grid grid-cols-3 gap-2">
           {INCOME_CATEGORIES.map((c) => (
             <button
@@ -116,20 +130,6 @@ export function IncomeEditor({
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="name">Nom</Label>
-        <Input
-          id="name"
-          value={name}
-          onChange={(e) => {
-            setNameTouched(true);
-            setName(e.target.value);
-          }}
-          placeholder={selected.label}
-          maxLength={60}
-        />
       </div>
 
       <PaymentMethodPicker value={method} onChange={setMethod} label="Reçu en" />

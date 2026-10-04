@@ -338,13 +338,18 @@ export function GoalForm({
 
       {error && <p className="text-sm text-rose-600">{error}</p>}
 
-      <Button
-        type="submit"
-        disabled={isPending}
-        className="bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-500 dark:text-white"
-      >
-        {isPending ? "Enregistrement…" : goal ? "Enregistrer" : "Ajouter l'objectif"}
-      </Button>
+      <div className="flex gap-2">
+        <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back(goal ? `/goals/${goal.id}` : "/goals")}>
+          Annuler
+        </Button>
+        <Button
+          type="submit"
+          disabled={isPending}
+          className="flex-1 bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-500 dark:text-white"
+        >
+          {isPending ? "Enregistrement…" : goal ? "Enregistrer" : "Ajouter l'objectif"}
+        </Button>
+      </div>
 
       <ConfirmDialog
         open={ideaToDelete != null}

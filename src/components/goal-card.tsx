@@ -395,7 +395,6 @@ function DepositDialog({
             className="text-lg font-semibold"
           />
         </div>
-        <PaymentMethodPicker value={method} onChange={setMethod} label="Pris en" />
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`deposit-name-${goal.id}`}>Nom (optionnel)</Label>
           <Input
@@ -406,6 +405,7 @@ function DepositDialog({
             maxLength={60}
           />
         </div>
+        <PaymentMethodPicker value={method} onChange={setMethod} label="Pris en" />
         <p className="text-[11px] text-slate-400">Il s&apos;ajoute à l&apos;objectif et à tes dépenses (payé), et sort de ton solde.</p>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
