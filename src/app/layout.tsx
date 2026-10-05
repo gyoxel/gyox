@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { BottomNav } from "@/components/bottom-nav";
 import { NavHistoryTracker } from "@/lib/nav-history";
+import { ThemeColorKeeper } from "@/components/theme-color";
 import { TabSwipe } from "@/components/tab-swipe";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </div>
         <BottomNav />
         <NavHistoryTracker />
+        <ThemeColorKeeper />
         <TabSwipe />
         <Toaster position="top-center" richColors />
         <ServiceWorkerRegister />
