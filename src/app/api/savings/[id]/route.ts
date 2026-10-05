@@ -4,11 +4,12 @@ import { deleteSavingsMove, getAllSavingsMoves, getSavingsMove, updateSavingsMov
 import { savingsBalance } from "@/lib/savings";
 import { savingsSchema } from "@/lib/savings-input";
 import { formatMoney } from "@/lib/utils";
+import { withBalanceGuard } from "@/lib/balance-guard";
 
 type Params = { params: Promise<{ id: string }> };
 
 /** PATCH { amount, method, note, date }: edits a move (its expense / income follows). */
-export async function PATCH(req: NextRequest, { params }: Params) {
+export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const parsed = savingsSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
@@ -25,11 +26,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
   const updated = await updateSavingsMove(id, { amount, method: parsed.data.method, note: parsed.data.note, date: parsed.data.date ?? move.date });
   return NextResponse.json(updated);
-}
+});
 
-export async function DELETE(_req: NextRequest, { params }: Params) {
+export const DELETE = withBalanceGuard(async function remove(_req: NextRequest, { params }: Params) {
   const { id } = await params;
   const gone = await deleteSavingsMove(id);
   if (!gone) return NextResponse.json({ error: "Opération introuvable." }, { status: 404 });
   return NextResponse.json({ ok: true, gone });
-}
+});

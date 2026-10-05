@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Check, Pencil } from "lucide-react";
+import { toast } from "sonner";
 import { mutate } from "@/lib/use-refresh-data";
+import { errorMessage } from "@/components/expense-editor";
 import type { DaretState } from "@/lib/daret";
 import { addMonths, monthKey, monthLabelFr, monthLabelShortFr } from "@/lib/date";
 import type { DaretWithExpense, PaymentMethod } from "@/lib/types";
@@ -67,6 +69,7 @@ export function DaretCard({
     if (!res.ok) {
       setPaid(!next);
       flip(!next);
+      toast.error(await errorMessage(res));
     }
     setBusy(false);
   }
@@ -78,7 +81,7 @@ export function DaretCard({
     setBusy(true);
     const res = await mutate({ method: "PATCH", path: `/api/darets/${daret.id}`, body: { payoutMethod: method } });
     setBusy(false);
-    if (!res.ok) return;
+    if (!res.ok) toast.error(await errorMessage(res));
   }
 
   const turnReached = state.turnStatus !== "upcoming";

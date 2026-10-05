@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { monthKey as toMonthKey, todayMonth } from "@/lib/date";
 import { getExpenseById, markMonthUnpaid, setPaymentMethod, undoLastCreditSlot } from "@/lib/repository";
 import { payExpense } from "@/lib/pay-expense";
+import { withBalanceGuard } from "@/lib/balance-guard";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -17,14 +18,14 @@ interface Params {
  *   lets a not-yet-started installment be paid in advance; omitted
  *   defaults to the real current month.
  */
-export async function POST(req: NextRequest, { params }: Params) {
+export const POST = withBalanceGuard(async function post(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const body = (await req.json().catch(() => ({}))) as { monthKey?: string; method?: string };
   const method = body.method === "cash" || body.method === "card" ? body.method : null;
   const result = await payExpense(id, body.monthKey, method);
   if ("error" in result) return NextResponse.json({ error: result.error }, { status: result.status });
   return NextResponse.json(result.payment, { status: 201 });
-}
+});
 
 /**
  * Undoes a payment.
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest, { params }: Params) {
  * unmark. Ignored for credits, which always undo the most recent
  * installment.
  */
-export async function DELETE(req: NextRequest, { params }: Params) {
+export const DELETE = withBalanceGuard(async function remove(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const expense = await getExpenseById(id);
   if (!expense) return NextResponse.json({ error: "Dépense introuvable." }, { status: 404 });
@@ -47,10 +48,10 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const ok = await markMonthUnpaid(expense.id, monthKeyValue);
   if (!ok) return NextResponse.json({ error: "Aucun paiement à annuler pour ce mois." }, { status: 400 });
   return NextResponse.json({ ok: true });
-}
+});
 
 /** Changes how a month's payment was made. Body: { monthKey, method }. */
-export async function PATCH(req: NextRequest, { params }: Params) {
+export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const body = (await req.json().catch(() => ({}))) as { monthKey?: string; method?: string };
   if (!body.monthKey || (body.method !== "cash" && body.method !== "card")) {
@@ -59,4 +60,4 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const ok = await setPaymentMethod(id, body.monthKey, body.method);
   if (!ok) return NextResponse.json({ error: "Aucun paiement pour ce mois." }, { status: 404 });
   return NextResponse.json({ ok: true });
-}
+});

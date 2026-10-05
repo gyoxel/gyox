@@ -3,17 +3,18 @@ import { deleteIncome, getIncomeById, updateIncome } from "@/lib/repository";
 import { getSavingsMoveOfIncome } from "@/lib/savings-repo";
 import { getLoanOfIncome } from "@/lib/loans-repo";
 import { incomeInputSchema } from "@/lib/validation";
+import { withBalanceGuard } from "@/lib/balance-guard";
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const parsed = incomeInputSchema.partial().safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const income = await updateIncome(id, parsed.data);
   if (!income) return NextResponse.json({ error: "Revenu introuvable." }, { status: 404 });
   return NextResponse.json(income);
-}
+});
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const DELETE = withBalanceGuard(async function remove(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const income = await getIncomeById(id);
   if (income?.expenseId) return NextResponse.json({ error: "Ce revenu vient d'un crédit : supprime le crédit." }, { status: 409 });
@@ -23,4 +24,4 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const ok = await deleteIncome(id);
   if (!ok) return NextResponse.json({ error: "Revenu introuvable." }, { status: 404 });
   return NextResponse.json({ ok: true, gone: [`/incomes/${id}`] });
-}
+});

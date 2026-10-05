@@ -3,6 +3,7 @@
 import { useState, useSyncExternalStore, useTransition } from "react";
 import { Check, ChevronRight, HandCoins, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import { errorMessage } from "@/components/expense-editor";
 import type { PaymentMethod, SalaryAdvance, Settings } from "@/lib/types";
 import { METHOD_META } from "@/lib/payment-method";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
@@ -379,7 +380,7 @@ export function SalaryPanel({
     startSaving(async () => {
       const res = await mutate({ method: "PATCH", path: "/api/settings", body: { salaryReceivedMonth: previous } });
       if (!res.ok) {
-        toast.error("Impossible d'annuler.");
+        toast.error(await errorMessage(res));
         return;
       }
       writeLate(null);
@@ -417,7 +418,7 @@ export function SalaryPanel({
     startSaving(async () => {
       const res = await mutate({ method: "DELETE", path: `/api/salary-advances/${advance.id}` });
       if (!res.ok) {
-        toast.error("Suppression impossible.");
+        toast.error(await errorMessage(res));
         return;
       }
       setToDelete(null);

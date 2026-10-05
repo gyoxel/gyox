@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { deleteGoal, getGoalById, pagesGoneWithExpenses, updateGoal } from "@/lib/repository";
 import { goalInputSchema } from "@/lib/validation";
+import { withBalanceGuard } from "@/lib/balance-guard";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -9,7 +10,7 @@ interface Params {
 // Any field of the goal (deposits have their own route).
 const patchSchema = goalInputSchema.partial();
 
-export async function PATCH(req: NextRequest, { params }: Params) {
+export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const current = await getGoalById(id);
   if (!current) return NextResponse.json({ error: "Objectif introuvable." }, { status: 404 });
@@ -25,9 +26,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const goal = await updateGoal(id, sent);
   if (!goal) return NextResponse.json({ error: "Modification impossible." }, { status: 400 });
   return NextResponse.json(goal);
-}
+});
 
-export async function DELETE(_req: NextRequest, { params }: Params) {
+export const DELETE = withBalanceGuard(async function remove(_req: NextRequest, { params }: Params) {
   const { id } = await params;
   const goal = await getGoalById(id);
   const expenseIds = (goal?.deposits ?? []).flatMap((d) => (d.expenseId ? [d.expenseId] : []));
@@ -35,4 +36,4 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const ok = await deleteGoal(id);
   if (!ok) return NextResponse.json({ error: "Objectif introuvable." }, { status: 404 });
   return NextResponse.json({ ok: true, gone });
-}
+});

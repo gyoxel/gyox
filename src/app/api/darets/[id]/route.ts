@@ -2,15 +2,16 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { deleteDaret, getDaretById, pagesGoneWithExpenses, setDaretPayout, updateDaret } from "@/lib/repository";
 import { daretDates, daretInputSchema } from "@/lib/daret-input";
+import { withBalanceGuard } from "@/lib/balance-guard";
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export const DELETE = withBalanceGuard(async function remove(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const daret = await getDaretById(id);
   const gone = daret ? await pagesGoneWithExpenses([daret.expenseId]) : [];
   const ok = await deleteDaret(id);
   if (!ok) return NextResponse.json({ error: "Daret introuvable." }, { status: 404 });
   return NextResponse.json({ ok: true, gone });
-}
+});
 
 const patchSchema = z.object({
   payoutMethod: z.enum(["cash", "card"]).nullable(),
@@ -20,7 +21,7 @@ const patchSchema = z.object({
  * PATCH { payoutMethod }: the payout collected in cash / card, or null to undo.
  * PATCH { name, amount, members, startMonth, turnMonth }: edits the daret.
  */
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await req.json().catch(() => null);
   if (body && typeof body === "object" && !("payoutMethod" in body)) {
@@ -40,4 +41,4 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const ok = await setDaretPayout(id, parsed.data.payoutMethod);
   if (!ok) return NextResponse.json({ error: "Daret introuvable." }, { status: 404 });
   return NextResponse.json({ ok: true });
-}
+});

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import type { PaymentMethod } from "@/lib/types";
 import { mutate } from "@/lib/use-refresh-data";
 import { cleanDecimalInput, cn, parseDecimalInput } from "@/lib/utils";
+import { insufficientMessage } from "@/lib/balance-message";
 import { errorMessage } from "@/components/expense-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +73,13 @@ export function TransferDialog({
     setError(null);
     if (!(value > 0)) return setError("Indique un montant.");
     if (from === to) return setError("Choisis deux comptes différents.");
+    if (value > available(from) + 0.005) {
+      return setError(
+        from === "savings"
+          ? `Épargne insuffisante : il te reste ${money(Math.max(0, savings))}.`
+          : insufficientMessage(from, available(from)),
+      );
+    }
     const cleanNote = note.trim() || null;
     const request =
       to === "savings"

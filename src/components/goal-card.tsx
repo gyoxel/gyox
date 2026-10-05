@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { CalendarClock, Check, ChevronRight, Pencil, Plus, Sparkles, Target, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
+import { errorMessage } from "@/components/expense-editor";
 import type { Goal, PaymentMethod } from "@/lib/types";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import { METHOD_META } from "@/lib/payment-method";
@@ -365,7 +366,7 @@ function DepositDialog({
       body: { amount: value, name: depositName.trim(), method },
     });
     setSaving(false);
-    if (!res.ok) return toast.error("Versement impossible.");
+    if (!res.ok) return toast.error(await errorMessage(res));
     toast.success(`+${formatMoney(value, currency)} pour ${goal.name} · ajouté aux dépenses`);
     onOpenChange(false);
     setDeposit("");

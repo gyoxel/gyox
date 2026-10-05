@@ -207,7 +207,9 @@ export function ExpenseEditor({
           ...(payCall ? [payCall] : []),
         ]);
         if (!res.ok) return setError(await errorMessage(res));
-        if (payCall && !pay?.ok) toast.error("Enregistré, mais le statut de paiement n'a pas pu être mis à jour.");
+        if (payCall && !pay?.ok) {
+          toast.error(pay?.status === 409 ? `Enregistré, mais pas payé. ${await errorMessage(pay)}` : "Enregistré, mais le statut de paiement n'a pas pu être mis à jour.");
+        }
 
         toast.success("Modifications enregistrées.");
         nav.back();
@@ -494,6 +496,8 @@ export function keepAboveKeyboard(input: HTMLInputElement) {
 
 export async function errorMessage(res: Response): Promise<string> {
   const body = await res.json().catch(() => null);
+  // A plain message from the server (e.g. "Solde insuffisant : …").
+  if (typeof body?.error === "string") return body.error;
   const first =
     body?.error?.formErrors?.[0] ??
     (body?.error?.fieldErrors && (Object.values(body.error.fieldErrors)[0] as string[] | undefined))?.[0];

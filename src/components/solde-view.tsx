@@ -108,7 +108,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
     startDelete(async () => {
       const res = await mutate({ method: "DELETE", path: `/api/wallet/${entry.opId}` });
       if (!res.ok) {
-        toast.error("Suppression impossible.");
+        toast.error(await errorMessage(res));
         return;
       }
       setToDelete(null);

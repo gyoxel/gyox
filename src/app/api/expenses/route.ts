@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createExpense, createIncome, getAllExpenses } from "@/lib/repository";
 import { payExpense } from "@/lib/pay-expense";
 import { expenseInputSchema, incomeInputSchema } from "@/lib/validation";
+import { withBalanceGuard } from "@/lib/balance-guard";
 
 export async function GET() {
   return NextResponse.json(await getAllExpenses());
@@ -16,7 +17,7 @@ const extrasSchema = z.object({
   income: incomeInputSchema.omit({ expenseId: true }).optional(),
 });
 
-export async function POST(req: NextRequest) {
+export const POST = withBalanceGuard(async function post(req: NextRequest) {
   const body = await req.json();
   const parsed = expenseInputSchema.safeParse(body);
   if (!parsed.success) {
@@ -38,4 +39,4 @@ export async function POST(req: NextRequest) {
     if ("error" in result) problems.push("paid");
   }
   return NextResponse.json({ ...expense, problems }, { status: 201 });
-}
+});

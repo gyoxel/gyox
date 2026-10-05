@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { deleteLoan, getLoan, updateLoan } from "@/lib/loans-repo";
 import { loanInputSchema, toLoanInput } from "@/lib/loan-input";
+import { withBalanceGuard } from "@/lib/balance-guard";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -10,7 +11,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   return NextResponse.json(loan);
 }
 
-export async function PATCH(req: NextRequest, { params }: Params) {
+export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const parsed = loanInputSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
@@ -26,10 +27,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     );
   }
   return NextResponse.json(await updateLoan(id, input));
-}
+});
 
-export async function DELETE(_req: NextRequest, { params }: Params) {
+export const DELETE = withBalanceGuard(async function remove(_req: NextRequest, { params }: Params) {
   const gone = await deleteLoan((await params).id);
   if (!gone) return NextResponse.json({ error: "Prêt introuvable." }, { status: 404 });
   return NextResponse.json({ ok: true, gone });
-}
+});

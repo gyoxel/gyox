@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { addGoalDeposit, getGoalById } from "@/lib/repository";
 import { todayDateStr } from "@/lib/date";
+import { withBalanceGuard } from "@/lib/balance-guard";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -19,7 +20,7 @@ const depositSchema = z.object({
 
 /** "+ Versement": money put aside for the goal (from cash or the card),
  *  with an optional label. */
-export async function POST(req: NextRequest, { params }: Params) {
+export const POST = withBalanceGuard(async function post(req: NextRequest, { params }: Params) {
   const { id } = await params;
   if (!(await getGoalById(id))) return NextResponse.json({ error: "Objectif introuvable." }, { status: 404 });
   const parsed = depositSchema.safeParse(await req.json().catch(() => null));
@@ -27,4 +28,4 @@ export async function POST(req: NextRequest, { params }: Params) {
   const { name, amount, date, method } = parsed.data;
   const deposit = await addGoalDeposit(id, { name: name || "Versement", amount, date: date ?? todayDateStr(), method });
   return NextResponse.json(deposit, { status: 201 });
-}
+});

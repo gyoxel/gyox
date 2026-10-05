@@ -113,6 +113,11 @@ export async function pagesGone(res: Response): Promise<string[]> {
   return Array.isArray(body?.gone) ? body.gone.filter((g): g is string => typeof g === "string") : [];
 }
 
+/** Two frames: lets the router finish what it's applying first. */
+function afterRouterSettles(go: () => void) {
+  requestAnimationFrame(() => requestAnimationFrame(go));
+}
+
 /**
  * - `back(fallback)`: previous in-app page, or `fallback` (home by default)
  *   when this is the first page of the session.
@@ -146,9 +151,16 @@ export function useNavBack() {
       let i = s ? s.pos - 1 : -1;
       while (s && i >= 0 && dead(s.stack[i])) i -= 1;
       // Back / forward shows the page as it was cached: reload its data so
-      // what was just deleted isn't listed there anymore.
-      if (s && i >= 0) jump(s, i, () => router.refresh());
-      else replace(fallback);
+      // what was just deleted isn't listed there anymore. Once the router
+      // has finished restoring it — and again a moment later: a refresh sent
+      // while the router is still busy can be dropped (about 1 time in 5),
+      // leaving the old list showing.
+      if (s && i >= 0) {
+        jump(s, i, () => {
+          afterRouterSettles(() => router.refresh());
+          setTimeout(() => router.refresh(), 500);
+        });
+      } else replace(fallback);
     },
   };
 }

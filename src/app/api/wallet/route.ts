@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createWalletOp, getAllWalletOps } from "@/lib/repository";
+import { withBalanceGuard } from "@/lib/balance-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ export async function GET() {
 }
 
 /** POST a transfer (cash ⇄ card) or an adjustment of one account. */
-export async function POST(req: NextRequest) {
+export const POST = withBalanceGuard(async function post(req: NextRequest) {
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const op = parsed.data;
@@ -42,4 +43,4 @@ export async function POST(req: NextRequest) {
     note: op.note || null,
   });
   return NextResponse.json(created, { status: 201 });
-}
+});

@@ -6,6 +6,7 @@ import { savingsBalance } from "@/lib/savings";
 import { todayDateStr } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
 import { savingsSchema } from "@/lib/savings-input";
+import { withBalanceGuard } from "@/lib/balance-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export async function GET() {
 }
 
 /** POST { kind: "in" | "out", amount, method, note }: into / out of the savings. */
-export async function POST(req: NextRequest) {
+export const POST = withBalanceGuard(async function post(req: NextRequest) {
   const parsed = savingsSchema.extend({ kind: z.enum(["in", "out"]) }).safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const { kind, amount, method, note, date } = parsed.data;
@@ -27,4 +28,4 @@ export async function POST(req: NextRequest) {
   }
   const move = await createSavingsMove({ kind, amount: Math.round(amount * 100) / 100, method, note, date: date ?? todayDateStr() });
   return NextResponse.json(move, { status: 201 });
-}
+});

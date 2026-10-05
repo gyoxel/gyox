@@ -64,7 +64,7 @@ export function CancelRepayment({ loanId, slot }: { loanId: string; slot: number
       onClick={async () => {
         setBusy(true);
         const res = await mutate({ method: "DELETE", path: `/api/loans/${loanId}/repayments/${slot}` });
-        if (!res.ok) toast.error("Impossible d'annuler.");
+        if (!res.ok) toast.error(await errorMessage(res));
         setBusy(false);
       }}
       className="text-xs font-medium text-slate-500 underline underline-offset-2 disabled:opacity-60 dark:text-slate-400"

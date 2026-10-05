@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { PrismaClient } from "@prisma/client";
 
 /**
@@ -95,5 +96,44 @@ declare global {
   var __budgetPrisma: ExtendedPrismaClient | undefined;
 }
 
-export const prisma = globalThis.__budgetPrisma ?? createClient();
-if (process.env.NODE_ENV !== "production") globalThis.__budgetPrisma = prisma;
+const base = globalThis.__budgetPrisma ?? createClient();
+if (process.env.NODE_ENV !== "production") globalThis.__budgetPrisma = base;
+
+type TransactionClient = Parameters<Parameters<ExtendedPrismaClient["$transaction"]>[0]>[0];
+const transactionScope = new AsyncLocalStorage<TransactionClient>();
+
+/**
+ * Runs `work` in one database transaction: every query made through
+ * `prisma` meanwhile (in any module) is part of it, and a throw rolls all
+ * of it back. Lets a check made after a change undo it (see balance-guard).
+ */
+export function inTransaction<T>(work: () => Promise<T>): Promise<T> {
+  if (transactionScope.getStore()) return work();
+  return base.$transaction((tx) => transactionScope.run(tx, work), { maxWait: 10_000, timeout: 20_000 });
+}
+
+/** Outside a transaction scope (e.g. the state before it, as committed). */
+export const committedPrisma = base;
+
+/**
+ * The client the app uses: the plain client, or — inside inTransaction —
+ * that transaction. Code written for the plain client keeps working there,
+ * including its own `prisma.$transaction([...])` batches (run in order
+ * within the surrounding transaction).
+ */
+export const prisma = new Proxy(base, {
+  get(target, prop) {
+    const tx = transactionScope.getStore();
+    if (tx && prop === "$transaction") {
+      return async (arg: unknown) => {
+        if (typeof arg === "function") return arg(tx);
+        const results: unknown[] = [];
+        for (const query of arg as Promise<unknown>[]) results.push(await query);
+        return results;
+      };
+    }
+    const source = (tx ?? target) as object;
+    const value = Reflect.get(source, prop);
+    return typeof value === "function" ? value.bind(source) : value;
+  },
+}) as ExtendedPrismaClient;

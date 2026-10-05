@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSettings, syncSalaryReceipts, updateSettings } from "@/lib/repository";
 import { settingsInputSchema } from "@/lib/validation";
+import { withBalanceGuard } from "@/lib/balance-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,7 @@ export async function GET() {
   return NextResponse.json(await getSettings());
 }
 
-export async function PATCH(req: NextRequest) {
+export const PATCH = withBalanceGuard(async function patch(req: NextRequest) {
   const body = await req.json();
   const before = await getSettings();
   const merged = { ...before, ...body };
@@ -20,4 +21,4 @@ export async function PATCH(req: NextRequest) {
   // "Salaire reçu" (or its undo): record / remove it in the Solde history.
   await syncSalaryReceipts(before.salaryReceivedMonth, settings.salaryReceivedMonth, settings);
   return NextResponse.json(settings);
-}
+});

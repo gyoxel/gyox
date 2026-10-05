@@ -8,7 +8,9 @@ import { Check, ChevronLeft, ChevronRight, Plus, PartyPopper } from "lucide-reac
 import { addMonths, monthKey as toMonthKey, monthLabelFr, monthLabelShortFr, type MonthId } from "@/lib/date";
 import { getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, getMonthLedgerItems, type DisplayColor } from "@/lib/engine";
 import type { Expense, Payment, PaymentMethod } from "@/lib/types";
+import { toast } from "sonner";
 import { METHOD_META } from "@/lib/payment-method";
+import { errorMessage } from "@/components/expense-editor";
 import { formatMoney, cn } from "@/lib/utils";
 import { ColorDot } from "@/components/color-dot";
 import { displayIcon } from "@/lib/category";
@@ -166,6 +168,7 @@ export function DueNowList({
       .then(async (res) => {
         if (!res.ok) {
           setLocalPayments((prev) => prev.filter((p) => p.id !== optimistic.id));
+          toast.error(await errorMessage(res));
           return;
         }
         const real: Payment = await res.json();
