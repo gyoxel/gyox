@@ -4,6 +4,7 @@ import { getDaretState } from "@/lib/daret";
 import { getCreditDisplayProgress, getCreditRealState, getEffectiveEndMonth } from "@/lib/engine";
 import { cn, formatMoney } from "@/lib/utils";
 import { displayIcon } from "@/lib/category";
+import { ScrollToFraction } from "@/components/scroll-to-fraction";
 
 const INITIALS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 const SHORT = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
@@ -11,6 +12,11 @@ const SHORT = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août
 const monthShort = (m: MonthId) => `${SHORT[m.month - 1]} ${String(m.year).slice(2)}`;
 /** Longest span drawn (beyond it, bars are cut at the edge). */
 const MAX_MONTHS = 36;
+/** Narrowest a month gets, so every month keeps its letter: a longer span
+ *  scrolls sideways instead of skipping months. */
+const MONTH_PX = 11;
+/** The name column (88px) and the gap after it. */
+const NAME_PX = 96;
 
 interface Row {
   expense: Expense;
@@ -109,7 +115,6 @@ export function TimelineSection({
   /** Left edge of a month on the axis, in %. */
   const at = (m: MonthId) => clamp((monthsBetween(axisStart, m) / span) * 100);
   const months = Array.from({ length: span }, (_, i) => addMonths(axisStart, i));
-  const tickEvery = span <= 12 ? 1 : span <= 24 ? 2 : 3;
   const todayLeft = at(current) + 50 / span;
 
   // Summary: what's left on the credits, per month now, and the day it's all over.
@@ -154,29 +159,29 @@ export function TimelineSection({
         )}
 
         <div className="flex flex-col px-3 pb-3 pt-3">
-          {/* Month axis */}
+          <ScrollToFraction fraction={(NAME_PX + (todayLeft / 100) * span * MONTH_PX) / (NAME_PX + span * MONTH_PX)}>
+          <div style={{ minWidth: NAME_PX + span * MONTH_PX }}>
+          {/* Month axis: every month */}
           <div className="flex items-end gap-2">
-            <div className="w-[88px] shrink-0" />
+            <div className="sticky left-0 z-10 w-[88px] shrink-0 self-stretch bg-white dark:bg-slate-900" />
             <div className="relative h-8 flex-1">
-              {months.map((m, i) =>
-                i % tickEvery === 0 || m.month === 1 ? (
-                  <span
-                    key={i}
-                    className={cn(
-                      "absolute bottom-0 -translate-x-1/2 text-center text-[10px] leading-tight",
-                      compareMonths(m, current) === 0 ? "font-bold text-blue-600 dark:text-sky-300" : "text-slate-400",
-                    )}
-                    style={{ left: `${at(m) + 50 / span}%` }}
-                  >
-                    {m.month === 1 || i === 0 ? (
-                      <span className="block text-[9px] font-semibold text-slate-500 dark:text-slate-400">
-                        {String(m.year).slice(2)}
-                      </span>
-                    ) : null}
-                    {INITIALS[m.month - 1]}
-                  </span>
-                ) : null,
-              )}
+              {months.map((m, i) => (
+                <span
+                  key={i}
+                  className={cn(
+                    "absolute bottom-0 -translate-x-1/2 text-center text-[9px] leading-tight",
+                    compareMonths(m, current) === 0 ? "font-bold text-blue-600 dark:text-sky-300" : "text-slate-400",
+                  )}
+                  style={{ left: `${at(m) + 50 / span}%` }}
+                >
+                  {m.month === 1 || i === 0 ? (
+                    <span className="block text-[9px] font-semibold text-slate-500 dark:text-slate-400">
+                      {String(m.year).slice(2)}
+                    </span>
+                  ) : null}
+                  {INITIALS[m.month - 1]}
+                </span>
+              ))}
             </div>
           </div>
 
@@ -190,7 +195,7 @@ export function TimelineSection({
               const done = r.percent >= 100;
               return (
                 <div key={r.expense.id} className="flex items-center gap-2 border-t border-slate-100 py-2.5 first:border-t-0 dark:border-slate-800">
-                  <div className="flex w-[88px] shrink-0 items-center gap-1.5">
+                  <div className="sticky left-0 z-10 flex w-[88px] shrink-0 items-center gap-1.5 self-stretch bg-white dark:bg-slate-900">
                     <span className="text-lg leading-none">{displayIcon(r.expense, categoryEmoji)}</span>
                     <span className="min-w-0">
                       <span className="block truncate text-[13px] font-semibold text-slate-800 dark:text-slate-100">
@@ -223,7 +228,11 @@ export function TimelineSection({
                         </span>
                       )}
                     </div>
-                    <p className="mt-1 flex items-baseline justify-between gap-1 text-[10px]">
+                    {/* Stays in view while the bars scroll sideways. */}
+                    <p
+                      className="sticky mt-1 flex items-baseline justify-between gap-1 text-[10px]"
+                      style={{ left: NAME_PX, maxWidth: `calc(100vw - ${NAME_PX + 56}px)` }}
+                    >
                       <span className={cn("font-semibold tabular-nums", s.text)}>{done ? "Terminé ✓" : `${r.percent}%`}</span>
                       <span className="truncate text-slate-400">
                         {!done && (
@@ -240,6 +249,8 @@ export function TimelineSection({
               );
             })}
           </div>
+          </div>
+          </ScrollToFraction>
 
           <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-[10px] text-slate-400">
             <span className="flex items-center gap-1">
