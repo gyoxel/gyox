@@ -7,6 +7,7 @@ import { ThemeColorKeeper } from "@/components/theme-color";
 import { TabSwipe } from "@/components/tab-swipe";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
+import { THEME_COLOR_BOOT_SCRIPT } from "@/lib/page-theme";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -38,15 +39,16 @@ export const viewport: Viewport = {
   // can be scrolled right above the keyboard reliably (the bottom bar hides
   // while typing, see BottomNav).
   interactiveWidget: "resizes-content",
-  // Accueil's colour; each page sets its own (see ThemeColor).
-  themeColor: "#019c86",
+  // No themeColor here: Next would put its meta back on every navigation,
+  // and the phone shows that colour for a frame. THEME_COLOR_BOOT_SCRIPT
+  // adds the page's own colour instead, and ThemeColor keeps it.
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="fr" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT + THEME_COLOR_BOOT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         <div id="page-root" className="mx-auto flex w-full max-w-lg flex-1 flex-col pb-28">

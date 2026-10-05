@@ -5,11 +5,14 @@ import { SIMPLE_HEADER } from "@/lib/theme";
 
 // The browser's bar (theme-color) follows the page's header colour.
 //
-// Timing: a phone shows a new theme-color right away, but the page's new
-// frame only reaches the screen a few frames after React commits it, so the
-// bar used to change ~80ms before the header. The new colour is applied once
-// the page has been painted (two frames) plus that display delay.
-const DISPLAY_DELAY_MS = 50;
+// Timing: a phone shows a new theme-color the moment the meta changes, but
+// the page's new frame only reaches the screen a frame or two after React
+// commits it: the colour is applied once the page has been painted (two
+// frames) plus a little of that display delay.
+//
+// Only this file writes the meta (the layout doesn't declare a themeColor):
+// any other value, even for one frame, would flash in the bar.
+const DISPLAY_DELAY_MS = 10;
 
 let desired: string | null = null;
 let pending: { frame: number; timer?: ReturnType<typeof setTimeout> } | null = null;
@@ -41,16 +44,15 @@ function cancelPending() {
 
 /**
  * Mounted once in the root layout, so it never goes away between pages:
- * the theme can change (Paramètres, system dark mode), and a navigation
- * can put the layout's default colour back in <head> — repaint at once
- * with the current page's colour after both (no flash of the default).
+ * repaints when the theme changes (Paramètres, system dark mode) or the
+ * meta goes missing.
  */
 export function ThemeColorKeeper() {
   useEffect(() => {
     const root = document.documentElement;
     const observer = new MutationObserver(paint);
     observer.observe(root, { attributes: true, attributeFilter: ["class"] });
-    observer.observe(document.head, { childList: true, subtree: true, attributes: true, attributeFilter: ["content", "media"] });
+    observer.observe(document.head, { childList: true });
     return () => observer.disconnect();
   }, []);
   return null;
