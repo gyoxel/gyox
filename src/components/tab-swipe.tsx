@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { pageColor } from "@/lib/page-theme";
+import { mixColor, setSwipeColor } from "@/components/theme-color";
 
 /** The bottom bar's tabs, in order: swipe left → next, right → previous. */
 const TABS = ["/", "/budget", "/credits", "/menu"];
@@ -216,10 +217,19 @@ export function TabSwipe() {
       preview.current = box;
     };
 
+    /** The browser's bar between the two pages' colours, as far as the
+     *  page has slid (it's one colour: it can't be split like the page). */
+    const tint = (offset: number) => {
+      const path = neighbour(shownDir);
+      if (!shownDir || !path) return;
+      setSwipeColor(mixColor(pageColor(pathname), pageColor(path), Math.abs(offset) / window.innerWidth));
+    };
+
     const place = (offset: number) => {
       const w = window.innerWidth;
       page.style.transform = `translateX(${offset}px)`;
       if (preview.current) preview.current.style.transform = `translateX(${offset + shownDir * w}px)`;
+      tint(offset);
     };
 
     const onStart = (e: TouchEvent) => {
@@ -259,6 +269,7 @@ export function TabSwipe() {
         preview.current?.remove();
         preview.current = null;
         shownDir = 0;
+        setSwipeColor(null);
         page.style.transform = `translateX(${mx * 0.15}px)`;
       }
     };
@@ -272,6 +283,14 @@ export function TabSwipe() {
         preview.current.style.transition = ease;
         preview.current.style.transform = `translateX(${offset + shownDir * w}px)`;
       }
+      // The bar's colour follows the page as it slides.
+      const until = performance.now() + SLIDE_MS;
+      const follow = () => {
+        tint(new DOMMatrix(getComputedStyle(page).transform).m41);
+        if (performance.now() < until) requestAnimationFrame(follow);
+        else tint(offset);
+      };
+      requestAnimationFrame(follow);
       setTimeout(() => done?.(), SLIDE_MS);
     };
 
@@ -295,6 +314,7 @@ export function TabSwipe() {
           navigating.current = false;
           preview.current?.remove();
           preview.current = null;
+          setSwipeColor(null);
           page.style.transition = "";
           page.style.transform = "";
         }, 5000);
@@ -304,6 +324,7 @@ export function TabSwipe() {
       animateTo(0, () => {
         preview.current?.remove();
         preview.current = null;
+        setSwipeColor(null);
         page.style.transition = "";
         page.style.transform = "";
       });
