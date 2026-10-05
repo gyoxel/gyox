@@ -43,7 +43,9 @@
   box-shadow: none !important;
   border: 1px solid var(--simple-line);
 }
-.simple [data-tone] {
+/* Headers: a line under them only — none against the browser's bar above
+   (doubled attribute: must outweigh the :is() rule just before). */
+.simple [data-tone][data-tone] {
   border-width: 0 0 1px;
 }
 .simple :is([data-tone], .text-white[class*="bg-gradient-to"]) :is(.bg-white:not(.h-full), [class*="bg-gradient-to"]) {
