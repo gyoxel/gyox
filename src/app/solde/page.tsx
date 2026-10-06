@@ -1,4 +1,4 @@
-import { getSettings } from "@/lib/repository";
+import { getSettings } from "@/lib/page-data";
 import { getWallet } from "@/lib/wallet-data";
 import { PageHeader } from "@/components/page-header";
 import { SoldeView } from "@/components/solde-view";

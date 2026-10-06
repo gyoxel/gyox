@@ -1,6 +1,7 @@
+import { getAllCategories, getAllExpenses, getAllPayments, getSettings } from "@/lib/page-data";
 import Link from "next/link";
 import { Check, ChevronRight, Clock } from "lucide-react";
-import { getAllCategories, getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
+
 import { monthFromSearchParams, monthKey, monthLabelFr, monthLabelShortFr, todayMonth } from "@/lib/date";
 import { getEffectiveEndMonth, getMonthPaymentStatus, getMonthSummary } from "@/lib/engine";
 import { METHOD_META } from "@/lib/payment-method";
@@ -115,7 +116,6 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
         </div>
 
         <AddLink href="/expenses/new" label="Ajouter une dépense" className="border-rose-200 text-rose-600 active:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:active:bg-rose-950/30" />
-
 
         {groups.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-slate-200 px-3 py-8 text-center text-sm text-slate-400 dark:border-slate-700">

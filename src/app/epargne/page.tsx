@@ -1,5 +1,4 @@
-import { getAllPayments, getSettings } from "@/lib/repository";
-import { getAllSavingsMoves } from "@/lib/savings-repo";
+import { getAllPayments, getAllSavingsMoves, getSettings } from "@/lib/page-data";
 import { getWallet } from "@/lib/wallet-data";
 import { isMoveCounted } from "@/lib/savings";
 import { PageHeader } from "@/components/page-header";

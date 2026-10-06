@@ -1,8 +1,8 @@
+import { getLoan, getSettings } from "@/lib/page-data";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Check, Clock, Pencil } from "lucide-react";
-import { getSettings } from "@/lib/repository";
-import { getLoan } from "@/lib/loans-repo";
+
 import { loanState } from "@/lib/loans";
 import { loanDelete } from "@/lib/delete-specs";
 import { compareMonths, monthLabelFr, todayMonth } from "@/lib/date";

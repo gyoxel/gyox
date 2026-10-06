@@ -7,7 +7,7 @@ import { getAllLoanRepayments, getAllLoans } from "./loans-repo";
 import { getIncomeCategories } from "./income-categories-repo";
 import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote, SalaryAdvance, Income, PaymentMethod, SalaryReceipt, WalletOp, SavingsMove, Loan, LoanRepayment } from "./types";
 
-function mapExpense(row: {
+export function mapExpense(row: {
   id: string;
   name: string;
   amount: number;
@@ -165,7 +165,7 @@ export async function deleteExpense(id: string): Promise<boolean> {
   }
 }
 
-function mapSettings(row: Omit<Settings, "theme" | "salaryMethod"> & { theme: string; salaryMethod: string }): Settings {
+export function mapSettings(row: Omit<Settings, "theme" | "salaryMethod"> & { theme: string; salaryMethod: string }): Settings {
   return {
     salary: row.salary,
     currency: row.currency,
@@ -410,7 +410,7 @@ export async function importData(backup: BackupData): Promise<void> {
   ]);
 }
 
-function mapPayment(row: {
+export function mapPayment(row: {
   id: string;
   expenseId: string;
   monthKey: string | null;
@@ -570,9 +570,9 @@ export async function createDaret(input: {
   return { ...mapDaret(daret), expense: mapExpense(expense) };
 }
 
-const asMethod = (m: string | null): PaymentMethod | null => (m === "cash" || m === "card" ? m : null);
+export const asMethod = (m: string | null): PaymentMethod | null => (m === "cash" || m === "card" ? m : null);
 
-function mapDaret<T extends { payoutMethod: string | null }>(row: T): Omit<T, "payoutMethod"> & { payoutMethod: PaymentMethod | null } {
+export function mapDaret<T extends { payoutMethod: string | null }>(row: T): Omit<T, "payoutMethod"> & { payoutMethod: PaymentMethod | null } {
   return { ...row, payoutMethod: asMethod(row.payoutMethod) };
 }
 
@@ -636,7 +636,7 @@ export async function deleteDaret(id: string): Promise<boolean> {
 // Categories
 // ---------------------------------------------------------------------------
 
-function mapCategory(row: { id: string; name: string; emoji: string; position: number }): Category {
+export function mapCategory(row: { id: string; name: string; emoji: string; position: number }): Category {
   return { id: row.id, name: row.name, emoji: row.emoji, position: row.position };
 }
 
@@ -730,12 +730,12 @@ export type GoalInput = Omit<Goal, "id" | "position" | "createdAt" | "deposits">
 
 type GoalRow = Omit<Goal, "deposits"> & { deposits?: (Omit<GoalDeposit, "method"> & { method: string | null })[] };
 
-const mapDeposit = (d: Omit<GoalDeposit, "method"> & { method: string | null }): GoalDeposit => ({
+export const mapDeposit = (d: Omit<GoalDeposit, "method"> & { method: string | null }): GoalDeposit => ({
   ...d,
   method: d.method === "cash" || d.method === "card" ? d.method : null,
 });
 
-function mapGoal(row: GoalRow): Goal {
+export function mapGoal(row: GoalRow): Goal {
   const deposits = (row.deposits ?? []).map(mapDeposit).sort(
     (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
   );
@@ -954,7 +954,7 @@ export async function setDayNote(date: string, text: string): Promise<DayNote | 
   return { date, text: clean, updatedAt };
 }
 
-const mapAdvance = (row: Omit<SalaryAdvance, "method"> & { method: string }): SalaryAdvance => ({
+export const mapAdvance = (row: Omit<SalaryAdvance, "method"> & { method: string }): SalaryAdvance => ({
   ...row,
   method: row.method === "cash" ? "cash" : "card",
 });
@@ -1028,7 +1028,7 @@ export async function deleteSalaryAdvance(id: string): Promise<boolean> {
 
 export type IncomeInput = Omit<Income, "id" | "createdAt">;
 
-const mapIncome = (row: Omit<Income, "method"> & { method: string }): Income => ({
+export const mapIncome = (row: Omit<Income, "method"> & { method: string }): Income => ({
   ...row,
   method: row.method === "card" ? "card" : "cash",
 });

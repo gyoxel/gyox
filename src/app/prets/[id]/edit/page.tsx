@@ -1,5 +1,6 @@
+import { getLoan } from "@/lib/page-data";
 import { notFound } from "next/navigation";
-import { getLoan } from "@/lib/loans-repo";
+
 import { loanDelete } from "@/lib/delete-specs";
 import { PageHeader } from "@/components/page-header";
 import { LoanEditor } from "@/components/loan-editor";

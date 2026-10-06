@@ -1,5 +1,6 @@
+import { getAllDarets, getAllGoals, getAllPayments, getSettings } from "@/lib/page-data";
 import { Target } from "lucide-react";
-import { getAllDarets, getAllGoals, getAllPayments, getSettings } from "@/lib/repository";
+
 import { getGoalProgress } from "@/lib/goals";
 import { todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
@@ -45,7 +46,6 @@ export default async function GoalsPage() {
         )}
 
         <AddLink href="/goals/new" label="Ajouter un objectif" className="border-amber-200 text-orange-600 active:bg-amber-50 dark:border-amber-900 dark:text-amber-400 dark:active:bg-amber-950/30" />
-
 
         {rows.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-slate-200 px-6 py-10 text-center dark:border-slate-700">

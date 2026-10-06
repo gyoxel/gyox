@@ -1,6 +1,6 @@
+import { getAllPayments, getSavingsMove, getSettings } from "@/lib/page-data";
 import { notFound } from "next/navigation";
-import { getAllPayments, getSettings } from "@/lib/repository";
-import { getSavingsMove } from "@/lib/savings-repo";
+
 import { isMoveCounted } from "@/lib/savings";
 import { savingsDelete } from "@/lib/delete-specs";
 import { PageHeader } from "@/components/page-header";

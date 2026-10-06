@@ -1,17 +1,7 @@
-import {
-  getAllCategories,
-  getAllDarets,
-  getAllDayNotes,
-  getAllExpenses,
-  getAllGoals,
-  getAllIncomes,
-  getAllPayments,
-  getAllSalaryAdvances,
-  getSettings,
-} from "@/lib/repository";
+import { getAllCategories, getAllDarets, getAllDayNotes, getAllExpenses, getAllGoals, getAllIncomes, getAllPayments, getAllSalaryAdvances, getIncomeCategories, getSettings } from "@/lib/page-data";
 import { advancesOn } from "@/lib/salary";
 import { incomeCategory } from "@/lib/income";
-import { getIncomeCategories } from "@/lib/income-categories-repo";
+
 import { addMonths, compareMonths, monthFromSearchParams, monthKey, monthLabelFr, todayMonth, type MonthId } from "@/lib/date";
 import { displayIcon } from "@/lib/category";
 import { getCreditRealState } from "@/lib/engine";

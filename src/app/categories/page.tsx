@@ -1,6 +1,6 @@
+import { getAllCategories, getAllExpenses, getAllIncomes, getIncomeCategories, getSettings } from "@/lib/page-data";
 import Link from "next/link";
-import { getAllCategories, getAllExpenses, getAllIncomes, getSettings } from "@/lib/repository";
-import { getIncomeCategories } from "@/lib/income-categories-repo";
+
 import { getMonthSummary } from "@/lib/engine";
 import { monthKey, monthLabelFr, todayMonth } from "@/lib/date";
 import { cn } from "@/lib/utils";

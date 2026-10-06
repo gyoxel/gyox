@@ -1,5 +1,6 @@
+import { getAllDarets, getAllPayments, getGoalById, getSettings } from "@/lib/page-data";
 import { notFound } from "next/navigation";
-import { getAllDarets, getAllPayments, getGoalById, getSettings } from "@/lib/repository";
+
 import { getGoalProgress, isDepositPaid, type GoalSimBase } from "@/lib/goals";
 import { monthKey, monthLabelFr, monthsBetween, todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";

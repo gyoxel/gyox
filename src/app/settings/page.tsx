@@ -1,6 +1,7 @@
+import { getSettings } from "@/lib/page-data";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { getSettings } from "@/lib/repository";
+
 import { currentAccount } from "@/lib/accounts";
 import { PageHeader } from "@/components/page-header";
 import { SettingsForm } from "@/components/settings-form";

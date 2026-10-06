@@ -1,18 +1,11 @@
+import { getAllCategories, getAllExpenses, getAllPayments, getDaretOfExpense, getDepositOfExpense, getLoanOfExpense, getSavingsMoveOfExpense, getSettings } from "@/lib/page-data";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Pencil } from "lucide-react";
-import {
-  getAllCategories,
-  getAllExpenses,
-  getAllPayments,
-  getDaretOfExpense,
-  getDepositOfExpense,
-  getSettings,
-} from "@/lib/repository";
+
 import { LockedDelete, LockedDeleteIcon } from "@/components/locked-delete";
 import { LinkedSourcePage } from "@/components/linked-source";
-import { getSavingsMoveOfExpense } from "@/lib/savings-repo";
-import { getLoanOfExpense } from "@/lib/loans-repo";
+
 import { DeleteButton } from "@/components/delete-button";
 import { expenseDelete } from "@/lib/delete-specs";
 import { Button } from "@/components/ui/button";

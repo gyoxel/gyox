@@ -1,5 +1,6 @@
+import { getDaretById, getSettings } from "@/lib/page-data";
 import { notFound } from "next/navigation";
-import { getDaretById, getSettings } from "@/lib/repository";
+
 import { PageHeader } from "@/components/page-header";
 import { DaretForm } from "@/components/daret-form";
 import { DeleteButton } from "@/components/delete-button";

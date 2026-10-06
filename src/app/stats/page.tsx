@@ -1,6 +1,7 @@
+import { getAllCategories, getAllExpenses, getAllIncomes, getAllPayments, getAllSalaryAdvances, getSettings } from "@/lib/page-data";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
-import { getAllCategories, getAllExpenses, getAllIncomes, getAllPayments, getAllSalaryAdvances, getSettings } from "@/lib/repository";
+
 import { incomesIn } from "@/lib/income";
 import { addMonths, compareMonths, monthFromSearchParams, monthKey, monthLabelFr, todayMonth } from "@/lib/date";
 import { salaryForMonth } from "@/lib/salary";

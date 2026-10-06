@@ -1,4 +1,4 @@
-import { getAllCategories } from "@/lib/repository";
+import { getAllCategories } from "@/lib/page-data";
 import { PageHeader } from "@/components/page-header";
 import { CREDIT_COLOR } from "@/lib/page-theme";
 import { ExpenseEditor } from "@/components/expense-editor";

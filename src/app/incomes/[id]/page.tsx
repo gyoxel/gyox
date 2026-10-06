@@ -1,13 +1,12 @@
+import { getAllExpenses, getIncomeById, getIncomeCategories, getLoanOfIncome, getSavingsMoveOfIncome } from "@/lib/page-data";
 import { notFound } from "next/navigation";
-import { getAllExpenses, getIncomeById } from "@/lib/repository";
+
 import { PageHeader } from "@/components/page-header";
 import { IncomeEditor } from "@/components/income-editor";
 import { DeleteButton } from "@/components/delete-button";
 import { LockedDeleteIcon } from "@/components/locked-delete";
 import { incomeDelete } from "@/lib/delete-specs";
-import { getSavingsMoveOfIncome } from "@/lib/savings-repo";
-import { getLoanOfIncome } from "@/lib/loans-repo";
-import { getIncomeCategories } from "@/lib/income-categories-repo";
+
 import { pageColor } from "@/lib/page-theme";
 import { METHOD_META } from "@/lib/payment-method";
 import { formatMoney } from "@/lib/utils";
