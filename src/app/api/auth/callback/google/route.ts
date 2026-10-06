@@ -59,12 +59,19 @@ export async function GET(request: NextRequest) {
     typeof claims.email === "string";
   if (!valid) return failed("google");
 
-  const userId = await signInWithGoogle({
-    sub: claims.sub as string,
-    email: claims.email as string,
-    name: typeof claims.name === "string" ? claims.name : null,
-    picture: typeof claims.picture === "string" ? claims.picture : null,
-  });
+  let userId: string;
+  try {
+    userId = await signInWithGoogle({
+      sub: claims.sub as string,
+      email: claims.email as string,
+      name: typeof claims.name === "string" ? claims.name : null,
+      picture: typeof claims.picture === "string" ? claims.picture : null,
+    });
+  } catch (error) {
+    // Database unreachable: say so (Google's code is spent, a new tap starts over).
+    console.error("[auth] sign-in failed:", error);
+    return failed("serveur");
+  }
   const response = NextResponse.redirect(new URL(safeNext(saved.next), origin));
   response.cookies.delete({ name: OAUTH_COOKIE, path: "/api/auth" });
   await setSession(response, request, userId);

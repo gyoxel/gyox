@@ -13,6 +13,7 @@ const ERRORS: Record<string, string> = {
   expire: "La connexion a pris trop de temps : réessaie.",
   google: "Google n'a pas pu confirmer ton compte : réessaie.",
   config: "La connexion Google n'est pas encore prête.",
+  serveur: "Le serveur ne répond pas pour l'instant : réessaie dans un moment.",
 };
 
 const FEATURES = [
