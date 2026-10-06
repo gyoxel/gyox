@@ -32,6 +32,10 @@ export interface Expense {
   icon: string | null;
   /** User-managed category (see Category), or null if uncategorized. */
   categoryId: string | null;
+  /** Months with their own amount, just for that month ("YYYY-MM" → amount;
+   *  0: nothing that month). A credit carries the difference over to its
+   *  last installment. Null: none. */
+  monthAmounts: Record<string, number> | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -44,7 +48,7 @@ export interface Category {
   position: number;
 }
 
-export type ExpenseInput = Omit<Expense, "id" | "createdAt" | "updatedAt">;
+export type ExpenseInput = Omit<Expense, "id" | "createdAt" | "updatedAt" | "monthAmounts">;
 
 export interface Settings {
   salary: number;

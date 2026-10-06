@@ -4,7 +4,7 @@ import { incomeCategory } from "@/lib/income";
 
 import { addMonths, compareMonths, monthFromSearchParams, monthKey, monthLabelFr, todayMonth, type MonthId } from "@/lib/date";
 import { displayIcon } from "@/lib/category";
-import { getCreditRealState } from "@/lib/engine";
+import { getCreditRealState, projectCreditInstallment } from "@/lib/engine";
 import { getDaretState } from "@/lib/daret";
 import { getGoalProgress } from "@/lib/goals";
 import { formatMoney } from "@/lib/utils";
@@ -145,7 +145,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             date,
             icon,
             label: `Dernière mensualité · ${e.name}`,
-            detail: `${money(Math.min(e.amount, state.remaining))} — fin du crédit 🎉`,
+            detail: `${money(projectCreditInstallment(e, payments, month, current) ?? Math.min(e.amount, state.remaining))} — fin du crédit 🎉`,
           },
     );
   }

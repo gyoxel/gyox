@@ -11,7 +11,7 @@ import { expenseDelete } from "@/lib/delete-specs";
 import { Button } from "@/components/ui/button";
 import { METHOD_META } from "@/lib/payment-method";
 import { getCreditRealState, getEffectiveEndMonth, getOccurrenceForMonth } from "@/lib/engine";
-import { compareMonths, monthKey, monthLabelFr, monthOfDateStr, monthsBetween, todayMonth } from "@/lib/date";
+import { compareMonths, monthKey, monthLabelFr, monthOfDateStr, monthsBetween, todayMonth, type MonthId } from "@/lib/date";
 import { PageHeader } from "@/components/page-header";
 import { CREDIT_COLOR, pageColor } from "@/lib/page-theme";
 
@@ -19,6 +19,7 @@ const GOALS_COLOR = pageColor("/goals");
 const DARET_COLOR = pageColor("/daret");
 import { ExpenseEditor, type PaymentStatusInit, type RecurrenceInit } from "@/components/expense-editor";
 import { CreditEditor } from "@/components/credit-editor";
+import { MonthAmountCard } from "@/components/month-amount-card";
 import { formatMoney } from "@/lib/utils";
 import type { Expense, Payment } from "@/lib/types";
 
@@ -162,6 +163,8 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
   const byId = new Map(allExpenses.map((e) => [e.id, e]));
   const recurrenceInit = getRecurrenceInit(expense, byId);
   const paymentStatus = getPaymentStatusInit(expense, payments, byId);
+  const ownPayments = payments.filter((p) => p.expenseId === expense.id);
+  const current = todayMonth();
 
   return (
     <>
@@ -186,10 +189,24 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
           />
         )}
 
+        {hasMonthAmounts(expense, ownPayments, current) && (
+          <MonthAmountCard expense={expense} payments={ownPayments} currentMonthKey={monthKey(current)} currency={settings.currency} />
+        )}
+
         <DeleteButton variant="full" {...expenseDelete(expense)} />
       </main>
     </>
   );
+}
+
+/** A month can get its own amount: a credit still being repaid, or an
+ *  expense that comes back every month and isn't over. */
+function hasMonthAmounts(expense: Expense, payments: Payment[], current: MonthId): boolean {
+  if (!expense.active || expense.amount <= 0) return false;
+  if (expense.type === "credit") return getCreditRealState(expense, payments, current).status !== "completed";
+  if (expense.frequency === "one-time") return false;
+  const end = getEffectiveEndMonth(expense, new Map());
+  return end == null || compareMonths(end, current) >= 0;
 }
 
 /** Which recurrence option the form should open on for this expense. */

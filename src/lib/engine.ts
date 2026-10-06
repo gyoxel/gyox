@@ -22,6 +22,75 @@ interface CreditScheduleEntry {
 const SAFETY_MONTHS_CAP = 1200; // 100 years, prevents runaway loops
 
 /**
+ * The amount set for one month only ("montant de ce mois"), if any. Never 0
+ * for a credit (an installment always pays something).
+ */
+function customAmountFor(expense: Expense, key: string): number | null {
+  const custom = expense.monthAmounts?.[key];
+  if (custom == null || !Number.isFinite(custom) || custom < 0) return null;
+  if (expense.type === "credit" && custom <= 0) return null;
+  return custom;
+}
+
+/** What an expense costs in month `key`: that month's own amount, else its usual one. */
+export function getAmountForMonth(expense: Expense, key: string): number {
+  return customAmountFor(expense, key) ?? expense.amount;
+}
+
+/**
+ * How far a credit's months with their own amount moved it from its plan:
+ * what they paid minus the usual installment (+200 for 1200 instead of 1000,
+ * −100 for 400 instead of 500). Counted on confirmed installments only.
+ */
+function creditCustomDrift(expense: Expense, creditPayments: Payment[]): number {
+  return round2(
+    creditPayments.reduce(
+      (s, p) => (p.monthKey && customAmountFor(expense, p.monthKey) != null ? s + p.amountPaid - expense.amount : s),
+      0,
+    ),
+  );
+}
+
+/**
+ * A credit's installment in month `key`, `remaining` being still owed: that
+ * month's own amount if it has one; else the usual one, except the last
+ * installment of the plan takes whatever is left. So paying 400 instead of
+ * 500 on a 1000 credit makes the next one 600; paying 1200 instead of 1000 on
+ * a 5000 one keeps 1000, 1000, 1000 and makes the last one 800. `drift`: see
+ * creditCustomDrift — the plan's count of installments doesn't move with it.
+ */
+function creditInstallment(expense: Expense, key: string, remaining: number, drift: number): number {
+  const custom = customAmountFor(expense, key);
+  if (custom != null) return round2(Math.min(custom, remaining));
+  const normalLeft = Math.ceil(round2(remaining + drift) / expense.amount - 1e-9);
+  return normalLeft <= 1 ? round2(remaining) : round2(Math.min(expense.amount, remaining));
+}
+
+/** A credit's installments, one a month from `from`, until `remaining` is paid. */
+function creditInstallmentsFrom(
+  expense: Expense,
+  remaining: number,
+  drift: number,
+  from: MonthId,
+): (CreditScheduleEntry & { month: MonthId })[] {
+  const out: (CreditScheduleEntry & { month: MonthId })[] = [];
+  if (expense.amount <= 0) return out;
+  let m = from;
+  let guard = 0;
+  while (remaining > 0.005 && guard < SAFETY_MONTHS_CAP) {
+    const key = monthKey(m);
+    const payment = creditInstallment(expense, key, remaining, drift);
+    if (customAmountFor(expense, key) != null) drift = round2(drift + payment - expense.amount);
+    const remainingAfter = Math.max(0, round2(remaining - payment));
+    out.push({ month: m, monthKey: key, remainingBefore: round2(remaining), payment, remainingAfter });
+    remaining = remainingAfter;
+    m = addMonths(m, 1);
+    guard++;
+  }
+  return out;
+}
+
+/**
  * Computes the full month-by-month payoff schedule for a credit from its
  * start date until the remaining balance reaches zero. The final payment is
  * automatically capped to whatever balance remains (never goes negative).
@@ -30,27 +99,9 @@ export function computeCreditSchedule(expense: Expense): CreditScheduleEntry[] {
   if (expense.type !== "credit" || expense.creditInitialAmount == null) return [];
   if (expense.creditInitialAmount <= 0) return [];
   if (expense.amount <= 0) return [];
-
-  const schedule: CreditScheduleEntry[] = [];
-  let remaining = expense.creditInitialAmount;
-  let m = monthOfDateStr(expense.startDate);
-  let guard = 0;
-
-  while (remaining > 0.005 && guard < SAFETY_MONTHS_CAP) {
-    const payment = Math.min(expense.amount, remaining);
-    const remainingAfter = Math.max(0, round2(remaining - payment));
-    schedule.push({
-      monthKey: monthKey(m),
-      remainingBefore: round2(remaining),
-      payment: round2(payment),
-      remainingAfter,
-    });
-    remaining = remainingAfter;
-    m = addMonths(m, 1);
-    guard++;
-  }
-
-  return schedule;
+  return creditInstallmentsFrom(expense, expense.creditInitialAmount, 0, monthOfDateStr(expense.startDate)).map(
+    ({ monthKey, remainingBefore, payment, remainingAfter }) => ({ monthKey, remainingBefore, payment, remainingAfter }),
+  );
 }
 
 function round2(n: number): number {
@@ -126,7 +177,9 @@ export function getOccurrenceForMonth(
   // Recurring monthly expense (permanent, or temporary following an end date / link)
   const effectiveEnd = getEffectiveEndMonth(expense, byId);
   if (effectiveEnd && compareMonths(m, effectiveEnd) > 0) return null;
-  return { expense, amount: expense.amount };
+  // This month only may have its own amount (0: nothing this month).
+  const amount = getAmountForMonth(expense, monthKey(m));
+  return amount > 0 ? { expense, amount } : null;
 }
 
 export function getMonthSummary(expenses: Expense[], m: MonthId, salary: number): MonthSummary {
@@ -253,11 +306,11 @@ export function getCreditRealState(
   // (e.g. paying ahead) is never "overdue".
   const isOverdue = compareMonths(currentMonth, scheduleMonth) > 0;
   const effectiveMonth = isOverdue ? currentMonth : scheduleMonth;
-  const monthlyAmount = expense.amount > 0 ? expense.amount : 0;
-  const pendingAmount = monthlyAmount > 0 ? Math.min(monthlyAmount, remaining) : 0;
-  const remainingSlotsNeeded = monthlyAmount > 0 ? Math.ceil(remaining / monthlyAmount) : 0;
-  const projectedEndMonth =
-    remainingSlotsNeeded > 0 ? addMonths(effectiveMonth, remainingSlotsNeeded - 1) : effectiveMonth;
+  // The installments still to pay, one a month from the next one's month
+  // (months with their own amount included).
+  const ahead = creditInstallmentsFrom(expense, remaining, creditCustomDrift(expense, creditPayments), effectiveMonth);
+  const pendingAmount = ahead[0]?.payment ?? 0;
+  const projectedEndMonth = ahead.length > 0 ? ahead[ahead.length - 1].month : effectiveMonth;
 
   return {
     paidTotal,
@@ -281,7 +334,7 @@ export function getCreditRealState(
  * repeating today's single pending amount forever. Returns null once the
  * balance would already be fully paid off by `viewMonth`.
  */
-function projectCreditInstallment(
+export function projectCreditInstallment(
   expense: Expense,
   payments: Payment[],
   viewMonth: MonthId,
@@ -290,27 +343,19 @@ function projectCreditInstallment(
   const today = getCreditRealState(expense, payments, currentMonth);
   if (today.status === "completed") return null;
 
-  const monthlyAmount = expense.amount > 0 ? expense.amount : 0;
-  if (monthlyAmount <= 0) return null;
+  if (expense.amount <= 0) return null;
 
-  let remaining = today.remaining;
-  let m: MonthId =
+  const from: MonthId =
     today.status === "not-started"
       ? monthOfDateStr(expense.startDate)
       : today.isOverdue
         ? currentMonth
         : (today.dueMonth ?? currentMonth);
-
-  let guard = 0;
-  while (remaining > 0.005 && guard < SAFETY_MONTHS_CAP) {
-    const payment = Math.min(monthlyAmount, remaining);
-    if (compareMonths(m, viewMonth) === 0) return round2(payment);
-    if (compareMonths(m, viewMonth) > 0) return null; // shouldn't happen, guards against infinite loop misuse
-    remaining = round2(remaining - payment);
-    m = addMonths(m, 1);
-    guard++;
-  }
-  return null; // fully paid off before reaching viewMonth
+  const creditPayments = payments.filter((p) => p.expenseId === expense.id && p.slotIndex != null);
+  const installment = creditInstallmentsFrom(expense, today.remaining, creditCustomDrift(expense, creditPayments), from).find(
+    (i) => compareMonths(i.month, viewMonth) === 0,
+  );
+  return installment ? installment.payment : null; // null: paid off before viewMonth
 }
 
 /**

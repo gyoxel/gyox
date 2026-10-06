@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { DEFAULT_CATEGORIES } from "./default-categories";
 import { defaultSettings } from "./user-defaults";
@@ -23,6 +24,7 @@ export function mapExpense(row: {
   linkedExpenseId: string | null;
   icon: string | null;
   categoryId: string | null;
+  monthAmounts?: unknown;
   createdAt: string;
   updatedAt: string;
 }): Expense {
@@ -42,9 +44,39 @@ export function mapExpense(row: {
     linkedExpenseId: row.linkedExpenseId,
     icon: row.icon,
     categoryId: row.categoryId,
+    monthAmounts: asMonthAmounts(row.monthAmounts),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
+}
+
+/** The stored months with their own amount, only the valid ones; null if none. */
+export function asMonthAmounts(value: unknown): Record<string, number> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const entries = Object.entries(value).filter(
+    ([key, amount]) => /^\d{4}-\d{2}$/.test(key) && typeof amount === "number" && Number.isFinite(amount) && amount >= 0,
+  );
+  return entries.length > 0 ? (Object.fromEntries(entries) as Record<string, number>) : null;
+}
+
+/**
+ * Sets (or with null, removes) one month's own amount. Returns the expense,
+ * null if it doesn't exist.
+ */
+export async function setMonthAmount(id: string, key: string, amount: number | null): Promise<Expense | null> {
+  const existing = await getExpenseById(id);
+  if (!existing) return null;
+  const next = { ...(existing.monthAmounts ?? {}) };
+  if (amount == null) delete next[key];
+  else next[key] = amount;
+  const row = await prisma.expense.update({
+    where: { id },
+    data: {
+      monthAmounts: Object.keys(next).length > 0 ? next : Prisma.DbNull,
+      updatedAt: new Date().toISOString(),
+    },
+  });
+  return mapExpense(row);
 }
 
 export async function getAllExpenses(): Promise<Expense[]> {
@@ -330,6 +362,7 @@ export async function importData(backup: BackupData): Promise<void> {
         linkedExpenseId: e.linkedExpenseId ?? null,
         icon: e.icon ?? null,
         categoryId: e.categoryId && categoryIds.has(e.categoryId) ? e.categoryId : null,
+        monthAmounts: asMonthAmounts(e.monthAmounts) ?? Prisma.DbNull,
         createdAt: e.createdAt ?? new Date().toISOString(),
         updatedAt: e.updatedAt ?? new Date().toISOString(),
       })),

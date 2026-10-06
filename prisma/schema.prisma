@@ -36,6 +36,10 @@ model Expense {
   /// User-managed category (Réglages). Deleting a category keeps its
   /// expenses, just uncategorized.
   categoryId          String?
+  /// Months with their own amount, just for that month: { "YYYY-MM": amount }
+  /// (0: nothing that month). A credit carries the difference over to its
+  /// last installment.
+  monthAmounts        Json?
   createdAt           String
   updatedAt           String
 

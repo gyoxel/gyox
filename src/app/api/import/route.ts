@@ -10,6 +10,7 @@ const backupSchema = z.object({
   expenses: z.array(
     baseExpenseSchema.extend({
       id: z.string().min(1),
+      monthAmounts: z.record(z.string().regex(/^\d{4}-\d{2}$/), z.number().min(0)).nullable().optional(),
       createdAt: z.string().optional(),
       updatedAt: z.string().optional(),
     }),
@@ -214,6 +215,7 @@ export async function POST(req: NextRequest) {
       creditInitialAmount: e.creditInitialAmount ?? null,
       creditPriorPaid: e.creditPriorPaid ?? null,
       linkedExpenseId: e.linkedExpenseId ?? null,
+      monthAmounts: e.monthAmounts ?? null,
       createdAt: e.createdAt ?? now,
       updatedAt: e.updatedAt ?? now,
     })),
