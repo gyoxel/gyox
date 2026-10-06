@@ -51,6 +51,12 @@ model Expense {
   /// Money lent (Prêts), shown in Dépenses.
   loan         Loan?
 
+  /// Whose it is (see lib/user-scope.ts: every query is scoped to the
+  /// signed-in user).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@map("expenses")
 }
 
@@ -74,6 +80,12 @@ model Daret {
 
   expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
 
+  /// Whose it is (see lib/user-scope.ts: every query is scoped to the
+  /// signed-in user).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@map("darets")
 }
 
@@ -102,14 +114,21 @@ model Payment {
 
   expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
 
+  /// Whose it is (see lib/user-scope.ts: every query is scoped to the
+  /// signed-in user).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([expenseId, monthKey])
   @@unique([expenseId, slotIndex])
+  @@index([userId])
   @@map("payments")
 }
 
-// Singleton row (id is always 1).
+// Each user's settings.
 model Settings {
-  id                  Int     @id @default(1)
+  /// One row per user.
+  userId              String  @id @default("")
   salary              Float
   currency            String
   savingsTarget       Float
@@ -122,6 +141,8 @@ model Settings {
   salaryReceivedMonth String?
   /// How the salary is received: "cash" or "card".
   salaryMethod        String  @default("card")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("settings")
 }
@@ -138,6 +159,12 @@ model Category {
 
   expenses Expense[]
 
+  /// Whose it is (see lib/user-scope.ts: every query is scoped to the
+  /// signed-in user).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@map("categories")
 }
 
@@ -161,6 +188,12 @@ model Goal {
 
   deposits GoalDeposit[]
 
+  /// Whose it is (see lib/user-scope.ts: every query is scoped to the
+  /// signed-in user).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@map("goals")
 }
 
@@ -181,7 +214,13 @@ model GoalDeposit {
   goal    Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
   expense Expense? @relation(fields: [expenseId], references: [id], onDelete: Cascade)
 
+  /// Whose it is (see lib/user-scope.ts: every query is scoped to the
+  /// signed-in user).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([goalId])
+  @@index([userId])
   @@map("goal_deposits")
 }
 
@@ -192,16 +231,28 @@ model GoalIdea {
   name      String
   createdAt String
 
+  /// Whose it is (see lib/user-scope.ts: every query is scoped to the
+  /// signed-in user).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@map("goal_ideas")
 }
 
 /// Calendrier: a free note on one day.
 model DayNote {
   /// "YYYY-MM-DD"
-  date      String @id
+  date      String
   text      String
   updatedAt String
 
+  /// Whose it is (see lib/user-scope.ts: every query is scoped to the
+  /// signed-in user).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, date])
   @@map("day_notes")
 }
 
@@ -218,6 +269,12 @@ model SalaryAdvance {
   method    String @default("card")
   createdAt String
 
+  /// Whose it is (see lib/user-scope.ts: every query is scoped to the
+  /// signed-in user).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@map("salary_advances")
 }
 
@@ -225,12 +282,18 @@ model SalaryAdvance {
 model SalaryReceipt {
   id        String @id @default(uuid())
   /// "YYYY-MM" of the pay day.
-  period    String @unique
+  period    String
   /// Salary minus the advances already taken on it.
   amount    Float
   method    String
   createdAt String
 
+  /// Whose it is (see lib/user-scope.ts: every query is scoped to the
+  /// signed-in user).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, period])
   @@map("salary_receipts")
 }
 
@@ -245,6 +308,12 @@ model WalletOp {
   note        String?
   createdAt   String
 
+  /// Whose it is (see lib/user-scope.ts: every query is scoped to the
+  /// signed-in user).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@map("wallet_ops")
 }
 
@@ -265,12 +334,18 @@ model Income {
   expenseId String?
   createdAt String
 
-  expense Expense? @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  expense       Expense?       @relation(fields: [expenseId], references: [id], onDelete: Cascade)
   /// Money taken out of the savings, shown in Revenus.
   savingsMove   SavingsMove?
   /// A loan's repayment received, shown in Revenus.
   loanRepayment LoanRepayment?
 
+  /// Whose it is (see lib/user-scope.ts: every query is scoped to the
+  /// signed-in user).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@map("incomes")
 }
 
@@ -278,13 +353,19 @@ model Income {
 /// the defaults plus the user's own. An income keeps the id in `category`
 /// (the default ones' ids are their old keys: "prime", "vente"…).
 model IncomeCategory {
-  id        String @id @default(uuid())
+  id        String @default(uuid())
   name      String
   emoji     String
   /// Display order, ascending.
   position  Int
   createdAt String
 
+  /// Whose it is (see lib/user-scope.ts: every query is scoped to the
+  /// signed-in user).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, id])
   @@map("income_categories")
 }
 
@@ -307,6 +388,12 @@ model SavingsMove {
   expense Expense? @relation(fields: [expenseId], references: [id], onDelete: Cascade)
   income  Income?  @relation(fields: [incomeId], references: [id], onDelete: Cascade)
 
+  /// Whose it is (see lib/user-scope.ts: every query is scoped to the
+  /// signed-in user).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@map("savings_moves")
 }
 
@@ -336,6 +423,12 @@ model Loan {
   expense    Expense?        @relation(fields: [expenseId], references: [id], onDelete: Cascade)
   repayments LoanRepayment[]
 
+  /// Whose it is (see lib/user-scope.ts: every query is scoped to the
+  /// signed-in user).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@map("loans")
 }
 
@@ -355,6 +448,47 @@ model LoanRepayment {
   loan   Loan    @relation(fields: [loanId], references: [id], onDelete: Cascade)
   income Income? @relation(fields: [incomeId], references: [id], onDelete: Cascade)
 
+  /// Whose it is (see lib/user-scope.ts: every query is scoped to the
+  /// signed-in user).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([loanId, slot])
+  @@index([userId])
   @@map("loan_repayments")
+}
+
+/// Someone signed in with Google. Everything else belongs to one user.
+model User {
+  id          String  @id @default(uuid())
+  /// Lowercase.
+  email       String  @unique
+  /// Google's account id ("sub"); null until the first sign-in (the owner,
+  /// created by the migration from the email alone).
+  googleSub   String? @unique
+  name        String?
+  /// Profile photo URL (Google's).
+  image       String?
+  createdAt   String
+  lastLoginAt String?
+
+  expenses         Expense[]
+  darets           Daret[]
+  payments         Payment[]
+  settings         Settings?
+  categories       Category[]
+  goals            Goal[]
+  goalDeposits     GoalDeposit[]
+  goalIdeas        GoalIdea[]
+  dayNotes         DayNote[]
+  salaryAdvances   SalaryAdvance[]
+  salaryReceipts   SalaryReceipt[]
+  walletOps        WalletOp[]
+  incomes          Income[]
+  incomeCategories IncomeCategory[]
+  savingsMoves     SavingsMove[]
+  loans            Loan[]
+  loanRepayments   LoanRepayment[]
+
+  @@map("users")
 }

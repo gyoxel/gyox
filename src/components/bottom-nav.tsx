@@ -43,7 +43,7 @@ const RIGHT_ITEMS = [
 ];
 
 // Pages opened from the Menu tab keep it highlighted.
-const MENU_PATHS = ["/menu", "/daret", "/goals", "/calendar", "/stats", "/categories", "/salary", "/incomes", "/solde", "/epargne", "/prets", "/settings"];
+const MENU_PATHS = ["/menu", "/daret", "/goals", "/calendar", "/stats", "/categories", "/salary", "/incomes", "/solde", "/epargne", "/prets", "/settings", "/profil"];
 
 // Fan-out positions (px) of each option's circle center relative to the
 // + button's center: left, top, right — like a radial speed-dial.
@@ -141,8 +141,15 @@ const PREFETCH_HREFS = [
   "/daret/new",
 ];
 
+/** Pages open before signing in: no app bar there. */
+export const SIGNED_OUT_PAGES = ["/connexion", "/confidentialite", "/conditions"];
+
 export function BottomNav() {
   const pathname = usePathname();
+  return SIGNED_OUT_PAGES.includes(pathname) ? null : <AppBar pathname={pathname} />;
+}
+
+function AppBar({ pathname }: { pathname: string }) {
   const router = useRouter();
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-const CACHE_NAME = "budget-shell-v2";
+const CACHE_NAME = "budget-shell-v3";
 const SHELL_ASSETS = ["/", "/manifest.json", "/icon.svg"];
 
 self.addEventListener("install", (event) => {
@@ -52,7 +52,8 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(request)
       .then((response) => {
-        if (response.ok && request.mode === "navigate") {
+        // Not a page that sent elsewhere (signed out: to Connexion).
+        if (response.ok && !response.redirected && request.mode === "navigate") {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
         }

@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
+import { scopeUserId } from "./user-scope";
 
 /**
  * Production runs on Prisma Postgres, whose direct host only accepts a few
@@ -83,10 +84,53 @@ function isTransient(error: unknown): boolean {
   );
 }
 
+/** The tables holding someone's data: every query on them is scoped to its user. */
+const USER_MODELS = new Set<string>(Prisma.dmmf.datamodel.models.map((m) => m.name).filter((name) => name !== "User"));
+
+// Never sent back: queries only ever see their own user's rows anyway.
+const omitUserId = Object.fromEntries(
+  [...USER_MODELS].map((name) => [name[0].toLowerCase() + name.slice(1), { userId: true }]),
+) as unknown as Prisma.GlobalOmitConfig;
+
+type Args = { where?: object; data?: unknown; create?: object; update?: object };
+
+const withoutUserId = (data: unknown) => {
+  if (!data || typeof data !== "object") return data;
+  const rest = { ...(data as Record<string, unknown>) };
+  delete rest.userId;
+  return rest;
+};
+
+/**
+ * Adds the user to a query (see lib/user-scope.ts): to its filter, and to
+ * the rows it creates. An update can't move a row to someone else.
+ */
+function scopeArgs(operation: string, args: Args, userId: string): Args {
+  const scoped: Args = { ...args };
+  if (operation === "create") scoped.data = { ...(args.data as object), userId };
+  else if (operation === "createMany" || operation === "createManyAndReturn") {
+    const rows = Array.isArray(args.data) ? args.data : [args.data];
+    scoped.data = rows.map((row) => ({ ...(row as object), userId }));
+  } else {
+    scoped.where = { ...args.where, userId };
+    if (operation === "upsert") {
+      scoped.create = { ...args.create, userId };
+      scoped.update = withoutUserId(args.update) as object;
+    } else if ("data" in args) {
+      scoped.data = withoutUserId(args.data);
+    }
+  }
+  return scoped;
+}
+
 function createClient() {
-  return new PrismaClient({ datasourceUrl: runtimeDatabaseUrl(databaseUrl()) }).$extends({
+  return new PrismaClient({ datasourceUrl: runtimeDatabaseUrl(databaseUrl()), omit: omitUserId }).$extends({
     query: {
-      async $allOperations({ operation, args, query }) {
+      async $allOperations({ model, operation, args, query }) {
+        if (model && USER_MODELS.has(model)) {
+          const userId = await scopeUserId();
+          if (userId) args = scopeArgs(operation, args as Args, userId) as typeof args;
+        }
         if (!READ_OPERATIONS.has(operation)) return query(args);
         for (let attempt = 0; ; attempt++) {
           try {
@@ -124,7 +168,7 @@ const transactionScope = new AsyncLocalStorage<TransactionClient>();
  */
 export function inTransaction<T>(work: () => Promise<T>): Promise<T> {
   if (transactionScope.getStore()) return work();
-  return base.$transaction((tx) => transactionScope.run(tx, work), { maxWait: 10_000, timeout: 20_000 });
+  return base.$transaction((tx) => transactionScope.run(tx, async () => await work()), { maxWait: 10_000, timeout: 20_000 });
 }
 
 /** Outside a transaction scope (e.g. the state before it, as committed). */

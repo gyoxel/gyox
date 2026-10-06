@@ -3,7 +3,16 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+// The demo data is the owner's (created by the users migration).
+const OWNER_EMAIL = "gyoxel@gmail.com";
+
 async function main() {
+  const owner = await prisma.user.upsert({
+    where: { email: OWNER_EMAIL },
+    update: {},
+    create: { email: OWNER_EMAIL, createdAt: new Date().toISOString() },
+  });
+  const userId = owner.id;
   const expenseCount = await prisma.expense.count();
   if (expenseCount === 0) {
     const now = new Date().toISOString();
@@ -28,6 +37,7 @@ async function main() {
           icon: "👩🏻‍🦰",
           createdAt: now,
           updatedAt: now,
+          userId,
         },
         {
           id: randomUUID(),
@@ -45,6 +55,7 @@ async function main() {
           icon: "👩🏻‍🦰",
           createdAt: now,
           updatedAt: now,
+          userId,
         },
         {
           id: randomUUID(),
@@ -62,6 +73,7 @@ async function main() {
           icon: "🚗",
           createdAt: now,
           updatedAt: now,
+          userId,
         },
         {
           id: randomUUID(),
@@ -79,6 +91,7 @@ async function main() {
           icon: "🍽️",
           createdAt: now,
           updatedAt: now,
+          userId,
         },
         {
           id: randomUUID(),
@@ -96,6 +109,7 @@ async function main() {
           icon: "📱",
           createdAt: now,
           updatedAt: now,
+          userId,
         },
         {
           id: randomUUID(),
@@ -113,6 +127,7 @@ async function main() {
           icon: "🧔🏻‍♂️",
           createdAt: now,
           updatedAt: now,
+          userId,
         },
         {
           id: randomUUID(),
@@ -130,6 +145,7 @@ async function main() {
           icon: "👨🏻‍🦰",
           createdAt: now,
           updatedAt: now,
+          userId,
         },
       ],
     });
@@ -139,7 +155,7 @@ async function main() {
   if (settingsCount === 0) {
     await prisma.settings.create({
       data: {
-        id: 1,
+        userId,
         salary: 8000,
         currency: "MAD",
         savingsTarget: 2000,

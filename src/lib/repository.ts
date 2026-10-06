@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { prisma } from "./prisma";
 import { DEFAULT_CATEGORIES } from "./default-categories";
+import { defaultSettings } from "./user-defaults";
 import { getAllSavingsMoves } from "./savings-repo";
 import { getAllLoanRepayments, getAllLoans } from "./loans-repo";
 import { getIncomeCategories } from "./income-categories-repo";
@@ -56,7 +57,14 @@ export async function getExpenseById(id: string): Promise<Expense | null> {
   return row ? mapExpense(row) : null;
 }
 
+/** A category id only if it's one of the user's own (else uncategorized). */
+async function ownCategoryId(categoryId: string | null | undefined): Promise<string | null> {
+  if (!categoryId) return null;
+  return (await prisma.category.findFirst({ where: { id: categoryId }, select: { id: true } }))?.id ?? null;
+}
+
 export async function createExpense(input: ExpenseInput): Promise<Expense> {
+  input = { ...input, categoryId: await ownCategoryId(input.categoryId) };
   const id = randomUUID();
   const now = new Date().toISOString();
   const row = await prisma.expense.create({
@@ -90,6 +98,9 @@ export async function updateExpense(
   const existing = await getExpenseById(id);
   if (!existing) return null;
   const merged: Expense = { ...existing, ...input };
+  if (input.categoryId !== undefined && input.categoryId !== existing.categoryId) {
+    merged.categoryId = await ownCategoryId(input.categoryId);
+  }
   const row = await prisma.expense.update({
     where: { id },
     data: {
@@ -154,8 +165,7 @@ export async function deleteExpense(id: string): Promise<boolean> {
   }
 }
 
-export async function getSettings(): Promise<Settings> {
-  const row = await prisma.settings.findUniqueOrThrow({ where: { id: 1 } });
+function mapSettings(row: Omit<Settings, "theme" | "salaryMethod"> & { theme: string; salaryMethod: string }): Settings {
   return {
     salary: row.salary,
     currency: row.currency,
@@ -168,19 +178,22 @@ export async function getSettings(): Promise<Settings> {
   };
 }
 
+/** The user's settings (made on their first sign-in; the defaults if somehow not). */
+export async function getSettings(): Promise<Settings> {
+  const row = await prisma.settings.findFirst();
+  if (row) return mapSettings(row);
+  try {
+    return mapSettings(await prisma.settings.create({ data: defaultSettings() }));
+  } catch {
+    // Made meanwhile by another request.
+    return mapSettings(await prisma.settings.findFirstOrThrow());
+  }
+}
+
 export async function updateSettings(input: Partial<Settings>): Promise<Settings> {
   const merged = { ...(await getSettings()), ...input };
-  const row = await prisma.settings.update({ where: { id: 1 }, data: merged });
-  return {
-    salary: row.salary,
-    currency: row.currency,
-    savingsTarget: row.savingsTarget,
-    startMonth: row.startMonth,
-    theme: row.theme as Settings["theme"],
-    payDay: row.payDay,
-    salaryReceivedMonth: row.salaryReceivedMonth,
-    salaryMethod: row.salaryMethod === "cash" ? "cash" : "card",
-  };
+  await prisma.settings.updateMany({ data: merged });
+  return merged;
 }
 
 export interface BackupData {
@@ -243,7 +256,40 @@ export async function exportData(): Promise<BackupData> {
   };
 }
 
-export async function importData(data: BackupData): Promise<void> {
+/**
+ * The backup with new ids for everything it holds (references follow): ids
+ * are unique across all accounts, so a backup made in another account (or
+ * before accounts) never collides with someone's rows. References to rows
+ * not in the backup (kept as they are) don't change.
+ */
+function withFreshIds(data: BackupData): BackupData {
+  const ids = new Map<string, string>();
+  const own = (rows: { id: string }[] | undefined) => rows?.forEach((r) => ids.set(r.id, randomUUID()));
+  [data.expenses, data.payments, data.darets, data.categories, data.goals, data.goalDeposits, data.goalIdeas, data.salaryAdvances,
+    data.incomes, data.salaryReceipts, data.walletOps, data.savingsMoves, data.loans, data.loanRepayments].forEach(own);
+  const id = (value: string) => ids.get(value) ?? value;
+  const ref = <T extends string | null | undefined>(value: T): T => (value ? (id(value) as T) : value);
+  return {
+    ...data,
+    expenses: data.expenses.map((e) => ({ ...e, id: id(e.id), linkedExpenseId: ref(e.linkedExpenseId), categoryId: ref(e.categoryId) })),
+    payments: data.payments?.map((p) => ({ ...p, id: id(p.id), expenseId: id(p.expenseId) })),
+    darets: data.darets?.map((d) => ({ ...d, id: id(d.id), expenseId: id(d.expenseId) })),
+    categories: data.categories?.map((c) => ({ ...c, id: id(c.id) })),
+    goals: data.goals?.map((g) => ({ ...g, id: id(g.id), daretIds: g.daretIds.map(id) })),
+    goalDeposits: data.goalDeposits?.map((d) => ({ ...d, id: id(d.id), goalId: id(d.goalId), expenseId: ref(d.expenseId) })),
+    goalIdeas: data.goalIdeas?.map((g) => ({ ...g, id: id(g.id) })),
+    salaryAdvances: data.salaryAdvances?.map((a) => ({ ...a, id: id(a.id) })),
+    incomes: data.incomes?.map((i) => ({ ...i, id: id(i.id), expenseId: ref(i.expenseId) })),
+    salaryReceipts: data.salaryReceipts?.map((r) => ({ ...r, id: id(r.id) })),
+    walletOps: data.walletOps?.map((o) => ({ ...o, id: id(o.id) })),
+    savingsMoves: data.savingsMoves?.map((m) => ({ ...m, id: id(m.id), expenseId: ref(m.expenseId), incomeId: ref(m.incomeId) })),
+    loans: data.loans?.map((l) => ({ ...l, id: id(l.id), expenseId: ref(l.expenseId) })),
+    loanRepayments: data.loanRepayments?.map((r) => ({ ...r, id: id(r.id), loanId: id(r.loanId), incomeId: ref(r.incomeId) })),
+  };
+}
+
+export async function importData(backup: BackupData): Promise<void> {
+  const data = withFreshIds(backup);
   // A backup without categories keeps the current ones; any expense pointing
   // at a category that won't exist after import is left uncategorized.
   const categoryIds = new Set(
@@ -360,7 +406,7 @@ export async function importData(data: BackupData): Promise<void> {
           }),
         ]
       : []),
-    prisma.settings.update({ where: { id: 1 }, data: data.settings }),
+    prisma.settings.updateMany({ data: data.settings }),
   ]);
 }
 
@@ -658,7 +704,8 @@ export async function resetCategories(): Promise<Category[]> {
       used.add(match.id);
       return prisma.category.update({ where: { id: match.id }, data });
     }
-    const id = all.some((c) => c.id === d.id) ? randomUUID() : d.id;
+    // A new id: the default ones may be someone else's.
+    const id = randomUUID();
     used.add(id);
     return prisma.category.create({ data: { id, ...data, createdAt: now } });
   });
@@ -902,7 +949,9 @@ export async function setDayNote(date: string, text: string): Promise<DayNote | 
     return null;
   }
   const updatedAt = new Date().toISOString();
-  return prisma.dayNote.upsert({ where: { date }, create: { date, text: clean, updatedAt }, update: { text: clean, updatedAt } });
+  const { count } = await prisma.dayNote.updateMany({ where: { date }, data: { text: clean, updatedAt } });
+  if (count === 0) await prisma.dayNote.create({ data: { date, text: clean, updatedAt } });
+  return { date, text: clean, updatedAt };
 }
 
 const mapAdvance = (row: Omit<SalaryAdvance, "method"> & { method: string }): SalaryAdvance => ({
@@ -942,11 +991,11 @@ export async function syncSalaryReceipts(previous: string | null, next: string |
   if (next && (!previous || next > previous)) {
     const advanced = (await prisma.salaryAdvance.findMany({ where: { period: next } })).reduce((s, a) => s + a.amount, 0);
     const amount = Math.max(0, Math.round((settings.salary - advanced) * 100) / 100);
-    await prisma.salaryReceipt.upsert({
-      where: { period: next },
-      update: {},
-      create: { id: randomUUID(), period: next, amount, method: settings.salaryMethod, createdAt: new Date().toISOString() },
-    });
+    if (!(await prisma.salaryReceipt.findFirst({ where: { period: next } }))) {
+      await prisma.salaryReceipt.create({
+        data: { id: randomUUID(), period: next, amount, method: settings.salaryMethod, createdAt: new Date().toISOString() },
+      });
+    }
   } else {
     await prisma.salaryReceipt.deleteMany({ where: next ? { period: { gt: next } } : {} });
   }

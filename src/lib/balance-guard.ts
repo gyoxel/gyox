@@ -4,30 +4,32 @@
 import { NextResponse } from "next/server";
 import { committedPrisma, inTransaction, prisma } from "./prisma";
 import { insufficientMessage } from "./balance-message";
+import { requireUserId } from "./user-scope";
 import type { PaymentMethod } from "./types";
 
 type Balance = Record<PaymentMethod, number>;
 
 // The same sums as buildWallet (wallet.ts), in one query.
+// $1: the user.
 const BALANCE_SQL = `
 SELECT acct, COALESCE(SUM(amt), 0)::float8 AS total FROM (
-  SELECT CASE WHEN method = 'cash' THEN 'cash' ELSE 'card' END AS acct, amount AS amt FROM salary_receipts
-  UNION ALL SELECT CASE WHEN method = 'cash' THEN 'cash' ELSE 'card' END, amount FROM salary_advances
-  UNION ALL SELECT CASE WHEN method = 'card' THEN 'card' ELSE 'cash' END, amount FROM incomes
+  SELECT CASE WHEN method = 'cash' THEN 'cash' ELSE 'card' END AS acct, amount AS amt FROM salary_receipts WHERE "userId" = $1
+  UNION ALL SELECT CASE WHEN method = 'cash' THEN 'cash' ELSE 'card' END, amount FROM salary_advances WHERE "userId" = $1
+  UNION ALL SELECT CASE WHEN method = 'card' THEN 'card' ELSE 'cash' END, amount FROM incomes WHERE "userId" = $1
   UNION ALL SELECT d."payoutMethod", ROUND((e.amount * d.members * 100)::numeric) / 100
     FROM darets d JOIN expenses e ON e.id = d."expenseId"
-    WHERE d."payoutMethod" IN ('cash', 'card') AND d."payoutReceivedAt" IS NOT NULL
+    WHERE d."userId" = $1 AND d."payoutMethod" IN ('cash', 'card') AND d."payoutReceivedAt" IS NOT NULL
   UNION ALL SELECT p.method, -p."amountPaid" FROM payments p JOIN expenses e ON e.id = p."expenseId"
-    WHERE p.method IN ('cash', 'card') AND p."amountPaid" > 0
+    WHERE p."userId" = $1 AND p.method IN ('cash', 'card') AND p."amountPaid" > 0
   UNION ALL SELECT g.method, -g.amount FROM goal_deposits g
-    WHERE g.method IN ('cash', 'card') AND g."expenseId" IS NULL AND g.amount > 0
+    WHERE g."userId" = $1 AND g.method IN ('cash', 'card') AND g."expenseId" IS NULL AND g.amount > 0
   UNION ALL SELECT o."fromAccount", -o.amount FROM wallet_ops o
-    WHERE o.kind = 'transfer' AND o."fromAccount" IN ('cash', 'card') AND o."toAccount" IN ('cash', 'card')
-  UNION ALL SELECT o."toAccount", o.amount FROM wallet_ops o WHERE o."toAccount" IN ('cash', 'card')
+    WHERE o."userId" = $1 AND o.kind = 'transfer' AND o."fromAccount" IN ('cash', 'card') AND o."toAccount" IN ('cash', 'card')
+  UNION ALL SELECT o."toAccount", o.amount FROM wallet_ops o WHERE o."userId" = $1 AND o."toAccount" IN ('cash', 'card')
 ) t GROUP BY acct`;
 
 async function readBalance(client: typeof prisma): Promise<Balance> {
-  const rows = await client.$queryRawUnsafe<{ acct: string; total: number }[]>(BALANCE_SQL);
+  const rows = await client.$queryRawUnsafe<{ acct: string; total: number }[]>(BALANCE_SQL, await requireUserId());
   const balance: Balance = { cash: 0, card: 0 };
   for (const r of rows) if (r.acct === "cash" || r.acct === "card") balance[r.acct] = Math.round(Number(r.total) * 100) / 100;
   return balance;
