@@ -1,7 +1,7 @@
+import { getAllLoans, getSettings } from "@/lib/page-data";
 import Link from "next/link";
 import { ChevronRight, Handshake } from "lucide-react";
-import { getSettings } from "@/lib/repository";
-import { getAllLoans } from "@/lib/loans-repo";
+
 import { loanState } from "@/lib/loans";
 import { monthLabelFr, todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";

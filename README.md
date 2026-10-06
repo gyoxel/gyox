@@ -47,6 +47,10 @@ Zineb, Tomobil, Makla, Abonnements, Dar, Solaih).
    et copier son URL de connexion.
 2. Dans les réglages du projet Vercel, ajouter la variable d'environnement
    `DATABASE_URL` avec cette URL (Production + Preview).
+   Connexion avec Google : `AUTH_GOOGLE_ID` et `AUTH_GOOGLE_SECRET` (client
+   OAuth « Application Web » du projet Google Cloud `gx-salaire`, avec
+   `<site>/api/auth/callback/google` dans ses URI de redirection) et
+   `AUTH_SECRET` (une valeur aléatoire, qui signe les sessions).
 3. Importer ce dépôt dans Vercel (Next.js est détecté automatiquement).
    `npm run build` exécute `prisma generate && next build`, et
    `postinstall` exécute déjà `prisma generate` après `npm install`.
@@ -67,12 +71,21 @@ Zineb, Tomobil, Makla, Abonnements, Dar, Solaih).
    même `DATABASE_URL` que le déploiement Vercel (poste local avec la variable
    exportée, ou `vercel env pull` puis `vercel build`).
 
+## Comptes
+
+Chacun se connecte avec Google (`/connexion`) et ne voit que ses propres
+données : chaque table a un `userId`, et l'extension Prisma de
+`src/lib/prisma.ts` l'ajoute à chaque requête (`src/lib/user-scope.ts`). La
+session est un cookie signé (`src/lib/session.ts`), vérifié par
+`src/proxy.ts`. Les données d'avant les comptes appartiennent à
+gyoxel@gmail.com.
+
 ## Architecture
 
 - `prisma/schema.prisma` — modèles `Expense` et `Settings` (mêmes champs que
   `src/lib/types.ts`, dates gardées en chaînes `"YYYY-MM-DD"`).
 - `prisma/seed.ts` — données de départ, idempotent.
-- `src/lib/prisma.ts` — client Prisma singleton.
+- `src/lib/prisma.ts` — client Prisma singleton (requêtes limitées à l'utilisateur connecté).
 - `src/lib/repository.ts` — accès aux données (CRUD dépenses, réglages,
   export/import), entièrement asynchrone.
 - `src/lib/engine.ts` — moteur de calcul pur (échéancier des crédits, totaux

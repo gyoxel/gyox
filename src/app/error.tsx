@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { signOut } from "@/components/sign-out-button";
 
 // Remembered across boundary re-renders: up to 3 quiet retries with growing
 // delays per failure streak (a streak resets after 30s), so a database that
@@ -54,6 +55,12 @@ export default function Error({ error, retry }: { error: Error & { digest?: stri
         >
           Réessayer
         </Button>
+      )}
+      {/* Way out if the session itself is the problem (e.g. an account gone). */}
+      {!retrying && (
+        <button type="button" onClick={() => void signOut()} className="text-xs text-slate-400 underline underline-offset-2">
+          Se reconnecter
+        </button>
       )}
       {!retrying && diagnosis && (
         <p className="max-w-sm text-xs break-words text-slate-500 select-text">{diagnosis}</p>

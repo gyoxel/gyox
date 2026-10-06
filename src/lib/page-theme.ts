@@ -20,6 +20,9 @@ const PAGE_COLORS: [prefix: string, color: string][] = [
   ["/categories", "#9333ea"],
   ["/salary", "#0891b2"],
   ["/settings", "#334155"],
+  ["/profil", "#334155"],
+  ["/confidentialite", "#334155"],
+  ["/conditions", "#334155"],
 ];
 
 /** The colour of the page at `pathname`. */

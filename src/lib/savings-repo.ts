@@ -5,7 +5,7 @@ import { randomUUID } from "crypto";
 import { prisma } from "./prisma";
 import type { PaymentMethod, SavingsMove } from "./types";
 
-function mapMove(row: {
+export function mapMove(row: {
   id: string;
   kind: string;
   amount: number;

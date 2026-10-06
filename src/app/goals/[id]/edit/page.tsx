@@ -1,5 +1,6 @@
+import { getAllDarets, getAllGoalIdeas, getAllGoals, getSettings } from "@/lib/page-data";
 import { notFound } from "next/navigation";
-import { getAllDarets, getAllGoalIdeas, getAllGoals, getSettings } from "@/lib/repository";
+
 import { daretOptions } from "@/lib/goal-options";
 import { PageHeader } from "@/components/page-header";
 import { GoalForm } from "@/components/goal-form";

@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
 import { databaseUrl, prisma, runtimeDatabaseUrl } from "@/lib/prisma";
-import { addMonths, todayMonth } from "@/lib/date";
-import { getMonthLedgerItems, getPaidThisMonth } from "@/lib/engine";
-import { getAllCategories, getAllDarets, getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
+import { asSystem } from "@/lib/user-scope";
 
 export const dynamic = "force-dynamic";
 
 /**
  * Diagnostic: runs, step by step, what the pages need (database connection,
- * each table, the Dashboard calculations) and reports the first failure
- * with its real message. In production, page errors only show an opaque
+ * each table) and reports the first failure with its real message. Public
+ * (no sign-in), so it reads no one's data: one id per table, never sent. In production, page errors only show an opaque
  * code; the error screen calls this to show what actually went wrong.
  */
 export async function GET() {
@@ -27,17 +25,14 @@ export async function GET() {
   }
 
   try {
-    await run("connexion", () => prisma.$queryRaw`SELECT 1`);
-    const settings = await run("réglages", getSettings);
-    const expenses = await run("dépenses", getAllExpenses);
-    const payments = await run("paiements", getAllPayments);
-    await run("catégories", getAllCategories);
-    await run("darets", getAllDarets);
-    await run("calculs", () => {
-      const month = todayMonth();
-      getPaidThisMonth(expenses, payments, month);
-      for (let i = -1; i <= 2; i++) getMonthLedgerItems(expenses, payments, addMonths(month, i), month);
-      return settings.salary;
+    await asSystem(async () => {
+      const one = { select: { createdAt: true } } as const;
+      await run("connexion", () => prisma.$queryRaw`SELECT 1`);
+      await run("réglages", () => prisma.settings.findFirst({ select: { payDay: true } }));
+      await run("dépenses", () => prisma.expense.findFirst(one));
+      await run("paiements", () => prisma.payment.findFirst(one));
+      await run("catégories", () => prisma.category.findFirst(one));
+      await run("darets", () => prisma.daret.findFirst(one));
     });
     return NextResponse.json({ ok: true, pooled: isPooled(), steps }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {

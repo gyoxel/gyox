@@ -1,4 +1,4 @@
-import { getIncomeCategories } from "@/lib/income-categories-repo";
+import { getIncomeCategories } from "@/lib/page-data";
 import { PageHeader } from "@/components/page-header";
 import { IncomeEditor } from "@/components/income-editor";
 

@@ -1,9 +1,10 @@
+import { getAllDarets, getAllIncomes, getIncomeCategories, getSettings } from "@/lib/page-data";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { getAllDarets, getAllIncomes, getSettings } from "@/lib/repository";
+
 import { daretPayout } from "@/lib/daret";
 import { incomeCategory, incomesIn } from "@/lib/income";
-import { getIncomeCategories } from "@/lib/income-categories-repo";
+
 import { monthKey, monthLabelFr, parseMonthKey, todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
 import type { Income } from "@/lib/types";

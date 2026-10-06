@@ -1,19 +1,7 @@
+import { getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllIncomes, getAllLoans, getAllPayments, getAllSalaryAdvances, getAllSalaryReceipts, getAllSavingsMoves, getAllWalletOps, getIncomeCategories } from "./page-data";
 // Server-side: the Solde built from the database (Solde page, Disponible
 // maintenant on Accueil, Statistiques).
-import {
-  getAllCategories,
-  getAllDarets,
-  getAllExpenses,
-  getAllGoals,
-  getAllIncomes,
-  getAllPayments,
-  getAllSalaryAdvances,
-  getAllSalaryReceipts,
-  getAllWalletOps,
-} from "./repository";
-import { getAllSavingsMoves } from "./savings-repo";
-import { getAllLoans } from "./loans-repo";
-import { getIncomeCategories } from "./income-categories-repo";
+
 import { monthKey, todayMonth } from "./date";
 import { buildWallet, type WalletSummary } from "./wallet";
 

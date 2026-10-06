@@ -1,5 +1,6 @@
+import { getAllPayments, getGoalById, getGoalDeposit, getSettings } from "@/lib/page-data";
 import { notFound } from "next/navigation";
-import { getAllPayments, getGoalById, getGoalDeposit, getSettings } from "@/lib/repository";
+
 import { PageHeader } from "@/components/page-header";
 import { DepositEditor } from "@/components/deposit-editor";
 import { DeleteButton } from "@/components/delete-button";

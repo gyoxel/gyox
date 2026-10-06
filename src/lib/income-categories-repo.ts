@@ -20,13 +20,13 @@ export async function createIncomeCategory(input: { name: string; emoji: string 
     prisma.incomeCategory.create({
       data: { id: randomUUID(), name: input.name, emoji: input.emoji, position, createdAt: new Date().toISOString() },
     }),
-    ...(pinned ? [prisma.incomeCategory.update({ where: { id: pinned.id }, data: { position: position + 1 } })] : []),
+    ...(pinned ? [prisma.incomeCategory.updateMany({ where: { id: pinned.id }, data: { position: position + 1 } })] : []),
   ]);
   return { id: row.id, name: row.name, emoji: row.emoji, position: row.position };
 }
 
 /** The default income categories (ids = the keys incomes used before). */
-const DEFAULTS = [
+export const DEFAULT_INCOME_CATEGORIES = [
   { id: "prime", name: "Prime", emoji: "🏆" },
   { id: "freelance", name: "Freelance", emoji: "💻" },
   { id: "heures-sup", name: "Heures sup", emoji: "⏱️" },
@@ -41,7 +41,7 @@ const DEFAULTS = [
 export async function updateIncomeCategory(id: string, input: { name?: string; emoji?: string }): Promise<Category | null> {
   const { count } = await prisma.incomeCategory.updateMany({ where: { id }, data: input });
   if (count === 0) return null;
-  const row = await prisma.incomeCategory.findUniqueOrThrow({ where: { id } });
+  const row = await prisma.incomeCategory.findFirstOrThrow({ where: { id } });
   return { id: row.id, name: row.name, emoji: row.emoji, position: row.position };
 }
 
@@ -62,14 +62,14 @@ export async function reorderIncomeCategories(ids: string[]): Promise<void> {
 /** Back to the defaults; the user's own go (their incomes move to "Autre"). */
 export async function resetIncomeCategories(): Promise<Category[]> {
   const now = new Date().toISOString();
-  const defaultIds = DEFAULTS.map((d) => d.id);
+  const defaultIds = DEFAULT_INCOME_CATEGORIES.map((d) => d.id);
   await prisma.$transaction([
     prisma.income.updateMany({
       where: { category: { notIn: [...defaultIds, "credit", "epargne", "pret"] } },
       data: { category: PINNED_LAST },
     }),
     prisma.incomeCategory.deleteMany({}),
-    prisma.incomeCategory.createMany({ data: DEFAULTS.map((d, i) => ({ ...d, position: i + 1, createdAt: now })) }),
+    prisma.incomeCategory.createMany({ data: DEFAULT_INCOME_CATEGORIES.map((d, i) => ({ ...d, position: i + 1, createdAt: now })) }),
   ]);
   return getIncomeCategories();
 }

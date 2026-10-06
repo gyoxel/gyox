@@ -1,5 +1,10 @@
-const CACHE_NAME = "budget-shell-v2";
-const SHELL_ASSETS = ["/", "/manifest.json", "/icon.svg"];
+const CACHE_NAME = "budget-shell-v4";
+// Not "/": signed out it redirects to Connexion, and a page answered with a
+// redirected response fails to load (ERR_FAILED).
+const SHELL_ASSETS = ["/manifest.json", "/icon.svg"];
+
+// A cached page usable for a navigation: never one that was redirected.
+const usable = (response) => (response && !response.redirected ? response : undefined);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -52,12 +57,13 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(request)
       .then((response) => {
-        if (response.ok && request.mode === "navigate") {
+        // Not a page that sent elsewhere (signed out: to Connexion).
+        if (response.ok && !response.redirected && request.mode === "navigate") {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
         }
         return response;
       })
-      .catch(() => caches.match(request).then((cached) => cached ?? caches.match("/"))),
+      .catch(async () => usable(await caches.match(request)) ?? usable(await caches.match("/")) ?? Response.error()),
   );
 });

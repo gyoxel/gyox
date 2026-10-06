@@ -1,9 +1,12 @@
 import Link from "next/link";
-import { Banknote, CalendarDays, ChartNoAxesCombined, ChevronRight, HandCoins, Handshake, PiggyBank, Settings, Tags, Target, TrendingUp, Wallet, type LucideIcon } from "lucide-react";
+import { Banknote, CalendarDays, CircleUserRound, ChartNoAxesCombined, ChevronRight, HandCoins, Handshake, PiggyBank, Settings, Tags, Target, TrendingUp, Wallet, type LucideIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 
 const GROUPS: { href: string; label: string; hint: string; icon: LucideIcon; tint: string }[][] = [
-  [{ href: "/settings", label: "Paramètres", hint: "Thème, sauvegarde", icon: Settings, tint: "from-slate-400 to-slate-600" }],
+  [
+    { href: "/profil", label: "Profil", hint: "Ton compte Google, déconnexion", icon: CircleUserRound, tint: "from-teal-400 to-emerald-700" },
+    { href: "/settings", label: "Paramètres", hint: "Thème, sauvegarde", icon: Settings, tint: "from-slate-400 to-slate-600" },
+  ],
   [
     { href: "/salary", label: "Salaire", hint: "Montant, jour de paie, avances", icon: Banknote, tint: "from-emerald-400 to-teal-600" },
     { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau, vente…", icon: TrendingUp, tint: "from-emerald-400 to-green-600" },

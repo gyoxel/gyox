@@ -1,4 +1,4 @@
-import { getAllSalaryAdvances, getAllSalaryReceipts, getSettings } from "@/lib/repository";
+import { getAllSalaryAdvances, getAllSalaryReceipts, getSettings } from "@/lib/page-data";
 import { monthLabelFr, parseMonthKey } from "@/lib/date";
 import { METHOD_META } from "@/lib/payment-method";
 import { formatMoney } from "@/lib/utils";

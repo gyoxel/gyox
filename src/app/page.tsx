@@ -1,6 +1,6 @@
-import { getAllCategories, getAllExpenses, getAllPayments, getAllSalaryAdvances, getSettings } from "@/lib/repository";
+import { getAllCategories, getAllExpenses, getAllLoans, getAllPayments, getAllSalaryAdvances, getSettings } from "@/lib/page-data";
 import { monthLabelFr, todayMonth } from "@/lib/date";
-import { getAllLoans } from "@/lib/loans-repo";
+
 import { loanState } from "@/lib/loans";
 import { getWallet } from "@/lib/wallet-data";
 import { HomeHeader } from "@/components/home-header";

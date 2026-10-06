@@ -1,4 +1,4 @@
-import { getAllDarets, getAllPayments, getSettings } from "@/lib/repository";
+import { getAllDarets, getAllPayments, getSettings } from "@/lib/page-data";
 import { getDaretState } from "@/lib/daret";
 import { compareMonths, monthKey, monthLabelFr, todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
@@ -61,7 +61,6 @@ export default async function DaretPage() {
         )}
 
         <AddLink href="/daret/new" label="Ajouter une daret" className="border-teal-200 text-[#007261] active:bg-teal-50 dark:border-teal-900 dark:text-teal-300 dark:active:bg-teal-950/30" />
-
 
         {items.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-slate-200 px-4 py-10 text-center dark:border-slate-700">

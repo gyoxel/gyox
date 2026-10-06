@@ -18,11 +18,11 @@ type RepaymentRow = {
   createdAt: string;
 };
 
-function mapRepayment(row: RepaymentRow): LoanRepayment {
+export function mapRepayment(row: RepaymentRow): LoanRepayment {
   return { ...row, method: row.method === "card" ? "card" : "cash" };
 }
 
-function mapLoan(row: {
+export function mapLoan(row: {
   id: string;
   name: string;
   amount: number;

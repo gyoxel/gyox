@@ -1,4 +1,4 @@
-import { getAllCategories, getAllDarets, getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
+import { getAllCategories, getAllDarets, getAllExpenses, getAllPayments, getSettings } from "@/lib/page-data";
 import { TimelineSection } from "@/components/timeline-section";
 import { displayIcon } from "@/lib/category";
 import { PageHeader } from "@/components/page-header";
