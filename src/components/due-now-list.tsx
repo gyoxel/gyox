@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { flushPendingRefresh, trackMutation } from "@/lib/use-refresh-data";
 import Link from "next/link";
@@ -203,9 +203,18 @@ export function DueNowList({
 
   const paidCount = items.filter((i) => i.paid).length;
   const left = items.filter((i) => !i.paid).reduce((s, i) => s + i.amount, 0);
+  const paidTotal = items.filter((i) => i.paid).reduce((s, i) => s + i.amount, 0);
+  const progress = left + paidTotal > 0 ? paidTotal / (left + paidTotal) : 0;
+  // Unpaid first, then paid: each group opens with its header.
+  const firstPaid = items.findIndex((i) => i.paid);
 
   return (
     <div className="flex flex-col gap-3">
+      {/* What this list is, and what the round boxes are for. */}
+      <div className="flex items-baseline justify-between gap-2 px-1">
+        <h2 className="text-base font-bold text-slate-900 dark:text-white">🧾 Dépenses du mois</h2>
+        {items.length > paidCount && <span className="text-[11px] text-slate-400">Coche ◯ quand c&apos;est payé</span>}
+      </div>
       {/* Month: ‹ › or swipe */}
       <div
         data-no-tab-swipe
@@ -234,6 +243,11 @@ export function DueNowList({
               )}
             </p>
           )}
+          {items.length > 0 && (
+            <span className="mx-auto mt-1 block h-1 w-28 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+              <span className="block h-full rounded-full bg-emerald-500 transition-[width] duration-500" style={{ width: `${progress * 100}%` }} />
+            </span>
+          )}
         </div>
         <button
           type="button"
@@ -252,17 +266,34 @@ export function DueNowList({
         </div>
       ) : (
         <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          {items.map(({ expense, amount, paid, color }) => {
+          {items.map(({ expense, amount, paid, color }, index) => {
             const isPending = pendingIds.has(expense.id);
             const method = paid ? paidMethod(expense) : null;
+            const header =
+              index === 0 && !paid ? (
+                <GroupHeader key="h-unpaid" tone="unpaid" label="À payer" count={items.length - paidCount} total={formatMoney(left, currency)} />
+              ) : index === firstPaid ? (
+                <GroupHeader
+                  key="h-paid"
+                  tone="paid"
+                  label={paidCount === items.length ? "Tout est payé 🎉" : "Payées"}
+                  count={paidCount}
+                  total={formatMoney(paidTotal, currency)}
+                />
+              ) : null;
             return (
+              <Fragment key={expense.id}>
+              {header}
               <li
                 key={expense.id}
                 ref={(el) => {
                   if (el) rowRefs.current.set(expense.id, el);
                   else rowRefs.current.delete(expense.id);
                 }}
-                className="flex items-center border-t border-slate-100 bg-white pr-1.5 first:border-t-0 dark:border-slate-800 dark:bg-slate-900"
+                className={cn(
+                  "flex items-center border-t border-slate-100 pr-1.5 dark:border-slate-800",
+                  paid ? "bg-emerald-50/40 dark:bg-emerald-950/10" : "bg-white dark:bg-slate-900",
+                )}
               >
                 {/* Tapping the row opens the edit page; only the round
                     checkbox on the right toggles "payé". */}
@@ -288,8 +319,8 @@ export function DueNowList({
                     >
                       {expense.name}
                     </span>
-                    <span className="block truncate text-[11px] text-slate-400">
-                      {paid ? `Payé${method ? ` ${METHOD_META[method].emoji} ${METHOD_META[method].label}` : ""}` : kindOf(expense)}
+                    <span className={cn("block truncate text-[11px]", paid ? "font-medium text-emerald-600 dark:text-emerald-400" : "text-slate-400")}>
+                      {paid ? `✓ Payé${method ? ` ${METHOD_META[method].emoji} ${METHOD_META[method].label}` : ""}` : kindOf(expense)}
                     </span>
                   </span>
                   <span
@@ -328,7 +359,7 @@ export function DueNowList({
                         "flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors group-disabled:opacity-50",
                         paid
                           ? "border-emerald-500 bg-emerald-500"
-                          : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800",
+                          : "border-rose-300 bg-white dark:border-rose-800 dark:bg-slate-800",
                       )}
                     >
                       {paid && <Check className="h-3.5 w-3.5 text-white" />}
@@ -336,6 +367,7 @@ export function DueNowList({
                   </button>
                 )}
               </li>
+              </Fragment>
             );
           })}
         </ul>
@@ -350,6 +382,27 @@ export function DueNowList({
         Ajouter une dépense
       </Link>
     </div>
+  );
+}
+
+/** "À payer" / "Payées" above each group, with how many and how much. */
+function GroupHeader({ tone, label, count, total }: { tone: "unpaid" | "paid"; label: string; count: number; total: string }) {
+  const unpaid = tone === "unpaid";
+  return (
+    <li
+      className={cn(
+        "flex items-center justify-between gap-2 border-t border-slate-100 px-3.5 py-2 text-[11px] font-semibold uppercase tracking-wide first:border-t-0 dark:border-slate-800",
+        unpaid
+          ? "bg-rose-50/70 text-rose-700 dark:bg-rose-950/20 dark:text-rose-300"
+          : "bg-emerald-50/80 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-300",
+      )}
+    >
+      <span className="flex items-center gap-1.5">
+        <span className={cn("h-2 w-2 rounded-full", unpaid ? "bg-rose-500" : "bg-emerald-500")} />
+        {label} · {count}
+      </span>
+      <span className="tabular-nums normal-case tracking-normal">{total}</span>
+    </li>
   );
 }
 
