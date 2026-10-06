@@ -1,6 +1,7 @@
 // Épargne in the database. Money put aside is also a paid one-time expense
 // (Dépenses) and money taken back an income (Revenus): those are what move
-// cash / the card in the Solde, and they're deleted with their move.
+// cash / the card in the Solde, and they're deleted with their move. Savings
+// held already ("existing") are neither: they only add to the savings.
 import { randomUUID } from "crypto";
 import { prisma } from "./prisma";
 import type { PaymentMethod, SavingsMove } from "./types";
@@ -18,13 +19,13 @@ export function mapMove(row: {
 }): SavingsMove {
   return {
     ...row,
-    kind: row.kind === "out" ? "out" : "in",
+    kind: row.kind === "out" ? "out" : row.kind === "existing" ? "existing" : "in",
     method: row.method === "card" ? "card" : "cash",
   };
 }
 
 export interface SavingsInput {
-  kind: "in" | "out";
+  kind: "in" | "out" | "existing";
   amount: number;
   method: PaymentMethod;
   note: string | null;
@@ -57,6 +58,11 @@ export async function getSavingsMoveOfIncome(incomeId: string): Promise<SavingsM
 export async function createSavingsMove(input: SavingsInput): Promise<SavingsMove> {
   const now = new Date().toISOString();
   const id = randomUUID();
+  if (input.kind === "existing") {
+    // Already saved before: only adds to the savings, the Solde doesn't move.
+    const move = await prisma.savingsMove.create({ data: { id, ...input, expenseId: null, incomeId: null, createdAt: now } });
+    return mapMove(move);
+  }
   if (input.kind === "in") {
     const expenseId = randomUUID();
     const [, , move] = await prisma.$transaction([

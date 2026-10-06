@@ -68,6 +68,16 @@ export function goalDelete(goal: { id: string; emoji: string; name: string }) {
 
 /** Deleting a savings move (its expense / income goes with it). */
 export function savingsDelete(move: SavingsMove) {
+  if (move.kind === "existing") {
+    return {
+      label: "Supprimer cette épargne",
+      endpoint: `/api/savings/${move.id}`,
+      title: "Supprimer cette épargne ?",
+      description: `${formatMoney(move.amount)} retirés de l'épargne. Ton solde ne change pas.`,
+      success: "Épargne supprimée.",
+      fallback: "/epargne",
+    };
+  }
   return {
     label: move.kind === "in" ? "Supprimer cette épargne" : "Supprimer ce retrait",
     endpoint: `/api/savings/${move.id}`,

@@ -14,9 +14,10 @@ export async function GET() {
   return NextResponse.json(await getAllSavingsMoves());
 }
 
-/** POST { kind: "in" | "out", amount, method, note }: into / out of the savings. */
+/** POST { kind: "in" | "out" | "existing", amount, method, note }: into / out
+ *  of the savings, or savings already held (the Solde doesn't move). */
 export const POST = withBalanceGuard(async function post(req: NextRequest) {
-  const parsed = savingsSchema.extend({ kind: z.enum(["in", "out"]) }).safeParse(await req.json().catch(() => null));
+  const parsed = savingsSchema.extend({ kind: z.enum(["in", "out", "existing"]) }).safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const { kind, amount, method, note, date } = parsed.data;
   if (kind === "out") {

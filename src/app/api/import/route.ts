@@ -147,7 +147,7 @@ const backupSchema = z.object({
     .array(
       z.object({
         id: z.string().min(1),
-        kind: z.enum(["in", "out"]),
+        kind: z.enum(["in", "out", "existing"]),
         amount: z.number().positive(),
         method: z.enum(["cash", "card"]),
         note: z.string().nullable(),

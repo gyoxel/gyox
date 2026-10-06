@@ -424,7 +424,7 @@ export async function importData(backup: BackupData): Promise<void> {
             data: data.savingsMoves
               .map((m) => ({ ...m, expenseId: known(m.expenseId, expenseIds), incomeId: known(m.incomeId, incomeIds) }))
               // A move whose expense / income isn't there would count with nothing behind it.
-              .filter((m) => (m.kind === "in" ? m.expenseId : m.incomeId)),
+              .filter((m) => m.kind === "existing" || (m.kind === "in" ? m.expenseId : m.incomeId)),
           }),
         ]
       : []),

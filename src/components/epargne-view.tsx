@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowDownToLine, ArrowUpFromLine, ChevronRight } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, ChevronRight, Landmark } from "lucide-react";
 import type { PaymentMethod, SavingsMove } from "@/lib/types";
 import { monthKey, monthLabelFr, parseMonthKey, todayMonth } from "@/lib/date";
 import { METHOD_META } from "@/lib/payment-method";
 import { cn, formatMoney } from "@/lib/utils";
 import { TransferDialog, type Account } from "@/components/transfer-dialog";
+import { ExistingSavingsDialog } from "@/components/existing-savings-dialog";
 import { HEADER_ADD_EVENT } from "@/components/header-add";
 import { Button } from "@/components/ui/button";
 
@@ -31,6 +32,7 @@ export function EpargneView({
 }) {
   const money = (n: number) => formatMoney(n, currency);
   const [dialog, setDialog] = useState<{ from: Account; to: Account } | null>(null);
+  const [existingOpen, setExistingOpen] = useState(false);
   // The header's "+": put money aside.
   useEffect(() => {
     const open = () => setDialog({ from: "card", to: "savings" });
@@ -71,12 +73,23 @@ export function EpargneView({
           <ArrowUpFromLine className="h-4 w-4" />
           Retirer
         </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="col-span-2 h-11 border-dashed border-lime-300 text-lime-800 dark:border-lime-800 dark:text-lime-300"
+          onClick={() => setExistingOpen(true)}
+        >
+          <Landmark className="h-4 w-4" />
+          J&apos;ai déjà une épargne
+        </Button>
       </div>
 
       {months.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-slate-200 px-4 py-7 text-center text-sm text-slate-400 dark:border-slate-700">
           Rien encore. <b className="text-slate-600 dark:text-slate-300">Mettre de côté</b> : l&apos;argent sort de ton solde,
-          s&apos;ajoute à tes dépenses comme épargne, et tu peux noter où tu l&apos;as mis.
+          s&apos;ajoute à tes dépenses comme épargne, et tu peux noter où tu l&apos;as mis.{" "}
+          <b className="text-slate-600 dark:text-slate-300">J&apos;ai déjà une épargne</b> : l&apos;argent que tu avais
+          déjà, sans toucher à ton solde.
         </p>
       ) : (
         months.map((m) => {
@@ -91,15 +104,15 @@ export function EpargneView({
                       <span
                         className={cn(
                           "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg",
-                          x.kind === "in" ? "bg-lime-50 dark:bg-lime-950/50" : "bg-amber-50 dark:bg-amber-950/50",
+                          x.kind === "out" ? "bg-amber-50 dark:bg-amber-950/50" : "bg-lime-50 dark:bg-lime-950/50",
                         )}
                       >
-                        {x.kind === "in" ? "🐷" : "↩️"}
+                        {x.kind === "existing" ? "🏦" : x.kind === "in" ? "🐷" : "↩️"}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-1.5">
                           <span className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">
-                            {x.note || (x.kind === "in" ? "Mis de côté" : "Retiré")}
+                            {x.note || (x.kind === "existing" ? "Déjà épargné" : x.kind === "in" ? "Mis de côté" : "Retiré")}
                           </span>
                           {!x.counted && (
                             <span className="shrink-0 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-slate-800">
@@ -109,16 +122,20 @@ export function EpargneView({
                         </span>
                         <span className="block text-[11px] text-slate-400">
                           {x.date.slice(8, 10)}/{x.date.slice(5, 7)} ·{" "}
-                          {x.kind === "in" ? `${METHOD_META[x.method].emoji} → 🐷` : `🐷 → ${METHOD_META[x.method].emoji}`}
+                          {x.kind === "existing"
+                            ? "Déjà épargné · hors solde"
+                            : x.kind === "in"
+                              ? `${METHOD_META[x.method].emoji} → 🐷`
+                              : `🐷 → ${METHOD_META[x.method].emoji}`}
                         </span>
                       </span>
                       <span
                         className={cn(
                           "text-sm font-semibold tabular-nums",
-                          !x.counted ? "text-slate-400 line-through" : x.kind === "in" ? "text-lime-700 dark:text-lime-400" : "text-amber-600",
+                          !x.counted ? "text-slate-400 line-through" : x.kind !== "out" ? "text-lime-700 dark:text-lime-400" : "text-amber-600",
                         )}
                       >
-                        {x.kind === "in" ? "+" : "−"}
+                        {x.kind !== "out" ? "+" : "−"}
                         {money(x.amount)}
                       </span>
                       <ChevronRight className="h-4 w-4 text-slate-300" />
@@ -130,6 +147,8 @@ export function EpargneView({
           );
         })
       )}
+
+      <ExistingSavingsDialog open={existingOpen} onOpenChange={setExistingOpen} />
 
       {dialog && (
         <TransferDialog

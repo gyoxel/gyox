@@ -252,7 +252,9 @@ export interface Income {
 /** Épargne: money put aside ("in") or taken back ("out"). */
 export interface SavingsMove {
   id: string;
-  kind: "in" | "out";
+  /** "in": put aside from the Solde; "out": taken back into it; "existing":
+   *  savings already held before (outside the Solde: no expense, no income). */
+  kind: "in" | "out" | "existing";
   amount: number;
   /** The account it leaves ("in") or goes to ("out"). */
   method: PaymentMethod;
