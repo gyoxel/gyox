@@ -3,6 +3,7 @@ import { CalendarCheck, HandCoins, ShieldCheck, Wallet } from "lucide-react";
 import { ThemeColor } from "@/components/theme-color";
 import { GoogleIcon } from "@/components/google-icon";
 import { ForgetOnMount } from "@/components/forget-on-mount";
+import { LoginBackdrop } from "@/components/login-backdrop";
 import { HOME_COLOR } from "@/lib/page-theme";
 import { safeNext } from "@/lib/google-oauth";
 
@@ -31,10 +32,11 @@ export default async function ConnexionPage({ searchParams }: PageProps<"/connex
   const href = next === "/" ? "/api/auth/google" : `/api/auth/google?suite=${encodeURIComponent(next)}`;
 
   return (
-    <main className="-mb-28 flex min-h-dvh flex-col bg-gradient-to-b from-[#019c86] via-[#017a6a] to-[#014d43] px-6 pb-8 pt-14 text-white">
+    <main className="relative -mb-28 flex min-h-dvh flex-col overflow-hidden bg-gradient-to-b from-[#019c86] via-[#017a6a] to-[#014d43] px-6 pb-8 pt-14 text-white">
       <ThemeColor color={HOME_COLOR} />
       <ForgetOnMount />
-      <div className="flex flex-col items-center text-center">
+      <LoginBackdrop />
+      <div className="relative flex flex-col items-center text-center">
         <span className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-white text-3xl font-black tracking-tight text-[#007261] shadow-xl shadow-black/20">
           GX
         </span>
@@ -44,7 +46,7 @@ export default async function ConnexionPage({ searchParams }: PageProps<"/connex
         <p className="mt-2 max-w-xs text-sm text-white/80">Ton budget du mois, simple et clair : ce qui rentre, ce qui sort, ce qui reste.</p>
       </div>
 
-      <ul className="mx-auto mt-10 flex w-full max-w-sm flex-col gap-3">
+      <ul className="relative mx-auto mt-10 flex w-full max-w-sm flex-col gap-3">
         {FEATURES.map(({ icon: Icon, text }) => (
           <li key={text} className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 text-sm ring-1 ring-white/15 backdrop-blur-sm">
             <Icon className="h-5 w-5 shrink-0 text-lime-200" />
@@ -53,7 +55,7 @@ export default async function ConnexionPage({ searchParams }: PageProps<"/connex
         ))}
       </ul>
 
-      <div className="mx-auto mt-auto w-full max-w-sm pt-10">
+      <div className="relative mx-auto mt-auto w-full max-w-sm pt-10">
         {error && (
           <p role="alert" className="mb-3 rounded-xl bg-rose-500/90 px-4 py-2.5 text-center text-sm font-medium">
             {error}
