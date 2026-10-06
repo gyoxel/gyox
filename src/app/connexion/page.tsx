@@ -7,7 +7,7 @@ import { LoginBackdrop } from "@/components/login-backdrop";
 import { HOME_COLOR } from "@/lib/page-theme";
 import { safeNext } from "@/lib/google-oauth";
 
-export const metadata = { title: "Connexion · GX Salaire" };
+export const metadata = { title: "GX Salaire · Ton budget du mois" };
 
 const ERRORS: Record<string, string> = {
   annule: "Connexion annulée.",

@@ -20,9 +20,21 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const DESCRIPTION = "Ton budget du mois, simple et clair : salaire, dépenses, crédits, darets et épargne.";
+
 export const metadata: Metadata = {
+  // Absolute links for the shared-link preview (opengraph-image.jpg).
+  metadataBase: new URL("https://gxsalaire.ma"),
   title: "GX Salaire",
-  description: "Suivi personnel du salaire, des dépenses, des crédits et de l'épargne.",
+  description: DESCRIPTION,
+  openGraph: {
+    type: "website",
+    siteName: "GX Salaire",
+    title: "GX Salaire · Ton budget du mois",
+    description: DESCRIPTION,
+    locale: "fr_MA",
+  },
+  twitter: { card: "summary_large_image" },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
