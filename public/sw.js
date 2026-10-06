@@ -1,7 +1,7 @@
-const CACHE_NAME = "budget-shell-v4";
+const CACHE_NAME = "budget-shell-v5";
 // Not "/": signed out it redirects to Connexion, and a page answered with a
 // redirected response fails to load (ERR_FAILED).
-const SHELL_ASSETS = ["/manifest.json", "/icon.svg"];
+const SHELL_ASSETS = ["/manifest.json"];
 
 // A cached page usable for a navigation: never one that was redirected.
 const usable = (response) => (response && !response.redirected ? response : undefined);
@@ -36,7 +36,7 @@ self.addEventListener("fetch", (event) => {
 
   // Build assets are content-hashed and immutable: serve straight from the
   // cache (instant on every launch), fetching only the first time.
-  if (url.pathname.startsWith("/_next/static/") || url.pathname === "/icon.svg") {
+  if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(
       caches.match(request).then(
         (cached) =>
