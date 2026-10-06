@@ -52,7 +52,12 @@ function validSnapshot(root: Element | null | undefined, path: string): string |
   if (!root) return null;
   if (root.querySelector('[aria-busy="true"]')) return null; // still the loading skeleton
   if (root.querySelector("h1")?.textContent?.trim() !== TITLES[path]) return null;
-  return root.innerHTML;
+  // Amounts shown with Accueil's eye are never kept (snapshots stay in storage).
+  const copy = root.cloneNode(true) as Element;
+  copy.querySelectorAll("[data-private]").forEach((el) => {
+    el.textContent = "•••• DH";
+  });
+  return copy.innerHTML;
 }
 
 function snapshotCurrent(path: string) {
