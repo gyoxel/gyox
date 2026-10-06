@@ -162,10 +162,10 @@ export function CreditEditor({
           { method: "PATCH", path: `/api/expenses/${expense.id}`, body: fields },
           ...(payCall ? [payCall] : []),
         ]);
+        // All or nothing: a refused payment (e.g. not enough money) leaves
+        // the expense as it was too.
         if (!res.ok) return setError(await errorMessage(res));
-        if (payCall && !pay?.ok) {
-          toast.error(pay?.status === 409 ? `Enregistré, mais pas payé. ${await errorMessage(pay)}` : "Enregistré, mais le statut de paiement n'a pas pu être mis à jour.");
-        }
+        if (payCall && pay && !pay.ok) return setError(await errorMessage(pay));
         toast.success("Crédit enregistré.");
         nav.back();
         return;

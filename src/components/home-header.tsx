@@ -2,13 +2,14 @@ import Link from "next/link";
 import { Settings } from "lucide-react";
 import { HEADER_BUTTON } from "@/components/header-button";
 import { ThemeColor } from "@/components/theme-color";
+import { RefreshLogo } from "@/components/refresh-logo";
 import { HOME_COLOR } from "@/lib/page-theme";
 
 const TIME_ZONE = "Africa/Casablanca";
 
 /**
  * Accueil's own header, in the app's colour (the browser's bar too): the
- * logo and name with Bonjour / Bonsoir, today's date as a small calendar
+ * logo (tap: refresh) and name with Bonjour / Bonsoir, today's date as a small calendar
  * tile, and settings.
  */
 export function HomeHeader() {
@@ -21,9 +22,7 @@ export function HomeHeader() {
     <header data-tone className="sticky top-0 z-30 rounded-b-[28px] px-4 pb-3 pt-3 text-white shadow-sm" style={{ backgroundColor: HOME_COLOR }}>
       <ThemeColor color={HOME_COLOR} />
       <div className="flex h-12 items-center gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-[15px] font-black tracking-tight text-[#007261] shadow-md">
-          GX
-        </span>
+        <RefreshLogo />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-white/75">{greeting} 👋</p>
           <h1 className="truncate text-xl font-extrabold tracking-tight">

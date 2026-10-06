@@ -134,6 +134,7 @@ export function HomeDashboard({
           setPayments={setLocalPayments}
           currentMonth={currentMonth}
           currency={currency}
+          balance={balance}
         />
       </section>
     </>

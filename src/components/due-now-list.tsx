@@ -11,6 +11,7 @@ import type { Expense, Payment, PaymentMethod } from "@/lib/types";
 import { toast } from "sonner";
 import { METHOD_META } from "@/lib/payment-method";
 import { errorMessage } from "@/components/expense-editor";
+import { insufficientMessage } from "@/lib/balance-message";
 import { formatMoney, cn } from "@/lib/utils";
 import { ColorDot } from "@/components/color-dot";
 import { displayIcon } from "@/lib/category";
@@ -69,8 +70,12 @@ export function DueNowList({
   currentMonth,
   currency,
   categoryEmoji,
+  balance,
 }: {
   categoryEmoji: Record<string, string>;
+  /** Cash and card right now (ticks not saved yet included): a tick that
+   *  would take one below 0 is refused at once, not after the server says so. */
+  balance?: Record<PaymentMethod, number>;
   expenses: Expense[];
   payments: Payment[];
   setPayments: React.Dispatch<React.SetStateAction<Payment[]>>;
@@ -157,6 +162,11 @@ export function DueNowList({
     }
 
     const optimistic = { ...buildOptimisticPayment(expense, viewMonth, localPayments), method };
+    if (method && balance && optimistic.amountPaid > balance[method] + 0.005) {
+      settlePending(expense.id, setPendingIds);
+      toast.error(insufficientMessage(method, balance[method]));
+      return;
+    }
     animateReorder(rowRefs.current, () => setLocalPayments((prev) => [...prev, optimistic]));
     void trackMutation(
       fetch(`/api/expenses/${expense.id}/payments`, {
