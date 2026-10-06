@@ -1,8 +1,9 @@
-import { CalendarDays, Mail, ShieldCheck } from "lucide-react";
+import { CalendarDays, ChevronRight, Mail, ShieldCheck, Users } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { SignOutButton } from "@/components/sign-out-button";
 import { currentAccount } from "@/lib/accounts";
+import { isAdmin } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Profil · GX Salaire" };
@@ -47,6 +48,23 @@ export default async function ProfilPage() {
               <Row icon={CalendarDays} label="Membre depuis" value={memberSince(account.createdAt)} />
               <Row icon={ShieldCheck} label="Sécurité" value="Tes informations sont protégées" />
             </div>
+
+            {isAdmin(account.email) && (
+              <Link
+                href="/admin"
+                prefetch
+                className="flex items-center gap-3.5 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm active:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:active:bg-slate-800"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-500 to-slate-700 text-white">
+                  <Users className="h-[18px] w-[18px]" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-semibold text-slate-900 dark:text-white">Admin</span>
+                  <span className="block truncate text-xs text-slate-500 dark:text-slate-400">Les comptes inscrits</span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+              </Link>
+            )}
 
             <SignOutButton />
           </>

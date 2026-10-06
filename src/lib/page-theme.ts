@@ -21,6 +21,7 @@ const PAGE_COLORS: [prefix: string, color: string][] = [
   ["/salary", "#0891b2"],
   ["/settings", "#334155"],
   ["/profil", "#334155"],
+  ["/admin", "#334155"],
   ["/confidentialite", "#334155"],
   ["/conditions", "#334155"],
 ];
