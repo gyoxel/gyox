@@ -20,7 +20,7 @@ const FEATURES = [
   { icon: Wallet, text: "Ton salaire, ton cash et ta carte, au dirham près" },
   { icon: CalendarCheck, text: "Tes dépenses et crédits du mois, cochés en un geste" },
   { icon: HandCoins, text: "Darets, prêts, épargne et objectifs" },
-  { icon: ShieldCheck, text: "Tes données ne sont visibles que par toi" },
+  { icon: ShieldCheck, text: "Tes informations sont protégées" },
 ];
 
 /** Sign-in (and the public home page Google links to). */

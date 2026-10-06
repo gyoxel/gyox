@@ -45,7 +45,7 @@ export default async function ProfilPage() {
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <Row icon={Mail} label="Connecté avec Google" value={account.email} />
               <Row icon={CalendarDays} label="Membre depuis" value={memberSince(account.createdAt)} />
-              <Row icon={ShieldCheck} label="Tes données" value="Visibles par toi seul" />
+              <Row icon={ShieldCheck} label="Sécurité" value="Tes informations sont protégées" />
             </div>
 
             <SignOutButton />
