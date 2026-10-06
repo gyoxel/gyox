@@ -91,6 +91,10 @@ function createClient() {
             return await query(args);
           } catch (error) {
             if (attempt >= 2 || !isTransient(error)) throw error;
+            // Logged (code and the end of the message) so slow, retried queries show up.
+            const code = (error as { code?: unknown })?.code;
+            const message = error instanceof Error ? error.message.replace(/\s+/g, " ").slice(-240) : "";
+            console.warn(`[db] retry ${attempt + 1} after ${String(code ?? "")} ${message}`);
             await new Promise((resolve) => setTimeout(resolve, 400 * 2 ** attempt));
           }
         }
