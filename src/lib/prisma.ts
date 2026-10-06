@@ -22,9 +22,11 @@ const POOLED_HOST = "pooled.db.prisma.io";
 /**
  * The test version (Vercel Preview deployments, the test branch) has its own
  * database, connected to Preview only as TEST_DATABASE_URL — so it never
- * touches the real data. Production has no TEST_ variable.
+ * touches the real data. Production never uses it, even if a TEST_
+ * variable gets connected to Production by mistake.
  */
 export function databaseUrl(): string | undefined {
+  if (process.env.VERCEL_ENV === "production") return process.env.DATABASE_URL;
   return process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
 }
 

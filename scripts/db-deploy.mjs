@@ -8,8 +8,10 @@
 import { spawnSync } from "node:child_process";
 
 // The test version (Preview) migrates and seeds its own database, never the
-// real one (see databaseUrl in src/lib/prisma.ts).
-if (process.env.TEST_DATABASE_URL) {
+// real one (see databaseUrl in src/lib/prisma.ts). Production never does,
+// even if a TEST_ variable gets connected to Production by mistake.
+const useTestDb = Boolean(process.env.TEST_DATABASE_URL) && process.env.VERCEL_ENV !== "production";
+if (useTestDb) {
   process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
   console.log("Preview: using the test database (TEST_DATABASE_URL).");
 }
@@ -34,7 +36,7 @@ function prisma(...args) {
 
 // "[reset-test-db]" in the commit message empties the TEST database and
 // fills it again with the demo data (never the real one: TEST_ only).
-if (process.env.TEST_DATABASE_URL && (process.env.VERCEL_GIT_COMMIT_MESSAGE ?? "").includes("[reset-test-db]")) {
+if (useTestDb && (process.env.VERCEL_GIT_COMMIT_MESSAGE ?? "").includes("[reset-test-db]")) {
   console.log("Preview: resetting the test database.");
   prisma("migrate", "reset", "--force", "--skip-generate");
 } else {
