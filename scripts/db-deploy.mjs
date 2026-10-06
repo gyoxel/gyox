@@ -32,5 +32,12 @@ function prisma(...args) {
   }
 }
 
-prisma("migrate", "deploy");
-prisma("db", "seed");
+// "[reset-test-db]" in the commit message empties the TEST database and
+// fills it again with the demo data (never the real one: TEST_ only).
+if (process.env.TEST_DATABASE_URL && (process.env.VERCEL_GIT_COMMIT_MESSAGE ?? "").includes("[reset-test-db]")) {
+  console.log("Preview: resetting the test database.");
+  prisma("migrate", "reset", "--force", "--skip-generate");
+} else {
+  prisma("migrate", "deploy");
+  prisma("db", "seed");
+}
