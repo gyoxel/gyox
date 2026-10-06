@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore, useTransition } from "react";
-import { Check, ChevronRight, HandCoins, Trash2, X } from "lucide-react";
+import { Banknote, Check, ChevronRight, HandCoins, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { errorMessage } from "@/components/expense-editor";
 import type { PaymentMethod, SalaryAdvance, Settings } from "@/lib/types";
@@ -266,6 +266,42 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
       )}
     />
   );
+
+  // A new account: no salary yet. First its amount, pay day and account;
+  // the countdown (and "As-tu reçu ton salaire ?") only come after.
+  if (settings.salary <= 0) {
+    return (
+      <>
+        <div className={cn(shell, "flex flex-col items-center gap-3 p-4 text-center")}>
+          {glow}
+          <p className="relative text-3xl">👋</p>
+          <div className="relative">
+            <p className="text-base font-semibold">Commence par ton salaire</p>
+            <p className="mt-1 text-sm text-white/70">
+              Son montant, le jour où tu le reçois et où il arrive (cash ou carte) : le compte à rebours et tes calculs
+              partent de là.
+            </p>
+          </div>
+          <Button
+            type="button"
+            className="relative w-full bg-emerald-500 text-white hover:bg-emerald-600 dark:bg-emerald-500 dark:text-white"
+            onClick={() => setEditing(true)}
+          >
+            <Banknote className="h-4 w-4" />
+            Ajouter mon salaire
+          </Button>
+        </div>
+        <Dialog open={editing} onOpenChange={setEditing}>
+          <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="max-h-[88dvh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Ton salaire</DialogTitle>
+            </DialogHeader>
+            <SalaryForm settings={settings} plain onSaved={() => setEditing(false)} />
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
 
   return (
     <>
