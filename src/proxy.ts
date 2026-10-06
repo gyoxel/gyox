@@ -28,5 +28,5 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   // Not the build's files, icons, manifest, service worker or link preview image.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|manifest.json|sw.js|robots.txt|opengraph-image).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon|apple-icon|manifest.json|sw.js|robots.txt|opengraph-image).*)"],
 };
