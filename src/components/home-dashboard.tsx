@@ -8,6 +8,7 @@ import type { Expense, Payment, PaymentMethod, SalaryAdvance, Settings } from "@
 import { walletPaidOut } from "@/lib/wallet";
 import { cn, formatMoney } from "@/lib/utils";
 import { mutationsSettled } from "@/lib/use-refresh-data";
+import { useRevealedBalance } from "@/lib/reveal-balance";
 import { CountdownNextSalary } from "@/components/countdown-next-salary";
 import { DueNowList } from "@/components/due-now-list";
 import { DueRepayments, type DueRepayment } from "@/components/due-repayments";
@@ -59,7 +60,7 @@ export function HomeDashboard({
     const local = walletPaidOut(localPayments, expenses);
     return { cash: solde.cash + saved.cash - local.cash, card: solde.card + saved.card - local.card };
   }, [solde, payments, localPayments, expenses]);
-  const [revealed, setRevealed] = useState(false);
+  const [revealed, setRevealed] = useRevealedBalance();
   const show = (n: number) => (revealed ? formatMoney(n, currency) : "•••• DH");
 
   return (
@@ -88,7 +89,7 @@ export function HomeDashboard({
                 // The card is a link: the eye only shows / hides the amounts.
                 e.preventDefault();
                 e.stopPropagation();
-                setRevealed((v) => !v);
+                setRevealed(!revealed);
               }}
               aria-label={revealed ? "Masquer le montant" : "Afficher le montant"}
               className="-mr-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/15 transition-colors active:bg-white/25"
@@ -101,6 +102,7 @@ export function HomeDashboard({
               "relative mt-1 text-[2.5rem] font-bold leading-tight tabular-nums",
               !revealed && "tracking-widest",
             )}
+            data-private
           >
             {show(balance.cash + balance.card)}
           </p>
@@ -112,7 +114,9 @@ export function HomeDashboard({
                   <span className="block text-[10px] font-medium uppercase tracking-wide text-white/75">
                     {m === "cash" ? "Espèces" : "Carte"}
                   </span>
-                  <span className="block truncate text-sm font-bold tabular-nums">{show(balance[m])}</span>
+                  <span data-private className="block truncate text-sm font-bold tabular-nums">
+                    {show(balance[m])}
+                  </span>
                 </span>
               </div>
             ))}
@@ -134,6 +138,7 @@ export function HomeDashboard({
           setPayments={setLocalPayments}
           currentMonth={currentMonth}
           currency={currency}
+          balance={balance}
         />
       </section>
     </>

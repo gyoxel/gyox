@@ -99,7 +99,7 @@ async function main() {
         },
         {
           id: randomUUID(),
-          name: "Dar",
+          name: "Karim",
           amount: 1200,
           type: "credit",
           frequency: "monthly",
@@ -116,7 +116,7 @@ async function main() {
         },
         {
           id: randomUUID(),
-          name: "Solaih",
+          name: "Sara",
           amount: 200,
           type: "credit",
           frequency: "monthly",
@@ -140,7 +140,7 @@ async function main() {
     await prisma.settings.create({
       data: {
         id: 1,
-        salary: 5500,
+        salary: 8000,
         currency: "MAD",
         savingsTarget: 2000,
         startMonth: "2026-09",

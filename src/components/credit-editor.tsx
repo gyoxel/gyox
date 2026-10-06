@@ -162,10 +162,10 @@ export function CreditEditor({
           { method: "PATCH", path: `/api/expenses/${expense.id}`, body: fields },
           ...(payCall ? [payCall] : []),
         ]);
+        // All or nothing: a refused payment (e.g. not enough money) leaves
+        // the expense as it was too.
         if (!res.ok) return setError(await errorMessage(res));
-        if (payCall && !pay?.ok) {
-          toast.error(pay?.status === 409 ? `Enregistré, mais pas payé. ${await errorMessage(pay)}` : "Enregistré, mais le statut de paiement n'a pas pu être mis à jour.");
-        }
+        if (payCall && pay && !pay.ok) return setError(await errorMessage(pay));
         toast.success("Crédit enregistré.");
         nav.back();
         return;
@@ -229,7 +229,7 @@ export function CreditEditor({
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="name">Nom</Label>
-        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Ahmed, Louza, Solaih…" />
+        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex : Karim, Sara, Youssef…" />
       </div>
 
       {/* Already repaid before it was added here */}

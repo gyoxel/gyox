@@ -114,7 +114,7 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="name">Nom</Label>
-        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="À qui : Ahmed, Louza, Solaih…" maxLength={60} />
+        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="À qui : Karim, Sara, Youssef…" maxLength={60} />
       </div>
 
       {priorOpen ? (
