@@ -32,6 +32,10 @@ export interface Expense {
   icon: string | null;
   /** User-managed category (see Category), or null if uncategorized. */
   categoryId: string | null;
+  /** Months with their own amount, just for that month ("YYYY-MM" → amount;
+   *  0: nothing that month). A credit carries the difference over to its
+   *  last installment. Null: none. */
+  monthAmounts: Record<string, number> | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -44,7 +48,7 @@ export interface Category {
   position: number;
 }
 
-export type ExpenseInput = Omit<Expense, "id" | "createdAt" | "updatedAt">;
+export type ExpenseInput = Omit<Expense, "id" | "createdAt" | "updatedAt" | "monthAmounts">;
 
 export interface Settings {
   salary: number;
@@ -248,7 +252,9 @@ export interface Income {
 /** Épargne: money put aside ("in") or taken back ("out"). */
 export interface SavingsMove {
   id: string;
-  kind: "in" | "out";
+  /** "in": put aside from the Solde; "out": taken back into it; "existing":
+   *  savings already held before (outside the Solde: no expense, no income). */
+  kind: "in" | "out" | "existing";
   amount: number;
   /** The account it leaves ("in") or goes to ("out"). */
   method: PaymentMethod;

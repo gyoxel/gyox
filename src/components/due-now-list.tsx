@@ -6,7 +6,7 @@ import { flushPendingRefresh, trackMutation } from "@/lib/use-refresh-data";
 import Link from "next/link";
 import { Check, ChevronLeft, ChevronRight, Plus, PartyPopper } from "lucide-react";
 import { addMonths, monthKey as toMonthKey, monthLabelFr, monthLabelShortFr, type MonthId } from "@/lib/date";
-import { getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, getMonthLedgerItems, type DisplayColor } from "@/lib/engine";
+import { getAmountForMonth, getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, getMonthLedgerItems, type DisplayColor } from "@/lib/engine";
 import type { Expense, Payment, PaymentMethod } from "@/lib/types";
 import { toast } from "sonner";
 import { METHOD_META } from "@/lib/payment-method";
@@ -459,8 +459,8 @@ function buildOptimisticPayment(expense: Expense, viewMonth: MonthId, payments: 
     expenseId: expense.id,
     monthKey: key,
     slotIndex: null,
-    amountDue: expense.amount,
-    amountPaid: expense.amount,
+    amountDue: getAmountForMonth(expense, key),
+    amountPaid: getAmountForMonth(expense, key),
     paidAt: now,
     createdAt: now,
   };

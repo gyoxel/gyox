@@ -29,7 +29,8 @@ export function SavingsEditor({ move, counted, currency }: { move: SavingsMove; 
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const value = parseDecimalInput(amount);
-  const isIn = move.kind === "in";
+  const isIn = move.kind !== "out";
+  const isExisting = move.kind === "existing";
 
   function save(e: React.FormEvent) {
     e.preventDefault();
@@ -52,7 +53,7 @@ export function SavingsEditor({ move, counted, currency }: { move: SavingsMove; 
       <div className="relative flex flex-col items-center gap-1 overflow-hidden rounded-3xl bg-gradient-to-br from-lime-400 via-green-500 to-emerald-700 px-4 py-5 text-white shadow-lg shadow-green-600/20 dark:shadow-none">
         <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
         <Label htmlFor="amount" className="relative text-xs text-white/80">
-          {isIn ? "Mis de côté 🐷" : "Retiré de l'épargne"}
+          {isExisting ? "Déjà épargné 🏦" : isIn ? "Mis de côté 🐷" : "Retiré de l'épargne"}
         </Label>
         <div className="relative flex items-baseline gap-2">
           <span className="text-2xl font-semibold text-white/80">{isIn ? "+" : "−"}</span>
@@ -83,10 +84,12 @@ export function SavingsEditor({ move, counted, currency }: { move: SavingsMove; 
         />
       </div>
 
-      <PaymentMethodPicker value={method} onChange={setMethod} label={isIn ? "Pris en" : "Mis en"} />
+      {!isExisting && <PaymentMethodPicker value={method} onChange={setMethod} label={isIn ? "Pris en" : "Mis en"} />}
 
       <p className="px-1 text-[11px] text-slate-400">
-        {isIn
+        {isExisting
+          ? "Épargne que tu avais déjà : hors de ton solde, ni dans tes dépenses ni dans tes revenus."
+          : isIn
           ? counted
             ? "Dans tes dépenses comme épargne (payée) : sorti de ton solde actuel."
             : "Pas payée dans tes dépenses : elle ne compte pas encore dans l'épargne."

@@ -89,7 +89,9 @@ export function DaretCard({
 
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      {/* Header */}
+      {/* Header and rounds: tapping them opens the daret (edit). The
+          contribution and payout below keep their own buttons. */}
+      <Link href={`/daret/${daret.id}`} aria-label={`Modifier ${daret.expense.name}`} className="block pb-0.5 active:opacity-70">
       <div className="flex items-center gap-3 px-4 pt-4">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-600 text-xl shadow-sm">
           {daret.expense.icon ?? "🤝🏻"}
@@ -112,13 +114,9 @@ export function DaretCard({
         >
           {state.phase === "running" ? `Tour ${state.round}/${daret.members}` : state.phase === "finished" ? "Terminée" : "À venir"}
         </span>
-        <Link
-          href={`/daret/${daret.id}`}
-          aria-label={`Modifier ${daret.expense.name}`}
-          className="-mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
-        >
+        <span aria-hidden className="-mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400">
           <Pencil className="h-4 w-4" />
-        </Link>
+        </span>
       </div>
 
       {/* Rounds */}
@@ -152,6 +150,7 @@ export function DaretCard({
           </span>
         </div>
       </div>
+      </Link>
 
       {/* This month's contribution */}
       {paid != null && (
