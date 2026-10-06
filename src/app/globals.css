@@ -98,3 +98,72 @@ body {
   0%, 100% { transform: rotate(-0.8deg); }
   50% { transform: rotate(0.8deg); }
 }
+
+/* Connexion's moving background (components/login-backdrop.tsx). */
+.gx-coin {
+  opacity: 0;
+  animation: gx-rise linear infinite;
+}
+@keyframes gx-rise {
+  from {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  12%,
+  80% {
+    opacity: var(--o);
+  }
+  to {
+    transform: translateY(calc(-100dvh - 140px)) rotate(var(--spin));
+    opacity: 0;
+  }
+}
+.gx-pulse {
+  stroke-dasharray: 12 120;
+  stroke-dashoffset: 12;
+  animation: gx-pulse linear infinite;
+}
+@keyframes gx-pulse {
+  to {
+    stroke-dashoffset: -108;
+  }
+}
+.gx-chart {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  opacity: 0;
+  animation: gx-chart 9s ease-in-out infinite;
+}
+@keyframes gx-chart {
+  8% {
+    opacity: 0.35;
+  }
+  55% {
+    stroke-dashoffset: 0;
+  }
+  85% {
+    stroke-dashoffset: 0;
+    opacity: 0.35;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+.gx-drift {
+  animation: gx-drift 14s ease-in-out infinite alternate;
+}
+@keyframes gx-drift {
+  to {
+    transform: translate(60px, -40px) scale(1.15);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gx-backdrop * {
+    animation: none !important;
+  }
+  .gx-chart {
+    stroke-dashoffset: 0;
+    opacity: 0.3;
+  }
+}
