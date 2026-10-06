@@ -20,6 +20,15 @@ const DIRECT_HOST = "db.prisma.io";
 const POOLED_HOST = "pooled.db.prisma.io";
 
 /**
+ * The test version (Vercel Preview deployments, the test branch) has its own
+ * database, connected to Preview only as TEST_DATABASE_URL — so it never
+ * touches the real data. Production has no TEST_ variable.
+ */
+export function databaseUrl(): string | undefined {
+  return process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
+}
+
+/**
  * Also: serverless Postgres can suspend when idle and take several seconds
  * to wake. Prisma's defaults (5s connect timeout, 10s pool timeout) make the
  * first requests after a pause fail with a server error — especially when a
@@ -73,7 +82,7 @@ function isTransient(error: unknown): boolean {
 }
 
 function createClient() {
-  return new PrismaClient({ datasourceUrl: runtimeDatabaseUrl(process.env.DATABASE_URL) }).$extends({
+  return new PrismaClient({ datasourceUrl: runtimeDatabaseUrl(databaseUrl()) }).$extends({
     query: {
       async $allOperations({ operation, args, query }) {
         if (!READ_OPERATIONS.has(operation)) return query(args);

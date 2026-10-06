@@ -7,6 +7,13 @@
  */
 import { spawnSync } from "node:child_process";
 
+// The test version (Preview) migrates and seeds its own database, never the
+// real one (see databaseUrl in src/lib/prisma.ts).
+if (process.env.TEST_DATABASE_URL) {
+  process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
+  console.log("Preview: using the test database (TEST_DATABASE_URL).");
+}
+
 const RETRYABLE = /too many (connections|clients)|Can't reach database server|Timed out|P1001|P1002|P1017/i;
 // Seconds to wait before each new attempt: about 5 minutes in all.
 const DELAYS = [10, 20, 30, 45, 60, 60, 60];

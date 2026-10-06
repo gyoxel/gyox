@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma, runtimeDatabaseUrl } from "@/lib/prisma";
+import { databaseUrl, prisma, runtimeDatabaseUrl } from "@/lib/prisma";
 import { addMonths, todayMonth } from "@/lib/date";
 import { getMonthLedgerItems, getPaidThisMonth } from "@/lib/engine";
 import { getAllCategories, getAllDarets, getAllExpenses, getAllPayments, getSettings } from "@/lib/repository";
@@ -52,7 +52,7 @@ export async function GET() {
 /** Whether the app goes through the connection pooler (see lib/prisma.ts). */
 function isPooled(): boolean {
   try {
-    return new URL(runtimeDatabaseUrl(process.env.DATABASE_URL) ?? "").hostname.startsWith("pooled.");
+    return new URL(runtimeDatabaseUrl(databaseUrl()) ?? "").hostname.startsWith("pooled.");
   } catch {
     return false;
   }
