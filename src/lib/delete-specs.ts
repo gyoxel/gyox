@@ -42,6 +42,18 @@ export function daretDelete(daret: DaretWithExpense) {
   };
 }
 
+/** Deleting a budget (its lines, its "+" expenses and "- Reste" incomes go with it). */
+export function budgetDelete(budget: { id: string; expense: { name: string } }) {
+  return {
+    label: "Supprimer ce budget",
+    endpoint: `/api/budgets/${budget.id}`,
+    title: "Supprimer ce budget ?",
+    description: `« ${budget.expense.name} », ses dépenses notées, ses dépassements et ses restes seront définitivement supprimés.`,
+    success: "Budget supprimé.",
+    fallback: "/budgets",
+  };
+}
+
 /** Deleting a deposit (bottom button and header bin). */
 export function depositDelete(goalId: string, deposit: GoalDeposit, currency: string) {
   return {

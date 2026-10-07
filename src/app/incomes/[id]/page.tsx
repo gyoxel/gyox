@@ -1,4 +1,5 @@
-import { getAllExpenses, getIncomeById, getIncomeCategories, getLoanOfIncome, getSavingsMoveOfIncome } from "@/lib/page-data";
+import { getAllExpenses, getBudgetOfIncome, getIncomeById, getIncomeCategories, getLoanOfIncome, getSavingsMoveOfIncome } from "@/lib/page-data";
+import { monthLabelFr, parseMonthKey } from "@/lib/date";
 import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/page-header";
@@ -16,12 +17,13 @@ export const dynamic = "force-dynamic";
 
 export default async function EditIncomePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [income, expenses, move, loan, categories] = await Promise.all([
+  const [income, expenses, move, loan, categories, budget] = await Promise.all([
     getIncomeById(id),
     getAllExpenses(),
     getSavingsMoveOfIncome(id),
     getLoanOfIncome(id),
     getIncomeCategories(),
+    getBudgetOfIncome(id),
   ]);
   if (!income) notFound();
   const received = `${METHOD_META[income.method].emoji} ${METHOD_META[income.method].label}`;
@@ -39,6 +41,23 @@ export default async function EditIncomePage({ params }: { params: Promise<{ id:
         editLabel="Modifier le retrait"
         buttonClass="bg-lime-600 text-white hover:bg-lime-700"
         sourceLabel="l'épargne"
+      />
+    );
+  }
+  if (budget) {
+    return (
+      <LinkedSourcePage
+        title={income.name}
+        tone={pageColor("/budgets")}
+        gradient="from-fuchsia-400 via-purple-500 to-violet-700"
+        eyebrow="Reste de budget 👛"
+        amount={`+${formatMoney(income.amount)}`}
+        subtitle={`${budget.budget.expense.name} · ${monthLabelFr(parseMonthKey(budget.monthKey))} · ${received}`}
+        text={`Ce qui restait du budget « ${budget.budget.expense.name} » à la fin du mois. Il suit les dépenses notées dans le budget.`}
+        href={`/budgets/${budget.budget.id}?month=${budget.monthKey}`}
+        editLabel="Voir le budget"
+        buttonClass="bg-purple-600 text-white hover:bg-purple-700"
+        sourceLabel="le budget"
       />
     );
   }

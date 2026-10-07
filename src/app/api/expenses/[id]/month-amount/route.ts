@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getDaretOfExpense, getDepositOfExpense, getExpenseById, getPaymentsForExpense, setMonthAmount } from "@/lib/repository";
 import { getSavingsMoveOfExpense } from "@/lib/savings-repo";
 import { getLoanOfExpense } from "@/lib/loans-repo";
+import { budgetIdOfExpense } from "@/lib/budgets-repo";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -30,13 +31,14 @@ export async function PUT(req: NextRequest, { params }: Params) {
   if (expense.frequency === "one-time" && expense.type !== "credit") {
     return NextResponse.json({ error: "Une dépense unique a déjà son propre montant." }, { status: 400 });
   }
-  const [daret, deposit, move, loan] = await Promise.all([
+  const [daret, deposit, move, loan, budget] = await Promise.all([
     getDaretOfExpense(id),
     getDepositOfExpense(id),
     getSavingsMoveOfExpense(id),
     getLoanOfExpense(id),
+    budgetIdOfExpense(id),
   ]);
-  if (daret || deposit || move || loan) {
+  if (daret || deposit || move || loan || budget) {
     return NextResponse.json({ error: "Ce montant se change depuis là d'où vient la dépense." }, { status: 409 });
   }
   if (expense.type === "credit" && amount != null && amount <= 0) {

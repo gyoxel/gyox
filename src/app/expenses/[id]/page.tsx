@@ -1,4 +1,4 @@
-import { getAllCategories, getAllExpenses, getAllPayments, getDaretOfExpense, getDepositOfExpense, getLoanOfExpense, getSavingsMoveOfExpense, getSettings } from "@/lib/page-data";
+import { getAllCategories, getAllExpenses, getAllPayments, getBudgetOfExpense, getDaretOfExpense, getDepositOfExpense, getLoanOfExpense, getSavingsMoveOfExpense, getSettings } from "@/lib/page-data";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Pencil } from "lucide-react";
@@ -11,7 +11,7 @@ import { expenseDelete } from "@/lib/delete-specs";
 import { Button } from "@/components/ui/button";
 import { METHOD_META } from "@/lib/payment-method";
 import { getCreditRealState, getEffectiveEndMonth, getOccurrenceForMonth } from "@/lib/engine";
-import { compareMonths, monthKey, monthLabelFr, monthOfDateStr, monthsBetween, todayMonth, type MonthId } from "@/lib/date";
+import { compareMonths, monthKey, monthLabelFr, monthOfDateStr, monthsBetween, parseMonthKey, todayMonth, type MonthId } from "@/lib/date";
 import { PageHeader } from "@/components/page-header";
 import { CREDIT_COLOR, pageColor } from "@/lib/page-theme";
 
@@ -27,7 +27,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ExpenseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [settings, allExpenses, payments, categories, linkedDeposit, linkedDaret, linkedMove, linkedLoan] = await Promise.all([
+  const [settings, allExpenses, payments, categories, linkedDeposit, linkedDaret, linkedMove, linkedLoan, linkedBudget] = await Promise.all([
     getSettings(),
     getAllExpenses(),
     getAllPayments(),
@@ -36,6 +36,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
     getDaretOfExpense(id),
     getSavingsMoveOfExpense(id),
     getLoanOfExpense(id),
+    getBudgetOfExpense(id),
   ]);
   const expense = allExpenses.find((e) => e.id === id);
   if (!expense) notFound();
@@ -97,6 +98,33 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
         editLabel="Modifier l'épargne"
         buttonClass="bg-lime-600 text-white hover:bg-lime-700"
         sourceLabel="l'épargne"
+      />
+    );
+  }
+  if (linkedBudget) {
+    const { budget, overflowOf } = linkedBudget;
+    const name = budget.expense.name;
+    return (
+      <LinkedSourcePage
+        title={expense.name}
+        tone={pageColor("/budgets")}
+        gradient="from-fuchsia-400 via-purple-500 to-violet-700"
+        eyebrow={overflowOf ? "Dépassement de budget" : "Budget 👛"}
+        amount={formatMoney(expense.amount, settings.currency)}
+        subtitle={
+          overflowOf
+            ? `${name} · ${monthLabelFr(parseMonthKey(overflowOf))}${paidWith ? ` · ${METHOD_META[paidWith].emoji}` : ""}`
+            : `${expense.type === "permanent" ? "Chaque mois" : expense.frequency === "one-time" ? "Une fois" : "Pendant quelques mois"}`
+        }
+        text={
+          overflowOf
+            ? `Ce qui a été dépensé au-delà du budget « ${name} » ce mois-là. Il suit les dépenses notées dans le budget.`
+            : `Le montant du budget « ${name} » : coche-le dans tes dépenses quand tu le prends. Pour le modifier ou noter ce que tu en dépenses, c'est depuis le budget.`
+        }
+        href={overflowOf ? `/budgets/${budget.id}?month=${overflowOf}` : `/budgets/${budget.id}`}
+        editLabel="Voir le budget"
+        buttonClass="bg-purple-600 text-white hover:bg-purple-700"
+        sourceLabel="le budget"
       />
     );
   }

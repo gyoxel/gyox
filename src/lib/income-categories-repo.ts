@@ -65,7 +65,7 @@ export async function resetIncomeCategories(): Promise<Category[]> {
   const defaultIds = DEFAULT_INCOME_CATEGORIES.map((d) => d.id);
   await prisma.$transaction([
     prisma.income.updateMany({
-      where: { category: { notIn: [...defaultIds, "credit", "epargne", "pret"] } },
+      where: { category: { notIn: [...defaultIds, "credit", "epargne", "pret", "budget"] } },
       data: { category: PINNED_LAST },
     }),
     prisma.incomeCategory.deleteMany({}),
