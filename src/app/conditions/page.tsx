@@ -5,7 +5,7 @@ export const metadata = { title: "Conditions · GX Salaire" };
 export default function ConditionsPage() {
   return (
     <LegalPage title="Conditions" updated="6 octobre 2026">
-      <p>En utilisant GX Salaire (gxsalaire.ma), tu acceptes ces conditions.</p>
+      <p>En utilisant GX Salaire (gx-salaire.vercel.app), tu acceptes ces conditions.</p>
 
       <h2>Le service</h2>
       <p>

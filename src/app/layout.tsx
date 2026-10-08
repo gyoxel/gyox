@@ -24,7 +24,7 @@ const DESCRIPTION = "Ton budget du mois, simple et clair : salaire, dépenses, c
 
 export const metadata: Metadata = {
   // Absolute links for the shared-link preview (opengraph-image.jpg).
-  metadataBase: new URL("https://gxsalaire.ma"),
+  metadataBase: new URL("https://gx-salaire.vercel.app"),
   title: "GX Salaire",
   description: DESCRIPTION,
   openGraph: {
