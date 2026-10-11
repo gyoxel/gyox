@@ -182,11 +182,22 @@ export async function deleteLoan(id: string): Promise<string[] | null> {
   return gone;
 }
 
-/** Installment `slot` received in cash / on the card: an income in Revenus. */
-export async function receiveRepayment(loanId: string, slot: number, method: PaymentMethod): Promise<LoanRepayment | null> {
+/**
+ * Installment `slot` received in cash / on the card: an income in Revenus.
+ * `amount`: what was given (default: what's expected that month); less
+ * goes to the next month, more comes off it. Null: no such installment, or
+ * already received.
+ */
+export async function receiveRepayment(
+  loanId: string,
+  slot: number,
+  method: PaymentMethod,
+  amount?: number,
+): Promise<LoanRepayment | null> {
   const loan = await getLoan(loanId);
   const target = loan && loanSlots(loan).find((s) => s.slot === slot);
   if (!loan || !target || target.repayment) return null;
+  const value = amount ?? target.amount;
   const now = new Date().toISOString();
   const date = todayDateStr();
   const incomeId = randomUUID();
@@ -195,7 +206,7 @@ export async function receiveRepayment(loanId: string, slot: number, method: Pay
       data: {
         id: incomeId,
         name: `Remboursement · ${loan.name}`,
-        amount: target.amount,
+        amount: value,
         date,
         category: "pret",
         method,
@@ -205,8 +216,23 @@ export async function receiveRepayment(loanId: string, slot: number, method: Pay
       },
     }),
     prisma.loanRepayment.create({
-      data: { id: randomUUID(), loanId, slot, amount: target.amount, method, date, incomeId, createdAt: now },
+      data: { id: randomUUID(), loanId, slot, amount: value, method, date, incomeId, createdAt: now },
     }),
+  ]);
+  return mapRepayment(row);
+}
+
+/** Changes what an installment brought (its income follows). Null: not received. */
+export async function updateRepayment(
+  loanId: string,
+  slot: number,
+  input: { amount: number; method: PaymentMethod },
+): Promise<LoanRepayment | null> {
+  const repayment = await prisma.loanRepayment.findUnique({ where: { loanId_slot: { loanId, slot } } });
+  if (!repayment) return null;
+  const [row] = await prisma.$transaction([
+    prisma.loanRepayment.update({ where: { id: repayment.id }, data: input }),
+    ...(repayment.incomeId ? [prisma.income.update({ where: { id: repayment.incomeId }, data: input })] : []),
   ]);
   return mapRepayment(row);
 }

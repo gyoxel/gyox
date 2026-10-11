@@ -7,8 +7,12 @@ const round = (n: number) => Math.round(n * 100) / 100;
 export interface LoanSlot {
   slot: number;
   month: MonthId;
+  /** What's expected that month: the plan's installment, plus what the
+   *  previous month left (or minus what it gave beyond). */
   amount: number;
-  /** Set once received. */
+  /** The plan's installment alone (0 for a month added by a shortfall). */
+  planned: number;
+  /** Set once received (its amount may differ from `amount`). */
   repayment: LoanRepayment | null;
 }
 
@@ -30,24 +34,53 @@ export function loanToRepay(loan: Pick<Loan, "amount" | "priorRepaid">): number 
   return round(loan.amount - (loan.priorRepaid ?? 0));
 }
 
-/** Installments 1…months: `monthly` each, the last one taking what's left. */
+const MAX_SLOTS = 600;
+
+/**
+ * Installments month by month from the first: the plan's (`monthly` each,
+ * the last one taking what's left), each received with any amount. What a
+ * month gives less goes to the next month (a month is added after the
+ * plan's last while something is left); what it gives more comes off the
+ * next one. A month not received yet keeps its amount (still expected).
+ */
 export function loanSlots(loan: Loan): LoanSlot[] {
   const toRepay = loanToRepay(loan);
   const start = parseMonthKey(loan.startMonth);
   const bySlot = new Map(loan.repayments.map((r) => [r.slot, r]));
-  return Array.from({ length: loan.months }, (_, i) => ({
-    slot: i + 1,
-    month: addMonths(start, i),
-    amount: i === loan.months - 1 ? round(toRepay - loan.monthly * (loan.months - 1)) : loan.monthly,
-    repayment: bySlot.get(i + 1) ?? null,
-  }));
+  const lastSlot = Math.max(loan.months, ...loan.repayments.map((r) => r.slot));
+  const slots: LoanSlot[] = [];
+  let left = toRepay; // not received yet
+  let expected = 0; // expected by the months not received yet
+  let carry = 0; // from the previous month: short (+) or beyond (−)
+  for (let i = 0; i < MAX_SLOTS; i++) {
+    const planned = i < loan.months - 1 ? loan.monthly : i === loan.months - 1 ? round(toRepay - loan.monthly * (loan.months - 1)) : 0;
+    const available = round(Math.max(0, left - expected));
+    const repayment = bySlot.get(i + 1) ?? null;
+    // The plan's last month and any after it take everything left.
+    const amount = round(i >= loan.months - 1 ? available : Math.min(available, Math.max(0, planned + carry)));
+    if (amount <= 0 && !repayment) {
+      // Nothing expected this month (given ahead, or all is expected already).
+      if (i >= loan.months - 1 && i >= lastSlot - 1) break;
+      carry = Math.min(0, round(planned + carry));
+      continue;
+    }
+    slots.push({ slot: i + 1, month: addMonths(start, i), amount, planned, repayment });
+    if (repayment) {
+      carry = round(amount - repayment.amount);
+      left = round(left - repayment.amount);
+    } else {
+      carry = 0;
+      expected = round(expected + amount);
+    }
+  }
+  return slots;
 }
 
 export function loanState(loan: Loan, current: MonthId): LoanState {
   const toRepay = loanToRepay(loan);
   const slots = loanSlots(loan);
   const received = round(loan.repayments.reduce((s, r) => s + r.amount, 0));
-  const open = slots.filter((s) => !s.repayment);
+  const open = slots.filter((s) => !s.repayment && s.amount > 0);
   return {
     toRepay,
     received,
@@ -55,7 +88,7 @@ export function loanState(loan: Loan, current: MonthId): LoanState {
     slots,
     due: open.filter((s) => compareMonths(s.month, current) <= 0),
     next: open[0] ?? null,
-    done: open.length === 0,
+    done: open.length === 0 && received >= toRepay - 0.005,
     endMonth: slots.at(-1)?.month ?? parseMonthKey(loan.startMonth),
   };
 }

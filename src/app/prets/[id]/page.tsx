@@ -3,14 +3,14 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Check, Clock, Pencil } from "lucide-react";
 
-import { loanState } from "@/lib/loans";
+import { loanState, type LoanSlot } from "@/lib/loans";
 import { loanDelete } from "@/lib/delete-specs";
 import { compareMonths, monthLabelFr, todayMonth } from "@/lib/date";
 import { METHOD_META } from "@/lib/payment-method";
 import { cn, formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { DeleteButton } from "@/components/delete-button";
-import { CancelRepayment, ReceiveRepayment } from "@/components/loan-repayments";
+import { CancelRepayment, EditRepayment, ReceiveRepayment } from "@/components/loan-repayments";
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
@@ -84,7 +84,15 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
                       {s.repayment ? (
                         <>
                           Reçu le {DAY.format(new Date(`${s.repayment.date}T12:00:00`))} · {METHOD_META[s.repayment.method].emoji}{" "}
-                          {METHOD_META[s.repayment.method].label} · <CancelRepayment loanId={loan.id} slot={s.slot} />
+                          {METHOD_META[s.repayment.method].label} ·{" "}
+                          <EditRepayment
+                            loanId={loan.id}
+                            slot={s.slot}
+                            expected={s.amount}
+                            amount={s.repayment.amount}
+                            method={s.repayment.method}
+                          />{" "}
+                          · <CancelRepayment loanId={loan.id} slot={s.slot} />
                         </>
                       ) : isDue ? (
                         "Tu l'as reçu ?"
@@ -92,6 +100,9 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
                         "À venir"
                       )}
                     </span>
+                    {slotNote(s, money) && (
+                      <span className="mt-0.5 block text-[11px] font-medium text-amber-700 dark:text-amber-400">{slotNote(s, money)}</span>
+                    )}
                   </span>
                   {isDue ? (
                     <span className="flex flex-col items-end gap-1">
@@ -126,4 +137,19 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
       </main>
     </>
   );
+}
+
+/** What moved between months: given less / more, or carried from the month before. */
+function slotNote(s: LoanSlot, money: (n: number) => string): string | null {
+  if (s.repayment) {
+    const diff = Math.round((s.amount - s.repayment.amount) * 100) / 100;
+    if (diff > 0) return `Reçu ${money(s.repayment.amount)} sur ${money(s.amount)} · ${money(diff)} passent au mois suivant`;
+    if (diff < 0) return `${money(-diff)} en avance sur les mois suivants`;
+    return null;
+  }
+  if (s.planned === 0) return "Ce qui reste des mois précédents";
+  const diff = Math.round((s.amount - s.planned) * 100) / 100;
+  if (diff > 0) return `Dont ${money(diff)} du mois précédent`;
+  if (diff < 0) return `${money(-diff)} déjà rendus en avance`;
+  return null;
 }
