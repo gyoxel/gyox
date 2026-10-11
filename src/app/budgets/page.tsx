@@ -14,7 +14,8 @@ export default async function BudgetsPage() {
   const [settings, budgets, entries, payments] = await Promise.all([getSettings(), getAllBudgets(), getAllBudgetEntries(), getAllPayments()]);
   const current = monthKey(todayMonth());
   const money = (n: number) => formatMoney(n, settings.currency);
-  const rows = budgets.map((b) => ({
+  // The last added on top.
+  const rows = [...budgets].reverse().map((b) => ({
     budget: b,
     state: budgetMonthState(b.expense, entries.filter((e) => e.budgetId === b.id), payments, current, current),
   }));

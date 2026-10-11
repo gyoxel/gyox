@@ -82,7 +82,8 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
     .map((g) => {
       const list = rows
         .filter((r) => (g.id ? r.expense.categoryId === g.id : !r.expense.categoryId || !categoryEmoji.has(r.expense.categoryId)))
-        .sort((a, b) => Number(a.status === "paid") - Number(b.status === "paid") || b.amount - a.amount);
+        // The last added on top.
+        .sort((a, b) => b.expense.createdAt.localeCompare(a.expense.createdAt));
       return { ...g, list, subtotal: list.reduce((s, r) => s + r.amount, 0) };
     })
     .filter((g) => g.list.length > 0);

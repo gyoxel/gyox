@@ -36,6 +36,8 @@ export default async function IncomesPage() {
     name: string;
     sub: string;
     date: string;
+    /** When it was added: orders a day's rows, the last on top. */
+    at: string;
     method: Income["method"];
     amount: number;
     badge?: string;
@@ -48,6 +50,7 @@ export default async function IncomesPage() {
       name: i.name,
       sub: incomeCategory(i.category, incomeCategories).label,
       date: i.date,
+      at: i.createdAt,
       method: i.method,
       amount: i.amount,
       badge: i.expenseId ? "Crédit" : i.category === "epargne" ? "Épargne" : i.category === "pret" ? "Prêt" : i.category === "budget" ? "Budget" : undefined,
@@ -61,11 +64,12 @@ export default async function IncomesPage() {
         name: `Daret · ${d.expense.name}`,
         sub: "Daret reçue",
         date: dayOf(d.payoutReceivedAt!),
+        at: d.payoutReceivedAt!,
         method: d.payoutMethod!,
         amount: daretPayout(d),
         badge: "Daret",
       })),
-  ].sort((a, b) => b.date.localeCompare(a.date));
+  ].sort((a, b) => b.date.localeCompare(a.date) || b.at.localeCompare(a.at));
   const months = [...new Set(rows.map((r) => r.date.slice(0, 7)))];
 
   return (

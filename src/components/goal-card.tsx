@@ -165,7 +165,7 @@ export function GoalCard({
       return { rows: [...acc.rows, { kind: "deposit", key: `deposit-${d.id}`, deposit: d, paid, percent }], reached };
     },
     { rows: [], reached: goal.savedAmount },
-  ).rows;
+  ).rows.reverse(); // the last one on top
   const stepRows: Row[] = [
     ...p.steps.map(stepRow).filter((r) => r.kind === "step" && r.step.kind === "saved"),
     ...depositRows,

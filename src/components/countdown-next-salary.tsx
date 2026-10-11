@@ -533,7 +533,7 @@ export function SalaryPanel({
           </p>
           {periodAdvances.length > 0 && (
             <ul className="flex flex-col gap-1 border-t border-amber-200/70 pt-2 text-sm dark:border-amber-900/60">
-              {periodAdvances.map((a) => (
+              {[...periodAdvances].reverse().map((a) => (
                 <li key={a.id} className="flex items-center gap-2">
                   <span className="flex-1 text-slate-700 dark:text-slate-200">
                     {money(a.amount)}

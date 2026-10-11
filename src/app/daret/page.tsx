@@ -20,7 +20,8 @@ export default async function DaretPage() {
   const [settings, darets, payments] = await Promise.all([getSettings(), getAllDarets(), getAllPayments()]);
   const current = todayMonth();
   const money = (n: number) => formatMoney(n, settings.currency);
-  const items = darets.map((daret) => ({ daret, state: getDaretState(daret, payments, current) }));
+  // The last added on top.
+  const items = [...darets].reverse().map((daret) => ({ daret, state: getDaretState(daret, payments, current) }));
 
   const monthly = items.filter((i) => i.state.phase === "running").reduce((s, i) => s + i.daret.expense.amount, 0);
   const nextPot = items

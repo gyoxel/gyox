@@ -19,7 +19,8 @@ export default async function GoalsPage() {
     getAllPayments(),
   ]);
   const current = todayMonth();
-  const rows = goals.map((goal) => ({ goal, progress: getGoalProgress(goal, darets, payments, current) }));
+  // The last added on top.
+  const rows = [...goals].reverse().map((goal) => ({ goal, progress: getGoalProgress(goal, darets, payments, current) }));
   const totalTarget = rows.reduce((s, r) => s + r.progress.target, 0);
   const totalNow = rows.reduce((s, r) => s + Math.min(r.progress.reachedNow, r.progress.target), 0);
   const overall = totalTarget > 0 ? Math.round((totalNow / totalTarget) * 100) : 0;

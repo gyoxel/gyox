@@ -5,8 +5,8 @@ import { PageHeader } from "@/components/page-header";
 import { HeaderAdd } from "@/components/header-add";
 import { AddLink } from "@/components/add-link";
 import { CreditCard } from "@/components/credit-card";
-import { getCreditEndMonth, getCreditRealState, getExpenseDisplayColor } from "@/lib/engine";
-import { compareMonths, todayMonth } from "@/lib/date";
+import { getCreditRealState, getExpenseDisplayColor } from "@/lib/engine";
+import { todayMonth } from "@/lib/date";
 
 export const dynamic = "force-dynamic";
 
@@ -19,20 +19,15 @@ export default async function CreditsPage() {
     getAllDarets(),
   ]);
   const categoryEmoji = new Map(categories.map((c) => [c.id, c.emoji]));
-  // Soonest end first; finished credits last.
+  // The last added on top; finished credits last.
   const current = todayMonth();
   const credits = expenses
     .filter((e) => e.type === "credit")
     .map((e) => ({ e, state: getCreditRealState(e, payments, current) }))
-    .sort((a, b) => {
-      const da = a.state.status === "completed" ? 1 : 0;
-      const db = b.state.status === "completed" ? 1 : 0;
-      if (da !== db) return da - db;
-      const ea = a.state.projectedEndMonth ?? getCreditEndMonth(a.e);
-      const eb = b.state.projectedEndMonth ?? getCreditEndMonth(b.e);
-      if (!ea || !eb) return ea ? -1 : eb ? 1 : 0;
-      return compareMonths(ea, eb);
-    })
+    .sort(
+      (a, b) =>
+        Number(a.state.status === "completed") - Number(b.state.status === "completed") || b.e.createdAt.localeCompare(a.e.createdAt),
+    )
     .map(({ e }) => e);
 
   return (
