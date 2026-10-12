@@ -10,7 +10,7 @@ const TIME_ZONE = "Africa/Casablanca";
 /**
  * Accueil's own header, in the app's colour (the browser's bar too): the
  * logo (tap: refresh) and name with Bonjour / Bonsoir, today's date as a small calendar
- * tile, and settings.
+ * tile (tap: the Calendrier), and settings.
  */
 export function HomeHeader() {
   const now = new Date();
@@ -29,15 +29,17 @@ export function HomeHeader() {
             GX <span className="font-semibold text-white/85">Salaire</span>
           </h1>
         </div>
-        <span
-          aria-label={part({ weekday: "long", day: "numeric", month: "long" })}
-          className="flex w-11 shrink-0 flex-col items-center overflow-hidden rounded-xl bg-white text-center shadow-sm"
+        <Link
+          href="/calendar"
+          prefetch
+          aria-label={`Calendrier · ${part({ weekday: "long", day: "numeric", month: "long" })}`}
+          className="flex w-11 shrink-0 flex-col items-center overflow-hidden rounded-xl bg-white text-center shadow-sm transition-transform active:scale-95"
         >
           <span className="w-full bg-gradient-to-r from-rose-400 to-pink-500 text-[9px] font-bold uppercase leading-[14px] text-white">
             {part({ month: "short" }).replace(".", "")}
           </span>
           <span className="text-base font-bold leading-[22px] text-slate-900">{part({ day: "numeric" })}</span>
-        </span>
+        </Link>
         <Link href="/settings" prefetch aria-label="Paramètres" className={HEADER_BUTTON}>
           <Settings className="h-[18px] w-[18px]" />
         </Link>
