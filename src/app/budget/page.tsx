@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Check, ChevronRight, Clock } from "lucide-react";
 
 import { monthFromSearchParams, monthKey, monthLabelFr, monthLabelShortFr, todayMonth } from "@/lib/date";
-import { getEffectiveEndMonth, getMonthPaymentStatus, getMonthSummary } from "@/lib/engine";
+import { getEffectiveEndMonth, getMonthPaymentStatus, getMonthSummary, lastPaidAt } from "@/lib/engine";
 import { METHOD_META } from "@/lib/payment-method";
 import { MonthSwitcher } from "@/components/month-switcher";
 import { PageHeader } from "@/components/page-header";
@@ -74,6 +74,8 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
   const paidCount = rows.filter((r) => r.status === "paid").length;
   const percent = total > 0 ? Math.round((paid / total) * 100) : 0;
 
+  const order = (r: Row) => (r.status === "paid" ? lastPaidAt(r.expense.id, payments, key) || r.expense.createdAt : r.expense.createdAt);
+
   // Grouped by category, in the categories' own order; uncategorized last.
   const groups = [
     ...categories.map((c) => ({ id: c.id, label: c.name, emoji: c.emoji })),
@@ -82,8 +84,8 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
     .map((g) => {
       const list = rows
         .filter((r) => (g.id ? r.expense.categoryId === g.id : !r.expense.categoryId || !categoryEmoji.has(r.expense.categoryId)))
-        // The last added on top.
-        .sort((a, b) => b.expense.createdAt.localeCompare(a.expense.createdAt));
+        // The last added or ticked paid on top.
+        .sort((a, b) => order(b).localeCompare(order(a)));
       return { ...g, list, subtotal: list.reduce((s, r) => s + r.amount, 0) };
     })
     .filter((g) => g.list.length > 0);
