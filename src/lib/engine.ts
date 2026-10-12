@@ -586,3 +586,18 @@ export function getPaidThisMonth(expenses: Expense[], payments: Payment[], curre
     .reduce((s, p) => s + p.amountPaid, 0);
   return round2(total);
 }
+
+/**
+ * When an expense was last ticked paid for month `key` (else at all): orders
+ * the paid ones, the last ticked on top. "" when never paid.
+ */
+export function lastPaidAt(expenseId: string, payments: Payment[], key: string): string {
+  let month = "";
+  let any = "";
+  for (const p of payments) {
+    if (p.expenseId !== expenseId || p.amountPaid <= 0) continue;
+    if (p.paidAt > any) any = p.paidAt;
+    if (p.monthKey === key && p.paidAt > month) month = p.paidAt;
+  }
+  return month || any;
+}

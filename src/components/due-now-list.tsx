@@ -6,7 +6,7 @@ import { flushPendingRefresh, trackMutation } from "@/lib/use-refresh-data";
 import Link from "next/link";
 import { Check, ChevronLeft, ChevronRight, Plus, PartyPopper } from "lucide-react";
 import { addMonths, monthKey as toMonthKey, monthLabelFr, monthLabelShortFr, type MonthId } from "@/lib/date";
-import { getAmountForMonth, getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, getMonthLedgerItems, type DisplayColor } from "@/lib/engine";
+import { getAmountForMonth, getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, getMonthLedgerItems, lastPaidAt, type DisplayColor } from "@/lib/engine";
 import type { Expense, Payment, PaymentMethod } from "@/lib/types";
 import { toast } from "sonner";
 import { METHOD_META } from "@/lib/payment-method";
@@ -110,10 +110,13 @@ export function DueNowList({
 
   const emojiById = useMemo(() => new Map(Object.entries(categoryEmoji)), [categoryEmoji]);
   const items = useMemo(() => {
+    const key = toMonthKey(viewMonth);
+    // To pay first, the last added on top; then paid, the last ticked on top.
+    const order = (item: { expense: Expense; paid: boolean }) =>
+      item.paid ? lastPaidAt(item.expense.id, localPayments, key) : item.expense.createdAt;
     return getMonthLedgerItems(expenses, localPayments, viewMonth, currentMonth)
       .map((item) => ({ ...item, color: getExpenseDisplayColor(item.expense) }))
-      // To pay first, then paid; in each, the last added on top.
-      .sort((a, b) => Number(a.paid) - Number(b.paid) || b.expense.createdAt.localeCompare(a.expense.createdAt));
+      .sort((a, b) => Number(a.paid) - Number(b.paid) || order(b).localeCompare(order(a)));
   }, [expenses, localPayments, viewMonth, currentMonth]);
 
   function goMonth(next: MonthId) {
