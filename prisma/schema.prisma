@@ -43,17 +43,21 @@ model Expense {
   createdAt           String
   updatedAt           String
 
-  category     Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  payments     Payment[]
-  daret        Daret?
+  category       Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  payments       Payment[]
+  daret          Daret?
   /// A goal deposit recorded as this (paid, one-time) expense.
-  goalDeposits GoalDeposit[]
+  goalDeposits   GoalDeposit[]
   /// A credit's money received when it was taken.
-  incomes      Income[]
+  incomes        Income[]
   /// Money put into the savings (Épargne), shown in Dépenses.
-  savingsMove  SavingsMove?
+  savingsMove    SavingsMove?
   /// Money lent (Prêts), shown in Dépenses.
-  loan         Loan?
+  loan           Loan?
+  /// The budget whose amount this expense carries (taken when ticked).
+  budget         Budget?       @relation("BudgetExpense")
+  /// A budget's month spent past its amount ("<name> +").
+  budgetOverflow BudgetMonth?  @relation("BudgetOverflow")
 
   /// Whose it is (see lib/user-scope.ts: every query is scoped to the
   /// signed-in user).
@@ -343,6 +347,8 @@ model Income {
   savingsMove   SavingsMove?
   /// A loan's repayment received, shown in Revenus.
   loanRepayment LoanRepayment?
+  /// What was left of a budget's month ("<name> - Reste").
+  budgetReste   BudgetMonth?
 
   /// Whose it is (see lib/user-scope.ts: every query is scoped to the
   /// signed-in user).
@@ -493,6 +499,79 @@ model User {
   savingsMoves     SavingsMove[]
   loans            Loan[]
   loanRepayments   LoanRepayment[]
+  budgets          Budget[]
+  budgetEntries    BudgetEntry[]
+  budgetMonths     BudgetMonth[]
 
   @@map("users")
+}
+
+/// Budgets: an amount for something (transport…) whose spending is noted day
+/// by day. Its expense carries the amount: ticked, it leaves the Solde all at
+/// once, and what's noted inside it doesn't count again. Spent past it, the
+/// difference is one expense "<name> +" for the month; what's left when the
+/// month is over comes back as an income "<name> - Reste" the next month.
+model Budget {
+  id        String @id @default(uuid())
+  /// Its expense: name, emoji, amount, recurrence (like any expense).
+  expenseId String @unique
+  createdAt String
+
+  expense Expense       @relation("BudgetExpense", fields: [expenseId], references: [id], onDelete: Cascade)
+  entries BudgetEntry[]
+  months  BudgetMonth[]
+
+  /// Whose it is (see lib/user-scope.ts: every query is scoped to the
+  /// signed-in user).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("budgets")
+}
+
+/// What was spent from a budget, one line a time (e.g. 20 DH of taxi).
+model BudgetEntry {
+  id        String  @id @default(uuid())
+  budgetId  String
+  /// "YYYY-MM-DD"
+  date      String
+  amount    Float
+  note      String?
+  /// "cash" / "card": how it's paid when it goes past the budget.
+  method    String  @default("cash")
+  createdAt String
+
+  budget Budget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  /// Whose it is (see lib/user-scope.ts).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([budgetId])
+  @@map("budget_entries")
+}
+
+/// A budget's month: the expense of what went past it, the income of what
+/// was left. Kept in step by lib/budgets-repo.ts (reconcileBudget).
+model BudgetMonth {
+  id                String  @id @default(uuid())
+  budgetId          String
+  /// "YYYY-MM"
+  monthKey          String
+  overflowExpenseId String? @unique
+  resteIncomeId     String? @unique
+
+  budget          Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  overflowExpense Expense? @relation("BudgetOverflow", fields: [overflowExpenseId], references: [id], onDelete: SetNull)
+  resteIncome     Income?  @relation(fields: [resteIncomeId], references: [id], onDelete: SetNull)
+
+  /// Whose it is (see lib/user-scope.ts).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([budgetId, monthKey])
+  @@index([userId])
+  @@map("budget_months")
 }

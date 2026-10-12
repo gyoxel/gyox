@@ -190,6 +190,31 @@ const backupSchema = z.object({
       }),
     )
     .optional(),
+  budgets: z.array(z.object({ id: z.string().min(1), expenseId: z.string().min(1), createdAt: z.string() })).optional(),
+  budgetEntries: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        budgetId: z.string().min(1),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        amount: z.number().positive(),
+        note: z.string().nullable(),
+        method: z.enum(["cash", "card"]).default("cash"),
+        createdAt: z.string(),
+      }),
+    )
+    .optional(),
+  budgetMonths: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        budgetId: z.string().min(1),
+        monthKey: z.string().regex(/^\d{4}-\d{2}$/),
+        overflowExpenseId: z.string().nullable(),
+        resteIncomeId: z.string().nullable(),
+      }),
+    )
+    .optional(),
 });
 
 export async function POST(req: NextRequest) {

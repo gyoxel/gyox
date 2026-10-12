@@ -43,7 +43,7 @@ const RIGHT_ITEMS = [
 ];
 
 // Pages opened from the Menu tab keep it highlighted.
-const MENU_PATHS = ["/menu", "/daret", "/goals", "/calendar", "/stats", "/categories", "/salary", "/incomes", "/solde", "/epargne", "/prets", "/settings", "/profil", "/admin"];
+const MENU_PATHS = ["/menu", "/budgets", "/daret", "/goals", "/calendar", "/stats", "/categories", "/salary", "/incomes", "/solde", "/epargne", "/prets", "/settings", "/profil", "/admin"];
 
 // Fan-out positions (px) of each option's circle center relative to the
 // + button's center: left, top, right — like a radial speed-dial.
@@ -219,8 +219,8 @@ function AppBar({ pathname }: { pathname: string }) {
     href === "/"
       ? current === "/"
       : href === "/menu"
-        ? MENU_PATHS.some((p) => current.startsWith(p))
-        : current.startsWith(href);
+        ? MENU_PATHS.some((p) => current === p || current.startsWith(`${p}/`))
+        : current === href || current.startsWith(`${href}/`);
 
   function toggle() {
     setOpenedAt(pathname);

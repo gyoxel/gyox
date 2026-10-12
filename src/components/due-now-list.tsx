@@ -18,7 +18,6 @@ import { displayIcon } from "@/lib/category";
 
 const SWIPE_THRESHOLD_PX = 40;
 
-const COLOR_RANK: Record<DisplayColor, number> = { orange: 0, red: 1, blue: 2 };
 
 /** Icon tile tinted like the expense's colour (permanent, temporary, credit). */
 const TILE_CLASS: Record<DisplayColor, string> = {
@@ -113,9 +112,8 @@ export function DueNowList({
   const items = useMemo(() => {
     return getMonthLedgerItems(expenses, localPayments, viewMonth, currentMonth)
       .map((item) => ({ ...item, color: getExpenseDisplayColor(item.expense) }))
-      .sort((a, b) => b.amount - a.amount)
-      .sort((a, b) => COLOR_RANK[a.color] - COLOR_RANK[b.color])
-      .sort((a, b) => Number(a.paid) - Number(b.paid));
+      // To pay first, then paid; in each, the last added on top.
+      .sort((a, b) => Number(a.paid) - Number(b.paid) || b.expense.createdAt.localeCompare(a.expense.createdAt));
   }, [expenses, localPayments, viewMonth, currentMonth]);
 
   function goMonth(next: MonthId) {

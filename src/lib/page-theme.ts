@@ -5,6 +5,7 @@ import { SIMPLE_HEADER } from "./theme";
 export const HOME_COLOR = "#019c86";
 
 const PAGE_COLORS: [prefix: string, color: string][] = [
+  ["/budgets", "#c026d3"],
   ["/budget", "#e11d48"],
   ["/expenses", "#e11d48"],
   ["/credits", "#2563eb"],
