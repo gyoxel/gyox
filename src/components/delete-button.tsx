@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 
 /** Round red bin, in the page header. */
 export const DELETE_ICON_BUTTON =
-  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-500/15 text-rose-300 ring-1 ring-rose-300/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] transition-transform active:scale-95";
+  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-600 ring-1 ring-rose-500/15 transition-transform active:scale-95 dark:bg-rose-500/15 dark:text-rose-300 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] dark:ring-rose-300/25";
 
 /**
  * Deletes something after a confirmation: the red bin in the page header

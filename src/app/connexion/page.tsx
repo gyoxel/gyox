@@ -1,10 +1,8 @@
 import Link from "next/link";
 import { CalendarCheck, HandCoins, ShieldCheck, Wallet } from "lucide-react";
-import { ThemeColor } from "@/components/theme-color";
 import { GoogleIcon } from "@/components/google-icon";
 import { ForgetOnMount } from "@/components/forget-on-mount";
 import { LoginBackdrop } from "@/components/login-backdrop";
-import { HEADER_COLOR } from "@/lib/theme";
 import { safeNext } from "@/lib/google-oauth";
 
 export const metadata = { title: "GX Salaire · Ton budget du mois" };
@@ -33,7 +31,6 @@ export default async function ConnexionPage({ searchParams }: PageProps<"/connex
 
   return (
     <main className="relative -mb-28 flex min-h-dvh flex-col overflow-hidden bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-900 px-6 pb-8 pt-14 text-white">
-      <ThemeColor color={HEADER_COLOR} />
       <ForgetOnMount />
       <LoginBackdrop />
       <div className="relative flex flex-col items-center text-center">

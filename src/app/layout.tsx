@@ -53,7 +53,7 @@ export const viewport: Viewport = {
   interactiveWidget: "resizes-content",
   // No themeColor here: Next would put its meta back on every navigation,
   // and the phone shows that colour for a frame. THEME_COLOR_BOOT_SCRIPT
-  // adds the page's own colour instead, and ThemeColor keeps it.
+  // adds the header's colour instead, and ThemeColorKeeper keeps it.
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

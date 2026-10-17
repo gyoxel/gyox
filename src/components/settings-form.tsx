@@ -213,23 +213,30 @@ function RowIcon({ className, children }: { className: string; children: React.R
   );
 }
 
+const NIGHT_PREVIEW =
+  "radial-gradient(120% 70% at 0% 0%, #3b2a7a 0%, transparent 60%), radial-gradient(100% 70% at 100% 0%, #0e5a73 0%, transparent 60%), #070c19";
+
 /** A tiny phone screen in that theme (system: half light, half dark;
  *  simple: grey header instead of the night one). */
 function ThemePreview({ kind, simple }: { kind: ThemeBase; simple: boolean }) {
   const screen = (dark: boolean) => (
     <span
-      className={cn(
-        "flex h-full flex-1 flex-col gap-1 p-1.5",
-        dark ? (simple ? "bg-slate-900" : "bg-[radial-gradient(120%_70%_at_0%_0%,#3b2a7a_0%,transparent_60%),radial-gradient(100%_70%_at_100%_0%,#0e5a73_0%,transparent_60%),#070c19]") : "bg-slate-50",
-      )}
+      className={cn("flex h-full flex-1 flex-col gap-1 p-1.5", dark ? "bg-slate-900" : "bg-slate-50")}
+      style={dark && !simple ? { background: NIGHT_PREVIEW } : undefined}
     >
+      <span className={cn("h-2.5 rounded", simple ? (dark ? "bg-slate-700" : "bg-slate-300") : dark ? "bg-white/10" : "bg-white shadow-sm")} />
       <span
         className={cn(
           "h-3 rounded",
-          simple ? (dark ? "bg-slate-700" : "bg-slate-300") : "bg-[linear-gradient(135deg,#6d4bd8,#1d6f99_60%,#0f1733)]",
+          simple
+            ? dark
+              ? "bg-slate-800"
+              : "bg-white shadow-sm"
+            : dark
+              ? "bg-gradient-to-r from-violet-600 via-sky-800 to-slate-900"
+              : "bg-gradient-to-r from-sky-500 via-sky-600 to-violet-600",
         )}
       />
-      <span className={cn("h-2 rounded", dark ? "bg-white/10" : "bg-white shadow-sm")} />
       <span className={cn("h-2 rounded", dark ? "bg-white/10" : "bg-white shadow-sm")} />
       <span className={cn("h-2 w-2/3 rounded", dark ? "bg-white/10" : "bg-white shadow-sm")} />
     </span>

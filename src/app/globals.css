@@ -327,9 +327,10 @@ body {
 }
 
 /* ------------------------------------------------------------------------
-   Premium look (any theme but "simple"): a deep night background with soft
-   aurora light, glass surfaces, one header for every page, every hero card
-   on the same night gradient.
+   Premium look (any theme but "simple"), one header for every page and
+   every hero card alike — each mode its own way: light is airy (white glass
+   header, heroes on the azure → iris gradient), dark is the night (aurora
+   background, glass surfaces, heroes on the night gradient).
    ------------------------------------------------------------------------ */
 :root {
   --gx-night: #070c19;
@@ -337,6 +338,10 @@ body {
   --gx-glass-strong: rgb(255 255 255 / 0.09);
   --gx-line: rgb(255 255 255 / 0.085);
   --gx-line-strong: rgb(255 255 255 / 0.14);
+  --gx-hero-light:
+    radial-gradient(110% 90% at 0% -10%, rgb(255 255 255 / 0.16), transparent 55%),
+    radial-gradient(90% 80% at 110% 110%, rgb(139 92 246 / 0.35), transparent 60%),
+    linear-gradient(135deg, var(--gx-azure-500) 0%, var(--gx-azure-600) 40%, var(--gx-iris-600) 100%);
   --gx-hero:
     radial-gradient(120% 85% at 8% -12%, rgb(139 92 246 / 0.55), transparent 58%),
     radial-gradient(95% 95% at 108% 6%, rgb(34 211 238 / 0.42), transparent 62%),
@@ -390,23 +395,30 @@ body {
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 12px 32px -18px rgb(0 0 0 / 0.7);
 }
 
-/* Hero cards (white text on a gradient): all on the same night gradient,
-   lit violet and cyan — whatever colour the page had. */
+/* Hero cards (white text on a gradient): all alike, whatever colour the
+   page had — azure → iris in light, the night lit violet and cyan in dark. */
 :root:not(.simple) .text-white[class*="bg-gradient-to"]:is([class*="rounded-3xl"], [class*="rounded-b-"], [class^="px-"], [class*=" px-"]) {
+  background-image: var(--gx-hero-light) !important;
+  border: 1px solid rgb(255 255 255 / 0.25);
+  box-shadow: 0 22px 40px -22px color-mix(in oklab, var(--gx-azure-600) 70%, transparent), inset 0 1px 0 rgb(255 255 255 / 0.3) !important;
+}
+:root.dark:not(.simple) .text-white[class*="bg-gradient-to"]:is([class*="rounded-3xl"], [class*="rounded-b-"], [class^="px-"], [class*=" px-"]) {
   background-image: var(--gx-hero) !important;
-  border: 1px solid rgb(255 255 255 / 0.1);
+  border-color: rgb(255 255 255 / 0.1);
   box-shadow: 0 24px 48px -24px rgb(2 6 23 / 0.75), inset 0 1px 0 rgb(255 255 255 / 0.1) !important;
 }
 
-/* The one header of every page: night glass, the page showing through. */
+/* The one header of every page: glass, the page showing through — white
+   in light, night in dark. */
 .gx-header {
-  background-color: rgb(9 14 30 / 0.88);
-  -webkit-backdrop-filter: blur(22px) saturate(160%);
-  backdrop-filter: blur(22px) saturate(160%);
-  box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.06), 0 10px 30px -18px rgb(2 6 23 / 0.6);
+  background-color: rgb(255 255 255 / 0.78);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  box-shadow: inset 0 -1px 0 rgb(15 23 42 / 0.06), 0 10px 30px -20px rgb(15 23 42 / 0.25);
 }
 .dark .gx-header {
   background-color: rgb(6 10 20 / 0.62);
+  box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.06), 0 10px 30px -18px rgb(2 6 23 / 0.6);
 }
 
 /* Floating glass bar at the bottom. */

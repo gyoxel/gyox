@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { Settings } from "lucide-react";
 import { HEADER_BUTTON } from "@/components/header-button";
-import { ThemeColor } from "@/components/theme-color";
 import { RefreshLogo } from "@/components/refresh-logo";
-import { HEADER_COLOR } from "@/lib/theme";
 
 const TIME_ZONE = "Africa/Casablanca";
 
@@ -19,26 +17,25 @@ export function HomeHeader() {
   const part = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("fr-FR", { timeZone: TIME_ZONE, ...o }).format(now);
 
   return (
-    <header data-tone className="gx-header sticky top-0 z-30 rounded-b-[28px] px-4 pb-3 pt-3 text-white">
-      <ThemeColor color={HEADER_COLOR} />
+    <header data-tone className="gx-header sticky top-0 z-30 rounded-b-[28px] px-4 pb-3 pt-3 text-slate-900 dark:text-white">
       <div className="flex h-12 items-center gap-3">
         <RefreshLogo />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">{greeting} 👋</p>
+          <p className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-white/60">{greeting} 👋</p>
           <h1 className="truncate text-xl font-extrabold tracking-tight">
-            GX <span className="font-semibold text-white/85">Salaire</span>
+            GX <span className="font-semibold text-slate-600 dark:text-white/85">Salaire</span>
           </h1>
         </div>
         <Link
           href="/calendar"
           prefetch
           aria-label={`Calendrier · ${part({ weekday: "long", day: "numeric", month: "long" })}`}
-          className="flex w-11 shrink-0 flex-col items-center overflow-hidden rounded-2xl bg-white/10 text-center ring-1 ring-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-transform active:scale-95"
+          className="flex w-11 shrink-0 flex-col items-center overflow-hidden rounded-2xl bg-white text-center shadow-sm ring-1 ring-slate-900/[0.06] transition-transform active:scale-95 dark:bg-white/10 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] dark:ring-white/15"
         >
-          <span className="w-full pt-1 text-[9px] font-bold uppercase leading-[12px] tracking-[0.12em] text-sky-300">
+          <span className="w-full pt-1 text-[9px] font-bold uppercase leading-[12px] tracking-[0.12em] text-sky-600 dark:text-sky-300">
             {part({ month: "short" }).replace(".", "")}
           </span>
-          <span className="pb-1 text-base font-bold leading-[20px] text-white">{part({ day: "numeric" })}</span>
+          <span className="pb-1 text-base font-bold leading-[20px] text-slate-900 dark:text-white">{part({ day: "numeric" })}</span>
         </Link>
         <Link href="/settings" prefetch aria-label="Paramètres" className={HEADER_BUTTON}>
           <Settings className="h-[18px] w-[18px]" />
