@@ -25,7 +25,7 @@ export default async function HomePage() {
       loanId: loan.id,
       name: loan.name,
       slot: s.slot,
-      amount: s.amount,
+      amount: s.left,
       monthLabel: monthLabelFr(s.month),
     })),
   );

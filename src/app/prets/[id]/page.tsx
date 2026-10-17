@@ -63,62 +63,62 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
           <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Remboursements</h2>
           <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
             {state.slots.map((s) => {
-              const isDue = !s.repayment && compareMonths(s.month, current) <= 0;
+              const isDue = s.open && compareMonths(s.month, current) <= 0;
+              const full = !s.open && s.received > 0 && s.received >= s.amount - 0.005;
               return (
-                <li key={s.slot} className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 first:border-t-0 dark:border-slate-800">
+                <li key={s.slot} className="flex items-start gap-3 border-t border-slate-100 px-4 py-3 first:border-t-0 dark:border-slate-800">
                   <span
                     className={cn(
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold",
-                      s.repayment
+                      "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold",
+                      full
                         ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50"
                         : isDue
                           ? "bg-amber-50 text-amber-600 dark:bg-amber-950/50"
-                          : "bg-slate-100 text-slate-400 dark:bg-slate-800",
+                          : !s.open
+                            ? "bg-slate-100 text-slate-500 dark:bg-slate-800"
+                            : "bg-slate-100 text-slate-400 dark:bg-slate-800",
                     )}
                   >
-                    {s.repayment ? <Check className="h-4 w-4" /> : isDue ? <Clock className="h-4 w-4" /> : s.slot}
+                    {full ? <Check className="h-4 w-4" /> : isDue ? <Clock className="h-4 w-4" /> : s.slot}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium capitalize text-slate-800 dark:text-slate-100">{monthLabelFr(s.month)}</span>
-                    <span className="block text-[11px] text-slate-400">
-                      {s.repayment ? (
-                        <>
-                          Reçu le {DAY.format(new Date(`${s.repayment.date}T12:00:00`))} · {METHOD_META[s.repayment.method].emoji}{" "}
-                          {METHOD_META[s.repayment.method].label} ·{" "}
-                          <EditRepayment
-                            loanId={loan.id}
-                            slot={s.slot}
-                            expected={s.amount}
-                            amount={s.repayment.amount}
-                            method={s.repayment.method}
-                          />{" "}
-                          · <CancelRepayment loanId={loan.id} slot={s.slot} />
-                        </>
-                      ) : isDue ? (
-                        "Tu l'as reçu ?"
-                      ) : (
-                        "À venir"
-                      )}
+                    <span className="flex items-baseline justify-between gap-2">
+                      <span className="text-sm font-medium capitalize text-slate-800 dark:text-slate-100">{monthLabelFr(s.month)}</span>
+                      <span
+                        className={cn(
+                          "text-sm font-semibold tabular-nums",
+                          s.open ? "text-slate-900 dark:text-white" : s.received > 0 ? "text-emerald-600" : "text-slate-400",
+                        )}
+                      >
+                        {s.open ? money(s.left) : `+${money(s.received)}`}
+                      </span>
                     </span>
+                    {s.repayments.map((r) => (
+                      <span key={r.id} className="block text-[11px] text-slate-400">
+                        +{money(r.amount)} le {DAY.format(new Date(`${r.date}T12:00:00`))} · {METHOD_META[r.method].emoji}{" "}
+                        {METHOD_META[r.method].label} ·{" "}
+                        <EditRepayment
+                          loanId={loan.id}
+                          repaymentId={r.id}
+                          expected={Math.round((s.amount - s.received + r.amount) * 100) / 100}
+                          amount={r.amount}
+                          method={r.method}
+                        />{" "}
+                        · <CancelRepayment loanId={loan.id} repaymentId={r.id} />
+                      </span>
+                    ))}
                     {slotNote(s, money) && (
                       <span className="mt-0.5 block text-[11px] font-medium text-amber-700 dark:text-amber-400">{slotNote(s, money)}</span>
                     )}
+                    {isDue ? (
+                      <span className="mt-2 flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">{s.received > 0 ? "Le reste, reçu ?" : "Tu l'as reçu ?"}</span>
+                        <ReceiveRepayment loanId={loan.id} slot={s.slot} amount={s.left} />
+                      </span>
+                    ) : (
+                      s.open && s.received === 0 && <span className="block text-[11px] text-slate-400">À venir</span>
+                    )}
                   </span>
-                  {isDue ? (
-                    <span className="flex flex-col items-end gap-1">
-                      <span className="text-sm font-semibold tabular-nums text-slate-900 dark:text-white">{money(s.amount)}</span>
-                      <ReceiveRepayment loanId={loan.id} slot={s.slot} amount={s.amount} />
-                    </span>
-                  ) : (
-                    <span
-                      className={cn(
-                        "text-sm font-semibold tabular-nums",
-                        s.repayment ? "text-emerald-600" : "text-slate-500 dark:text-slate-400",
-                      )}
-                    >
-                      {s.repayment ? `+${money(s.repayment.amount)}` : money(s.amount)}
-                    </span>
-                  )}
                 </li>
               );
             })}
@@ -139,12 +139,17 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
   );
 }
 
-/** What moved between months: given less / more, or carried from the month before. */
+/** Where a month stands, and what moved between months. */
 function slotNote(s: LoanSlot, money: (n: number) => string): string | null {
-  if (s.repayment) {
-    const diff = Math.round((s.amount - s.repayment.amount) * 100) / 100;
-    if (diff > 0) return `Reçu ${money(s.repayment.amount)} sur ${money(s.amount)} · ${money(diff)} passent au mois suivant`;
-    if (diff < 0) return `${money(-diff)} en avance sur les mois suivants`;
+  if (s.open && s.received > 0) return `Reçu ${money(s.received)} sur ${money(s.amount)} · reste ${money(s.left)} ce mois-ci`;
+  if (!s.open) {
+    const diff = Math.round((s.amount - s.received) * 100) / 100;
+    if (diff > 0.005) {
+      return s.received > 0
+        ? `Reçu ${money(s.received)} sur ${money(s.amount)} · ${money(diff)} passés au mois suivant`
+        : `Pas reçu · ${money(diff)} passés au mois suivant`;
+    }
+    if (diff < -0.005) return `${money(-diff)} en avance sur les mois suivants`;
     return null;
   }
   if (s.planned === 0) return "Ce qui reste des mois précédents";

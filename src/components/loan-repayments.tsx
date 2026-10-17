@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 function differenceHint(value: number, expected: number): string | null {
   if (!(value > 0) || Math.abs(value - expected) < 0.005) return null;
   return value < expected
-    ? `Il manque ${formatMoney(expected - value)} : ils passent au mois suivant.`
+    ? `Il reste ${formatMoney(expected - value)} à recevoir ce mois-ci. Pas reçus d'ici la fin du mois, ils passent au mois suivant.`
     : `${formatMoney(value - expected)} en avance : le mois suivant attend moins.`;
 }
 
@@ -69,16 +69,17 @@ export function ReceiveRepayment({
   );
 }
 
-/** "Modifier": what a received installment brought, and how. */
+/** "Modifier": what a repayment brought, and how. */
 export function EditRepayment({
   loanId,
-  slot,
+  repaymentId,
   expected,
   amount,
   method,
 }: {
   loanId: string;
-  slot: number;
+  repaymentId: string;
+  /** What its month expected besides this repayment. */
   expected: number;
   amount: number;
   method: PaymentMethod;
@@ -100,7 +101,7 @@ export function EditRepayment({
           initialAmount={amount}
           initialMethod={method}
           onClose={() => setOpen(false)}
-          submit={(value, m) => ({ method: "PATCH", path: `/api/loans/${loanId}/repayments/${slot}`, body: { amount: value, method: m } })}
+          submit={(value, m) => ({ method: "PATCH", path: `/api/loans/${loanId}/repayments/${repaymentId}`, body: { amount: value, method: m } })}
           done={() => "Remboursement modifié."}
         />
       )}
@@ -149,7 +150,7 @@ function RepaymentDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>Attendu ce mois-ci : {formatMoney(expected)}</DialogDescription>
+          <DialogDescription>Encore attendu ce mois-ci : {formatMoney(expected)}</DialogDescription>
         </DialogHeader>
         <form onSubmit={confirm} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
@@ -176,8 +177,8 @@ function RepaymentDialog({
   );
 }
 
-/** Undo a received installment (its income goes with it). */
-export function CancelRepayment({ loanId, slot }: { loanId: string; slot: number }) {
+/** Undo a repayment (its income goes with it). */
+export function CancelRepayment({ loanId, repaymentId }: { loanId: string; repaymentId: string }) {
   const [busy, setBusy] = useState(false);
   return (
     <button
@@ -185,7 +186,7 @@ export function CancelRepayment({ loanId, slot }: { loanId: string; slot: number
       disabled={busy}
       onClick={async () => {
         setBusy(true);
-        const res = await mutate({ method: "DELETE", path: `/api/loans/${loanId}/repayments/${slot}` });
+        const res = await mutate({ method: "DELETE", path: `/api/loans/${loanId}/repayments/${repaymentId}` });
         if (!res.ok) toast.error(await errorMessage(res));
         setBusy(false);
       }}

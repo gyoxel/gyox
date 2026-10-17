@@ -3,7 +3,7 @@
 // what move cash / the card in the Solde, and they go with the loan.
 import { randomUUID } from "crypto";
 import { prisma } from "./prisma";
-import { todayDateStr } from "./date";
+import { todayDateStr, todayMonth } from "./date";
 import { loanSlots, loanToRepay } from "./loans";
 import type { Loan, LoanRepayment, PaymentMethod } from "./types";
 
@@ -183,10 +183,11 @@ export async function deleteLoan(id: string): Promise<string[] | null> {
 }
 
 /**
- * Installment `slot` received in cash / on the card: an income in Revenus.
- * `amount`: what was given (default: what's expected that month); less
- * goes to the next month, more comes off it. Null: no such installment, or
- * already received.
+ * Money given back for month `slot`, in cash / on the card: an income in
+ * Revenus. `amount`: what was given (default: what that month still
+ * expects); a month can be given in several times, and what it lacks once
+ * it's over goes to the next one. Null: no such month, or not expecting
+ * anything any more.
  */
 export async function receiveRepayment(
   loanId: string,
@@ -195,9 +196,9 @@ export async function receiveRepayment(
   amount?: number,
 ): Promise<LoanRepayment | null> {
   const loan = await getLoan(loanId);
-  const target = loan && loanSlots(loan).find((s) => s.slot === slot);
-  if (!loan || !target || target.repayment) return null;
-  const value = amount ?? target.amount;
+  const target = loan && loanSlots(loan, todayMonth()).find((s) => s.slot === slot);
+  if (!loan || !target || !target.open) return null;
+  const value = amount ?? target.left;
   const now = new Date().toISOString();
   const date = todayDateStr();
   const incomeId = randomUUID();
@@ -222,13 +223,13 @@ export async function receiveRepayment(
   return mapRepayment(row);
 }
 
-/** Changes what an installment brought (its income follows). Null: not received. */
+/** Changes what a repayment brought (its income follows). Null: not found. */
 export async function updateRepayment(
   loanId: string,
-  slot: number,
+  repaymentId: string,
   input: { amount: number; method: PaymentMethod },
 ): Promise<LoanRepayment | null> {
-  const repayment = await prisma.loanRepayment.findUnique({ where: { loanId_slot: { loanId, slot } } });
+  const repayment = await prisma.loanRepayment.findFirst({ where: { id: repaymentId, loanId } });
   if (!repayment) return null;
   const [row] = await prisma.$transaction([
     prisma.loanRepayment.update({ where: { id: repayment.id }, data: input }),
@@ -237,9 +238,9 @@ export async function updateRepayment(
   return mapRepayment(row);
 }
 
-/** Undoes a received installment (its income goes with it). */
-export async function cancelRepayment(loanId: string, slot: number): Promise<boolean> {
-  const repayment = await prisma.loanRepayment.findUnique({ where: { loanId_slot: { loanId, slot } } });
+/** Undoes a repayment (its income goes with it). */
+export async function cancelRepayment(loanId: string, repaymentId: string): Promise<boolean> {
+  const repayment = await prisma.loanRepayment.findFirst({ where: { id: repaymentId, loanId } });
   if (!repayment) return false;
   if (repayment.incomeId) await prisma.income.deleteMany({ where: { id: repayment.incomeId } });
   await prisma.loanRepayment.deleteMany({ where: { id: repayment.id } });
