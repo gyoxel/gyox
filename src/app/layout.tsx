@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Toaster } from "sonner";
 import { BottomNav } from "@/components/bottom-nav";
+import { AppToaster } from "@/components/app-toaster";
 import { NavHistoryTracker } from "@/lib/nav-history";
 import { ThemeColorKeeper } from "@/components/theme-color";
 import { TabSwipe } from "@/components/tab-swipe";
@@ -63,14 +63,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT + THEME_COLOR_BOOT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-        <div id="page-root" className="mx-auto flex w-full max-w-lg flex-1 flex-col pb-28">
+        <div id="page-root" className="mx-auto flex w-full max-w-lg flex-1 flex-col pb-32">
           {children}
         </div>
         <BottomNav />
         <NavHistoryTracker />
         <ThemeColorKeeper />
         <TabSwipe />
-        <Toaster position="top-center" richColors />
+        <AppToaster />
         <ServiceWorkerRegister />
       </body>
     </html>

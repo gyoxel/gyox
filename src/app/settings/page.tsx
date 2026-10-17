@@ -27,7 +27,7 @@ export default async function SettingsPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={account.image} alt="" referrerPolicy="no-referrer" className="h-12 w-12 rounded-2xl object-cover shadow-sm" />
             ) : (
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#00c3ab] to-[#007261] text-lg font-bold shadow-sm">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-700 text-lg font-bold shadow-sm">
                 {name.charAt(0).toUpperCase()}
               </span>
             )}

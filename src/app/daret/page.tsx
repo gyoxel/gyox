@@ -33,7 +33,7 @@ export default async function DaretPage() {
       <PageHeader title="Daret" back action={<HeaderAdd href="/daret/new" label="Ajouter une daret" />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         {items.length > 0 && (
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-400 via-emerald-500 to-[#007261] px-5 py-4 text-white shadow-lg shadow-emerald-600/20 dark:shadow-none">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-400 via-emerald-500 to-emerald-700 px-5 py-4 text-white shadow-lg shadow-emerald-600/20 dark:shadow-none">
             <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
             <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">
               {nextPot ? "Prochaine daret à recevoir" : "Tes darets"}
@@ -61,7 +61,7 @@ export default async function DaretPage() {
           </div>
         )}
 
-        <AddLink href="/daret/new" label="Ajouter une daret" className="border-teal-200 text-[#007261] active:bg-teal-50 dark:border-teal-900 dark:text-teal-300 dark:active:bg-teal-950/30" />
+        <AddLink href="/daret/new" label="Ajouter une daret" className="border-teal-200 text-emerald-700 active:bg-teal-50 dark:border-teal-900 dark:text-teal-300 dark:active:bg-teal-950/30" />
 
         {items.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-slate-200 px-4 py-10 text-center dark:border-slate-700">

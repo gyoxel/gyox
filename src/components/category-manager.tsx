@@ -511,7 +511,7 @@ export function CategoryManager({
       />
 
       {orderChanged && !draggingId && (
-        <div className="sticky bottom-28 z-20 flex gap-2 rounded-2xl border border-violet-200 bg-white/95 p-2 shadow-lg backdrop-blur dark:border-violet-900 dark:bg-slate-900/95">
+        <div className="sticky bottom-28 z-20 flex gap-2 rounded-2xl border border-violet-200 bg-white/95 p-2 shadow-lg backdrop-blur dark:border-violet-900 dark:bg-[#10162a]/95">
           <Button type="button" variant="outline" className="flex-1" onClick={resetOrder} disabled={busy}>
             <RotateCcw className="h-4 w-4" />
             Annuler

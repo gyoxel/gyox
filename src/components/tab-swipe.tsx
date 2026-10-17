@@ -2,8 +2,6 @@
 
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { pageColor } from "@/lib/page-theme";
-import { mixColor, setSwipeColor } from "@/components/theme-color";
 
 /** The bottom bar's tabs, in order: swipe left → next, right → previous. */
 const TABS = ["/", "/budget", "/credits", "/menu"];
@@ -69,7 +67,7 @@ function snapshotCurrent(path: string) {
 /** Stand-in while a tab has no snapshot yet: its header and a skeleton. */
 function placeholder(path: string): string {
   const block = (h: string) => `<div class="${h} animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800/70"></div>`;
-  return `<div data-tone class="sticky top-0 z-30 flex h-[68px] items-center rounded-b-[28px] px-4 pb-3 pt-3 text-white" style="background-color:${pageColor(path)}"><h1 class="text-xl font-bold tracking-tight">${TITLES[path] ?? ""}</h1></div><div class="flex flex-col gap-4 px-4 py-5">${block("h-28")}${block("h-20")}${block("h-14")}${block("h-14")}${block("h-14")}</div>`;
+  return `<div data-tone class="gx-header sticky top-0 z-30 flex h-[68px] items-center rounded-b-[28px] px-4 pb-3 pt-3 text-white"><h1 class="text-xl font-bold tracking-tight">${TITLES[path] ?? ""}</h1></div><div class="flex flex-col gap-4 px-4 py-5">${block("h-28")}${block("h-20")}${block("h-14")}${block("h-14")}${block("h-14")}</div>`;
 }
 
 /** Loads the other tabs in a hidden frame, once per visit, to snapshot them
@@ -222,19 +220,10 @@ export function TabSwipe() {
       preview.current = box;
     };
 
-    /** The browser's bar between the two pages' colours, as far as the
-     *  page has slid (it's one colour: it can't be split like the page). */
-    const tint = (offset: number) => {
-      const path = neighbour(shownDir);
-      if (!shownDir || !path) return;
-      setSwipeColor(mixColor(pageColor(pathname), pageColor(path), Math.abs(offset) / window.innerWidth));
-    };
-
     const place = (offset: number) => {
       const w = window.innerWidth;
       page.style.transform = `translateX(${offset}px)`;
       if (preview.current) preview.current.style.transform = `translateX(${offset + shownDir * w}px)`;
-      tint(offset);
     };
 
     const onStart = (e: TouchEvent) => {
@@ -274,7 +263,6 @@ export function TabSwipe() {
         preview.current?.remove();
         preview.current = null;
         shownDir = 0;
-        setSwipeColor(null);
         page.style.transform = `translateX(${mx * 0.15}px)`;
       }
     };
@@ -288,14 +276,6 @@ export function TabSwipe() {
         preview.current.style.transition = ease;
         preview.current.style.transform = `translateX(${offset + shownDir * w}px)`;
       }
-      // The bar's colour follows the page as it slides.
-      const until = performance.now() + SLIDE_MS;
-      const follow = () => {
-        tint(new DOMMatrix(getComputedStyle(page).transform).m41);
-        if (performance.now() < until) requestAnimationFrame(follow);
-        else tint(offset);
-      };
-      requestAnimationFrame(follow);
       setTimeout(() => done?.(), SLIDE_MS);
     };
 
@@ -319,7 +299,6 @@ export function TabSwipe() {
           navigating.current = false;
           preview.current?.remove();
           preview.current = null;
-          setSwipeColor(null);
           page.style.transition = "";
           page.style.transform = "";
         }, 5000);
@@ -329,7 +308,6 @@ export function TabSwipe() {
       animateTo(0, () => {
         preview.current?.remove();
         preview.current = null;
-        setSwipeColor(null);
         page.style.transition = "";
         page.style.transform = "";
       });

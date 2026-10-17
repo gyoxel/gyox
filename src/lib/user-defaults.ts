@@ -12,7 +12,7 @@ export function defaultSettings() {
     currency: "MAD",
     savingsTarget: 0,
     startMonth: monthKey(todayMonth()),
-    theme: "system",
+    theme: "dark",
     payDay: 1,
     salaryReceivedMonth: null,
     salaryMethod: "card",

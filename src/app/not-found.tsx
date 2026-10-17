@@ -15,7 +15,7 @@ export default function NotFound() {
         <p className="text-sm text-slate-500 dark:text-slate-400">Elle a peut-être été supprimée.</p>
         <Link
           href="/"
-          className="mt-2 rounded-full bg-[#019c86] px-5 py-2.5 text-sm font-semibold text-white active:bg-[#007261]"
+          className="mt-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white active:bg-emerald-700"
         >
           Retour à l&apos;accueil
         </Link>

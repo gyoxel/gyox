@@ -13,10 +13,7 @@ import { METHOD_META } from "@/lib/payment-method";
 import { findPayment, getCreditRealState, getEffectiveEndMonth, getOccurrenceForMonth } from "@/lib/engine";
 import { compareMonths, monthKey, monthLabelFr, monthOfDateStr, monthsBetween, parseMonthKey, todayMonth, type MonthId } from "@/lib/date";
 import { PageHeader } from "@/components/page-header";
-import { CREDIT_COLOR, pageColor } from "@/lib/page-theme";
 
-const GOALS_COLOR = pageColor("/goals");
-const DARET_COLOR = pageColor("/daret");
 import { ExpenseEditor, type PaymentStatusInit, type RecurrenceInit } from "@/components/expense-editor";
 import { CreditEditor } from "@/components/credit-editor";
 import { MonthPayments } from "@/components/payment-parts";
@@ -51,7 +48,6 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
         <PageHeader
           title={expense.name}
           back
-          tone={GOALS_COLOR}
           action={<LockedDeleteIcon hint={`Ce versement vient de l'objectif « ${goal.name} » : supprime-le depuis le versement.`} />}
         />
         <main className="flex flex-col gap-5 px-4 py-5">
@@ -88,7 +84,6 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
     return (
       <LinkedSourcePage
         title={expense.name}
-        tone={pageColor("/epargne")}
         gradient="from-lime-400 via-green-500 to-emerald-700"
         eyebrow="Épargne 🐷"
         amount={formatMoney(expense.amount, settings.currency)}
@@ -107,7 +102,6 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
     return (
       <LinkedSourcePage
         title={expense.name}
-        tone={pageColor("/budgets")}
         gradient="from-fuchsia-400 via-purple-500 to-violet-700"
         eyebrow={overflowOf ? "Dépassement de budget" : "Budget 👛"}
         amount={formatMoney(expense.amount, settings.currency)}
@@ -132,7 +126,6 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
     return (
       <LinkedSourcePage
         title={expense.name}
-        tone={pageColor("/prets")}
         gradient="from-amber-400 via-orange-500 to-amber-700"
         eyebrow="Prêt 🤝"
         amount={formatMoney(expense.amount, settings.currency)}
@@ -153,11 +146,10 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
         <PageHeader
           title={expense.name}
           back
-          tone={DARET_COLOR}
           action={<LockedDeleteIcon hint={`Cette cotisation vient de la daret « ${expense.name} » : supprime-la depuis la daret.`} />}
         />
         <main className="flex flex-col gap-5 px-4 py-5">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-400 via-emerald-500 to-[#007261] p-5 text-white shadow-lg shadow-emerald-600/20 dark:shadow-none">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-400 via-emerald-500 to-emerald-700 p-5 text-white shadow-lg shadow-emerald-600/20 dark:shadow-none">
             <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
             <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Cotisation · daret</p>
             <p className="relative mt-1 text-4xl font-bold tabular-nums">
@@ -172,7 +164,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
             Cette cotisation vient de la daret « {expense.name} ». Tu peux la cocher ou la décocher dans tes dépenses ;
             pour la modifier ou la supprimer, c&apos;est depuis la daret.
           </p>
-          <Button asChild className="bg-[#019c86] text-white hover:bg-[#007261]">
+          <Button asChild className="bg-emerald-600 text-white hover:bg-emerald-700">
             <Link href={`/daret/${linkedDaret.id}`}>
               <Pencil className="h-4 w-4" />
               Modifier la daret
@@ -200,7 +192,6 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
       <PageHeader
         title={`Modifier · ${expense.name}`}
         back
-        tone={expense.type === "credit" ? CREDIT_COLOR : undefined}
         action={<DeleteButton variant="icon" {...expenseDelete(expense)} />}
       />
       <main className="flex flex-col gap-5 px-4 py-5">

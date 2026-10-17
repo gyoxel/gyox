@@ -5,7 +5,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f8fafc;
+  --background: #f3f5fa;
   --foreground: #0f172a;
 }
 
@@ -17,8 +17,261 @@
 }
 
 :root.dark {
-  --background: #020617;
+  --background: #070c19;
   --foreground: #f1f5f9;
+  color-scheme: dark;
+}
+
+/* GX palette: five families instead of Tailwind's fourteen hues, softer
+   than its defaults — every rose-*, sky-*, lime-*… class in the app takes
+   them (azure: brand and actions, iris: its companion, mint: money in /
+   paid, gold: loans / warnings, coral: money out / due). */
+:root {
+  --gx-azure-50: oklch(0.975 0.016 222);
+  --gx-azure-100: oklch(0.945 0.036 222);
+  --gx-azure-200: oklch(0.895 0.066 222);
+  --gx-azure-300: oklch(0.830 0.100 222);
+  --gx-azure-400: oklch(0.755 0.130 222);
+  --gx-azure-500: oklch(0.680 0.145 222);
+  --gx-azure-600: oklch(0.595 0.140 222);
+  --gx-azure-700: oklch(0.510 0.125 222);
+  --gx-azure-800: oklch(0.430 0.105 222);
+  --gx-azure-900: oklch(0.370 0.085 222);
+  --gx-azure-950: oklch(0.280 0.065 222);
+  --gx-iris-50: oklch(0.975 0.017 282);
+  --gx-iris-100: oklch(0.945 0.038 282);
+  --gx-iris-200: oklch(0.895 0.069 282);
+  --gx-iris-300: oklch(0.830 0.105 282);
+  --gx-iris-400: oklch(0.755 0.137 282);
+  --gx-iris-500: oklch(0.680 0.152 282);
+  --gx-iris-600: oklch(0.595 0.147 282);
+  --gx-iris-700: oklch(0.510 0.131 282);
+  --gx-iris-800: oklch(0.430 0.110 282);
+  --gx-iris-900: oklch(0.370 0.089 282);
+  --gx-iris-950: oklch(0.280 0.068 282);
+  --gx-mint-50: oklch(0.975 0.015 166);
+  --gx-mint-100: oklch(0.945 0.034 166);
+  --gx-mint-200: oklch(0.895 0.063 166);
+  --gx-mint-300: oklch(0.830 0.095 166);
+  --gx-mint-400: oklch(0.755 0.123 166);
+  --gx-mint-500: oklch(0.680 0.138 166);
+  --gx-mint-600: oklch(0.595 0.133 166);
+  --gx-mint-700: oklch(0.510 0.119 166);
+  --gx-mint-800: oklch(0.430 0.100 166);
+  --gx-mint-900: oklch(0.370 0.081 166);
+  --gx-mint-950: oklch(0.280 0.062 166);
+  --gx-gold-50: oklch(0.975 0.017 76);
+  --gx-gold-100: oklch(0.945 0.038 76);
+  --gx-gold-200: oklch(0.895 0.069 76);
+  --gx-gold-300: oklch(0.830 0.105 76);
+  --gx-gold-400: oklch(0.755 0.137 76);
+  --gx-gold-500: oklch(0.680 0.152 76);
+  --gx-gold-600: oklch(0.595 0.147 76);
+  --gx-gold-700: oklch(0.510 0.131 76);
+  --gx-gold-800: oklch(0.430 0.110 76);
+  --gx-gold-900: oklch(0.370 0.089 76);
+  --gx-gold-950: oklch(0.280 0.068 76);
+  --gx-coral-50: oklch(0.975 0.019 16);
+  --gx-coral-100: oklch(0.945 0.042 16);
+  --gx-coral-200: oklch(0.895 0.078 16);
+  --gx-coral-300: oklch(0.830 0.118 16);
+  --gx-coral-400: oklch(0.755 0.153 16);
+  --gx-coral-500: oklch(0.680 0.171 16);
+  --gx-coral-600: oklch(0.595 0.165 16);
+  --gx-coral-700: oklch(0.510 0.147 16);
+  --gx-coral-800: oklch(0.430 0.124 16);
+  --gx-coral-900: oklch(0.370 0.100 16);
+  --gx-coral-950: oklch(0.280 0.077 16);
+}
+
+@theme {
+  --color-sky-50: var(--gx-azure-50);
+  --color-sky-100: var(--gx-azure-100);
+  --color-sky-200: var(--gx-azure-200);
+  --color-sky-300: var(--gx-azure-300);
+  --color-sky-400: var(--gx-azure-400);
+  --color-sky-500: var(--gx-azure-500);
+  --color-sky-600: var(--gx-azure-600);
+  --color-sky-700: var(--gx-azure-700);
+  --color-sky-800: var(--gx-azure-800);
+  --color-sky-900: var(--gx-azure-900);
+  --color-sky-950: var(--gx-azure-950);
+  --color-blue-50: var(--gx-azure-50);
+  --color-blue-100: var(--gx-azure-100);
+  --color-blue-200: var(--gx-azure-200);
+  --color-blue-300: var(--gx-azure-300);
+  --color-blue-400: var(--gx-azure-400);
+  --color-blue-500: var(--gx-azure-500);
+  --color-blue-600: var(--gx-azure-600);
+  --color-blue-700: var(--gx-azure-700);
+  --color-blue-800: var(--gx-azure-800);
+  --color-blue-900: var(--gx-azure-900);
+  --color-blue-950: var(--gx-azure-950);
+  --color-cyan-50: var(--gx-azure-50);
+  --color-cyan-100: var(--gx-azure-100);
+  --color-cyan-200: var(--gx-azure-200);
+  --color-cyan-300: var(--gx-azure-300);
+  --color-cyan-400: var(--gx-azure-400);
+  --color-cyan-500: var(--gx-azure-500);
+  --color-cyan-600: var(--gx-azure-600);
+  --color-cyan-700: var(--gx-azure-700);
+  --color-cyan-800: var(--gx-azure-800);
+  --color-cyan-900: var(--gx-azure-900);
+  --color-cyan-950: var(--gx-azure-950);
+  --color-indigo-50: var(--gx-iris-50);
+  --color-indigo-100: var(--gx-iris-100);
+  --color-indigo-200: var(--gx-iris-200);
+  --color-indigo-300: var(--gx-iris-300);
+  --color-indigo-400: var(--gx-iris-400);
+  --color-indigo-500: var(--gx-iris-500);
+  --color-indigo-600: var(--gx-iris-600);
+  --color-indigo-700: var(--gx-iris-700);
+  --color-indigo-800: var(--gx-iris-800);
+  --color-indigo-900: var(--gx-iris-900);
+  --color-indigo-950: var(--gx-iris-950);
+  --color-violet-50: var(--gx-iris-50);
+  --color-violet-100: var(--gx-iris-100);
+  --color-violet-200: var(--gx-iris-200);
+  --color-violet-300: var(--gx-iris-300);
+  --color-violet-400: var(--gx-iris-400);
+  --color-violet-500: var(--gx-iris-500);
+  --color-violet-600: var(--gx-iris-600);
+  --color-violet-700: var(--gx-iris-700);
+  --color-violet-800: var(--gx-iris-800);
+  --color-violet-900: var(--gx-iris-900);
+  --color-violet-950: var(--gx-iris-950);
+  --color-purple-50: var(--gx-iris-50);
+  --color-purple-100: var(--gx-iris-100);
+  --color-purple-200: var(--gx-iris-200);
+  --color-purple-300: var(--gx-iris-300);
+  --color-purple-400: var(--gx-iris-400);
+  --color-purple-500: var(--gx-iris-500);
+  --color-purple-600: var(--gx-iris-600);
+  --color-purple-700: var(--gx-iris-700);
+  --color-purple-800: var(--gx-iris-800);
+  --color-purple-900: var(--gx-iris-900);
+  --color-purple-950: var(--gx-iris-950);
+  --color-fuchsia-50: var(--gx-iris-50);
+  --color-fuchsia-100: var(--gx-iris-100);
+  --color-fuchsia-200: var(--gx-iris-200);
+  --color-fuchsia-300: var(--gx-iris-300);
+  --color-fuchsia-400: var(--gx-iris-400);
+  --color-fuchsia-500: var(--gx-iris-500);
+  --color-fuchsia-600: var(--gx-iris-600);
+  --color-fuchsia-700: var(--gx-iris-700);
+  --color-fuchsia-800: var(--gx-iris-800);
+  --color-fuchsia-900: var(--gx-iris-900);
+  --color-fuchsia-950: var(--gx-iris-950);
+  --color-emerald-50: var(--gx-mint-50);
+  --color-emerald-100: var(--gx-mint-100);
+  --color-emerald-200: var(--gx-mint-200);
+  --color-emerald-300: var(--gx-mint-300);
+  --color-emerald-400: var(--gx-mint-400);
+  --color-emerald-500: var(--gx-mint-500);
+  --color-emerald-600: var(--gx-mint-600);
+  --color-emerald-700: var(--gx-mint-700);
+  --color-emerald-800: var(--gx-mint-800);
+  --color-emerald-900: var(--gx-mint-900);
+  --color-emerald-950: var(--gx-mint-950);
+  --color-green-50: var(--gx-mint-50);
+  --color-green-100: var(--gx-mint-100);
+  --color-green-200: var(--gx-mint-200);
+  --color-green-300: var(--gx-mint-300);
+  --color-green-400: var(--gx-mint-400);
+  --color-green-500: var(--gx-mint-500);
+  --color-green-600: var(--gx-mint-600);
+  --color-green-700: var(--gx-mint-700);
+  --color-green-800: var(--gx-mint-800);
+  --color-green-900: var(--gx-mint-900);
+  --color-green-950: var(--gx-mint-950);
+  --color-teal-50: var(--gx-mint-50);
+  --color-teal-100: var(--gx-mint-100);
+  --color-teal-200: var(--gx-mint-200);
+  --color-teal-300: var(--gx-mint-300);
+  --color-teal-400: var(--gx-mint-400);
+  --color-teal-500: var(--gx-mint-500);
+  --color-teal-600: var(--gx-mint-600);
+  --color-teal-700: var(--gx-mint-700);
+  --color-teal-800: var(--gx-mint-800);
+  --color-teal-900: var(--gx-mint-900);
+  --color-teal-950: var(--gx-mint-950);
+  --color-lime-50: var(--gx-mint-50);
+  --color-lime-100: var(--gx-mint-100);
+  --color-lime-200: var(--gx-mint-200);
+  --color-lime-300: var(--gx-mint-300);
+  --color-lime-400: var(--gx-mint-400);
+  --color-lime-500: var(--gx-mint-500);
+  --color-lime-600: var(--gx-mint-600);
+  --color-lime-700: var(--gx-mint-700);
+  --color-lime-800: var(--gx-mint-800);
+  --color-lime-900: var(--gx-mint-900);
+  --color-lime-950: var(--gx-mint-950);
+  --color-amber-50: var(--gx-gold-50);
+  --color-amber-100: var(--gx-gold-100);
+  --color-amber-200: var(--gx-gold-200);
+  --color-amber-300: var(--gx-gold-300);
+  --color-amber-400: var(--gx-gold-400);
+  --color-amber-500: var(--gx-gold-500);
+  --color-amber-600: var(--gx-gold-600);
+  --color-amber-700: var(--gx-gold-700);
+  --color-amber-800: var(--gx-gold-800);
+  --color-amber-900: var(--gx-gold-900);
+  --color-amber-950: var(--gx-gold-950);
+  --color-orange-50: var(--gx-gold-50);
+  --color-orange-100: var(--gx-gold-100);
+  --color-orange-200: var(--gx-gold-200);
+  --color-orange-300: var(--gx-gold-300);
+  --color-orange-400: var(--gx-gold-400);
+  --color-orange-500: var(--gx-gold-500);
+  --color-orange-600: var(--gx-gold-600);
+  --color-orange-700: var(--gx-gold-700);
+  --color-orange-800: var(--gx-gold-800);
+  --color-orange-900: var(--gx-gold-900);
+  --color-orange-950: var(--gx-gold-950);
+  --color-yellow-50: var(--gx-gold-50);
+  --color-yellow-100: var(--gx-gold-100);
+  --color-yellow-200: var(--gx-gold-200);
+  --color-yellow-300: var(--gx-gold-300);
+  --color-yellow-400: var(--gx-gold-400);
+  --color-yellow-500: var(--gx-gold-500);
+  --color-yellow-600: var(--gx-gold-600);
+  --color-yellow-700: var(--gx-gold-700);
+  --color-yellow-800: var(--gx-gold-800);
+  --color-yellow-900: var(--gx-gold-900);
+  --color-yellow-950: var(--gx-gold-950);
+  --color-rose-50: var(--gx-coral-50);
+  --color-rose-100: var(--gx-coral-100);
+  --color-rose-200: var(--gx-coral-200);
+  --color-rose-300: var(--gx-coral-300);
+  --color-rose-400: var(--gx-coral-400);
+  --color-rose-500: var(--gx-coral-500);
+  --color-rose-600: var(--gx-coral-600);
+  --color-rose-700: var(--gx-coral-700);
+  --color-rose-800: var(--gx-coral-800);
+  --color-rose-900: var(--gx-coral-900);
+  --color-rose-950: var(--gx-coral-950);
+  --color-red-50: var(--gx-coral-50);
+  --color-red-100: var(--gx-coral-100);
+  --color-red-200: var(--gx-coral-200);
+  --color-red-300: var(--gx-coral-300);
+  --color-red-400: var(--gx-coral-400);
+  --color-red-500: var(--gx-coral-500);
+  --color-red-600: var(--gx-coral-600);
+  --color-red-700: var(--gx-coral-700);
+  --color-red-800: var(--gx-coral-800);
+  --color-red-900: var(--gx-coral-900);
+  --color-red-950: var(--gx-coral-950);
+  --color-pink-50: var(--gx-coral-50);
+  --color-pink-100: var(--gx-coral-100);
+  --color-pink-200: var(--gx-coral-200);
+  --color-pink-300: var(--gx-coral-300);
+  --color-pink-400: var(--gx-coral-400);
+  --color-pink-500: var(--gx-coral-500);
+  --color-pink-600: var(--gx-coral-600);
+  --color-pink-700: var(--gx-coral-700);
+  --color-pink-800: var(--gx-coral-800);
+  --color-pink-900: var(--gx-coral-900);
+  --color-pink-950: var(--gx-coral-950);
 }
 
 /* Thème simple: the coloured headers, hero cards and tiles (white text on a
@@ -71,6 +324,116 @@
 
 body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* ------------------------------------------------------------------------
+   Premium look (any theme but "simple"): a deep night background with soft
+   aurora light, glass surfaces, one header for every page, every hero card
+   on the same night gradient.
+   ------------------------------------------------------------------------ */
+:root {
+  --gx-night: #070c19;
+  --gx-glass: rgb(255 255 255 / 0.055);
+  --gx-glass-strong: rgb(255 255 255 / 0.09);
+  --gx-line: rgb(255 255 255 / 0.085);
+  --gx-line-strong: rgb(255 255 255 / 0.14);
+  --gx-hero:
+    radial-gradient(120% 85% at 8% -12%, rgb(139 92 246 / 0.55), transparent 58%),
+    radial-gradient(95% 95% at 108% 6%, rgb(34 211 238 / 0.42), transparent 62%),
+    linear-gradient(158deg, #1a2448 0%, #0f1733 55%, #0a1126 100%);
+}
+
+/* The background: night, lit from the top corners (fixed, so it doesn't
+   move or repaint while scrolling). */
+:root:not(.simple) body {
+  background-color: var(--background);
+}
+:root:not(.simple) body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 38% at 12% -4%, rgb(167 139 250 / 0.18), transparent 70%),
+    radial-gradient(60% 34% at 100% 0%, rgb(56 189 248 / 0.16), transparent 70%);
+}
+:root.dark:not(.simple) body::before {
+  background:
+    radial-gradient(75% 42% at 10% -6%, rgb(124 58 237 / 0.34), transparent 70%),
+    radial-gradient(65% 40% at 102% 2%, rgb(34 211 238 / 0.24), transparent 70%),
+    radial-gradient(60% 40% at -10% 60%, rgb(20 184 166 / 0.09), transparent 70%),
+    radial-gradient(60% 40% at 110% 78%, rgb(99 102 241 / 0.11), transparent 70%),
+    radial-gradient(80% 50% at 50% 110%, rgb(14 165 233 / 0.12), transparent 70%);
+}
+
+/* Glass: in the dark, the app's surfaces (cards, rows, chips, fields) are
+   light glass over the night instead of flat slate. */
+.dark:not(.simple) :is([class~="dark:bg-slate-900"], [class*="dark:bg-slate-900/"]) {
+  background-color: transparent;
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.075), rgb(255 255 255 / 0.04));
+}
+.dark:not(.simple) [class*="dark:bg-slate-800"] {
+  background-color: var(--gx-glass-strong);
+}
+.dark:not(.simple) [class*="dark:border-slate-800"] {
+  border-color: var(--gx-line);
+}
+.dark:not(.simple) [class*="dark:border-slate-700"] {
+  border-color: var(--gx-line-strong);
+}
+.dark:not(.simple) :is([class*="dark:active:bg-slate-800"], [class*="dark:active:bg-slate-900"]):active {
+  background-color: rgb(255 255 255 / 0.1);
+}
+/* Cards: a hairline of light on their top edge. */
+.dark:not(.simple) [class~="dark:bg-slate-900"]:is([class*="rounded-3xl"], [class*="rounded-2xl"]) {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 12px 32px -18px rgb(0 0 0 / 0.7);
+}
+
+/* Hero cards (white text on a gradient): all on the same night gradient,
+   lit violet and cyan — whatever colour the page had. */
+:root:not(.simple) .text-white[class*="bg-gradient-to"]:is([class*="rounded-3xl"], [class*="rounded-b-"], [class^="px-"], [class*=" px-"]) {
+  background-image: var(--gx-hero) !important;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow: 0 24px 48px -24px rgb(2 6 23 / 0.75), inset 0 1px 0 rgb(255 255 255 / 0.1) !important;
+}
+
+/* The one header of every page: night glass, the page showing through. */
+.gx-header {
+  background-color: rgb(9 14 30 / 0.88);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(22px) saturate(160%);
+  box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.06), 0 10px 30px -18px rgb(2 6 23 / 0.6);
+}
+.dark .gx-header {
+  background-color: rgb(6 10 20 / 0.62);
+}
+
+/* Floating glass bar at the bottom. */
+.gx-dock {
+  background-color: rgb(255 255 255 / 0.86);
+  border: 1px solid rgb(15 23 42 / 0.06);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  backdrop-filter: blur(30px) saturate(180%);
+  box-shadow: 0 18px 40px -16px rgb(15 23 42 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.6);
+}
+.dark .gx-dock {
+  background-color: rgb(14 20 40 / 0.8);
+  border-color: rgb(255 255 255 / 0.1);
+  box-shadow: 0 22px 44px -14px rgb(0 0 0 / 0.75), inset 0 1px 0 rgb(255 255 255 / 0.08);
+}
+
+/* Glass that blurs what's behind it (dialogs, floating buttons). */
+.gx-glass-blur {
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+}
+
+/* The main action: azure, glowing. */
+.gx-cta {
+  background-image: linear-gradient(135deg, var(--gx-azure-300) 0%, var(--gx-azure-500) 45%, var(--gx-iris-600) 100%);
+  color: #fff;
+  box-shadow: 0 10px 26px -10px color-mix(in oklab, var(--gx-azure-400) 85%, transparent), inset 0 1px 0 rgb(255 255 255 / 0.35);
 }
 
 /* No horizontal scroll on any screen size. `clip`, not `hidden`: hidden

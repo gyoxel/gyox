@@ -4,7 +4,7 @@ import { ThemeColor } from "@/components/theme-color";
 import { GoogleIcon } from "@/components/google-icon";
 import { ForgetOnMount } from "@/components/forget-on-mount";
 import { LoginBackdrop } from "@/components/login-backdrop";
-import { HOME_COLOR } from "@/lib/page-theme";
+import { HEADER_COLOR } from "@/lib/theme";
 import { safeNext } from "@/lib/google-oauth";
 
 export const metadata = { title: "GX Salaire · Ton budget du mois" };
@@ -32,12 +32,12 @@ export default async function ConnexionPage({ searchParams }: PageProps<"/connex
   const href = next === "/" ? "/api/auth/google" : `/api/auth/google?suite=${encodeURIComponent(next)}`;
 
   return (
-    <main className="relative -mb-28 flex min-h-dvh flex-col overflow-hidden bg-gradient-to-b from-[#019c86] via-[#017a6a] to-[#014d43] px-6 pb-8 pt-14 text-white">
-      <ThemeColor color={HOME_COLOR} />
+    <main className="relative -mb-28 flex min-h-dvh flex-col overflow-hidden bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-900 px-6 pb-8 pt-14 text-white">
+      <ThemeColor color={HEADER_COLOR} />
       <ForgetOnMount />
       <LoginBackdrop />
       <div className="relative flex flex-col items-center text-center">
-        <span className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-white text-3xl font-black tracking-tight text-[#007261] shadow-xl shadow-black/20">
+        <span className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-white text-3xl font-black tracking-tight text-emerald-700 shadow-xl shadow-black/20">
           GX
         </span>
         <h1 className="mt-5 text-3xl font-extrabold tracking-tight">

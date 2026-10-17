@@ -34,7 +34,7 @@ export default async function ProfilPage() {
                     className="h-20 w-20 rounded-full object-cover shadow-md ring-4 ring-white/15"
                   />
                 ) : (
-                  <span className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#00c3ab] to-[#007261] text-3xl font-bold shadow-md ring-4 ring-white/15">
+                  <span className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-700 text-3xl font-bold shadow-md ring-4 ring-white/15">
                     {name.charAt(0).toUpperCase()}
                   </span>
                 )}

@@ -184,10 +184,10 @@ export function DaretCard({
       {/* My turn */}
       <div className="m-4 mt-3 rounded-2xl bg-gradient-to-br from-teal-400/15 to-emerald-500/15 px-4 py-3 dark:from-teal-400/10 dark:to-emerald-500/10">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-medium text-[#007261] dark:text-teal-300">
+          <p className="text-xs font-medium text-emerald-700 dark:text-teal-300">
             Mon tour · <span className="capitalize">{monthLabelFr(state.turn)}</span>
           </p>
-          <p className="text-xs font-semibold text-[#007261] dark:text-teal-300">
+          <p className="text-xs font-semibold text-emerald-700 dark:text-teal-300">
             {payoutReceived
               ? `Reçue ✓ ${METHOD_META[daret.payoutMethod!].emoji}`
               : state.turnStatus === "now"
@@ -199,13 +199,13 @@ export function DaretCard({
                     : ""}
           </p>
         </div>
-        <p className="mt-0.5 text-2xl font-bold tabular-nums text-[#007261] dark:text-teal-200">
+        <p className="mt-0.5 text-2xl font-bold tabular-nums text-emerald-700 dark:text-teal-200">
           {payoutReceived ? "" : "+ "}
           {money(state.payout)}
         </p>
         {turnReached &&
           (payoutReceived ? (
-            <p className="mt-1 flex items-center justify-between text-[11px] text-[#007261]/80 dark:text-teal-300/80">
+            <p className="mt-1 flex items-center justify-between text-[11px] text-emerald-700/80 dark:text-teal-300/80">
               <span>
                 Reçue en {METHOD_META[daret.payoutMethod!].label.toLowerCase()}
                 {daret.payoutReceivedAt &&
@@ -217,13 +217,13 @@ export function DaretCard({
             </p>
           ) : choosing === "payout" ? (
             <div className="mt-2 flex items-center justify-between gap-2 rounded-xl bg-white/80 py-1 pl-3 pr-1 dark:bg-slate-900/60">
-              <span className="text-xs font-medium text-[#007261] dark:text-teal-300">Reçue comment ?</span>
+              <span className="text-xs font-medium text-emerald-700 dark:text-teal-300">Reçue comment ?</span>
               <MethodChoice label="Reçue" onPick={(m) => setPayout(m)} />
             </div>
           ) : (
             <Button
               type="button"
-              className="mt-2 w-full bg-[#019c86] text-white hover:bg-[#007261] dark:bg-[#019c86] dark:text-white"
+              className="mt-2 w-full bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-600 dark:text-white"
               onClick={() => setChoosing("payout")}
               disabled={busy}
             >

@@ -8,7 +8,6 @@ import { DeleteButton } from "@/components/delete-button";
 import { LockedDeleteIcon } from "@/components/locked-delete";
 import { incomeDelete } from "@/lib/delete-specs";
 
-import { pageColor } from "@/lib/page-theme";
 import { METHOD_META } from "@/lib/payment-method";
 import { formatMoney } from "@/lib/utils";
 import { LinkedSourcePage } from "@/components/linked-source";
@@ -31,7 +30,6 @@ export default async function EditIncomePage({ params }: { params: Promise<{ id:
     return (
       <LinkedSourcePage
         title={income.name}
-        tone={pageColor("/epargne")}
         gradient="from-lime-400 via-green-500 to-emerald-700"
         eyebrow="Retrait d'épargne"
         amount={`+${formatMoney(income.amount)}`}
@@ -48,7 +46,6 @@ export default async function EditIncomePage({ params }: { params: Promise<{ id:
     return (
       <LinkedSourcePage
         title={income.name}
-        tone={pageColor("/budgets")}
         gradient="from-fuchsia-400 via-purple-500 to-violet-700"
         eyebrow="Reste de budget 👛"
         amount={`+${formatMoney(income.amount)}`}
@@ -65,7 +62,6 @@ export default async function EditIncomePage({ params }: { params: Promise<{ id:
     return (
       <LinkedSourcePage
         title={income.name}
-        tone={pageColor("/prets")}
         gradient="from-amber-400 via-orange-500 to-amber-700"
         eyebrow="Remboursement de prêt"
         amount={`+${formatMoney(income.amount)}`}

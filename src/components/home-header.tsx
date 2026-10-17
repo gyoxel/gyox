@@ -3,7 +3,7 @@ import { Settings } from "lucide-react";
 import { HEADER_BUTTON } from "@/components/header-button";
 import { ThemeColor } from "@/components/theme-color";
 import { RefreshLogo } from "@/components/refresh-logo";
-import { HOME_COLOR } from "@/lib/page-theme";
+import { HEADER_COLOR } from "@/lib/theme";
 
 const TIME_ZONE = "Africa/Casablanca";
 
@@ -19,12 +19,12 @@ export function HomeHeader() {
   const part = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("fr-FR", { timeZone: TIME_ZONE, ...o }).format(now);
 
   return (
-    <header data-tone className="sticky top-0 z-30 rounded-b-[28px] px-4 pb-3 pt-3 text-white shadow-sm" style={{ backgroundColor: HOME_COLOR }}>
-      <ThemeColor color={HOME_COLOR} />
+    <header data-tone className="gx-header sticky top-0 z-30 rounded-b-[28px] px-4 pb-3 pt-3 text-white">
+      <ThemeColor color={HEADER_COLOR} />
       <div className="flex h-12 items-center gap-3">
         <RefreshLogo />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-white/75">{greeting} 👋</p>
+          <p className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">{greeting} 👋</p>
           <h1 className="truncate text-xl font-extrabold tracking-tight">
             GX <span className="font-semibold text-white/85">Salaire</span>
           </h1>
@@ -33,12 +33,12 @@ export function HomeHeader() {
           href="/calendar"
           prefetch
           aria-label={`Calendrier · ${part({ weekday: "long", day: "numeric", month: "long" })}`}
-          className="flex w-11 shrink-0 flex-col items-center overflow-hidden rounded-xl bg-white text-center shadow-sm transition-transform active:scale-95"
+          className="flex w-11 shrink-0 flex-col items-center overflow-hidden rounded-2xl bg-white/10 text-center ring-1 ring-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-transform active:scale-95"
         >
-          <span className="w-full bg-gradient-to-r from-rose-400 to-pink-500 text-[9px] font-bold uppercase leading-[14px] text-white">
+          <span className="w-full pt-1 text-[9px] font-bold uppercase leading-[12px] tracking-[0.12em] text-sky-300">
             {part({ month: "short" }).replace(".", "")}
           </span>
-          <span className="text-base font-bold leading-[22px] text-slate-900">{part({ day: "numeric" })}</span>
+          <span className="pb-1 text-base font-bold leading-[20px] text-white">{part({ day: "numeric" })}</span>
         </Link>
         <Link href="/settings" prefetch aria-label="Paramètres" className={HEADER_BUTTON}>
           <Settings className="h-[18px] w-[18px]" />

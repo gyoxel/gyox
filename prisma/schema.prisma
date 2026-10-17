@@ -145,7 +145,7 @@ model Settings {
   currency            String
   savingsTarget       Float
   startMonth          String
-  theme               String  @default("system")
+  theme               String  @default("dark")
   /// Day of the month the salary arrives (1-31; clamped to short months).
   payDay              Int     @default(1)
   /// "YYYY-MM" of the last pay day whose salary was confirmed received (the

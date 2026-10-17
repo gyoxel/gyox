@@ -7,89 +7,62 @@ import { DATA_CHANGED_EVENT } from "@/lib/use-refresh-data";
 import { ArrowDownToLine, ArrowUpFromLine, House, Landmark, LayoutGrid, Plus, ReceiptText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Each tab in its section's colour (the active one on a gradient tile).
 const LEFT_ITEMS = [
-  {
-    href: "/",
-    label: "Accueil",
-    icon: House,
-    gradient: "from-emerald-400 to-teal-600 shadow-teal-500/30",
-    tint: "text-teal-600 dark:text-teal-400",
-  },
-  {
-    href: "/budget",
-    label: "Dépenses",
-    icon: ReceiptText,
-    gradient: "from-rose-400 to-pink-600 shadow-rose-500/30",
-    tint: "text-rose-600 dark:text-rose-400",
-  },
+  { href: "/", label: "Accueil", icon: House },
+  { href: "/budget", label: "Dépenses", icon: ReceiptText },
 ];
 
 const RIGHT_ITEMS = [
-  {
-    href: "/credits",
-    label: "Crédits",
-    icon: Landmark,
-    gradient: "from-sky-400 to-blue-600 shadow-blue-500/30",
-    tint: "text-blue-600 dark:text-sky-400",
-  },
-  {
-    href: "/menu",
-    label: "Menu",
-    icon: LayoutGrid,
-    gradient: "from-violet-400 to-purple-600 shadow-violet-500/30",
-    tint: "text-violet-600 dark:text-violet-400",
-  },
+  { href: "/credits", label: "Crédits", icon: Landmark },
+  { href: "/menu", label: "Menu", icon: LayoutGrid },
 ];
 
 // Pages opened from the Menu tab keep it highlighted.
 const MENU_PATHS = ["/menu", "/budgets", "/daret", "/goals", "/calendar", "/stats", "/categories", "/salary", "/incomes", "/solde", "/epargne", "/prets", "/settings", "/profil", "/admin"];
 
 // Fan-out positions (px) of each option's circle center relative to the
-// + button's center: left, top, right — like a radial speed-dial.
+// + button's center: left, top, right — like a radial speed-dial. Glass
+// circles, each with its own colour and glow.
 const ACTIONS = [
   {
     href: "/incomes/new",
     label: "Revenu",
     icon: ArrowDownToLine,
-    dx: -112,
-    dy: -118,
-    className: "bg-gradient-to-br from-emerald-400 to-teal-500 shadow-emerald-400/35",
+    dx: -108,
+    dy: -112,
+    className: "text-emerald-600 shadow-emerald-500/40 dark:text-emerald-300",
   },
   {
     href: "/expenses/new",
     label: "Dépense",
     icon: ArrowUpFromLine,
     dx: 0,
-    dy: -178,
-    className: "bg-gradient-to-br from-rose-400 to-rose-600 shadow-rose-400/35",
+    dy: -168,
+    className: "text-rose-600 shadow-rose-500/40 dark:text-rose-300",
   },
   {
     href: "/expenses/new?type=credit",
     label: "Crédit",
     icon: ArrowDownToLine,
-    dx: 112,
-    dy: -118,
-    className: "bg-gradient-to-br from-sky-400 to-blue-600 shadow-sky-400/35",
+    dx: 108,
+    dy: -112,
+    className: "text-sky-600 shadow-sky-500/40 dark:text-sky-300",
   },
 ];
 
 const ACTION_SIZE = 60;
 
+/** A tab: its icon, lit azure on a glass pill when it's the current one. */
 function NavLink({
   href,
   label,
   icon: Icon,
-  gradient,
-  tint,
   active,
   onNavigate,
 }: {
   href: string;
   label: string;
   icon: typeof House;
-  gradient: string;
-  tint: string;
   active: boolean;
   onNavigate: (href: string) => void;
 }) {
@@ -99,22 +72,24 @@ function NavLink({
       prefetch
       onClick={() => !active && onNavigate(href)}
       aria-current={active ? "page" : undefined}
-      className="flex flex-1 touch-manipulation select-none flex-col items-center gap-0.5 pb-2 pt-2 active:opacity-70"
+      className="flex flex-1 touch-manipulation select-none flex-col items-center gap-0.5 py-1.5 active:opacity-70"
     >
       <span
         data-tint
         className={cn(
-          "flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-200",
-          active ? cn("-translate-y-1 bg-gradient-to-br text-white shadow-md", gradient) : cn(tint, "opacity-70"),
+          "flex h-9 w-12 items-center justify-center rounded-full transition-all duration-300",
+          active
+            ? "bg-sky-500/12 text-sky-600 shadow-[0_0_18px_-4px] shadow-sky-400/60 dark:bg-sky-400/15 dark:text-sky-300"
+            : "text-slate-400 dark:text-slate-400",
         )}
       >
-        <Icon className="h-5 w-5" strokeWidth={active ? 2.2 : 1.8} />
+        <Icon className="h-[21px] w-[21px]" strokeWidth={active ? 2.2 : 1.8} />
       </span>
       <span
         data-tint
         className={cn(
-          "text-[11px] transition-colors duration-200",
-          active ? cn("font-bold", tint) : "font-medium text-slate-400 dark:text-slate-500",
+          "text-[10.5px] tracking-wide transition-colors duration-200",
+          active ? "font-semibold text-sky-600 dark:text-sky-300" : "font-medium text-slate-400 dark:text-slate-500",
         )}
       >
         {label}
@@ -233,25 +208,26 @@ function AppBar({ pathname }: { pathname: string }) {
         aria-hidden
         onClick={() => setOpen(false)}
         className={cn(
-          "fixed inset-0 z-40 bg-slate-50/85 transition-opacity duration-300 dark:bg-slate-950/85",
-          open ? "opacity-100 backdrop-blur-sm" : "pointer-events-none opacity-0",
+          "fixed inset-0 z-40 bg-slate-100/70 transition-opacity duration-300 dark:bg-[#050812]/70",
+          open ? "opacity-100 backdrop-blur-md" : "pointer-events-none opacity-0",
         )}
       />
 
+      {/* Floating glass dock, off the bottom edge. */}
       <nav
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 rounded-t-3xl bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_30px_rgba(15,23,42,0.08)] dark:bg-slate-900",
+          "pointer-events-none fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(env(safe-area-inset-bottom)+10px)]",
           typing && "hidden",
         )}
       >
-        <div className="mx-auto flex max-w-lg items-stretch justify-between px-2">
+        <div className="gx-dock pointer-events-auto mx-auto flex max-w-md items-center justify-between rounded-[30px] px-1.5">
           {LEFT_ITEMS.map((item) => (
             <NavLink key={item.href} {...item} active={isActive(item.href)} onNavigate={navigateTo} />
           ))}
 
-          <div className="relative flex flex-1 items-start justify-center">
+          <div className="relative flex flex-1 items-center justify-center self-stretch">
             {/* Anchor at the + button's center; options fan out from here. */}
-            <div className="absolute left-1/2 top-2 h-0 w-0">
+            <div className="absolute left-1/2 top-1/2 h-0 w-0">
               {ACTIONS.map(({ href, label, icon: Icon, dx, dy, className }, i) => (
                 <Link
                   key={label}
@@ -275,13 +251,13 @@ function AppBar({ pathname }: { pathname: string }) {
                   <span
                     style={{ width: ACTION_SIZE, height: ACTION_SIZE }}
                     className={cn(
-                      "flex items-center justify-center rounded-full text-white shadow-lg transition-transform duration-150 active:scale-95",
+                      "gx-glass-blur flex items-center justify-center rounded-full bg-white/85 shadow-[0_10px_30px_-8px] ring-1 ring-slate-900/5 transition-transform duration-150 active:scale-95 dark:bg-white/10 dark:ring-white/20",
                       className,
                     )}
                   >
                     <Icon className="h-6 w-6" strokeWidth={2} />
                   </span>
-                  <span className="text-center text-xs font-semibold uppercase tracking-wide text-slate-800 dark:text-slate-100">
+                  <span className="text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700 dark:text-slate-200">
                     {label}
                   </span>
                 </Link>
@@ -293,12 +269,12 @@ function AppBar({ pathname }: { pathname: string }) {
               onClick={toggle}
               aria-expanded={open}
               aria-label={open ? "Fermer le menu d'ajout" : "Ajouter"}
-              className="relative -mt-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#00c3ab] to-[#007261] text-white shadow-lg shadow-teal-500/30 ring-4 ring-white transition-[transform,box-shadow] duration-200 active:scale-95 dark:ring-slate-900"
+              className="gx-cta relative flex h-12 w-12 items-center justify-center rounded-full transition-[transform,box-shadow] duration-200 active:scale-95"
             >
               <span
                 aria-hidden
                 className={cn(
-                  "absolute inset-0 rounded-2xl bg-slate-400 transition-opacity duration-300 dark:bg-slate-600",
+                  "absolute inset-0 rounded-full bg-slate-500 transition-opacity duration-300 dark:bg-slate-600",
                   open ? "opacity-100" : "opacity-0",
                 )}
               />

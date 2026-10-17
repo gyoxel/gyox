@@ -39,7 +39,7 @@ export function LockedDeleteIcon({ hint }: { hint: string }) {
       aria-label="Supprimer (depuis sa source)"
       aria-disabled
       onClick={() => toast(hint)}
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-white/45 ring-1 ring-white/20"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-white/35 ring-1 ring-white/10"
     >
       <Trash2 className="h-[18px] w-[18px]" />
     </button>
