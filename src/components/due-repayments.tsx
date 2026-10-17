@@ -6,7 +6,10 @@ export interface DueRepayment {
   loanId: string;
   name: string;
   slot: number;
-  amount: number;
+  /** Expected that month in all. */
+  expected: number;
+  /** Already received that month. */
+  received: number;
   /** "octobre 2026" */
   monthLabel: string;
 }
@@ -28,14 +31,24 @@ export function DueRepayments({ items, currency }: { items: DueRepayment[]; curr
             </span>
             <span className="min-w-0">
               <span className="block truncate text-sm font-semibold text-slate-900 dark:text-white">
-                {d.name} · {formatMoney(d.amount, currency)}
+                {d.name} · {formatMoney(d.expected - d.received, currency)}
               </span>
               <span className="block truncate text-[11px] text-amber-800 dark:text-amber-200">
-                Remboursement · {d.monthLabel} : reçu ?
+                {d.received > 0
+                  ? `${d.monthLabel} : reste ${formatMoney(d.expected - d.received, currency)} (${formatMoney(d.received, currency)} reçus)`
+                  : `Remboursement · ${d.monthLabel} : reçu ?`}
               </span>
             </span>
           </Link>
-          <ReceiveRepayment loanId={d.loanId} slot={d.slot} amount={d.amount} className="[&_span.text-xs]:hidden" />
+          <ReceiveRepayment
+            variant="compact"
+            loanId={d.loanId}
+            slot={d.slot}
+            name={d.name}
+            monthLabel={d.monthLabel}
+            expected={d.expected}
+            received={d.received}
+          />
         </div>
       ))}
     </section>

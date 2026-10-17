@@ -171,7 +171,8 @@ export function getOccurrenceForMonth(
   }
 
   if (expense.frequency === "one-time") {
-    return compareMonths(m, start) === 0 ? { expense, amount: expense.amount } : null;
+    // Paid another amount than planned: that one.
+    return compareMonths(m, start) === 0 ? { expense, amount: getAmountForMonth(expense, monthKey(m)) } : null;
   }
 
   // Recurring monthly expense (permanent, or temporary following an end date / link)

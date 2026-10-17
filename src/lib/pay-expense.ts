@@ -2,24 +2,64 @@
 // by the payments route and by creating an expense already paid.
 import { monthKey as toMonthKey, parseMonthKey, todayMonth } from "./date";
 import { getCreditRealState, getOccurrenceForMonth, getUnpaidMonths } from "./engine";
-import { getAllExpenses, getExpenseById, getPaymentsForExpense, markCreditSlotPaid, markMonthPaid } from "./repository";
+import {
+  getAllExpenses,
+  getDaretOfExpense,
+  getDepositOfExpense,
+  getExpenseById,
+  getPaymentsForExpense,
+  markCreditSlotPaid,
+  markMonthPaid,
+  setMonthAmount,
+} from "./repository";
+import { getSavingsMoveOfExpense } from "./savings-repo";
+import { getLoanOfExpense } from "./loans-repo";
+import { budgetIdOfExpense } from "./budgets-repo";
 import type { Payment, PaymentMethod } from "./types";
 
 /**
  * - Non-credit: settles `monthKey` (omitted: the oldest unpaid month).
  * - Credit: pays the installment pending as of `monthKey` (omitted: now).
+ * `amount`: paid another amount than expected — it becomes that month's own
+ * amount (a recurring expense goes back to its usual one the month after,
+ * a credit carries the difference over to its last installment).
  * Returns the payment, or the reason it can't be paid.
  */
 export async function payExpense(
   id: string,
   monthKey: string | undefined,
   method: PaymentMethod | null,
+  amount?: number,
 ): Promise<{ payment: Payment } | { error: string; status: number }> {
   // Only this expense's payments are needed (the engine filters by id
   // anyway); loading the whole table on every tap made quick successive
   // ticks needlessly heavy for the database.
-  const [expense, payments] = await Promise.all([getExpenseById(id), getPaymentsForExpense(id)]);
+  const [loaded, payments] = await Promise.all([getExpenseById(id), getPaymentsForExpense(id)]);
+  let expense = loaded;
   if (!expense) return { error: "Dépense introuvable.", status: 404 };
+
+  if (amount != null) {
+    const [daret, deposit, move, loan, budget] = await Promise.all([
+      getDaretOfExpense(id),
+      getDepositOfExpense(id),
+      getSavingsMoveOfExpense(id),
+      getLoanOfExpense(id),
+      budgetIdOfExpense(id),
+    ]);
+    if (daret || deposit || move || loan || budget) {
+      return { error: "Ce montant se change depuis là d'où vient la dépense.", status: 409 };
+    }
+    const key = monthKey ?? toMonthKey(todayMonth());
+    const usual =
+      expense.type === "credit"
+        ? getCreditRealState({ ...expense, monthAmounts: withoutMonth(expense.monthAmounts, key) }, payments, parseMonthKey(key)).pendingAmount
+        : (getOccurrenceForMonth({ ...expense, monthAmounts: withoutMonth(expense.monthAmounts, key) }, parseMonthKey(key), new Map())?.amount ?? 0);
+    const value = Math.round(amount * 100) / 100;
+    if (Math.abs(value - usual) > 0.005 || expense.monthAmounts?.[key] != null) {
+      expense = (await setMonthAmount(id, key, Math.abs(value - usual) > 0.005 ? value : null)) ?? expense;
+    }
+    monthKey = key;
+  }
 
   if (expense.type === "credit") {
     const evalMonth = monthKey ? parseMonthKey(monthKey) : todayMonth();
@@ -57,3 +97,10 @@ export async function payExpense(
 
   return { payment: await markMonthPaid(expense.id, targetMonthKey, amountDue, amountDue, method) };
 }
+
+const withoutMonth = (amounts: Record<string, number> | null, key: string) => {
+  if (!amounts || amounts[key] == null) return amounts;
+  const rest = { ...amounts };
+  delete rest[key];
+  return Object.keys(rest).length > 0 ? rest : null;
+};

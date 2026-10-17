@@ -98,9 +98,18 @@ export default async function LoansPage() {
                 {nextDue && (
                   <div className="mx-4 mb-4 flex items-center justify-between gap-2 rounded-2xl bg-amber-50 py-1.5 pl-3 pr-1.5 dark:bg-amber-950/40">
                     <span className="min-w-0 text-xs font-medium text-amber-800 dark:text-amber-200">
-                      <span className="capitalize">{monthLabelFr(nextDue.month)}</span> · {money(nextDue.left)} reçu ?
+                      <span className="capitalize">{monthLabelFr(nextDue.month)}</span> ·{" "}
+                      {nextDue.received > 0 ? `reste ${money(nextDue.left)}` : `${money(nextDue.left)} reçu ?`}
                     </span>
-                    <ReceiveRepayment loanId={loan.id} slot={nextDue.slot} amount={nextDue.left} />
+                    <ReceiveRepayment
+                      variant="compact"
+                      loanId={loan.id}
+                      slot={nextDue.slot}
+                      name={loan.name}
+                      monthLabel={monthLabelFr(nextDue.month)}
+                      expected={nextDue.amount}
+                      received={nextDue.received}
+                    />
                   </div>
                 )}
               </div>

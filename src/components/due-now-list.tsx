@@ -2,9 +2,9 @@
 
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { flushPendingRefresh, trackMutation } from "@/lib/use-refresh-data";
+import { flushPendingRefresh, mutate, trackMutation } from "@/lib/use-refresh-data";
 import Link from "next/link";
-import { Check, ChevronLeft, ChevronRight, Plus, PartyPopper } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Pencil, Plus, PartyPopper } from "lucide-react";
 import { addMonths, monthKey as toMonthKey, monthLabelFr, monthLabelShortFr, type MonthId } from "@/lib/date";
 import { getAmountForMonth, getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, getMonthLedgerItems, lastPaidAt, type DisplayColor } from "@/lib/engine";
 import type { Expense, Payment, PaymentMethod } from "@/lib/types";
@@ -14,6 +14,7 @@ import { errorMessage } from "@/components/expense-editor";
 import { insufficientMessage } from "@/lib/balance-message";
 import { formatMoney, cn } from "@/lib/utils";
 import { ColorDot } from "@/components/color-dot";
+import { AmountSheet } from "@/components/amount-sheet";
 import { displayIcon } from "@/lib/category";
 
 const SWIPE_THRESHOLD_PX = 40;
@@ -87,6 +88,8 @@ export function DueNowList({
   const rowRefs = useRef(new Map<string, HTMLElement>());
   // Ticking asks how it was paid: 💵 or 💳 show in place of the checkbox.
   const [choosingId, setChoosingId] = useState<string | null>(null);
+  // "Autre montant": paid another amount than expected.
+  const [otherAmount, setOtherAmount] = useState<{ expense: Expense; amount: number } | null>(null);
   const chooserRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!choosingId) return;
@@ -190,6 +193,12 @@ export function DueNowList({
   }
 
   const byId = useMemo(() => new Map(expenses.map((e) => [e.id, e])), [expenses]);
+  /** " · au lieu de 700 DH" when this month was paid another amount. */
+  function insteadOf(expense: Expense): string {
+    const key = toMonthKey(viewMonth);
+    if (expense.type === "credit" || expense.monthAmounts?.[key] == null) return "";
+    return ` · au lieu de ${formatMoney(expense.amount, currency)}`;
+  }
   /** "Chaque mois", "Une fois", "Jusqu'à juin 27", "Crédit · reste 2 500 DH". */
   function kindOf(expense: Expense): string {
     if (expense.type === "credit") {
@@ -321,7 +330,7 @@ export function DueNowList({
                       {expense.name}
                     </span>
                     <span className={cn("block truncate text-[11px]", paid ? "font-medium text-emerald-600 dark:text-emerald-400" : "text-slate-400")}>
-                      {paid ? `✓ Payé${method ? ` ${METHOD_META[method].emoji} ${METHOD_META[method].label}` : ""}` : kindOf(expense)}
+                      {paid ? `✓ Payé${method ? ` ${METHOD_META[method].emoji} ${METHOD_META[method].label}` : ""}${insteadOf(expense)}` : kindOf(expense)}
                     </span>
                   </span>
                   <span
@@ -346,6 +355,17 @@ export function DueNowList({
                         {METHOD_META[m].emoji}
                       </button>
                     ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setChoosingId(null);
+                        setOtherAmount({ expense, amount });
+                      }}
+                      aria-label="Payé un autre montant"
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-600 shadow-sm transition-transform active:scale-90 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
                   </div>
                 ) : (
                   <button
@@ -372,6 +392,17 @@ export function DueNowList({
             );
           })}
         </ul>
+      )}
+
+      {otherAmount && (
+        <OtherAmountSheet
+          expense={otherAmount.expense}
+          expected={otherAmount.amount}
+          viewMonth={viewMonth}
+          currency={currency}
+          balance={balance}
+          onClose={() => setOtherAmount(null)}
+        />
       )}
 
       <Link
@@ -465,4 +496,62 @@ function buildOptimisticPayment(expense: Expense, viewMonth: MonthId, payments: 
     paidAt: now,
     createdAt: now,
   };
+}
+
+/**
+ * "Autre montant": this month was paid another amount than expected — it
+ * becomes that month's own amount (see lib/pay-expense.ts).
+ */
+function OtherAmountSheet({
+  expense,
+  expected,
+  viewMonth,
+  currency,
+  balance,
+  onClose,
+}: {
+  expense: Expense;
+  expected: number;
+  viewMonth: MonthId;
+  currency: string;
+  balance?: Record<PaymentMethod, number>;
+  onClose: () => void;
+}) {
+  const money = (n: number) => formatMoney(n, currency);
+  const label = monthLabelFr(viewMonth);
+  const next = monthLabelFr(addMonths(viewMonth, 1)).toLowerCase();
+  function explain(value: number): string | null {
+    const diff = Math.round((value - expected) * 100) / 100;
+    if (Math.abs(diff) < 0.005) return null;
+    const what = diff > 0 ? `${money(diff)} de plus` : `${money(-diff)} de moins`;
+    if (expense.type === "credit") return `${what} que prévu : la différence passe sur la dernière mensualité du crédit.`;
+    if (expense.frequency === "one-time") return `${what} que prévu : cette dépense compte pour ${money(value)}.`;
+    return `${what} que prévu, juste pour ${label.toLowerCase()} : en ${next}, elle revient à ${money(expense.amount)}.`;
+  }
+  return (
+    <AmountSheet
+      title="Tu as payé combien ?"
+      subtitle={`${expense.icon ?? "🧾"} ${expense.name} · ${label} · prévu ${money(expected)}`}
+      expected={expected}
+      initialAmount={expected}
+      initialMethod="cash"
+      chips={[["Le montant prévu", expected]]}
+      explain={explain}
+      methodLabel="Payé en"
+      confirmLabel={(v) => `Payé ${money(v)}`}
+      tone="rose"
+      onClose={onClose}
+      onSubmit={async (value, method) => {
+        if (balance && value > balance[method] + 0.005) return insufficientMessage(method, balance[method]);
+        const res = await mutate({
+          method: "POST",
+          path: `/api/expenses/${expense.id}/payments`,
+          body: { monthKey: toMonthKey(viewMonth), method, amount: value },
+        });
+        if (!res.ok) return errorMessage(res);
+        toast.success(`${expense.name} : ${money(value)} payés.`);
+        return null;
+      }}
+    />
+  );
 }

@@ -10,12 +10,11 @@ import { METHOD_META } from "@/lib/payment-method";
 import { cn, formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { DeleteButton } from "@/components/delete-button";
-import { CancelRepayment, EditRepayment, ReceiveRepayment } from "@/components/loan-repayments";
+import { ReceiveRepayment, RepaymentRow } from "@/components/loan-repayments";
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
-const DAY = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit" });
 
 /** One loan: what came back, every installment (received, due, to come). */
 export default async function LoanPage({ params }: { params: Promise<{ id: string }> }) {
@@ -90,30 +89,51 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
                           s.open ? "text-slate-900 dark:text-white" : s.received > 0 ? "text-emerald-600" : "text-slate-400",
                         )}
                       >
-                        {s.open ? money(s.left) : `+${money(s.received)}`}
+                        {s.open ? (s.received > 0 ? `reste ${money(s.left)}` : money(s.amount)) : `+${money(s.received)}`}
                       </span>
                     </span>
-                    {s.repayments.map((r) => (
-                      <span key={r.id} className="block text-[11px] text-slate-400">
-                        +{money(r.amount)} le {DAY.format(new Date(`${r.date}T12:00:00`))} · {METHOD_META[r.method].emoji}{" "}
-                        {METHOD_META[r.method].label} ·{" "}
-                        <EditRepayment
-                          loanId={loan.id}
-                          repaymentId={r.id}
-                          expected={Math.round((s.amount - s.received + r.amount) * 100) / 100}
-                          amount={r.amount}
-                          method={r.method}
-                        />{" "}
-                        · <CancelRepayment loanId={loan.id} repaymentId={r.id} />
+                    {s.received > 0 && (
+                      <span className="mt-1.5 block">
+                        <span className="flex h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                          <span
+                            className={cn("h-full rounded-full", s.received >= s.amount - 0.005 ? "bg-emerald-500" : "bg-amber-500")}
+                            style={{ width: `${Math.min(100, (s.received / Math.max(s.amount, 0.01)) * 100)}%` }}
+                          />
+                        </span>
+                        <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">
+                          {money(s.received)} reçus sur {money(s.amount)}
+                        </span>
                       </span>
-                    ))}
+                    )}
+                    {s.repayments.length > 0 && (
+                      <span className="-mx-2 mt-1 block">
+                        {s.repayments.map((r) => (
+                          <RepaymentRow
+                            key={r.id}
+                            repayment={r}
+                            loanId={loan.id}
+                            slot={s.slot}
+                            name={loan.name}
+                            monthLabel={monthLabelFr(s.month)}
+                            expected={s.amount}
+                            received={s.received}
+                          />
+                        ))}
+                      </span>
+                    )}
                     {slotNote(s, money) && (
                       <span className="mt-0.5 block text-[11px] font-medium text-amber-700 dark:text-amber-400">{slotNote(s, money)}</span>
                     )}
                     {isDue ? (
-                      <span className="mt-2 flex items-center justify-between gap-2">
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400">{s.received > 0 ? "Le reste, reçu ?" : "Tu l'as reçu ?"}</span>
-                        <ReceiveRepayment loanId={loan.id} slot={s.slot} amount={s.left} />
+                      <span className="mt-2 block">
+                        <ReceiveRepayment
+                          loanId={loan.id}
+                          slot={s.slot}
+                          name={loan.name}
+                          monthLabel={monthLabelFr(s.month)}
+                          expected={s.amount}
+                          received={s.received}
+                        />
                       </span>
                     ) : (
                       s.open && s.received === 0 && <span className="block text-[11px] text-slate-400">À venir</span>
@@ -141,7 +161,7 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
 
 /** Where a month stands, and what moved between months. */
 function slotNote(s: LoanSlot, money: (n: number) => string): string | null {
-  if (s.open && s.received > 0) return `Reçu ${money(s.received)} sur ${money(s.amount)} · reste ${money(s.left)} ce mois-ci`;
+  if (s.open && s.received > 0) return `Reste ${money(s.left)} à recevoir ce mois-ci`;
   if (!s.open) {
     const diff = Math.round((s.amount - s.received) * 100) / 100;
     if (diff > 0.005) {
