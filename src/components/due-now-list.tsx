@@ -15,6 +15,7 @@ import { insufficientMessage } from "@/lib/balance-message";
 import { formatMoney, cn } from "@/lib/utils";
 import { ColorDot } from "@/components/color-dot";
 import { AmountSheet } from "@/components/amount-sheet";
+import { explainPayment, PaymentPartRow, PaymentPartSheet } from "@/components/payment-parts";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { displayIcon } from "@/lib/category";
 
@@ -584,23 +585,6 @@ function buildOptimisticPayment(expense: Expense, viewMonth: MonthId, payments: 
   return { ...base, slotIndex: null, amountDue: amount, part: 0 };
 }
 
-/** What paying `value` of a month does, `left` being still to pay of it. */
-function explainPayment(expense: Expense, left: number, value: number, money: (n: number) => string): string {
-  const credit = expense.type === "credit";
-  const after = round(left - value);
-  if (after > 0.005) {
-    return `Il restera ${money(after)} à payer ce mois-ci (« ${expense.name} · reste »). Pas payés d'ici la fin du mois, ${
-      credit ? "ils s'ajoutent à la dernière mensualité du crédit." : "ils ne passent pas au mois suivant."
-    }`;
-  }
-  if (after < -0.005) {
-    return credit ? `${money(-after)} en avance : la dernière mensualité baisse d'autant.` : `${money(-after)} de plus que prévu ce mois-ci.`;
-  }
-  return "Ce mois est réglé ✓";
-}
-
-const WHEN = new Intl.DateTimeFormat("fr-FR", { timeZone: "Africa/Casablanca", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-
 /**
  * ✏️ on a paid row: this month's payment, to correct (paid 200, it was
  * 300) — straight away when paid at once, else the month's payments first,
@@ -631,38 +615,16 @@ function EditPayment({
   const paid = round(parts.reduce((s, p) => s + p.amountPaid, 0));
 
   if (picked) {
-    const others = round(paid - picked.amountPaid);
-    const left = round(Math.max(0, due - others));
-    const path = `/api/expenses/${expense.id}/payments/${picked.id}`;
     return (
-      <AmountSheet
-        title="Modifier le paiement"
-        subtitle={`${expense.icon ?? "🧾"} ${expense.name} · ${label} · prévu ${money(due)}`}
-        expected={due}
-        already={others}
-        initialAmount={picked.amountPaid}
-        initialMethod={picked.method ?? "cash"}
-        chips={left > 0 && Math.abs(left - picked.amountPaid) > 0.005 ? [[others > 0 ? "Tout le reste" : "Tout", left]] : []}
-        explain={(v) => explainPayment(expense, left, v, money)}
-        methodLabel="Payé en"
-        confirmLabel={(v) => `Enregistrer ${money(v)}`}
-        tone="rose"
+      <PaymentPartSheet
+        expense={expense}
+        payment={picked}
+        others={round(paid - picked.amountPaid)}
+        due={due}
+        monthLabel={label}
+        currency={currency}
+        balance={balance}
         onClose={onClose}
-        onSubmit={async (value, method) => {
-          // Same account: only what's added comes out of it.
-          const out = method === picked.method ? value - picked.amountPaid : value;
-          if (balance && out > balance[method] + 0.005) return insufficientMessage(method, balance[method]);
-          const res = await mutate({ method: "PATCH", path, body: { amount: value, method } });
-          if (!res.ok) return errorMessage(res);
-          toast.success("Paiement modifié.");
-          return null;
-        }}
-        onDelete={async () => {
-          const res = await mutate({ method: "DELETE", path });
-          if (!res.ok) return errorMessage(res);
-          toast.success("Paiement supprimé.");
-          return null;
-        }}
       />
     );
   }
@@ -679,20 +641,7 @@ function EditPayment({
         <ul className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
           {parts.map((p) => (
             <li key={p.id} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setPicked(p)}
-                className="flex w-full items-center gap-2 px-3 py-3 text-left text-sm active:bg-slate-50 dark:active:bg-slate-800"
-              >
-                <span className="text-slate-500 dark:text-slate-400">{WHEN.format(new Date(p.paidAt))}</span>
-                {p.method && (
-                  <span className="text-slate-500 dark:text-slate-400">
-                    {METHOD_META[p.method].emoji} {METHOD_META[p.method].label}
-                  </span>
-                )}
-                <span className="ml-auto font-semibold tabular-nums text-slate-900 dark:text-white">{money(p.amountPaid)}</span>
-                <Pencil className="h-3.5 w-3.5 text-slate-300" />
-              </button>
+              <PaymentPartRow payment={p} currency={currency} onClick={() => setPicked(p)} />
             </li>
           ))}
         </ul>

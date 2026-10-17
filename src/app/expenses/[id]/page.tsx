@@ -20,6 +20,7 @@ const DARET_COLOR = pageColor("/daret");
 import { ExpenseEditor, type PaymentStatusInit, type RecurrenceInit } from "@/components/expense-editor";
 import { CreditEditor } from "@/components/credit-editor";
 import { MonthAmountCard } from "@/components/month-amount-card";
+import { MonthPayments } from "@/components/payment-parts";
 import { formatMoney } from "@/lib/utils";
 import type { Expense, Payment } from "@/lib/types";
 
@@ -193,6 +194,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
   const paymentStatus = getPaymentStatusInit(expense, payments, byId);
   const ownPayments = payments.filter((p) => p.expenseId === expense.id);
   const current = todayMonth();
+  const paidMonth = getPaidMonth(expense, ownPayments, current);
 
   return (
     <>
@@ -203,6 +205,8 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
         action={<DeleteButton variant="icon" {...expenseDelete(expense)} />}
       />
       <main className="flex flex-col gap-5 px-4 py-5">
+        {paidMonth && <MonthPayments expense={expense} {...paidMonth} currency={settings.currency} />}
+
         {expense.type === "credit" ? (
           <CreditEditor
             expense={expense}
@@ -225,6 +229,18 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
       </main>
     </>
   );
+}
+
+/** What's been paid of the month that matters (the expense's own month for a
+ *  one-time one, this month otherwise): its payments, to correct. */
+function getPaidMonth(expense: Expense, payments: Payment[], current: MonthId) {
+  const month = expense.type !== "credit" && expense.frequency === "one-time" ? monthOfDateStr(expense.startDate) : current;
+  const key = monthKey(month);
+  const parts = payments
+    .filter((p) => p.monthKey === key && p.amountPaid > 0 && (expense.type !== "credit" || p.slotIndex != null))
+    .sort((a, b) => (a.part ?? 0) - (b.part ?? 0));
+  const settled = findPayment(parts, expense.id, key);
+  return settled ? { parts, due: settled.amountDue, monthLabel: monthLabelFr(month) } : null;
 }
 
 /** A month can get its own amount: a credit still being repaid, or an
