@@ -14,7 +14,6 @@ import * as daretsById from "@/app/api/darets/[id]/route";
 import * as dayNotesByDate from "@/app/api/day-notes/[date]/route";
 import * as expenses from "@/app/api/expenses/route";
 import * as expensesById from "@/app/api/expenses/[id]/route";
-import * as expensesByIdMonthAmount from "@/app/api/expenses/[id]/month-amount/route";
 import * as expensesByIdPayments from "@/app/api/expenses/[id]/payments/route";
 import * as expensesByIdPaymentsByPaymentId from "@/app/api/expenses/[id]/payments/[paymentId]/route";
 import * as goalIdeas from "@/app/api/goal-ideas/route";
@@ -58,7 +57,6 @@ const ROUTES: [string, RouteModule][] = [
   ["day-notes/[date]", dayNotesByDate],
   ["expenses", expenses],
   ["expenses/[id]", expensesById],
-  ["expenses/[id]/month-amount", expensesByIdMonthAmount],
   ["expenses/[id]/payments", expensesByIdPayments],
   ["expenses/[id]/payments/[paymentId]", expensesByIdPaymentsByPaymentId],
   ["goal-ideas", goalIdeas],

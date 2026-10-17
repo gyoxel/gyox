@@ -19,7 +19,6 @@ const GOALS_COLOR = pageColor("/goals");
 const DARET_COLOR = pageColor("/daret");
 import { ExpenseEditor, type PaymentStatusInit, type RecurrenceInit } from "@/components/expense-editor";
 import { CreditEditor } from "@/components/credit-editor";
-import { MonthAmountCard } from "@/components/month-amount-card";
 import { MonthPayments } from "@/components/payment-parts";
 import { formatMoney } from "@/lib/utils";
 import type { Expense, Payment } from "@/lib/types";
@@ -221,10 +220,6 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
           />
         )}
 
-        {hasMonthAmounts(expense, ownPayments, current) && (
-          <MonthAmountCard expense={expense} payments={ownPayments} currentMonthKey={monthKey(current)} currency={settings.currency} />
-        )}
-
         <DeleteButton variant="full" {...expenseDelete(expense)} />
       </main>
     </>
@@ -241,16 +236,6 @@ function getPaidMonth(expense: Expense, payments: Payment[], current: MonthId) {
     .sort((a, b) => (a.part ?? 0) - (b.part ?? 0));
   const settled = findPayment(parts, expense.id, key);
   return settled ? { parts, due: settled.amountDue, monthLabel: monthLabelFr(month) } : null;
-}
-
-/** A month can get its own amount: a credit still being repaid, or an
- *  expense that comes back every month and isn't over. */
-function hasMonthAmounts(expense: Expense, payments: Payment[], current: MonthId): boolean {
-  if (!expense.active || expense.amount <= 0) return false;
-  if (expense.type === "credit") return getCreditRealState(expense, payments, current).status !== "completed";
-  if (expense.frequency === "one-time") return false;
-  const end = getEffectiveEndMonth(expense, new Map());
-  return end == null || compareMonths(end, current) >= 0;
 }
 
 /** Which recurrence option the form should open on for this expense. */

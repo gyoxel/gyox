@@ -59,26 +59,6 @@ export function asMonthAmounts(value: unknown): Record<string, number> | null {
   return entries.length > 0 ? (Object.fromEntries(entries) as Record<string, number>) : null;
 }
 
-/**
- * Sets (or with null, removes) one month's own amount. Returns the expense,
- * null if it doesn't exist.
- */
-export async function setMonthAmount(id: string, key: string, amount: number | null): Promise<Expense | null> {
-  const existing = await getExpenseById(id);
-  if (!existing) return null;
-  const next = { ...(existing.monthAmounts ?? {}) };
-  if (amount == null) delete next[key];
-  else next[key] = amount;
-  const row = await prisma.expense.update({
-    where: { id },
-    data: {
-      monthAmounts: Object.keys(next).length > 0 ? next : Prisma.DbNull,
-      updatedAt: new Date().toISOString(),
-    },
-  });
-  return mapExpense(row);
-}
-
 export async function getAllExpenses(): Promise<Expense[]> {
   const rows = await prisma.expense.findMany({ orderBy: { createdAt: "asc" } });
   return rows.map(mapExpense);
