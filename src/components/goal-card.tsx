@@ -5,9 +5,9 @@ import Link from "next/link";
 import { CalendarClock, Check, ChevronRight, Pencil, Plus, Sparkles, Target, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { errorMessage } from "@/components/expense-editor";
-import type { Goal, PaymentMethod } from "@/lib/types";
-import { PaymentMethodPicker } from "@/components/payment-method-picker";
-import { METHOD_META } from "@/lib/payment-method";
+import type { DepositSource, Goal } from "@/lib/types";
+import { DepositSourcePicker } from "@/components/payment-method-picker";
+import { DEPOSIT_SOURCE_META } from "@/lib/payment-method";
 import type { GoalProgress } from "@/lib/goals";
 import { monthLabelFr, monthLabelShortFr } from "@/lib/date";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput } from "@/lib/utils";
@@ -91,6 +91,7 @@ export function GoalCard({
   currency,
   linkToDetail = false,
   depositsPaid,
+  savings,
 }: {
   goal: Goal;
   progress: GoalProgress;
@@ -98,6 +99,8 @@ export function GoalCard({
   linkToDetail?: boolean;
   /** Detail page: whether each deposit is paid (ticked in Dépenses). */
   depositsPaid?: Record<string, boolean>;
+  /** Detail page: what's in the savings (a deposit can come from there). */
+  savings?: number;
 }) {
   const [adding, setAdding] = useState(false);
   const p = progress;
@@ -146,7 +149,7 @@ export function GoalCard({
             Modifier
           </Link>
         </div>
-        <DepositDialog goal={goal} currency={currency} open={adding} onOpenChange={setAdding} />
+        <DepositDialog goal={goal} currency={currency} savings={savings} open={adding} onOpenChange={setAdding} />
       </div>
     );
   }
@@ -228,14 +231,15 @@ export function GoalCard({
                     href={`/goals/${goal.id}/deposits/${row.deposit.id}`}
                     className="flex items-center gap-3 px-4 py-3 text-sm active:bg-slate-50 dark:active:bg-slate-800/60"
                   >
-                    <StepIcon>💵</StepIcon>
+                    <StepIcon>{row.deposit.method === "savings" ? "🐷" : "💵"}</StepIcon>
                     <span className="min-w-0 flex-1">
                       <span className={cn("block truncate font-medium text-slate-800 dark:text-slate-100", !row.paid && "text-slate-400")}>
                         {row.deposit.name}
                       </span>
                       <span className="block text-[11px] text-slate-400">
                         {DEPOSIT_DATE.format(new Date(`${row.deposit.date}T12:00:00`))}
-                        {row.deposit.method && ` · ${METHOD_META[row.deposit.method].emoji}`}
+                        {row.deposit.method &&
+                          ` · ${DEPOSIT_SOURCE_META[row.deposit.method].emoji}${row.deposit.method === "savings" ? " Épargne" : ""}`}
                         {!row.paid && <span className="ml-1 font-semibold text-rose-500">· Non payé</span>}
                       </span>
                     </span>
@@ -334,26 +338,29 @@ export function GoalCard({
         </div>
       )}
 
-      <DepositDialog goal={goal} currency={currency} open={adding} onOpenChange={setAdding} />
+      <DepositDialog goal={goal} currency={currency} savings={savings} open={adding} onOpenChange={setAdding} />
     </>
   );
 }
 
-/** "+ Versement": money put aside for the goal, with an optional label. */
+/** "+ Versement": money put aside for the goal (from cash, the card or the
+ *  savings), with an optional label. */
 function DepositDialog({
   goal,
   currency,
+  savings,
   open,
   onOpenChange,
 }: {
   goal: Goal;
   currency: string;
+  savings?: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
   const [deposit, setDeposit] = useState("");
   const [depositName, setDepositName] = useState("");
-  const [method, setMethod] = useState<PaymentMethod>("cash");
+  const [method, setMethod] = useState<DepositSource>("cash");
   const [saving, setSaving] = useState(false);
 
   async function addDeposit() {
@@ -367,7 +374,7 @@ function DepositDialog({
     });
     setSaving(false);
     if (!res.ok) return toast.error(await errorMessage(res));
-    toast.success(`+${formatMoney(value, currency)} pour ${goal.name} · ajouté aux dépenses`);
+    toast.success(`+${formatMoney(value, currency)} pour ${goal.name} · ${method === "savings" ? "pris de l'épargne" : "ajouté aux dépenses"}`);
     onOpenChange(false);
     setDeposit("");
     setDepositName("");
@@ -404,8 +411,12 @@ function DepositDialog({
             maxLength={60}
           />
         </div>
-        <PaymentMethodPicker value={method} onChange={setMethod} label="Pris en" />
-        <p className="text-[11px] text-slate-400">Il s&apos;ajoute à l&apos;objectif et à tes dépenses (payé), et sort de ton solde.</p>
+        <DepositSourcePicker value={method} onChange={setMethod} />
+        <p className="text-[11px] text-slate-400">
+          {method === "savings"
+            ? `Il s'ajoute à l'objectif et sort de ton épargne${savings != null ? ` (${formatMoney(savings, currency)} dedans)` : ""}. Ton solde et tes dépenses ne bougent pas.`
+            : "Il s'ajoute à l'objectif et à tes dépenses (payé), et sort de ton solde."}
+        </p>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Annuler

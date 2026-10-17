@@ -1,11 +1,12 @@
 // Épargne: what's in the savings. Pure (no DB access).
 import type { Payment, SavingsMove } from "./types";
 
-/** Money put aside counts while its expense is paid; money taken back always. */
+/** Money put aside counts while its expense is paid; money taken back (or
+ *  given to a goal) always. */
 export function savingsBalance(moves: SavingsMove[], payments: Payment[]): number {
   const paid = new Set(payments.filter((p) => p.amountPaid > 0).map((p) => p.expenseId));
   const total = moves.reduce((s, m) => {
-    if (m.kind === "out") return s - m.amount;
+    if (m.kind === "out" || m.kind === "goal") return s - m.amount;
     return m.expenseId && !paid.has(m.expenseId) ? s : s + m.amount;
   }, 0);
   return Math.round(total * 100) / 100;

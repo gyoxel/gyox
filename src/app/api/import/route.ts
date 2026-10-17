@@ -78,7 +78,7 @@ const backupSchema = z.object({
         name: z.string(),
         amount: z.number().positive(),
         date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-        method: z.enum(["cash", "card"]).nullable().default(null),
+        method: z.enum(["cash", "card", "savings"]).nullable().default(null),
         expenseId: z.string().nullable().default(null),
         createdAt: z.string(),
       }),
@@ -148,13 +148,14 @@ const backupSchema = z.object({
     .array(
       z.object({
         id: z.string().min(1),
-        kind: z.enum(["in", "out", "existing"]),
+        kind: z.enum(["in", "out", "existing", "goal"]),
         amount: z.number().positive(),
         method: z.enum(["cash", "card"]),
         note: z.string().nullable(),
         date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
         expenseId: z.string().nullable(),
         incomeId: z.string().nullable(),
+        goalDepositId: z.string().nullable().default(null),
         createdAt: z.string(),
       }),
     )

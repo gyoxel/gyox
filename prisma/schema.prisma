@@ -217,7 +217,8 @@ model GoalDeposit {
   amount    Float
   /// "YYYY-MM-DD"
   date      String
-  /// Taken from cash or the card ("cash" / "card"); null for older deposits.
+  /// Taken from cash, the card or the savings ("cash" / "card" /
+  /// "savings"); null for older deposits.
   method    String?
   /// The paid one-time expense it shows as in Dépenses (deleted with it).
   expenseId String?
@@ -225,6 +226,8 @@ model GoalDeposit {
 
   goal    Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
   expense Expense? @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  /// Taken from the savings: the move it comes off them as.
+  savingsMove SavingsMove?
 
   /// Whose it is (see lib/user-scope.ts: every query is scoped to the
   /// signed-in user).
@@ -385,7 +388,9 @@ model IncomeCategory {
 
 /// Épargne: money put aside ("in": leaves cash / the card, shows in Dépenses
 /// as a paid expense) or taken back ("out": comes into cash / the card,
-/// shows in Revenus). The savings = what's in (paid) − what's out.
+/// shows in Revenus), savings held already ("existing"), or given to a goal
+/// ("goal": a deposit taken from the savings). The savings = what's in
+/// (paid) − what's out.
 model SavingsMove {
   id        String  @id @default(uuid())
   kind      String
@@ -397,10 +402,13 @@ model SavingsMove {
   date      String
   expenseId String? @unique
   incomeId  String? @unique
+  /// "goal": the deposit it is (deleted with it).
+  goalDepositId String? @unique
   createdAt String
 
-  expense Expense? @relation(fields: [expenseId], references: [id], onDelete: Cascade)
-  income  Income?  @relation(fields: [incomeId], references: [id], onDelete: Cascade)
+  expense     Expense?     @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  income      Income?      @relation(fields: [incomeId], references: [id], onDelete: Cascade)
+  goalDeposit GoalDeposit? @relation(fields: [goalDepositId], references: [id], onDelete: Cascade)
 
   /// Whose it is (see lib/user-scope.ts: every query is scoped to the
   /// signed-in user).

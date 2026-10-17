@@ -36,7 +36,8 @@ export function DepositEditor({
   const nav = useNavBack();
   const [amount, setAmount] = useState(toDecimalInput(deposit.amount));
   const [name, setName] = useState(deposit.name === "Versement" ? "" : deposit.name);
-  const [method, setMethod] = useState<PaymentMethod>(deposit.method ?? "cash");
+  const [method, setMethod] = useState<PaymentMethod>(deposit.method === "card" ? "card" : "cash");
+  const fromSavings = deposit.method === "savings";
   const [paid, setPaid] = useState(initialPaid);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -88,7 +89,12 @@ export function DepositEditor({
         <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex : Prime, reste du mois…" maxLength={60} />
       </div>
 
-      {linked ? (
+      {fromSavings ? (
+        <p className="flex items-center gap-2 rounded-xl bg-lime-50 px-3 py-2.5 text-sm text-lime-800 dark:bg-lime-950/40 dark:text-lime-300">
+          <span className="text-base leading-none">🐷</span>
+          Pris de l&apos;épargne : il en sort, ton solde ne bouge pas.
+        </p>
+      ) : linked ? (
         <div className="flex flex-col gap-2">
           <Label>Statut de paiement</Label>
           <div role="radiogroup" aria-label="Statut de paiement" className="grid grid-cols-2 gap-2">

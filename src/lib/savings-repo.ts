@@ -15,11 +15,12 @@ export function mapMove(row: {
   date: string;
   expenseId: string | null;
   incomeId: string | null;
+  goalDepositId?: string | null;
   createdAt: string;
 }): SavingsMove {
   return {
     ...row,
-    kind: row.kind === "out" ? "out" : row.kind === "existing" ? "existing" : "in",
+    kind: row.kind === "out" || row.kind === "existing" || row.kind === "goal" ? row.kind : "in",
     method: row.method === "card" ? "card" : "cash",
   };
 }

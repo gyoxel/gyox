@@ -12,7 +12,7 @@ import { ExistingSavingsDialog } from "@/components/existing-savings-dialog";
 import { HEADER_ADD_EVENT } from "@/components/header-add";
 import { Button } from "@/components/ui/button";
 
-type Move = SavingsMove & { counted: boolean };
+type Move = SavingsMove & { counted: boolean; href: string };
 
 /**
  * Épargne: the money put aside (outside the Solde), buttons to put more
@@ -42,7 +42,7 @@ export function EpargneView({
   const month = monthKey(todayMonth());
   const thisMonth = moves.filter((m) => m.counted && m.date.startsWith(month));
   const inMonth = thisMonth.filter((m) => m.kind === "in").reduce((s, m) => s + m.amount, 0);
-  const outMonth = thisMonth.filter((m) => m.kind === "out").reduce((s, m) => s + m.amount, 0);
+  const outMonth = thisMonth.filter((m) => m.kind === "out" || m.kind === "goal").reduce((s, m) => s + m.amount, 0);
   const months = [...new Set(moves.map((m) => m.date.slice(0, 7)))];
 
   return (
@@ -100,19 +100,19 @@ export function EpargneView({
               <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 {list.map((x) => (
                   <li key={x.id} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
-                    <Link href={`/epargne/${x.id}`} className="flex items-center gap-3 px-4 py-3 active:bg-slate-50 dark:active:bg-slate-800/60">
+                    <Link href={x.href} className="flex items-center gap-3 px-4 py-3 active:bg-slate-50 dark:active:bg-slate-800/60">
                       <span
                         className={cn(
                           "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg",
-                          x.kind === "out" ? "bg-amber-50 dark:bg-amber-950/50" : "bg-lime-50 dark:bg-lime-950/50",
+                          x.kind === "out" || x.kind === "goal" ? "bg-amber-50 dark:bg-amber-950/50" : "bg-lime-50 dark:bg-lime-950/50",
                         )}
                       >
-                        {x.kind === "existing" ? "🏦" : x.kind === "in" ? "🐷" : "↩️"}
+                        {x.kind === "existing" ? "🏦" : x.kind === "in" ? "🐷" : x.kind === "goal" ? "🎯" : "↩️"}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-1.5">
                           <span className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">
-                            {x.note || (x.kind === "existing" ? "Déjà épargné" : x.kind === "in" ? "Mis de côté" : "Retiré")}
+                            {x.note || (x.kind === "existing" ? "Déjà épargné" : x.kind === "in" ? "Mis de côté" : x.kind === "goal" ? "Objectif" : "Retiré")}
                           </span>
                           {!x.counted && (
                             <span className="shrink-0 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-slate-800">
@@ -126,16 +126,22 @@ export function EpargneView({
                             ? "Déjà épargné · hors solde"
                             : x.kind === "in"
                               ? `${METHOD_META[x.method].emoji} → 🐷`
-                              : `🐷 → ${METHOD_META[x.method].emoji}`}
+                              : x.kind === "goal"
+                                ? "🐷 → 🎯 Versement à l'objectif"
+                                : `🐷 → ${METHOD_META[x.method].emoji}`}
                         </span>
                       </span>
                       <span
                         className={cn(
                           "text-sm font-semibold tabular-nums",
-                          !x.counted ? "text-slate-400 line-through" : x.kind !== "out" ? "text-lime-700 dark:text-lime-400" : "text-amber-600",
+                          !x.counted
+                            ? "text-slate-400 line-through"
+                            : x.kind === "out" || x.kind === "goal"
+                              ? "text-amber-600"
+                              : "text-lime-700 dark:text-lime-400",
                         )}
                       >
-                        {x.kind !== "out" ? "+" : "−"}
+                        {x.kind === "out" || x.kind === "goal" ? "−" : "+"}
                         {money(x.amount)}
                       </span>
                       <ChevronRight className="h-4 w-4 text-slate-300" />

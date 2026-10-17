@@ -6,7 +6,7 @@ import { defaultSettings } from "./user-defaults";
 import { getAllSavingsMoves } from "./savings-repo";
 import { getAllLoanRepayments, getAllLoans } from "./loans-repo";
 import { getIncomeCategories } from "./income-categories-repo";
-import type { Budget, BudgetEntry, BudgetMonth, Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote, SalaryAdvance, Income, PaymentMethod, SalaryReceipt, WalletOp, SavingsMove, Loan, LoanRepayment } from "./types";
+import type { Budget, BudgetEntry, BudgetMonth, Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote, DepositSource, SalaryAdvance, Income, PaymentMethod, SalaryReceipt, WalletOp, SavingsMove, Loan, LoanRepayment } from "./types";
 
 export function mapExpense(row: {
   id: string;
@@ -304,7 +304,13 @@ function withFreshIds(data: BackupData): BackupData {
     incomes: data.incomes?.map((i) => ({ ...i, id: id(i.id), expenseId: ref(i.expenseId) })),
     salaryReceipts: data.salaryReceipts?.map((r) => ({ ...r, id: id(r.id) })),
     walletOps: data.walletOps?.map((o) => ({ ...o, id: id(o.id) })),
-    savingsMoves: data.savingsMoves?.map((m) => ({ ...m, id: id(m.id), expenseId: ref(m.expenseId), incomeId: ref(m.incomeId) })),
+    savingsMoves: data.savingsMoves?.map((m) => ({
+      ...m,
+      id: id(m.id),
+      expenseId: ref(m.expenseId),
+      incomeId: ref(m.incomeId),
+      goalDepositId: ref(m.goalDepositId),
+    })),
     loans: data.loans?.map((l) => ({ ...l, id: id(l.id), expenseId: ref(l.expenseId) })),
     loanRepayments: data.loanRepayments?.map((r) => ({ ...r, id: id(r.id), loanId: id(r.loanId), incomeId: ref(r.incomeId) })),
     budgets: data.budgets?.map((b) => ({ ...b, id: id(b.id), expenseId: id(b.expenseId) })),
@@ -333,6 +339,10 @@ export async function importData(backup: BackupData): Promise<void> {
     data.incomes ? data.incomes.map((i) => i.id) : (await prisma.income.findMany({ select: { id: true } })).map((i) => i.id),
   );
   const loanIds = new Set((data.loans ?? []).map((l) => l.id));
+  // Goal deposits kept when the backup has no goals; savings may point at them.
+  const depositIds = new Set(
+    data.goals ? (data.goalDeposits ?? []).map((d) => d.id) : (await prisma.goalDeposit.findMany({ select: { id: true } })).map((d) => d.id),
+  );
   const known = (id: string | null | undefined, ids: Set<string>) => (id && ids.has(id) ? id : null);
   await prisma.$transaction([
     prisma.expense.deleteMany({}),
@@ -422,9 +432,14 @@ export async function importData(backup: BackupData): Promise<void> {
           prisma.savingsMove.deleteMany({}),
           prisma.savingsMove.createMany({
             data: data.savingsMoves
-              .map((m) => ({ ...m, expenseId: known(m.expenseId, expenseIds), incomeId: known(m.incomeId, incomeIds) }))
-              // A move whose expense / income isn't there would count with nothing behind it.
-              .filter((m) => m.kind === "existing" || (m.kind === "in" ? m.expenseId : m.incomeId)),
+              .map((m) => ({
+                ...m,
+                expenseId: known(m.expenseId, expenseIds),
+                incomeId: known(m.incomeId, incomeIds),
+                goalDepositId: known(m.goalDepositId, depositIds),
+              }))
+              // A move whose expense / income / deposit isn't there would count with nothing behind it.
+              .filter((m) => m.kind === "existing" || (m.kind === "in" ? m.expenseId : m.kind === "goal" ? m.goalDepositId : m.incomeId)),
           }),
         ]
       : []),
@@ -848,8 +863,12 @@ type GoalRow = Omit<Goal, "deposits"> & { deposits?: (Omit<GoalDeposit, "method"
 
 export const mapDeposit = (d: Omit<GoalDeposit, "method"> & { method: string | null }): GoalDeposit => ({
   ...d,
-  method: d.method === "cash" || d.method === "card" ? d.method : null,
+  method: d.method === "cash" || d.method === "card" || d.method === "savings" ? d.method : null,
 });
+
+/** How a goal deposit taken from the savings shows there. */
+const savingsNote = (goal: { emoji: string; name: string }, name: string) =>
+  `${goal.emoji} ${goal.name}${name && name !== "Versement" ? ` · ${name}` : ""}`;
 
 export function mapGoal(row: GoalRow): Goal {
   const deposits = (row.deposits ?? []).map(mapDeposit).sort(
@@ -915,12 +934,33 @@ export async function deleteGoal(id: string): Promise<boolean> {
 
 export async function addGoalDeposit(
   goalId: string,
-  input: { name: string; amount: number; date: string; method: PaymentMethod | null },
+  input: { name: string; amount: number; date: string; method: DepositSource | null },
 ): Promise<GoalDeposit> {
   const now = new Date().toISOString();
   const goal = await prisma.goal.findUniqueOrThrow({ where: { id: goalId } });
   if (!input.method) {
     return mapDeposit(await prisma.goalDeposit.create({ data: { id: randomUUID(), goalId, ...input, createdAt: now } }));
+  }
+  if (input.method === "savings") {
+    // Taken from the savings: it comes off them (a "goal" move in Épargne),
+    // not off the Solde, and isn't an expense.
+    const id = randomUUID();
+    const [deposit] = await prisma.$transaction([
+      prisma.goalDeposit.create({ data: { id, goalId, ...input, createdAt: now } }),
+      prisma.savingsMove.create({
+        data: {
+          id: randomUUID(),
+          kind: "goal",
+          amount: input.amount,
+          method: "cash",
+          note: savingsNote(goal, input.name),
+          date: input.date,
+          goalDepositId: id,
+          createdAt: now,
+        },
+      }),
+    ]);
+    return mapDeposit(deposit);
   }
   // Taken from cash / the card: it also shows in Dépenses as a paid one-time
   // expense (that payment is what comes off the Solde).
@@ -982,17 +1022,28 @@ export async function getGoalDeposit(goalId: string, depositId: string): Promise
 
 /**
  * Edits a deposit; for a newer one, its expense in Dépenses follows (amount,
- * note) and so does its payment: paid (cash / card) or not paid.
+ * note) and so does its payment: paid (cash / card) or not paid. One taken
+ * from the savings stays so: its move there follows (amount, note).
  */
 export async function updateGoalDeposit(
   goalId: string,
   depositId: string,
   input: { name: string; amount: number; method: PaymentMethod | null; paid: boolean },
 ): Promise<GoalDeposit | null> {
-  const deposit = await prisma.goalDeposit.findFirst({ where: { id: depositId, goalId } });
+  const deposit = await prisma.goalDeposit.findFirst({ where: { id: depositId, goalId }, include: { goal: true } });
   if (!deposit) return null;
   const now = new Date().toISOString();
   const name = input.name || "Versement";
+  if (deposit.method === "savings") {
+    const [row] = await prisma.$transaction([
+      prisma.goalDeposit.update({ where: { id: depositId }, data: { name, amount: input.amount } }),
+      prisma.savingsMove.updateMany({
+        where: { goalDepositId: depositId },
+        data: { amount: input.amount, note: savingsNote(deposit.goal, name) },
+      }),
+    ]);
+    return mapDeposit(row);
+  }
   if (deposit.expenseId) {
     const expenseId = deposit.expenseId;
     const monthKeyValue = deposit.date.slice(0, 7);

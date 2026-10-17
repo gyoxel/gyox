@@ -175,6 +175,9 @@ export interface Goal {
   deposits: GoalDeposit[];
 }
 
+/** Where a goal deposit's money comes from. */
+export type DepositSource = PaymentMethod | "savings";
+
 export interface GoalDeposit {
   id: string;
   goalId: string;
@@ -182,8 +185,9 @@ export interface GoalDeposit {
   amount: number;
   /** "YYYY-MM-DD" */
   date: string;
-  /** Taken from cash or the card (null for older deposits: not in the Solde). */
-  method: PaymentMethod | null;
+  /** Taken from cash, the card or the savings (null for older deposits: not
+   *  in the Solde). */
+  method: DepositSource | null;
   /** The paid one-time expense it shows as in Dépenses (newer deposits). */
   expenseId?: string | null;
   createdAt: string;
@@ -257,8 +261,9 @@ export interface Income {
 export interface SavingsMove {
   id: string;
   /** "in": put aside from the Solde; "out": taken back into it; "existing":
-   *  savings already held before (outside the Solde: no expense, no income). */
-  kind: "in" | "out" | "existing";
+   *  savings already held before (outside the Solde: no expense, no income);
+   *  "goal": given to a goal (a deposit taken from the savings). */
+  kind: "in" | "out" | "existing" | "goal";
   amount: number;
   /** The account it leaves ("in") or goes to ("out"). */
   method: PaymentMethod;
@@ -269,6 +274,8 @@ export interface SavingsMove {
   expenseId: string | null;
   /** "out": the income it shows as in Revenus. */
   incomeId: string | null;
+  /** "goal": the goal deposit it is. */
+  goalDepositId?: string | null;
   createdAt: string;
 }
 

@@ -60,7 +60,9 @@ export function depositDelete(goalId: string, deposit: GoalDeposit, currency: st
     label: "Supprimer ce versement",
     endpoint: `/api/goals/${goalId}/deposits/${deposit.id}`,
     title: "Supprimer ce versement ?",
-    description: `${formatMoney(deposit.amount, currency)} sera retiré de l'objectif${deposit.expenseId ? " et de tes dépenses" : ""}.`,
+    description: `${formatMoney(deposit.amount, currency)} sera retiré de l'objectif${
+      deposit.method === "savings" ? " et reviendra dans l'épargne" : deposit.expenseId ? " et de tes dépenses" : ""
+    }.`,
     success: "Versement supprimé.",
     fallback: `/goals/${goalId}`,
   };

@@ -64,7 +64,10 @@ export function getGoalProgress(
     .filter((d) => goal.daretIds.includes(d.id))
     .map((d) => {
       const state = getDaretState(d, payments, currentMonth);
-      return { daret: d, payout: state.payout, turn: state.turn, received: compareMonths(state.turn, currentMonth) < 0 };
+      // In hand once its payout is confirmed received (in its turn month),
+      // or anyway once that month is over.
+      const received = d.payoutMethod != null || compareMonths(state.turn, currentMonth) < 0;
+      return { daret: d, payout: state.payout, turn: state.turn, received };
     })
     .sort((a, b) => compareMonths(a.turn, b.turn));
 

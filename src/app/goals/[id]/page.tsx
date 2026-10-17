@@ -1,5 +1,6 @@
 import { getAllDarets, getAllPayments, getGoalById, getSettings } from "@/lib/page-data";
 import { notFound } from "next/navigation";
+import { getWallet } from "@/lib/wallet-data";
 
 import { getGoalProgress, isDepositPaid, type GoalSimBase } from "@/lib/goals";
 import { monthKey, monthLabelFr, monthsBetween, todayMonth } from "@/lib/date";
@@ -15,11 +16,12 @@ export const dynamic = "force-dynamic";
 /** One goal in detail: progress, deposits, its darets, and simulations. */
 export default async function GoalDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [settings, goal, darets, payments] = await Promise.all([
+  const [settings, goal, darets, payments, wallet] = await Promise.all([
     getSettings(),
     getGoalById(id),
     getAllDarets(),
     getAllPayments(),
+    getWallet(),
   ]);
   if (!goal) notFound();
   const current = todayMonth();
@@ -41,6 +43,7 @@ export default async function GoalDetailPage({ params }: { params: Promise<{ id:
           progress={progress}
           currency={settings.currency}
           depositsPaid={Object.fromEntries(goal.deposits.map((d) => [d.id, isDepositPaid(d, payments)]))}
+          savings={wallet.savings}
         />
 
         <section className="flex flex-col gap-2.5">
