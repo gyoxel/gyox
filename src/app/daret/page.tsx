@@ -61,7 +61,7 @@ export default async function DaretPage() {
           </div>
         )}
 
-        <AddLink href="/daret/new" label="Ajouter une daret" className="border-teal-200 text-emerald-700 active:bg-teal-50 dark:border-teal-900 dark:text-teal-300 dark:active:bg-teal-950/30" />
+        <AddLink href="/daret/new" label="Ajouter une daret" />
 
         {items.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-slate-200 px-4 py-10 text-center dark:border-slate-700">

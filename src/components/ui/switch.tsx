@@ -26,7 +26,7 @@ export function Switch({
       onClick={() => onCheckedChange(!checked)}
       className={cn(
         "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200",
-        checked ? "bg-sky-500 shadow-[0_0_14px_-3px] shadow-sky-400/70" : "bg-slate-200 dark:bg-white/15",
+        checked ? "bg-violet-600" : "bg-slate-200 dark:bg-white/15",
         className,
       )}
     >

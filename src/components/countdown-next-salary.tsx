@@ -284,7 +284,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
           </div>
           <Button
             type="button"
-            className="relative w-full bg-emerald-500 text-white hover:bg-emerald-600 dark:bg-emerald-500 dark:text-white"
+            className="relative w-full gx-cta"
             onClick={() => setEditing(true)}
           >
             <Banknote className="h-4 w-4" />
@@ -323,7 +323,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
             </Button>
             <Button
               type="button"
-              className="bg-emerald-500 text-white hover:bg-emerald-600 dark:bg-emerald-500 dark:text-white"
+              className="gx-cta"
               onClick={confirmReceived}
               disabled={saving}
             >
@@ -506,7 +506,7 @@ export function SalaryPanel({
                 />
                 <Button
                   type="button"
-                  className="shrink-0 bg-amber-500 text-white hover:bg-amber-600"
+                  className="shrink-0 gx-cta"
                   onClick={addAdvance}
                   disabled={saving || !(parseDecimalInput(advanceInput) > 0)}
                 >
@@ -519,7 +519,7 @@ export function SalaryPanel({
           ) : (
             <Button
               type="button"
-              className="w-full bg-amber-500 text-white hover:bg-amber-600"
+              className="w-full gx-cta"
               onClick={() => setAdvanceOpen(true)}
               disabled={!advancePeriod}
             >
@@ -597,7 +597,7 @@ function ActionButton({
         className={cn(
           "h-auto min-h-11 w-full whitespace-normal py-2.5 text-center leading-snug",
           enabled
-            ? "bg-emerald-600 text-white hover:bg-emerald-700"
+            ? "gx-cta"
             : "bg-slate-200 text-slate-400 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-500",
         )}
         onClick={onClick}

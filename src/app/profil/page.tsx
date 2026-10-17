@@ -55,7 +55,7 @@ export default async function ProfilPage() {
                 prefetch
                 className="flex items-center gap-3.5 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm active:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:active:bg-slate-800"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-500 to-slate-700 text-white">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-slate-500 to-slate-700 text-white">
                   <Users className="h-[18px] w-[18px]" />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -91,7 +91,7 @@ export default async function ProfilPage() {
 function Row({ icon: Icon, label, value }: { icon: typeof Mail; label: string; value: string }) {
   return (
     <div className="flex items-center gap-3.5 border-t border-slate-100 px-4 py-3.5 first:border-t-0 dark:border-slate-800">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--gx-tile)] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
         <Icon className="h-[18px] w-[18px]" />
       </span>
       <span className="min-w-0 flex-1">

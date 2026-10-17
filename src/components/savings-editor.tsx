@@ -102,7 +102,7 @@ export function SavingsEditor({ move, counted, currency }: { move: SavingsMove; 
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back("/epargne")}>
           Annuler
         </Button>
-        <Button type="submit" className="flex-1 bg-lime-600 text-white hover:bg-lime-700" disabled={pending}>
+        <Button type="submit" className="flex-1 gx-cta" disabled={pending}>
           {pending ? "Enregistrement…" : "Enregistrer"}
         </Button>
       </div>

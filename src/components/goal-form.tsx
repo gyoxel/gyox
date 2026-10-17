@@ -343,7 +343,7 @@ export function GoalForm({
         <Button
           type="submit"
           disabled={isPending}
-          className="flex-1 bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-500 dark:text-white"
+          className="flex-1 gx-cta"
         >
           {isPending ? "Enregistrement…" : goal ? "Enregistrer" : "Ajouter l'objectif"}
         </Button>

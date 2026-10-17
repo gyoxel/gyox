@@ -425,7 +425,7 @@ function DepositDialog({
             type="button"
             onClick={addDeposit}
             disabled={saving || parseDecimalInput(deposit) <= 0}
-            className="bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-500 dark:text-white"
+            className="gx-cta"
           >
             <Check className="h-4 w-4" />
             {saving ? "Ajout…" : "Ajouter"}
@@ -440,7 +440,7 @@ const DEPOSIT_DATE = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "
 
 function StepIcon({ children }: { children: React.ReactNode }) {
   return (
-    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-base dark:bg-amber-950/40">
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--gx-tile)] text-base dark:bg-white/10">
       {children}
     </span>
   );

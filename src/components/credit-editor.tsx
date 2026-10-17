@@ -489,7 +489,7 @@ export function CreditEditor({
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back()}>
           Annuler
         </Button>
-        <Button type="submit" className="flex-1 bg-blue-600 text-white hover:bg-blue-700" disabled={isPending}>
+        <Button type="submit" className="flex-1 gx-cta" disabled={isPending}>
           {isPending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter"}
         </Button>
       </div>
@@ -631,7 +631,7 @@ function CustomTry({
         </div>
         <Button
           type="button"
-          className="h-10 shrink-0 bg-blue-600 px-3 text-white hover:bg-blue-700"
+          className="h-10 shrink-0 px-3 gx-cta"
           onClick={onApply}
           disabled={!result}
         >

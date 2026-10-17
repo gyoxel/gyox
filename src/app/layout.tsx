@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Manrope } from "next/font/google";
 import { BottomNav } from "@/components/bottom-nav";
 import { AppToaster } from "@/components/app-toaster";
 import { NavHistoryTracker } from "@/lib/nav-history";
@@ -17,6 +17,12 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+// The app's type, like the banking apps'.
+const manrope = Manrope({
+  variable: "--font-app",
   subsets: ["latin"],
 });
 
@@ -58,12 +64,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="fr" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="fr" className={`${geistSans.variable} ${geistMono.variable} ${manrope.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT + THEME_COLOR_BOOT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-        <div id="page-root" className="mx-auto flex w-full max-w-lg flex-1 flex-col pb-32">
+        <div id="page-root" className="relative mx-auto flex w-full max-w-lg flex-1 flex-col pb-32">
           {children}
         </div>
         <BottomNav />

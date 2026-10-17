@@ -300,7 +300,7 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back("/prets")}>
           Annuler
         </Button>
-        <Button type="submit" className="flex-1 bg-amber-600 text-white hover:bg-amber-700" disabled={pending}>
+        <Button type="submit" className="flex-1 gx-cta" disabled={pending}>
           {pending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter le prêt"}
         </Button>
       </div>

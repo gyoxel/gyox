@@ -80,7 +80,7 @@ export function ExistingSavingsDialog({ open, onOpenChange }: { open: boolean; o
             />
           </div>
           {error && <p className="text-sm text-rose-600">{error}</p>}
-          <Button type="submit" className="bg-lime-600 text-white hover:bg-lime-700" disabled={pending || !(value > 0)}>
+          <Button type="submit" className="gx-cta" disabled={pending || !(value > 0)}>
             <Landmark className="h-4 w-4" />
             {pending ? "Enregistrement…" : "Ajouter à l'épargne"}
           </Button>

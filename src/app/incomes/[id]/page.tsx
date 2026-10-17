@@ -37,7 +37,7 @@ export default async function EditIncomePage({ params }: { params: Promise<{ id:
         text="Cet argent a été repris de ton épargne. Pour le modifier ou le supprimer, c'est depuis l'épargne."
         href={`/epargne/${move.id}`}
         editLabel="Modifier le retrait"
-        buttonClass="bg-lime-600 text-white hover:bg-lime-700"
+        buttonClass="gx-cta"
         sourceLabel="l'épargne"
       />
     );
@@ -53,7 +53,7 @@ export default async function EditIncomePage({ params }: { params: Promise<{ id:
         text={`Ce qui restait du budget « ${budget.budget.expense.name} » à la fin du mois. Il suit les dépenses notées dans le budget.`}
         href={`/budgets/${budget.budget.id}?month=${budget.monthKey}`}
         editLabel="Voir le budget"
-        buttonClass="bg-purple-600 text-white hover:bg-purple-700"
+        buttonClass="gx-cta"
         sourceLabel="le budget"
       />
     );
@@ -69,7 +69,7 @@ export default async function EditIncomePage({ params }: { params: Promise<{ id:
         text={`Un remboursement du prêt à ${loan.name}. Pour l'annuler, c'est depuis le prêt.`}
         href={`/prets/${loan.id}`}
         editLabel="Voir le prêt"
-        buttonClass="bg-amber-600 text-white hover:bg-amber-700"
+        buttonClass="gx-cta"
         sourceLabel="le prêt"
       />
     );

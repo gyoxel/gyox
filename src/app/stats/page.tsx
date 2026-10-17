@@ -125,7 +125,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
         {transition && (
           <div className="flex gap-3 rounded-3xl bg-gradient-to-br from-emerald-50 to-teal-50 px-4 py-3.5 dark:from-emerald-950/40 dark:to-teal-950/40">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow-sm">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow-sm">
               <Sparkles className="h-4 w-4" />
             </span>
             <div className="text-sm text-emerald-900 dark:text-emerald-200">

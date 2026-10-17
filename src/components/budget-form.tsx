@@ -244,7 +244,7 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back("/budgets")}>
           Annuler
         </Button>
-        <Button type="submit" className="flex-1 bg-purple-600 text-white hover:bg-purple-700" disabled={isPending}>
+        <Button type="submit" className="flex-1 gx-cta" disabled={isPending}>
           {isPending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter le budget"}
         </Button>
       </div>

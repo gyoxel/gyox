@@ -46,7 +46,7 @@ export default async function GoalsPage() {
           </div>
         )}
 
-        <AddLink href="/goals/new" label="Ajouter un objectif" className="border-amber-200 text-orange-600 active:bg-amber-50 dark:border-amber-900 dark:text-amber-400 dark:active:bg-amber-950/30" />
+        <AddLink href="/goals/new" label="Ajouter un objectif" />
 
         {rows.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-slate-200 px-6 py-10 text-center dark:border-slate-700">

@@ -418,7 +418,7 @@ export function ExpenseEditor({
         </Button>
         <Button
           type="submit"
-          className="flex-1 bg-rose-600 text-white hover:bg-rose-700 dark:bg-rose-600 dark:text-white"
+          className="flex-1 gx-cta"
           disabled={isPending}
         >
           {isPending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter la dépense"}

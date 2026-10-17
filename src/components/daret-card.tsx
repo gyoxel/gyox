@@ -93,7 +93,7 @@ export function DaretCard({
           contribution and payout below keep their own buttons. */}
       <Link href={`/daret/${daret.id}`} aria-label={`Modifier ${daret.expense.name}`} className="block pb-0.5 active:opacity-70">
       <div className="flex items-center gap-3 px-4 pt-4">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-600 text-xl shadow-sm">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--gx-tile)] text-xl dark:bg-white/10">
           {daret.expense.icon ?? "🤝🏻"}
         </span>
         <div className="min-w-0 flex-1">
@@ -223,7 +223,7 @@ export function DaretCard({
           ) : (
             <Button
               type="button"
-              className="mt-2 w-full bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-600 dark:text-white"
+              className="mt-2 w-full gx-cta"
               onClick={() => setChoosing("payout")}
               disabled={busy}
             >

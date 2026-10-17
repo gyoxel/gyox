@@ -219,7 +219,7 @@ function TakeBudget({ expenseId, monthKey, amount }: { expenseId: string; monthK
       </p>
       <PaymentMethodPicker value={method} onChange={setMethod} label="Pris en" />
       {error && <p className="text-sm text-rose-600">{error}</p>}
-      <Button type="button" className="bg-purple-600 text-white hover:bg-purple-700" disabled={pending} onClick={take}>
+      <Button type="button" className="gx-cta" disabled={pending} onClick={take}>
         {pending ? "…" : `Prendre ${amount}`}
       </Button>
     </div>
@@ -302,7 +302,7 @@ function AddLine({
         </div>
       )}
       {error && <p className="text-sm text-rose-600">{error}</p>}
-      <Button type="submit" className="bg-purple-600 text-white hover:bg-purple-700" disabled={pending || !(value > 0)}>
+      <Button type="submit" className="gx-cta" disabled={pending || !(value > 0)}>
         <Plus className="h-4 w-4" />
         {pending ? "Enregistrement…" : "Ajouter"}
       </Button>
@@ -370,7 +370,7 @@ function EditLine({
           <Input aria-label="Date" type="date" value={date} min={min} max={max} onChange={(e) => setDate(e.target.value || entry.date)} />
           <PaymentMethodPicker value={method} onChange={setMethod} label="Si ça dépasse" />
           {error && <p className="text-sm text-rose-600">{error}</p>}
-          <Button type="submit" className="bg-purple-600 text-white hover:bg-purple-700" disabled={pending}>
+          <Button type="submit" className="gx-cta" disabled={pending}>
             {pending ? "…" : "Enregistrer"}
           </Button>
           <Button

@@ -43,11 +43,7 @@ export default async function LoansPage() {
           </div>
         </div>
 
-        <AddLink
-          href="/prets/new"
-          label="Ajouter un prêt"
-          className="border-amber-200 text-amber-700 active:bg-amber-50 dark:border-amber-900 dark:text-amber-300 dark:active:bg-amber-950/30"
-        />
+        <AddLink href="/prets/new" label="Ajouter un prêt" />
 
         {rows.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-slate-200 px-4 py-10 text-center dark:border-slate-700">
@@ -68,7 +64,7 @@ export default async function LoansPage() {
               >
                 <Link href={`/prets/${loan.id}`} className="flex flex-col gap-2.5 px-4 pb-3 pt-4 active:bg-slate-50 dark:active:bg-slate-800/60">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 text-xl shadow-sm">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--gx-tile)] text-xl dark:bg-white/10">
                       🤝
                     </span>
                     <span className="min-w-0 flex-1">

@@ -84,7 +84,7 @@ export default async function IncomesPage() {
           </p>
         </div>
 
-        <AddLink href="/incomes/new" label="Ajouter un revenu" className="border-emerald-200 text-emerald-600 active:bg-emerald-50 dark:border-emerald-900 dark:text-emerald-400 dark:active:bg-emerald-950/30" />
+        <AddLink href="/incomes/new" label="Ajouter un revenu" />
 
         {months.length === 0 ? (
           <p className="rounded-xl border border-dashed border-slate-200 px-3 py-6 text-center text-sm text-slate-400 dark:border-slate-700">
@@ -103,7 +103,7 @@ export default async function IncomesPage() {
                   {list.map((r) => (
                     <li key={r.id} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
                       <Link href={r.href} className="flex items-center gap-3 px-4 py-3 active:bg-slate-50 dark:active:bg-slate-800/60">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-lg dark:bg-emerald-950/50">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--gx-tile)] text-lg dark:bg-white/10">
                           {r.emoji}
                         </span>
                         <span className="min-w-0 flex-1">

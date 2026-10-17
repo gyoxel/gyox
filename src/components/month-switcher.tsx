@@ -9,7 +9,7 @@ import type { ReactNode } from "react";
 
 const SWIPE_THRESHOLD_PX = 40;
 const ARROW =
-  "flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 active:bg-slate-100 dark:text-slate-400 dark:active:bg-slate-800";
+  "flex h-9 w-9 items-center justify-center rounded-full text-slate-500 active:bg-slate-100 dark:text-slate-400 dark:active:bg-slate-800";
 
 /** ‹ month › as a card (like the Accueil's), with an optional line under the month. */
 export function MonthSwitcher({

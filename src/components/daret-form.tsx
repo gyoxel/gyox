@@ -184,7 +184,7 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back("/daret")}>
           Annuler
         </Button>
-        <Button type="submit" className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-600 dark:text-white" disabled={isPending}>
+        <Button type="submit" className="flex-1 gx-cta" disabled={isPending}>
           {isPending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter la daret"}
         </Button>
       </div>

@@ -113,7 +113,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
           })}
         </div>
         <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--gx-tile)] text-slate-500 dark:bg-slate-800 dark:text-slate-300">
             <Leaf className="h-4 w-4" />
           </span>
           <span className="min-w-0 flex-1">
@@ -207,7 +207,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
 
 function RowIcon({ className, children }: { className: string; children: React.ReactNode }) {
   return (
-    <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-sm", className)}>
+    <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-white shadow-sm", className)}>
       {children}
     </span>
   );

@@ -31,10 +31,10 @@ function AccountPicker<T extends string>({
             aria-checked={value === m}
             onClick={() => onChange(m)}
             className={cn(
-              "flex h-10 items-center justify-center gap-1.5 rounded-xl border text-sm font-medium transition-colors",
+              "flex h-11 items-center justify-center gap-1.5 rounded-full text-sm font-semibold transition-colors",
               value === m
-                ? "border-slate-900 bg-slate-900 text-white dark:border-sky-400/50 dark:bg-sky-400/15 dark:text-sky-50 dark:shadow-[0_0_20px_-6px] dark:shadow-sky-400/60"
-                : "border-slate-200 bg-white text-slate-600 active:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
+                ? "bg-violet-600 text-white shadow-[0_8px_18px_-10px] shadow-violet-600/70 dark:bg-violet-500"
+                : "bg-[var(--gx-chip)] text-slate-600 active:bg-slate-200 dark:bg-white/[0.07] dark:text-slate-300",
             )}
           >
             <span className="text-base leading-none">{options[m].emoji}</span>

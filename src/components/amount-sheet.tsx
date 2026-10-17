@@ -34,8 +34,8 @@ export interface AmountSheetProps {
 }
 
 const TONES = {
-  amber: { bar: "bg-amber-500", over: "bg-emerald-500", chip: "border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200", button: "bg-amber-600 hover:bg-amber-700" },
-  rose: { bar: "bg-rose-500", over: "bg-emerald-500", chip: "border-rose-500 bg-rose-50 text-rose-800 dark:bg-rose-950/50 dark:text-rose-200", button: "bg-rose-600 hover:bg-rose-700" },
+  amber: { bar: "bg-amber-500", over: "bg-emerald-500", chip: "border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200", button: "gx-cta" },
+  rose: { bar: "bg-rose-500", over: "bg-emerald-500", chip: "border-rose-500 bg-rose-50 text-rose-800 dark:bg-rose-950/50 dark:text-rose-200", button: "gx-cta" },
 } as const;
 
 /**
@@ -150,7 +150,7 @@ export function AmountSheet(props: AmountSheetProps) {
 
           <PaymentMethodPicker value={method} onChange={setMethod} label={props.methodLabel} />
           {error && <p className="text-sm text-rose-600">{error}</p>}
-          <Button type="submit" className={cn("text-white", colors.button)} disabled={pending || !(value > 0)}>
+          <Button type="submit" className={colors.button} disabled={pending || !(value > 0)}>
             {pending ? "Enregistrement…" : props.confirmLabel(typed)}
           </Button>
           {props.onDelete && (

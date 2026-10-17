@@ -47,8 +47,7 @@ export function ReceiveRepayment({ variant = "full", ...info }: MonthInfo & { va
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          "flex shrink-0 items-center justify-center gap-1.5 rounded-xl font-semibold text-white shadow-sm transition-transform active:scale-95",
-          "bg-amber-600 active:bg-amber-700",
+          "gx-cta flex shrink-0 items-center justify-center gap-1.5 rounded-full font-semibold transition-transform active:scale-95",
           variant === "full" ? "h-11 w-full text-sm" : "h-9 px-3 text-xs",
         )}
       >

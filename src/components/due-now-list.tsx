@@ -24,9 +24,9 @@ const SWIPE_THRESHOLD_PX = 40;
 
 /** Icon tile tinted like the expense's colour (permanent, temporary, credit). */
 const TILE_CLASS: Record<DisplayColor, string> = {
-  orange: "bg-orange-50 dark:bg-orange-950/40",
-  red: "bg-rose-50 dark:bg-rose-950/40",
-  blue: "bg-blue-50 dark:bg-blue-950/40",
+  orange: "bg-[var(--gx-tile)] dark:bg-white/10",
+  red: "bg-[var(--gx-tile)] dark:bg-white/10",
+  blue: "bg-[var(--gx-tile)] dark:bg-white/10",
 };
 
 const round = (n: number) => Math.round(n * 100) / 100;
@@ -261,7 +261,7 @@ export function DueNowList({
           type="button"
           onClick={() => goMonth(addMonths(viewMonth, -1))}
           aria-label="Mois précédent"
-          className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 active:bg-slate-100 dark:text-slate-400 dark:active:bg-slate-800"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 active:bg-slate-100 dark:text-slate-400 dark:active:bg-slate-800"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -288,7 +288,7 @@ export function DueNowList({
           type="button"
           onClick={() => goMonth(addMonths(viewMonth, 1))}
           aria-label="Mois suivant"
-          className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 active:bg-slate-100 dark:text-slate-400 dark:active:bg-slate-800"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 active:bg-slate-100 dark:text-slate-400 dark:active:bg-slate-800"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -341,8 +341,8 @@ export function DueNowList({
                 >
                   <span
                     className={cn(
-                      "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl",
-                      paid ? "bg-emerald-50 dark:bg-emerald-950/40" : rest ? "bg-amber-50 dark:bg-amber-950/40" : TILE_CLASS[color],
+                      "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xl",
+                      TILE_CLASS[color],
                     )}
                   >
                     <span className={cn((paid || rest) && "opacity-60")}>{displayIcon(expense, emojiById)}</span>

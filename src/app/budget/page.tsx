@@ -125,7 +125,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
           </p>
         </div>
 
-        <AddLink href="/expenses/new" label="Ajouter une dépense" className="border-rose-200 text-rose-600 active:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:active:bg-rose-950/30" />
+        <AddLink href="/expenses/new" label="Ajouter une dépense" />
 
         {groups.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-slate-200 px-3 py-8 text-center text-sm text-slate-400 dark:border-slate-700">
@@ -154,8 +154,8 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
                       >
                         <span
                           className={cn(
-                            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl",
-                            isPaid ? "bg-emerald-50 dark:bg-emerald-950/40" : "bg-rose-50 dark:bg-rose-950/40",
+                            "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xl",
+                            "bg-[var(--gx-tile)] dark:bg-white/10",
                           )}
                         >
                           {r.icon}

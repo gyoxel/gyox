@@ -133,7 +133,7 @@ export function DepositEditor({
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back(`/goals/${goal.id}`)}>
           Annuler
         </Button>
-        <Button type="submit" className="flex-1 bg-orange-500 text-white hover:bg-orange-600" disabled={pending}>
+        <Button type="submit" className="flex-1 gx-cta" disabled={pending}>
           {pending ? "Enregistrement…" : "Enregistrer"}
         </Button>
       </div>

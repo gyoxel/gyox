@@ -478,7 +478,7 @@ export function CategoryManager({
           onClick={() => open({ mode: "new" })}
           className="flex min-h-[96px] flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-slate-300 text-slate-500 transition-colors active:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:active:bg-slate-900"
         >
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--gx-tile)] dark:bg-slate-800">
             <Plus className="h-5 w-5" />
           </span>
           <span className="text-sm font-semibold">Ajouter</span>
@@ -516,7 +516,7 @@ export function CategoryManager({
             <RotateCcw className="h-4 w-4" />
             Annuler
           </Button>
-          <Button type="button" className="flex-1 bg-violet-600 text-white hover:bg-violet-700" onClick={saveOrder} disabled={busy}>
+          <Button type="button" className="flex-1 gx-cta" onClick={saveOrder} disabled={busy}>
             <Check className="h-4 w-4" />
             Enregistrer l&apos;ordre
           </Button>
@@ -579,7 +579,7 @@ export function CategoryManager({
               />
             </div>
 
-            <Button type="button" onClick={submit} disabled={busy} className="bg-violet-600 text-white hover:bg-violet-700">
+            <Button type="button" onClick={submit} disabled={busy} className="gx-cta">
               <Check className="h-4 w-4" />
               {editing?.mode === "new" ? "Ajouter" : "Enregistrer"}
             </Button>

@@ -68,7 +68,7 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
                 <li key={s.slot} className="flex items-start gap-3 border-t border-slate-100 px-4 py-3 first:border-t-0 dark:border-slate-800">
                   <span
                     className={cn(
-                      "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold",
+                      "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold",
                       full
                         ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50"
                         : isDue
@@ -146,7 +146,7 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
           {loan.note && <p className="px-1 text-xs text-slate-500 dark:text-slate-400">📝 {loan.note}</p>}
         </section>
 
-        <Button asChild className="bg-amber-600 text-white hover:bg-amber-700">
+        <Button asChild className="gx-cta">
           <Link href={`/prets/${loan.id}/edit`}>
             <Pencil className="h-4 w-4" />
             Modifier le prêt

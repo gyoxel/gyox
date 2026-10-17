@@ -65,7 +65,7 @@ export function EpargneView({
       </div>
 
       <div className="grid grid-cols-2 gap-2.5">
-        <Button type="button" className="h-12 bg-lime-600 text-white hover:bg-lime-700" onClick={() => setDialog({ from: "card", to: "savings" })}>
+        <Button type="button" className="h-12 gx-cta" onClick={() => setDialog({ from: "card", to: "savings" })}>
           <ArrowDownToLine className="h-4 w-4" />
           Mettre de côté
         </Button>
@@ -103,8 +103,8 @@ export function EpargneView({
                     <Link href={x.href} className="flex items-center gap-3 px-4 py-3 active:bg-slate-50 dark:active:bg-slate-800/60">
                       <span
                         className={cn(
-                          "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg",
-                          x.kind === "out" || x.kind === "goal" ? "bg-amber-50 dark:bg-amber-950/50" : "bg-lime-50 dark:bg-lime-950/50",
+                          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg",
+                          "bg-[var(--gx-tile)] dark:bg-white/10",
                         )}
                       >
                         {x.kind === "existing" ? "🏦" : x.kind === "in" ? "🐷" : x.kind === "goal" ? "🎯" : "↩️"}

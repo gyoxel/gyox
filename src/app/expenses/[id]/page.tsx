@@ -64,7 +64,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
             Ce versement vient de l&apos;objectif « {goal.name} ». Tu peux le cocher ou le décocher dans tes dépenses ; pour
             le modifier, c&apos;est depuis le versement.
           </p>
-          <Button asChild className="bg-orange-500 text-white hover:bg-orange-600">
+          <Button asChild className="gx-cta">
             <Link href={`/goals/${goal.id}/deposits/${deposit.id}`}>
               <Pencil className="h-4 w-4" />
               Modifier le versement
@@ -91,7 +91,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
         text="Cet argent a été mis dans ton épargne. Tu peux le cocher ou le décocher dans tes dépenses ; pour le modifier ou le supprimer, c'est depuis l'épargne."
         href={`/epargne/${linkedMove.id}`}
         editLabel="Modifier l'épargne"
-        buttonClass="bg-lime-600 text-white hover:bg-lime-700"
+        buttonClass="gx-cta"
         sourceLabel="l'épargne"
       />
     );
@@ -117,7 +117,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
         }
         href={overflowOf ? `/budgets/${budget.id}?month=${overflowOf}` : `/budgets/${budget.id}`}
         editLabel="Voir le budget"
-        buttonClass="bg-purple-600 text-white hover:bg-purple-700"
+        buttonClass="gx-cta"
         sourceLabel="le budget"
       />
     );
@@ -133,7 +133,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
         text={`Cet argent a été prêté à ${linkedLoan.name}. Pour le modifier ou le supprimer, c'est depuis le prêt — où tu confirmes aussi chaque remboursement reçu.`}
         href={`/prets/${linkedLoan.id}`}
         editLabel="Voir le prêt"
-        buttonClass="bg-amber-600 text-white hover:bg-amber-700"
+        buttonClass="gx-cta"
         sourceLabel="le prêt"
       />
     );
@@ -164,7 +164,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
             Cette cotisation vient de la daret « {expense.name} ». Tu peux la cocher ou la décocher dans tes dépenses ;
             pour la modifier ou la supprimer, c&apos;est depuis la daret.
           </p>
-          <Button asChild className="bg-emerald-600 text-white hover:bg-emerald-700">
+          <Button asChild className="gx-cta">
             <Link href={`/daret/${linkedDaret.id}`}>
               <Pencil className="h-4 w-4" />
               Modifier la daret
