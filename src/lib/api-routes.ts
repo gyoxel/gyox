@@ -16,6 +16,7 @@ import * as expenses from "@/app/api/expenses/route";
 import * as expensesById from "@/app/api/expenses/[id]/route";
 import * as expensesByIdMonthAmount from "@/app/api/expenses/[id]/month-amount/route";
 import * as expensesByIdPayments from "@/app/api/expenses/[id]/payments/route";
+import * as expensesByIdPaymentsByPaymentId from "@/app/api/expenses/[id]/payments/[paymentId]/route";
 import * as goalIdeas from "@/app/api/goal-ideas/route";
 import * as goalIdeasById from "@/app/api/goal-ideas/[id]/route";
 import * as goals from "@/app/api/goals/route";
@@ -59,6 +60,7 @@ const ROUTES: [string, RouteModule][] = [
   ["expenses/[id]", expensesById],
   ["expenses/[id]/month-amount", expensesByIdMonthAmount],
   ["expenses/[id]/payments", expensesByIdPayments],
+  ["expenses/[id]/payments/[paymentId]", expensesByIdPaymentsByPaymentId],
   ["goal-ideas", goalIdeas],
   ["goal-ideas/[id]", goalIdeasById],
   ["goals", goals],

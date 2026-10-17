@@ -612,6 +612,40 @@ export async function markCreditSlotPaid(
   return mapPayment(row);
 }
 
+/** Changes one part of a month's payment: how much, cash or card. */
+export async function updatePaymentPart(
+  expenseId: string,
+  paymentId: string,
+  input: { amountPaid: number; method: PaymentMethod },
+): Promise<Payment | null> {
+  const payment = await prisma.payment.findFirst({ where: { id: paymentId, expenseId } });
+  if (!payment) return null;
+  const [row] = await prisma.$transaction([prisma.payment.update({ where: { id: payment.id }, data: input })]);
+  return mapPayment(row);
+}
+
+/**
+ * Removes one part of a month's payment (a mistake). The month's other parts
+ * close up, the first staying part 0; a credit installment gone entirely
+ * moves the later ones down one, so they stay 1, 2, 3…
+ */
+export async function deletePaymentPart(expenseId: string, paymentId: string): Promise<boolean> {
+  const payment = await prisma.payment.findFirst({ where: { id: paymentId, expenseId } });
+  if (!payment) return false;
+  const month = payment.slotIndex != null ? { slotIndex: payment.slotIndex } : { monthKey: payment.monthKey, slotIndex: null };
+  const others = await prisma.payment.findMany({ where: { expenseId, id: { not: payment.id }, ...month }, orderBy: { part: "asc" } });
+  const later =
+    payment.slotIndex != null && others.length === 0
+      ? await prisma.payment.findMany({ where: { expenseId, slotIndex: { gt: payment.slotIndex } }, orderBy: [{ slotIndex: "asc" }, { part: "asc" }] })
+      : [];
+  await prisma.$transaction([
+    prisma.payment.delete({ where: { id: payment.id } }),
+    ...others.flatMap((p, i) => (p.part === i ? [] : [prisma.payment.update({ where: { id: p.id }, data: { part: i } })])),
+    ...later.map((p) => prisma.payment.update({ where: { id: p.id }, data: { slotIndex: (p.slotIndex ?? 0) - 1 } })),
+  ]);
+  return true;
+}
+
 /** Undo: removes the most recently confirmed installment (highest slot), all its parts. */
 export async function undoLastCreditSlot(expenseId: string): Promise<boolean> {
   const last = await prisma.payment.findFirst({

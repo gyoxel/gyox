@@ -18,6 +18,21 @@ import { getLoanOfExpense } from "./loans-repo";
 import { budgetIdOfExpense } from "./budgets-repo";
 import type { Payment, PaymentMethod } from "./types";
 
+export const AMOUNT_LOCKED = "Ce montant se change depuis là d'où vient la dépense.";
+
+/** Whether the expense comes from somewhere else (a daret, a goal, savings,
+ *  a loan, a budget), whose amount it follows: it's paid as it is. */
+export async function amountLocked(id: string): Promise<boolean> {
+  const links = await Promise.all([
+    getDaretOfExpense(id),
+    getDepositOfExpense(id),
+    getSavingsMoveOfExpense(id),
+    getLoanOfExpense(id),
+    budgetIdOfExpense(id),
+  ]);
+  return links.some(Boolean);
+}
+
 /**
  * - Non-credit: settles `monthKey` (omitted: the oldest unpaid month).
  * - Credit: pays the installment pending as of `monthKey` (omitted: now).
@@ -41,18 +56,7 @@ export async function payExpense(
   if (!expense) return { error: "Dépense introuvable.", status: 404 };
   const value = amount != null ? Math.round(amount * 100) / 100 : null;
 
-  if (value != null) {
-    const [daret, deposit, move, loan, budget] = await Promise.all([
-      getDaretOfExpense(id),
-      getDepositOfExpense(id),
-      getSavingsMoveOfExpense(id),
-      getLoanOfExpense(id),
-      budgetIdOfExpense(id),
-    ]);
-    if (daret || deposit || move || loan || budget) {
-      return { error: "Ce montant se change depuis là d'où vient la dépense.", status: 409 };
-    }
-  }
+  if (value != null && (await amountLocked(id))) return { error: AMOUNT_LOCKED, status: 409 };
 
   if (expense.type === "credit") {
     const evalMonth = monthKey ? parseMonthKey(monthKey) : todayMonth();

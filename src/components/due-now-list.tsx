@@ -4,7 +4,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { flushPendingRefresh, mutate, trackMutation } from "@/lib/use-refresh-data";
 import Link from "next/link";
-import { Check, ChevronLeft, ChevronRight, Pencil, Plus, PartyPopper } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Pencil, Plus, PartyPopper, Undo2 } from "lucide-react";
 import { addMonths, monthKey as toMonthKey, monthLabelFr, monthLabelShortFr, type MonthId } from "@/lib/date";
 import { findPayment, getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, getMonthLedgerItems, lastPaidAt, type DisplayColor, type LedgerItem } from "@/lib/engine";
 import type { Expense, Payment, PaymentMethod } from "@/lib/types";
@@ -15,6 +15,7 @@ import { insufficientMessage } from "@/lib/balance-message";
 import { formatMoney, cn } from "@/lib/utils";
 import { ColorDot } from "@/components/color-dot";
 import { AmountSheet } from "@/components/amount-sheet";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { displayIcon } from "@/lib/category";
 
 const SWIPE_THRESHOLD_PX = 40;
@@ -96,6 +97,8 @@ export function DueNowList({
   const [choosingId, setChoosingId] = useState<string | null>(null);
   // ✏️: paid another amount than what's left (part of it, or more).
   const [otherAmount, setOtherAmount] = useState<{ expense: Expense; due: number; already: number } | null>(null);
+  // ✏️ on a paid row: correct this month's payment (or one of its parts).
+  const [editing, setEditing] = useState<{ expense: Expense; parts: Payment[]; due: number } | null>(null);
   const chooserRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!choosingId) return;
@@ -112,6 +115,18 @@ export function DueNowList({
     const key = toMonthKey(viewMonth);
     const methods = localPayments.filter((p) => p.expenseId === expense.id && p.monthKey === key && p.amountPaid > 0).map((p) => p.method);
     return [...new Set(methods.filter((m): m is PaymentMethod => m != null))];
+  }
+
+  /** Opens the correction of this month's payment of `expense`. */
+  function editPayment(expense: Expense) {
+    const key = toMonthKey(viewMonth);
+    const parts = localPayments
+      .filter((p) => p.expenseId === expense.id && p.monthKey === key && (expense.type !== "credit" || p.slotIndex != null))
+      .sort((a, b) => (a.part ?? 0) - (b.part ?? 0));
+    const settled = findPayment(parts, expense.id, key);
+    if (settled) setEditing({ expense, parts, due: settled.amountDue });
+    // A credit paid ahead: this month is covered by another month's payment.
+    else toast.info("Ce mois est couvert par une mensualité payée un autre mois : modifie-la depuis ce mois-là.");
   }
 
   /** This month's amount due and what's paid of it so far (its parts). */
@@ -371,7 +386,32 @@ export function DueNowList({
                     {formatMoney(amount, currency)}
                   </span>
                 </Link>
-                {choosingId === key ? (
+                {choosingId === key && paid ? (
+                  <div ref={chooserRef} className="flex shrink-0 items-center gap-1 py-1 pl-1" aria-label="Modifier ou annuler ?">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setChoosingId(null);
+                        editPayment(expense);
+                      }}
+                      aria-label="Modifier le paiement"
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm transition-transform active:scale-90 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setChoosingId(null);
+                        untick(expense);
+                      }}
+                      aria-label="Annuler le paiement"
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 shadow-sm transition-transform active:scale-90 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    >
+                      <Undo2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : choosingId === key ? (
                   <div ref={chooserRef} className="flex shrink-0 items-center gap-1 py-1 pl-1" aria-label="Payé comment ?">
                     {(["cash", "card"] as const).map((m) => (
                       <button
@@ -399,11 +439,11 @@ export function DueNowList({
                 ) : (
                   <button
                     type="button"
-                    onClick={() => (paid ? untick(expense) : setChoosingId(key))}
+                    onClick={() => setChoosingId(key)}
                     disabled={isPending}
                     aria-label={
                       paid
-                        ? `Annuler le paiement de ${expense.name}`
+                        ? `Modifier ou annuler le paiement de ${expense.name}`
                         : rest
                           ? `Marquer le reste de ${expense.name} comme payé`
                           : `Marquer ${expense.name} comme payé`
@@ -429,6 +469,17 @@ export function DueNowList({
             );
           })}
         </ul>
+      )}
+
+      {editing && (
+        <EditPayment
+          key={editing.parts.map((p) => p.id).join()}
+          {...editing}
+          viewMonth={viewMonth}
+          currency={currency}
+          balance={balance}
+          onClose={() => setEditing(null)}
+        />
       )}
 
       {otherAmount && (
@@ -533,6 +584,124 @@ function buildOptimisticPayment(expense: Expense, viewMonth: MonthId, payments: 
   return { ...base, slotIndex: null, amountDue: amount, part: 0 };
 }
 
+/** What paying `value` of a month does, `left` being still to pay of it. */
+function explainPayment(expense: Expense, left: number, value: number, money: (n: number) => string): string {
+  const credit = expense.type === "credit";
+  const after = round(left - value);
+  if (after > 0.005) {
+    return `Il restera ${money(after)} à payer ce mois-ci (« ${expense.name} · reste »). Pas payés d'ici la fin du mois, ${
+      credit ? "ils s'ajoutent à la dernière mensualité du crédit." : "ils ne passent pas au mois suivant."
+    }`;
+  }
+  if (after < -0.005) {
+    return credit ? `${money(-after)} en avance : la dernière mensualité baisse d'autant.` : `${money(-after)} de plus que prévu ce mois-ci.`;
+  }
+  return "Ce mois est réglé ✓";
+}
+
+const WHEN = new Intl.DateTimeFormat("fr-FR", { timeZone: "Africa/Casablanca", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
+/**
+ * ✏️ on a paid row: this month's payment, to correct (paid 200, it was
+ * 300) — straight away when paid at once, else the month's payments first,
+ * to pick the one to change. Each: its amount, cash / card, or removed.
+ */
+function EditPayment({
+  expense,
+  parts,
+  due,
+  viewMonth,
+  currency,
+  balance,
+  onClose,
+}: {
+  expense: Expense;
+  /** The month's payments (its parts), first one first. */
+  parts: Payment[];
+  /** The month's amount. */
+  due: number;
+  viewMonth: MonthId;
+  currency: string;
+  balance?: Record<PaymentMethod, number>;
+  onClose: () => void;
+}) {
+  const [picked, setPicked] = useState<Payment | null>(parts.length === 1 ? parts[0] : null);
+  const money = (n: number) => formatMoney(n, currency);
+  const label = monthLabelFr(viewMonth);
+  const paid = round(parts.reduce((s, p) => s + p.amountPaid, 0));
+
+  if (picked) {
+    const others = round(paid - picked.amountPaid);
+    const left = round(Math.max(0, due - others));
+    const path = `/api/expenses/${expense.id}/payments/${picked.id}`;
+    return (
+      <AmountSheet
+        title="Modifier le paiement"
+        subtitle={`${expense.icon ?? "🧾"} ${expense.name} · ${label} · prévu ${money(due)}`}
+        expected={due}
+        already={others}
+        initialAmount={picked.amountPaid}
+        initialMethod={picked.method ?? "cash"}
+        chips={left > 0 && Math.abs(left - picked.amountPaid) > 0.005 ? [[others > 0 ? "Tout le reste" : "Tout", left]] : []}
+        explain={(v) => explainPayment(expense, left, v, money)}
+        methodLabel="Payé en"
+        confirmLabel={(v) => `Enregistrer ${money(v)}`}
+        tone="rose"
+        onClose={onClose}
+        onSubmit={async (value, method) => {
+          // Same account: only what's added comes out of it.
+          const out = method === picked.method ? value - picked.amountPaid : value;
+          if (balance && out > balance[method] + 0.005) return insufficientMessage(method, balance[method]);
+          const res = await mutate({ method: "PATCH", path, body: { amount: value, method } });
+          if (!res.ok) return errorMessage(res);
+          toast.success("Paiement modifié.");
+          return null;
+        }}
+        onDelete={async () => {
+          const res = await mutate({ method: "DELETE", path });
+          if (!res.ok) return errorMessage(res);
+          toast.success("Paiement supprimé.");
+          return null;
+        }}
+      />
+    );
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Quel paiement modifier ?</DialogTitle>
+          <DialogDescription>
+            {expense.icon ?? "🧾"} {expense.name} · {label} · {money(paid)} payés sur {money(due)}
+          </DialogDescription>
+        </DialogHeader>
+        <ul className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
+          {parts.map((p) => (
+            <li key={p.id} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setPicked(p)}
+                className="flex w-full items-center gap-2 px-3 py-3 text-left text-sm active:bg-slate-50 dark:active:bg-slate-800"
+              >
+                <span className="text-slate-500 dark:text-slate-400">{WHEN.format(new Date(p.paidAt))}</span>
+                {p.method && (
+                  <span className="text-slate-500 dark:text-slate-400">
+                    {METHOD_META[p.method].emoji} {METHOD_META[p.method].label}
+                  </span>
+                )}
+                <span className="ml-auto font-semibold tabular-nums text-slate-900 dark:text-white">{money(p.amountPaid)}</span>
+                <Pencil className="h-3.5 w-3.5 text-slate-300" />
+              </button>
+            </li>
+          ))}
+        </ul>
+        <p className="text-center text-[11px] text-slate-400">Touche un paiement pour changer son montant, cash ou carte, ou le supprimer.</p>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 /**
  * ✏️ "Tu as payé combien ?": part of the month (the rest stays to pay this
  * month: "X · reste"), all of it, or more — or, on a rest, part of what's
@@ -560,19 +729,6 @@ function OtherAmountSheet({
   const money = (n: number) => formatMoney(n, currency);
   const label = monthLabelFr(viewMonth);
   const left = round(Math.max(0, due - already));
-  const credit = expense.type === "credit";
-  function explain(value: number): string | null {
-    const after = round(left - value);
-    if (after > 0.005) {
-      return `Il restera ${money(after)} à payer ce mois-ci (« ${expense.name} · reste »). Pas payés d'ici la fin du mois, ${
-        credit ? "ils s'ajoutent à la dernière mensualité du crédit." : "ils ne passent pas au mois suivant."
-      }`;
-    }
-    if (after < -0.005) {
-      return credit ? `${money(-after)} en avance : la dernière mensualité baisse d'autant.` : `${money(-after)} de plus que prévu ce mois-ci.`;
-    }
-    return "Ce mois est réglé ✓";
-  }
   return (
     <AmountSheet
       title={already > 0 ? "Tu paies combien du reste ?" : "Tu as payé combien ?"}
@@ -582,7 +738,7 @@ function OtherAmountSheet({
       initialAmount={left}
       initialMethod="cash"
       chips={left > 0 ? [[already > 0 ? "Tout le reste" : "Tout", left]] : []}
-      explain={explain}
+      explain={(v) => explainPayment(expense, left, v, money)}
       methodLabel="Payé en"
       confirmLabel={(v) => `Payé ${money(v)}`}
       tone="rose"
