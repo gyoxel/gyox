@@ -103,7 +103,7 @@ export function EpargneView({
                     <Link href={x.href} className="flex items-center gap-3 px-4 py-3 active:bg-slate-50 dark:active:bg-slate-800/60">
                       <span
                         className={cn(
-                          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg",
+                          "flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl text-lg",
                           "bg-[var(--gx-tile)] dark:bg-white/10",
                         )}
                       >

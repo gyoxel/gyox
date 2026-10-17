@@ -163,7 +163,7 @@ export function TimelineSection({
           <div style={{ minWidth: NAME_PX + span * MONTH_PX }}>
           {/* Month axis: every month */}
           <div className="flex items-end gap-2">
-            <div className="sticky left-0 z-10 w-[88px] shrink-0 self-stretch bg-white dark:bg-[#12172a]" />
+            <div className="sticky left-0 z-10 w-[88px] shrink-0 self-stretch bg-white dark:bg-[#111d18]" />
             <div className="relative h-8 flex-1">
               {months.map((m, i) => (
                 <span
@@ -195,7 +195,7 @@ export function TimelineSection({
               const done = r.percent >= 100;
               return (
                 <div key={r.expense.id} className="flex items-center gap-2 border-t border-slate-100 py-2.5 first:border-t-0 dark:border-slate-800">
-                  <div className="sticky left-0 z-10 flex w-[88px] shrink-0 items-center gap-1.5 self-stretch bg-white dark:bg-[#12172a]">
+                  <div className="sticky left-0 z-10 flex w-[88px] shrink-0 items-center gap-1.5 self-stretch bg-white dark:bg-[#111d18]">
                     <span className="text-lg leading-none">{displayIcon(r.expense, categoryEmoji)}</span>
                     <span className="min-w-0">
                       <span className="block truncate text-[13px] font-semibold text-slate-800 dark:text-slate-100">

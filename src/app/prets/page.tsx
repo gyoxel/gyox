@@ -64,7 +64,7 @@ export default async function LoansPage() {
               >
                 <Link href={`/prets/${loan.id}`} className="flex flex-col gap-2.5 px-4 pb-3 pt-4 active:bg-slate-50 dark:active:bg-slate-800/60">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--gx-tile)] text-xl dark:bg-white/10">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--gx-tile)] text-xl dark:bg-white/10">
                       🤝
                     </span>
                     <span className="min-w-0 flex-1">

@@ -103,7 +103,7 @@ export default async function IncomesPage() {
                   {list.map((r) => (
                     <li key={r.id} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
                       <Link href={r.href} className="flex items-center gap-3 px-4 py-3 active:bg-slate-50 dark:active:bg-slate-800/60">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--gx-tile)] text-lg dark:bg-white/10">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[var(--gx-tile)] text-lg dark:bg-white/10">
                           {r.emoji}
                         </span>
                         <span className="min-w-0 flex-1">

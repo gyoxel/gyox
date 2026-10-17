@@ -5,8 +5,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f5f5f9;
-  --foreground: #14121f;
+  --background: #f3f6f4;
+  --foreground: #0f1f1a;
 }
 
 @theme inline {
@@ -17,38 +17,26 @@
 }
 
 :root.dark {
-  --background: #070c19;
+  --background: #07100d;
   --foreground: #f1f5f9;
   color-scheme: dark;
 }
 
-/* GX palette: one brand colour (violet) and three meanings — mint: money
-   in / paid, coral: money out / due, gold: loans / warnings. Tailwind's
-   other hues all take the brand: every sky-*, violet-*, lime-*… class in
-   the app follows. */
+/* GX palette: one brand colour, green #168568 (its 600), and two meanings
+   besides — coral: money out / due, gold: loans / warnings. Every other
+   Tailwind hue in the app (emerald, sky, violet…) takes the brand. */
 :root {
-  --gx-brand-50: oklch(0.975 0.025 296);
-  --gx-brand-100: oklch(0.945 0.056 296);
-  --gx-brand-200: oklch(0.895 0.102 296);
-  --gx-brand-300: oklch(0.830 0.155 296);
-  --gx-brand-400: oklch(0.755 0.202 296);
-  --gx-brand-500: oklch(0.680 0.225 296);
-  --gx-brand-600: oklch(0.595 0.217 296);
-  --gx-brand-700: oklch(0.510 0.194 296);
-  --gx-brand-800: oklch(0.430 0.163 296);
-  --gx-brand-900: oklch(0.370 0.132 296);
-  --gx-brand-950: oklch(0.280 0.101 296);
-  --gx-mint-50: oklch(0.975 0.016 160);
-  --gx-mint-100: oklch(0.945 0.036 160);
-  --gx-mint-200: oklch(0.895 0.066 160);
-  --gx-mint-300: oklch(0.830 0.100 160);
-  --gx-mint-400: oklch(0.755 0.130 160);
-  --gx-mint-500: oklch(0.680 0.145 160);
-  --gx-mint-600: oklch(0.595 0.140 160);
-  --gx-mint-700: oklch(0.510 0.125 160);
-  --gx-mint-800: oklch(0.430 0.105 160);
-  --gx-mint-900: oklch(0.370 0.085 160);
-  --gx-mint-950: oklch(0.280 0.065 160);
+  --gx-brand-50: oklch(0.975 0.018 170);
+  --gx-brand-100: oklch(0.948 0.036 170);
+  --gx-brand-200: oklch(0.900 0.065 170);
+  --gx-brand-300: oklch(0.835 0.095 170);
+  --gx-brand-400: oklch(0.745 0.118 170);
+  --gx-brand-500: oklch(0.645 0.120 170);
+  --gx-brand-600: #168568;
+  --gx-brand-700: oklch(0.475 0.090 170);
+  --gx-brand-800: oklch(0.405 0.075 170);
+  --gx-brand-900: oklch(0.345 0.060 170);
+  --gx-brand-950: oklch(0.265 0.045 170);
   --gx-gold-50: oklch(0.975 0.017 72);
   --gx-gold-100: oklch(0.945 0.038 72);
   --gx-gold-200: oklch(0.895 0.069 72);
@@ -74,6 +62,50 @@
 }
 
 @theme {
+  --color-emerald-50: var(--gx-brand-50);
+  --color-emerald-100: var(--gx-brand-100);
+  --color-emerald-200: var(--gx-brand-200);
+  --color-emerald-300: var(--gx-brand-300);
+  --color-emerald-400: var(--gx-brand-400);
+  --color-emerald-500: var(--gx-brand-500);
+  --color-emerald-600: var(--gx-brand-600);
+  --color-emerald-700: var(--gx-brand-700);
+  --color-emerald-800: var(--gx-brand-800);
+  --color-emerald-900: var(--gx-brand-900);
+  --color-emerald-950: var(--gx-brand-950);
+  --color-green-50: var(--gx-brand-50);
+  --color-green-100: var(--gx-brand-100);
+  --color-green-200: var(--gx-brand-200);
+  --color-green-300: var(--gx-brand-300);
+  --color-green-400: var(--gx-brand-400);
+  --color-green-500: var(--gx-brand-500);
+  --color-green-600: var(--gx-brand-600);
+  --color-green-700: var(--gx-brand-700);
+  --color-green-800: var(--gx-brand-800);
+  --color-green-900: var(--gx-brand-900);
+  --color-green-950: var(--gx-brand-950);
+  --color-teal-50: var(--gx-brand-50);
+  --color-teal-100: var(--gx-brand-100);
+  --color-teal-200: var(--gx-brand-200);
+  --color-teal-300: var(--gx-brand-300);
+  --color-teal-400: var(--gx-brand-400);
+  --color-teal-500: var(--gx-brand-500);
+  --color-teal-600: var(--gx-brand-600);
+  --color-teal-700: var(--gx-brand-700);
+  --color-teal-800: var(--gx-brand-800);
+  --color-teal-900: var(--gx-brand-900);
+  --color-teal-950: var(--gx-brand-950);
+  --color-lime-50: var(--gx-brand-50);
+  --color-lime-100: var(--gx-brand-100);
+  --color-lime-200: var(--gx-brand-200);
+  --color-lime-300: var(--gx-brand-300);
+  --color-lime-400: var(--gx-brand-400);
+  --color-lime-500: var(--gx-brand-500);
+  --color-lime-600: var(--gx-brand-600);
+  --color-lime-700: var(--gx-brand-700);
+  --color-lime-800: var(--gx-brand-800);
+  --color-lime-900: var(--gx-brand-900);
+  --color-lime-950: var(--gx-brand-950);
   --color-sky-50: var(--gx-brand-50);
   --color-sky-100: var(--gx-brand-100);
   --color-sky-200: var(--gx-brand-200);
@@ -151,50 +183,6 @@
   --color-fuchsia-800: var(--gx-brand-800);
   --color-fuchsia-900: var(--gx-brand-900);
   --color-fuchsia-950: var(--gx-brand-950);
-  --color-emerald-50: var(--gx-mint-50);
-  --color-emerald-100: var(--gx-mint-100);
-  --color-emerald-200: var(--gx-mint-200);
-  --color-emerald-300: var(--gx-mint-300);
-  --color-emerald-400: var(--gx-mint-400);
-  --color-emerald-500: var(--gx-mint-500);
-  --color-emerald-600: var(--gx-mint-600);
-  --color-emerald-700: var(--gx-mint-700);
-  --color-emerald-800: var(--gx-mint-800);
-  --color-emerald-900: var(--gx-mint-900);
-  --color-emerald-950: var(--gx-mint-950);
-  --color-green-50: var(--gx-mint-50);
-  --color-green-100: var(--gx-mint-100);
-  --color-green-200: var(--gx-mint-200);
-  --color-green-300: var(--gx-mint-300);
-  --color-green-400: var(--gx-mint-400);
-  --color-green-500: var(--gx-mint-500);
-  --color-green-600: var(--gx-mint-600);
-  --color-green-700: var(--gx-mint-700);
-  --color-green-800: var(--gx-mint-800);
-  --color-green-900: var(--gx-mint-900);
-  --color-green-950: var(--gx-mint-950);
-  --color-teal-50: var(--gx-mint-50);
-  --color-teal-100: var(--gx-mint-100);
-  --color-teal-200: var(--gx-mint-200);
-  --color-teal-300: var(--gx-mint-300);
-  --color-teal-400: var(--gx-mint-400);
-  --color-teal-500: var(--gx-mint-500);
-  --color-teal-600: var(--gx-mint-600);
-  --color-teal-700: var(--gx-mint-700);
-  --color-teal-800: var(--gx-mint-800);
-  --color-teal-900: var(--gx-mint-900);
-  --color-teal-950: var(--gx-mint-950);
-  --color-lime-50: var(--gx-mint-50);
-  --color-lime-100: var(--gx-mint-100);
-  --color-lime-200: var(--gx-mint-200);
-  --color-lime-300: var(--gx-mint-300);
-  --color-lime-400: var(--gx-mint-400);
-  --color-lime-500: var(--gx-mint-500);
-  --color-lime-600: var(--gx-mint-600);
-  --color-lime-700: var(--gx-mint-700);
-  --color-lime-800: var(--gx-mint-800);
-  --color-lime-900: var(--gx-mint-900);
-  --color-lime-950: var(--gx-mint-950);
   --color-amber-50: var(--gx-gold-50);
   --color-amber-100: var(--gx-gold-100);
   --color-amber-200: var(--gx-gold-200);
@@ -316,28 +304,30 @@ body {
 }
 
 /* ------------------------------------------------------------------------
-   GX look — clean, like the banking apps (Simple, PayPal…): one brand
-   colour, round buttons and icons, white cards on a calm background, no
-   haze over the page. Light is airy; dark is the night (aurora background,
-   glass surfaces). "simple" keeps its own plain rules above.
+   GX look — one green (#168568), calm and clean: white cards on a soft
+   background, nothing hazy over the page, squircle tiles tinted with the
+   green, pill buttons (the main one green, the others green-tinted), bold
+   titles. Dark is a green night (glows, glass). "simple" keeps its own
+   plain rules above.
    ------------------------------------------------------------------------ */
 :root {
-  --gx-ink: #14121f;
-  --gx-tile: #f0eff5;
-  --gx-chip: #f3f2f8;
+  --gx-ink: #0f1f1a;
+  --gx-tile: var(--gx-brand-100);
+  --gx-tile-ink: var(--gx-brand-700);
+  --gx-chip: #ecf1ee;
   --gx-glass: rgb(255 255 255 / 0.055);
   --gx-glass-strong: rgb(255 255 255 / 0.09);
   --gx-line: rgb(255 255 255 / 0.085);
   --gx-line-strong: rgb(255 255 255 / 0.14);
-  --gx-card-shadow: 0 1px 2px rgb(20 18 31 / 0.04), 0 12px 32px -20px rgb(20 18 31 / 0.22);
+  --gx-card-shadow: 0 1px 2px rgb(15 31 26 / 0.04), 0 12px 30px -20px rgb(15 31 26 / 0.25);
   --gx-hero:
-    radial-gradient(120% 85% at 8% -12%, rgb(139 92 246 / 0.55), transparent 58%),
-    radial-gradient(95% 95% at 108% 6%, rgb(34 211 238 / 0.32), transparent 62%),
-    linear-gradient(158deg, #1d1a48 0%, #121334 55%, #0b0d26 100%);
+    radial-gradient(120% 85% at 8% -12%, rgb(22 133 104 / 0.55), transparent 58%),
+    radial-gradient(95% 95% at 108% 6%, rgb(45 212 191 / 0.22), transparent 62%),
+    linear-gradient(158deg, #0f2c24 0%, #0b1f19 55%, #081611 100%);
 }
 
-/* The background: calm in light; in the dark, the night lit from the top
-   corners (fixed, so it doesn't move or repaint while scrolling). */
+/* The background: calm in light; in the dark, a green night lit from the
+   top (fixed, so it doesn't move or repaint while scrolling). */
 :root:not(.simple) body {
   background-color: var(--background);
 }
@@ -348,13 +338,12 @@ body {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(75% 42% at 10% -6%, rgb(124 58 237 / 0.34), transparent 70%),
-    radial-gradient(65% 40% at 102% 2%, rgb(34 211 238 / 0.18), transparent 70%),
-    radial-gradient(60% 40% at -10% 60%, rgb(20 184 166 / 0.07), transparent 70%),
-    radial-gradient(60% 40% at 110% 78%, rgb(124 58 237 / 0.11), transparent 70%);
+    radial-gradient(75% 42% at 10% -6%, rgb(22 133 104 / 0.32), transparent 70%),
+    radial-gradient(65% 40% at 102% 2%, rgb(45 212 191 / 0.13), transparent 70%),
+    radial-gradient(60% 40% at 110% 80%, rgb(22 133 104 / 0.1), transparent 70%);
 }
 
-/* Light cards: white on the calm background, no border — a soft shadow. */
+/* Light cards: white on the soft background, no border — a soft shadow. */
 :root:not(.dark):not(.simple) [class~="bg-white"][class*="border-slate-200"] {
   border-color: transparent;
   box-shadow: var(--gx-card-shadow);
@@ -364,7 +353,7 @@ body {
    over the night instead of flat slate. */
 .dark:not(.simple) :is([class~="dark:bg-slate-900"], [class*="dark:bg-slate-900/"]) {
   background-color: transparent;
-  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.075), rgb(255 255 255 / 0.04));
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.04));
 }
 .dark:not(.simple) [class*="dark:bg-slate-800"] {
   background-color: var(--gx-glass-strong);
@@ -383,29 +372,34 @@ body {
 }
 
 /* Icons: every little coloured tile (white icon on a gradient) becomes the
-   same round, quiet tile — dark icon on grey; light on glass in the dark. */
+   same squircle — green icon on a green tint (light green on glass in the
+   dark). */
 :root:not(.simple) .text-white[class*="bg-gradient-to"]:not(:is([class*="rounded-3xl"], [class*="rounded-b-"], [class^="px-"], [class*=" px-"])) {
   background-image: none !important;
   background-color: var(--gx-tile) !important;
-  color: var(--gx-ink) !important;
+  color: var(--gx-tile-ink) !important;
   box-shadow: none !important;
-  border-radius: 9999px;
+  border-radius: 16px;
 }
 :root.dark:not(.simple) .text-white[class*="bg-gradient-to"]:not(:is([class*="rounded-3xl"], [class*="rounded-b-"], [class^="px-"], [class*=" px-"])) {
-  background-color: rgb(255 255 255 / 0.09) !important;
-  color: #ece9f7 !important;
+  background-color: color-mix(in oklab, var(--gx-brand-400) 16%, transparent) !important;
+  color: var(--gx-brand-200) !important;
+}
+.dark {
+  --gx-tile: color-mix(in oklab, var(--gx-brand-400) 16%, transparent);
+  --gx-tile-ink: var(--gx-brand-200);
 }
 
 /* Hero cards (white text on a gradient), all alike whatever the page —
-   light: a white card washed with the brand, its text dark; dark: the
-   night lit violet and cyan. */
+   light: a white card washed with green, its text dark; dark: the green
+   night. */
 :root:not(.dark):not(.simple) .text-white[class*="bg-gradient-to"]:is([class*="rounded-3xl"], [class*="rounded-b-"], [class^="px-"], [class*=" px-"]) {
   --color-white: var(--gx-ink);
   background-image:
-    radial-gradient(120% 90% at 100% 0%, color-mix(in oklab, var(--gx-brand-200) 45%, transparent), transparent 60%),
-    linear-gradient(180deg, #ffffff, #fcfbff) !important;
+    radial-gradient(130% 100% at 100% 0%, color-mix(in oklab, var(--gx-brand-100) 85%, transparent), transparent 62%),
+    linear-gradient(180deg, #ffffff, #fbfdfc) !important;
   border: 1px solid color-mix(in oklab, var(--gx-brand-200) 45%, transparent);
-  box-shadow: 0 1px 2px rgb(20 18 31 / 0.04), 0 18px 38px -24px color-mix(in oklab, var(--gx-brand-700) 60%, transparent) !important;
+  box-shadow: var(--gx-card-shadow) !important;
 }
 :root:not(.dark):not(.simple) .text-white[class*="bg-gradient-to"]:is([class*="rounded-3xl"], [class*="rounded-b-"], [class^="px-"], [class*=" px-"]) :is(.bg-white:not(.h-full), [class*="bg-white/"], [class*="bg-gradient-to"]) {
   background-image: none;
@@ -415,15 +409,15 @@ body {
   background-color: var(--gx-brand-600);
 }
 :root:not(.dark):not(.simple) .text-white[class*="bg-gradient-to"]:is([class*="rounded-3xl"], [class*="rounded-b-"], [class^="px-"], [class*=" px-"]) > [aria-hidden].absolute {
-  background-color: color-mix(in oklab, var(--gx-brand-100) 55%, transparent);
+  background-color: color-mix(in oklab, var(--gx-brand-100) 60%, transparent);
 }
 /* Their light tints (made for a dark gradient) take a readable shade:
-   money in, money out, loans keep their meaning; the rest turns grey. */
+   money in, out and loans keep their meaning; the rest turns grey. */
 :root:not(.dark):not(.simple) .text-white[class*="bg-gradient-to"]:is([class*="rounded-3xl"], [class*="rounded-b-"], [class^="px-"], [class*=" px-"]) :is([class*="text-"][class*="-100"], [class*="text-"][class*="-200"], [class*="text-"][class*="-300"]) {
   color: color-mix(in oklab, var(--gx-ink) 55%, transparent);
 }
 :root:not(.dark):not(.simple) .text-white[class*="bg-gradient-to"]:is([class*="rounded-3xl"], [class*="rounded-b-"], [class^="px-"], [class*=" px-"]) :is([class*="text-emerald-1"], [class*="text-emerald-2"], [class*="text-emerald-3"], [class*="text-green-1"], [class*="text-green-2"], [class*="text-green-3"], [class*="text-teal-1"], [class*="text-teal-2"], [class*="text-teal-3"], [class*="text-lime-1"], [class*="text-lime-2"], [class*="text-lime-3"]) {
-  color: var(--gx-mint-700);
+  color: var(--gx-brand-700);
 }
 :root:not(.dark):not(.simple) .text-white[class*="bg-gradient-to"]:is([class*="rounded-3xl"], [class*="rounded-b-"], [class^="px-"], [class*=" px-"]) :is([class*="text-rose-1"], [class*="text-rose-2"], [class*="text-rose-3"], [class*="text-red-1"], [class*="text-red-2"], [class*="text-red-3"], [class*="text-pink-1"], [class*="text-pink-2"], [class*="text-pink-3"]) {
   color: var(--gx-coral-600);
@@ -434,7 +428,7 @@ body {
 :root.dark:not(.simple) .text-white[class*="bg-gradient-to"]:is([class*="rounded-3xl"], [class*="rounded-b-"], [class^="px-"], [class*=" px-"]) {
   background-image: var(--gx-hero) !important;
   border: 1px solid rgb(255 255 255 / 0.1);
-  box-shadow: 0 24px 48px -24px rgb(2 6 23 / 0.75), inset 0 1px 0 rgb(255 255 255 / 0.1) !important;
+  box-shadow: 0 24px 48px -24px rgb(0 0 0 / 0.75), inset 0 1px 0 rgb(255 255 255 / 0.1) !important;
 }
 
 /* The header of every page: on the page itself, nothing floating over it —
@@ -443,7 +437,7 @@ body {
   background-color: var(--background);
 }
 .dark .gx-header {
-  background-color: rgb(7 12 25 / 0.7);
+  background-color: rgb(7 16 13 / 0.72);
   -webkit-backdrop-filter: blur(22px) saturate(160%);
   backdrop-filter: blur(22px) saturate(160%);
   box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.06);
@@ -455,22 +449,60 @@ body {
   backdrop-filter: blur(24px) saturate(160%);
 }
 
-/* The main action: the brand colour, softly glowing. */
+/* The main action: the green, softly lifted. */
 .gx-cta {
   background-color: var(--gx-brand-600);
   color: #fff;
-  box-shadow: 0 12px 26px -12px color-mix(in oklab, var(--gx-brand-600) 85%, transparent);
+  box-shadow: 0 12px 24px -14px color-mix(in oklab, var(--gx-brand-700) 90%, transparent), inset 0 1px 0 rgb(255 255 255 / 0.14);
 }
 
-/* Accueil: the brand's soft light behind the greeting and the balance. */
-.gx-home-glow {
-  background:
-    radial-gradient(70% 60% at 85% 10%, color-mix(in oklab, var(--gx-brand-200) 55%, transparent), transparent 70%),
-    radial-gradient(60% 55% at 0% 30%, rgb(253 230 238 / 0.7), transparent 70%),
-    linear-gradient(180deg, #fbfaff 0%, var(--background) 100%);
+/* "simple": the wallet card is a plain surface too. */
+.simple .gx-wallet {
+  --color-white: var(--simple-ink);
+  color: var(--simple-ink);
+  background: var(--simple-surface) !important;
+  border: 1px solid var(--simple-line);
+  box-shadow: none !important;
 }
-.dark .gx-home-glow {
-  background: none;
+.simple .gx-wallet::before,
+.simple .gx-wallet::after {
+  display: none;
+}
+
+/* Accueil's wallet card: deep green like a bank card, with rings of light. */
+.gx-wallet {
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(110% 120% at 105% -10%, rgb(255 255 255 / 0.2), transparent 50%),
+    linear-gradient(150deg, #1c9a7a 0%, #168568 45%, #0d5744 100%);
+  box-shadow: 0 22px 40px -22px rgb(13 87 68 / 0.85), inset 0 1px 0 rgb(255 255 255 / 0.18);
+}
+.gx-wallet::before,
+.gx-wallet::after {
+  content: "";
+  position: absolute;
+  border-radius: 9999px;
+  border: 1.5px solid rgb(255 255 255 / 0.12);
+  pointer-events: none;
+}
+.gx-wallet::before {
+  width: 220px;
+  height: 220px;
+  right: -70px;
+  top: -90px;
+}
+.gx-wallet::after {
+  width: 320px;
+  height: 320px;
+  right: -130px;
+  top: -140px;
+}
+.dark .gx-wallet {
+  background:
+    radial-gradient(110% 120% at 105% -10%, rgb(255 255 255 / 0.12), transparent 50%),
+    linear-gradient(150deg, #157a61 0%, #0f5f4b 50%, #0a3f32 100%);
 }
 
 /* No horizontal scroll on any screen size. `clip`, not `hidden`: hidden

@@ -229,7 +229,7 @@ export function ShortcutWheel() {
           style={styleFor(offsetOf(i, 0))}
           className={cn(
             "absolute inset-x-0 top-1/2 flex items-center gap-3 rounded-2xl bg-white px-3.5 py-3 text-left will-change-transform",
-            "shadow-[0_10px_30px_-8px_rgba(15,23,42,0.25)] ring-1 ring-slate-900/5 dark:bg-[#141a2f] dark:ring-white/10",
+            "shadow-[0_10px_30px_-8px_rgba(15,23,42,0.25)] ring-1 ring-slate-900/5 dark:bg-[#13211c] dark:ring-white/10",
           )}
         >
           <span

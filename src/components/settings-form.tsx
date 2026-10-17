@@ -113,7 +113,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
           })}
         </div>
         <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--gx-tile)] text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[var(--gx-tile)] text-slate-500 dark:bg-slate-800 dark:text-slate-300">
             <Leaf className="h-4 w-4" />
           </span>
           <span className="min-w-0 flex-1">
@@ -214,7 +214,7 @@ function RowIcon({ className, children }: { className: string; children: React.R
 }
 
 const NIGHT_PREVIEW =
-  "radial-gradient(120% 70% at 0% 0%, #3b2a7a 0%, transparent 60%), radial-gradient(100% 70% at 100% 0%, #0e5a73 0%, transparent 60%), #070c19";
+  "radial-gradient(120% 70% at 0% 0%, #12594a 0%, transparent 60%), radial-gradient(100% 70% at 100% 0%, #0f4a3f 0%, transparent 60%), #07100d";
 
 /** A tiny phone screen in that theme (system: half light, half dark;
  *  simple: grey header instead of the night one). */
@@ -233,8 +233,8 @@ function ThemePreview({ kind, simple }: { kind: ThemeBase; simple: boolean }) {
               ? "bg-slate-800"
               : "bg-white shadow-sm"
             : dark
-              ? "bg-gradient-to-r from-violet-600 via-sky-800 to-slate-900"
-              : "bg-gradient-to-r from-sky-500 via-sky-600 to-violet-600",
+              ? "bg-gradient-to-r from-emerald-600 to-emerald-900"
+              : "bg-gradient-to-r from-emerald-500 to-emerald-700",
         )}
       />
       <span className={cn("h-2 rounded", dark ? "bg-white/10" : "bg-white shadow-sm")} />

@@ -91,7 +91,7 @@ export default async function ProfilPage() {
 function Row({ icon: Icon, label, value }: { icon: typeof Mail; label: string; value: string }) {
   return (
     <div className="flex items-center gap-3.5 border-t border-slate-100 px-4 py-3.5 first:border-t-0 dark:border-slate-800">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--gx-tile)] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[var(--gx-tile)] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
         <Icon className="h-[18px] w-[18px]" />
       </span>
       <span className="min-w-0 flex-1">

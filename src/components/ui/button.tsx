@@ -10,9 +10,9 @@ const buttonVariants = cva(
       variant: {
         /** The main action: the brand colour (globals.css). */
         default: "gx-cta hover:brightness-110",
-        /** The other actions: a white pill. */
+        /** The other actions: a pill tinted with the green. */
         outline:
-          "bg-white text-slate-900 shadow-[0_6px_18px_-10px_rgba(20,18,31,0.3)] ring-1 ring-slate-900/[0.06] hover:bg-slate-50 dark:bg-white/[0.07] dark:text-slate-100 dark:shadow-none dark:ring-white/12 dark:hover:bg-white/10",
+          "bg-emerald-50 text-emerald-900 ring-1 ring-emerald-700/10 hover:bg-emerald-100 dark:bg-white/[0.07] dark:text-slate-100 dark:ring-white/12 dark:hover:bg-white/10",
         ghost: "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10",
         destructive: "bg-rose-600 text-white shadow-[0_10px_24px_-12px] shadow-rose-500/70 hover:bg-rose-700",
         subtle: "bg-[var(--gx-chip)] text-slate-900 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-100",

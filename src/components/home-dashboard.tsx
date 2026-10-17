@@ -21,14 +21,21 @@ const QUICK_ACTIONS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/solde", label: "Transfert", icon: ArrowLeftRight },
 ];
 
-/** "20 449,50 DH": the whole number dark, the decimals and currency lighter. */
+/** The cash share of what's available (0-1; half and half when nothing). */
+function cashShare(balance: Record<PaymentMethod, number>): number {
+  const cash = Math.max(0, balance.cash);
+  const total = cash + Math.max(0, balance.card);
+  return total > 0 ? cash / total : 0.5;
+}
+
+/** "20 449,50 DH": the whole number, the decimals and currency softer. */
 function BigAmount({ text }: { text: string }) {
   const match = /^(.*?\d)((?:,\d+)?\s*\S+)$/.exec(text);
   if (!match) return <>{text}</>;
   return (
     <>
       {match[1]}
-      <span className="text-slate-400 dark:text-slate-500">{match[2].replace(/^(,\d+)?\s*/, (m) => m.trim() + " ")}</span>
+      <span className="text-[0.6em] font-bold text-white/70">{match[2].replace(/^(,\d+)?\s*/, (m) => m.trim() + " ")}</span>
     </>
   );
 }
@@ -84,64 +91,58 @@ export function HomeDashboard({
 
   return (
     <>
-      {/* What's available now, big and centred; "Détails" opens the Solde. */}
-      <section className="flex flex-col items-center pt-1 text-center">
-        <p className="text-[15px] font-semibold text-slate-700 dark:text-slate-200">Disponible maintenant</p>
-        <Link
-          href="/solde"
-          prefetch
-          className="mt-2 rounded-full bg-white/80 px-4 py-1 text-xs font-semibold text-slate-600 shadow-[0_4px_14px_-6px_rgba(20,18,31,0.25)] ring-1 ring-slate-900/[0.05] active:scale-95 dark:bg-white/10 dark:text-slate-200 dark:ring-white/10"
-        >
-          Détails
-        </Link>
-        <div className="mt-4 flex items-center gap-2">
-          <p
-            data-private
-            className={cn(
-              "text-[2.6rem] font-extrabold leading-none tracking-tight tabular-nums text-slate-900 dark:text-white",
-              !revealed && "tracking-widest",
-            )}
-          >
-            <BigAmount text={show(balance.cash + balance.card)} />
-          </p>
+      {/* The wallet card: what's available now (the Solde), and how it splits
+          between cash and the card. Tapping it opens the Solde. */}
+      <Link href="/solde" prefetch aria-label="Disponible maintenant · voir le solde" className="gx-wallet block rounded-[28px] px-5 pb-5 pt-4 transition-transform active:scale-[0.99]">
+        <div className="relative flex items-center justify-between">
+          <p className="text-[13px] font-semibold text-white/80">Disponible maintenant</p>
           <button
             type="button"
-            onClick={() => setRevealed(!revealed)}
+            onClick={(e) => {
+              // The card is a link: the eye only shows / hides the amounts.
+              e.preventDefault();
+              e.stopPropagation();
+              setRevealed(!revealed);
+            }}
             aria-label={revealed ? "Masquer le montant" : "Afficher le montant"}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-700 transition-colors active:bg-slate-900/5 dark:text-slate-200 dark:active:bg-white/10"
+            className="-mr-1 flex h-9 w-9 items-center justify-center rounded-full bg-white/15 transition-colors active:bg-white/25"
           >
-            {revealed ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            {revealed ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
           </button>
         </div>
-        <div className="mt-4 flex flex-wrap justify-center gap-2">
+        <p
+          data-private
+          className={cn("relative mt-1 text-[2.6rem] font-extrabold leading-tight tracking-tight tabular-nums", !revealed && "tracking-widest")}
+        >
+          <BigAmount text={show(balance.cash + balance.card)} />
+        </p>
+        {/* Cash | card: a bar of their shares, then each one. */}
+        <div className="relative mt-4 flex h-1.5 overflow-hidden rounded-full bg-white/20">
+          <span className="h-full bg-white" style={{ width: `${cashShare(balance) * 100}%` }} />
+        </div>
+        <div className="relative mt-3 grid grid-cols-2 gap-3">
           {(["cash", "card"] as const).map((m) => (
-            <Link
-              key={m}
-              href="/solde"
-              prefetch
-              className="flex items-center gap-2 rounded-full bg-white px-3.5 py-2 text-[13px] shadow-[0_6px_18px_-10px_rgba(20,18,31,0.3)] ring-1 ring-slate-900/[0.04] active:scale-95 dark:bg-white/10 dark:ring-white/10"
-            >
-              <span className="text-base leading-none">{m === "cash" ? "💵" : "💳"}</span>
-              <span className="text-slate-500 dark:text-slate-400">{m === "cash" ? "Espèces" : "Carte"}</span>
-              <span data-private className="font-bold tabular-nums text-slate-900 dark:text-white">
+            <div key={m} className={cn("min-w-0", m === "card" && "text-right")}>
+              <p className={cn("flex items-center gap-1.5 text-[12px] font-medium text-white/75", m === "card" && "justify-end")}>
+                <span className={cn("h-2 w-2 rounded-full", m === "cash" ? "bg-white" : "bg-white/35")} />
+                {m === "cash" ? "Espèces" : "Carte"}
+              </p>
+              <p data-private className="truncate text-[17px] font-bold tabular-nums">
                 {show(balance[m])}
-              </span>
-            </Link>
+              </p>
+            </div>
           ))}
         </div>
-      </section>
+      </Link>
 
-      {/* Quick actions, like a bank app's. */}
-      <div data-no-tab-swipe className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+      {/* Quick actions: round buttons, their name under them. */}
+      <div className="grid grid-cols-4 gap-2">
         {QUICK_ACTIONS.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            prefetch
-            className="flex shrink-0 items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-[0_6px_18px_-10px_rgba(20,18,31,0.3)] ring-1 ring-slate-900/[0.04] active:scale-95 dark:bg-white/10 dark:text-slate-100 dark:ring-white/10"
-          >
-            <Icon className="h-[18px] w-[18px]" strokeWidth={1.9} />
-            {label}
+          <Link key={href} href={href} prefetch className="flex flex-col items-center gap-1.5 active:scale-95">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-emerald-700 shadow-[0_8px_20px_-12px_rgba(15,31,26,0.35)] ring-1 ring-slate-900/[0.04] dark:bg-white/[0.08] dark:text-emerald-300 dark:ring-white/10">
+              <Icon className="h-[22px] w-[22px]" strokeWidth={1.9} />
+            </span>
+            <span className="text-[12px] font-semibold text-slate-700 dark:text-slate-300">{label}</span>
           </Link>
         ))}
       </div>

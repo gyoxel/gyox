@@ -341,7 +341,7 @@ export function DueNowList({
                 >
                   <span
                     className={cn(
-                      "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xl",
+                      "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xl",
                       TILE_CLASS[color],
                     )}
                   >

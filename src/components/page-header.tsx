@@ -28,7 +28,7 @@ export function PageHeader({
     <header data-tone className="gx-header sticky top-0 z-30 px-5 pb-2 pt-4 text-slate-900 dark:rounded-b-[28px] dark:text-white">
       <div className="flex h-12 items-center gap-3">
         {back && <BackButton />}
-        <h1 className="min-w-0 flex-1 truncate text-[23px] font-bold tracking-tight">{title}</h1>
+        <h1 className="min-w-0 flex-1 truncate text-[25px] font-extrabold tracking-tight">{title}</h1>
         {action}
         {!hideSettings && (
           <Link href="/settings" prefetch aria-label="Paramètres" className={HEADER_BUTTON}>

@@ -440,7 +440,7 @@ const DEPOSIT_DATE = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "
 
 function StepIcon({ children }: { children: React.ReactNode }) {
   return (
-    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--gx-tile)] text-base dark:bg-white/10">
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[var(--gx-tile)] text-base dark:bg-white/10">
       {children}
     </span>
   );

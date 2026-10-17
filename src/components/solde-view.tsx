@@ -180,7 +180,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
               )}
             >
               <div className="flex items-center gap-3">
-                <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-2xl", a.tile)}>
+                <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-2xl", a.tile)}>
                   {METHOD_META[a.key].emoji}
                 </span>
                 <span className="flex-1 text-base font-semibold text-slate-900 dark:text-white">{a.name}</span>
@@ -219,7 +219,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
           prefetch
           className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm active:scale-[0.99] dark:border-slate-800 dark:bg-slate-900"
         >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--gx-tile)] text-2xl dark:bg-white/10">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--gx-tile)] text-2xl dark:bg-white/10">
             🐷
           </span>
           <span className="min-w-0 flex-1">
@@ -339,7 +339,7 @@ function EntryRow({
     <>
       <span
         className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg",
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg",
           transfer || entry.kind === "adjust"
             ? "bg-indigo-50 dark:bg-indigo-950/50"
             : line.amount > 0

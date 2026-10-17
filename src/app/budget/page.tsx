@@ -154,7 +154,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
                       >
                         <span
                           className={cn(
-                            "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xl",
+                            "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xl",
                             "bg-[var(--gx-tile)] dark:bg-white/10",
                           )}
                         >

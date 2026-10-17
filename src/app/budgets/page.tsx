@@ -68,7 +68,7 @@ export default async function BudgetsPage() {
                       className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm active:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:active:bg-slate-800/60"
                     >
                       <span className="flex items-center gap-3">
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--gx-tile)] text-xl dark:bg-white/10">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--gx-tile)] text-xl dark:bg-white/10">
                           {budget.expense.icon ?? "👛"}
                         </span>
                         <span className="min-w-0 flex-1">
