@@ -118,6 +118,10 @@ model Payment {
   paidAt     String
   /// How it was paid: "cash" or "card" (null for older payments).
   method     String?
+  /// A month (or installment) paid in several times: 0 for the first, then
+  /// 1, 2… for what's added (each with its own amount and cash / card).
+  /// amountDue is the month's, on every part.
+  part       Int     @default(0)
   createdAt  String
 
   expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
@@ -127,8 +131,8 @@ model Payment {
   userId String @default("")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([expenseId, monthKey])
-  @@unique([expenseId, slotIndex])
+  @@unique([expenseId, monthKey, part])
+  @@unique([expenseId, slotIndex, part])
   @@index([userId])
   @@map("payments")
 }

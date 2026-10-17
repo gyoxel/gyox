@@ -10,7 +10,7 @@ import { DeleteButton } from "@/components/delete-button";
 import { expenseDelete } from "@/lib/delete-specs";
 import { Button } from "@/components/ui/button";
 import { METHOD_META } from "@/lib/payment-method";
-import { getCreditRealState, getEffectiveEndMonth, getOccurrenceForMonth } from "@/lib/engine";
+import { findPayment, getCreditRealState, getEffectiveEndMonth, getOccurrenceForMonth } from "@/lib/engine";
 import { compareMonths, monthKey, monthLabelFr, monthOfDateStr, monthsBetween, parseMonthKey, todayMonth, type MonthId } from "@/lib/date";
 import { PageHeader } from "@/components/page-header";
 import { CREDIT_COLOR, pageColor } from "@/lib/page-theme";
@@ -262,8 +262,9 @@ function getPaymentStatusInit(
 
   if (expense.type === "credit") {
     const state = getCreditRealState(expense, payments, current);
-    const payment = payments.find((p) => p.expenseId === expense.id && p.slotIndex != null && p.monthKey === currentKey);
-    const paid = payment != null;
+    // Paid in part: not paid yet (ticking pays the rest).
+    const payment = findPayment(payments.filter((p) => p.slotIndex != null), expense.id, currentKey);
+    const paid = payment != null && payment.amountPaid >= payment.amountDue - 0.005;
     if (state.status === "not-started" || (state.status === "completed" && !paid)) return null;
     return { monthKey: currentKey, paid, method: payment?.method ?? null, hint: "(ce mois-ci)" };
   }
@@ -271,9 +272,8 @@ function getPaymentStatusInit(
   const target = expense.frequency === "one-time" ? monthOfDateStr(expense.startDate) : current;
   if (!getOccurrenceForMonth(expense, target, byId)) return null;
   const key = monthKey(target);
-  const payment = payments.find(
-    (p) => p.expenseId === expense.id && p.monthKey === key && p.amountPaid >= p.amountDue - 0.005,
-  );
+  const settled = findPayment(payments, expense.id, key);
+  const payment = settled && settled.amountPaid >= settled.amountDue - 0.005 ? settled : undefined;
   const hint = compareMonths(target, current) === 0 ? "(ce mois-ci)" : `(${monthLabelFr(target)})`;
   return { monthKey: key, paid: payment != null, method: payment?.method ?? null, hint };
 }

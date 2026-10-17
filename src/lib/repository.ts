@@ -399,6 +399,7 @@ export async function importData(backup: BackupData): Promise<void> {
           amountPaid: p.amountPaid,
           paidAt: p.paidAt,
           method: p.method ?? null,
+          part: p.part ?? 0,
           createdAt: p.createdAt,
         })),
     }),
@@ -485,6 +486,7 @@ export function mapPayment(row: {
   amountPaid: number;
   paidAt: string;
   method: string | null;
+  part?: number;
   createdAt: string;
 }): Payment {
   return {
@@ -496,6 +498,7 @@ export function mapPayment(row: {
     amountPaid: row.amountPaid,
     paidAt: row.paidAt,
     method: row.method === "cash" || row.method === "card" ? row.method : null,
+    part: row.part ?? 0,
     createdAt: row.createdAt,
   };
 }
@@ -510,7 +513,7 @@ export async function getPaymentsForExpense(expenseId: string): Promise<Payment[
   return rows.map(mapPayment);
 }
 
-/** Non-credit expenses: one payment row per due month, upserted by month. */
+/** Non-credit expenses: a month's (first) payment, upserted by month. */
 export async function markMonthPaid(
   expenseId: string,
   monthKeyValue: string,
@@ -520,7 +523,7 @@ export async function markMonthPaid(
 ): Promise<Payment> {
   const now = new Date().toISOString();
   const row = await prisma.payment.upsert({
-    where: { expenseId_monthKey: { expenseId, monthKey: monthKeyValue } },
+    where: { expenseId_monthKey_part: { expenseId, monthKey: monthKeyValue, part: 0 } },
     update: { amountDue, amountPaid, paidAt: now, method },
     create: {
       method,
@@ -537,13 +540,45 @@ export async function markMonthPaid(
   return mapPayment(row);
 }
 
+/** Unticks a month: all of its parts. */
 export async function markMonthUnpaid(expenseId: string, monthKeyValue: string): Promise<boolean> {
-  try {
-    await prisma.payment.delete({ where: { expenseId_monthKey: { expenseId, monthKey: monthKeyValue } } });
-    return true;
-  } catch {
-    return false;
-  }
+  const { count } = await prisma.payment.deleteMany({ where: { expenseId, monthKey: monthKeyValue } });
+  return count > 0;
+}
+
+/**
+ * Adds to a month (or credit installment) already paid in part: a new part
+ * with its own amount and cash / card, the month's amount due on it.
+ */
+export async function addPaymentPart(
+  expenseId: string,
+  monthKeyValue: string,
+  slotIndex: number | null,
+  amountDue: number,
+  amountPaid: number,
+  method: PaymentMethod | null,
+): Promise<Payment> {
+  const now = new Date().toISOString();
+  const last = await prisma.payment.findFirst({
+    where: { expenseId, monthKey: monthKeyValue },
+    orderBy: { part: "desc" },
+    select: { part: true },
+  });
+  const row = await prisma.payment.create({
+    data: {
+      id: randomUUID(),
+      expenseId,
+      monthKey: monthKeyValue,
+      slotIndex,
+      amountDue,
+      amountPaid,
+      method,
+      part: (last?.part ?? -1) + 1,
+      paidAt: now,
+      createdAt: now,
+    },
+  });
+  return mapPayment(row);
 }
 
 /**
@@ -559,7 +594,8 @@ export async function markCreditSlotPaid(
   method: PaymentMethod | null = null,
 ): Promise<Payment> {
   const now = new Date().toISOString();
-  const existingCount = await prisma.payment.count({ where: { expenseId, slotIndex: { not: null } } });
+  // Installments paid in several times count once.
+  const existingCount = await prisma.payment.count({ where: { expenseId, slotIndex: { not: null }, part: 0 } });
   const row = await prisma.payment.create({
     data: {
       method,
@@ -576,14 +612,14 @@ export async function markCreditSlotPaid(
   return mapPayment(row);
 }
 
-/** Undo: removes the most recently confirmed installment (highest slot). */
+/** Undo: removes the most recently confirmed installment (highest slot), all its parts. */
 export async function undoLastCreditSlot(expenseId: string): Promise<boolean> {
   const last = await prisma.payment.findFirst({
     where: { expenseId, slotIndex: { not: null } },
     orderBy: { slotIndex: "desc" },
   });
   if (!last) return false;
-  await prisma.payment.delete({ where: { id: last.id } });
+  await prisma.payment.deleteMany({ where: { expenseId, slotIndex: last.slotIndex } });
   return true;
 }
 
@@ -954,7 +990,7 @@ export async function updateGoalDeposit(
       await prisma.$transaction([
         expenseUpdate,
         prisma.payment.upsert({
-          where: { expenseId_monthKey: { expenseId, monthKey: monthKeyValue } },
+          where: { expenseId_monthKey_part: { expenseId, monthKey: monthKeyValue, part: 0 } },
           update: { amountDue: input.amount, amountPaid: input.amount, method: input.method },
           create: {
             id: randomUUID(),

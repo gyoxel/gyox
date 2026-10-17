@@ -85,6 +85,10 @@ export interface Payment {
   paidAt: string;
   /** "cash" or "card"; null for payments made before it was tracked. */
   method?: PaymentMethod | null;
+  /** A month (or installment) paid in several times: 0 (or none) for the
+   *  first part, then 1, 2… Each part has its own amount and cash / card;
+   *  amountDue is the month's, on every part. */
+  part?: number;
   createdAt: string;
 }
 

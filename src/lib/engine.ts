@@ -38,17 +38,29 @@ export function getAmountForMonth(expense: Expense, key: string): number {
 }
 
 /**
- * How far a credit's months with their own amount moved it from its plan:
- * what they paid minus the usual installment (+200 for 1200 instead of 1000,
- * −100 for 400 instead of 500). Counted on confirmed installments only.
+ * How far a credit's installments moved it from its plan: what each one
+ * paid (its parts added up) minus what it should have — the usual
+ * installment for a month with its own amount (+200 for 1200 instead of
+ * 1000), else what was due when it was paid (−600 for 400 paid of 1000).
+ * The difference ends up on the last installment.
  */
 function creditCustomDrift(expense: Expense, creditPayments: Payment[]): number {
-  return round2(
-    creditPayments.reduce(
-      (s, p) => (p.monthKey && customAmountFor(expense, p.monthKey) != null ? s + p.amountPaid - expense.amount : s),
-      0,
-    ),
-  );
+  const slots = new Map<number, { due: number; paid: number; monthKey: string | null }>();
+  for (const p of creditPayments) {
+    const slot = slots.get(p.slotIndex ?? 0) ?? { due: 0, paid: 0, monthKey: null };
+    if ((p.part ?? 0) === 0) {
+      slot.due = p.amountDue;
+      slot.monthKey = p.monthKey;
+    }
+    slot.paid += p.amountPaid;
+    slots.set(p.slotIndex ?? 0, slot);
+  }
+  let drift = 0;
+  for (const slot of slots.values()) {
+    const custom = slot.monthKey != null && customAmountFor(expense, slot.monthKey) != null;
+    drift += custom ? slot.paid - expense.amount : slot.paid - slot.due;
+  }
+  return round2(drift);
 }
 
 /**
@@ -257,7 +269,8 @@ export function getCreditRealState(
   const creditPayments = payments.filter((p) => p.expenseId === expense.id && p.slotIndex != null);
   const paidTotal = round2(creditPayments.reduce((s, p) => s + p.amountPaid, 0));
   const remaining = Math.max(0, round2(initial - paidTotal));
-  const paidSlots = creditPayments.length;
+  // An installment paid in several times is one installment.
+  const paidSlots = creditPayments.filter((p) => (p.part ?? 0) === 0).length;
   const start = monthOfDateStr(expense.startDate);
 
   if (remaining <= 0 && paidSlots > 0) {
@@ -376,12 +389,21 @@ export function getCreditDisplayProgress(
   return { total, paid, percent };
 }
 
-function findPayment(
-  payments: Payment[],
-  expenseId: string,
-  monthKeyValue: string,
-): Payment | undefined {
-  return payments.find((p) => p.expenseId === expenseId && p.monthKey === monthKeyValue);
+/**
+ * A month's payment of an expense, its parts added up: what was paid in
+ * all; the month's amount due; the last part's cash / card and time.
+ */
+export function findPayment(payments: Payment[], expenseId: string, monthKeyValue: string): Payment | undefined {
+  const parts = payments.filter((p) => p.expenseId === expenseId && p.monthKey === monthKeyValue);
+  if (parts.length <= 1) return parts[0];
+  const first = parts.find((p) => (p.part ?? 0) === 0) ?? parts[0];
+  const last = parts.reduce((a, b) => (b.paidAt > a.paidAt ? b : a));
+  return {
+    ...first,
+    amountPaid: round2(parts.reduce((s, p) => s + p.amountPaid, 0)),
+    paidAt: last.paidAt,
+    method: last.method,
+  };
 }
 
 /**
@@ -404,7 +426,9 @@ export function getMonthPaymentStatus(
     return compareMonths(m, currentMonth) <= 0 ? "unpaid" : "not-yet-due";
   }
   const payment = findPayment(payments, expense.id, key);
-  if (payment && payment.amountPaid >= payment.amountDue) return "paid";
+  if (payment && payment.amountPaid >= payment.amountDue - 0.005) return "paid";
+  // Paid in part, the month over: what's left went with it.
+  if (payment && payment.amountPaid > 0.005 && compareMonths(m, currentMonth) < 0) return "paid";
   return compareMonths(m, currentMonth) <= 0 ? "unpaid" : "not-yet-due";
 }
 
@@ -451,7 +475,9 @@ export function getUnpaidMonths(
     if (occ) {
       const payment = findPayment(payments, expense.id, monthKey(m));
       const paid = payment?.amountPaid ?? 0;
-      if (occ.amount - paid > 0.005) {
+      // A past month paid in part is done: what's left went with it.
+      const over = paid > 0.005 && compareMonths(m, uptoMonth) < 0;
+      if (occ.amount - paid > 0.005 && !over) {
         unpaid.push({ monthKey: monthKey(m), month: m, amountDue: occ.amount, amountPaid: paid });
       }
     }
@@ -465,6 +491,9 @@ export interface LedgerItem {
   expense: Expense;
   amount: number;
   paid: boolean;
+  /** What's left of a month paid in part, still to pay this month (the
+   *  same expense: "X · reste"). */
+  rest?: boolean;
 }
 
 /**
@@ -511,6 +540,10 @@ export function getMonthLedgerItems(
       const settled = findPayment(payments, expense.id, monthKey(viewMonth));
       if (settled) {
         items.push({ expense, amount: settled.amountPaid, paid: true });
+        // Paid in part: the rest stays to pay while the month lasts (then
+        // it goes on the last installment).
+        const rest = round2(settled.amountDue - settled.amountPaid);
+        if (rest > 0.005 && compareMonths(viewMonth, currentMonth) >= 0) items.push({ expense, amount: rest, paid: false, rest: true });
         continue;
       }
 
@@ -544,31 +577,19 @@ export function getMonthLedgerItems(
     const start = monthOfDateStr(expense.startDate);
     if (compareMonths(viewMonth, start) < 0) continue;
 
-    if (isFuture) {
-      // Future month: show only its own occurrence (fixed/programmed for
-      // that specific month), never the backlog accumulated through today —
-      // that backlog already surfaces when browsing to today's/past months.
-      const occ = getOccurrenceForMonth(expense, viewMonth, byId);
-      if (!occ) continue;
-      const payment = findPayment(payments, expense.id, monthKey(viewMonth));
-      const paidAmount = payment?.amountPaid ?? 0;
-      const remaining = round2(occ.amount - paidAmount);
-      if (remaining > 0.005) {
-        items.push({ expense, amount: remaining, paid: false });
-      } else {
-        items.push({ expense, amount: occ.amount, paid: true });
-      }
-      continue;
-    }
-
-    // Not a credit: only this month's own occurrence, paid or not.
+    // Only this month's own occurrence: what's paid of it, and while the
+    // month lasts what's left of it (once over, the rest goes with it).
     const occ = getOccurrenceForMonth(expense, viewMonth, byId);
     if (!occ) continue;
     const payment = findPayment(payments, expense.id, monthKey(viewMonth));
-    const remaining = round2(occ.amount - (payment?.amountPaid ?? 0));
-    items.push(
-      remaining > 0.005 ? { expense, amount: remaining, paid: false } : { expense, amount: occ.amount, paid: true },
-    );
+    const paidAmount = payment?.amountPaid ?? 0;
+    if (paidAmount <= 0.005) {
+      items.push({ expense, amount: occ.amount, paid: false });
+      continue;
+    }
+    items.push({ expense, amount: round2(paidAmount), paid: true });
+    const rest = round2(occ.amount - paidAmount);
+    if (rest > 0.005 && compareMonths(viewMonth, currentMonth) >= 0) items.push({ expense, amount: rest, paid: false, rest: true });
   }
 
   return items;

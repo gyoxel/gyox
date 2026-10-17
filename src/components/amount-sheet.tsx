@@ -125,7 +125,7 @@ export function AmountSheet(props: AmountSheetProps) {
             <p className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400">
               <span>
                 {formatMoney(total)} sur {formatMoney(expected)}
-                {already > 0 && <> (dont {formatMoney(already)} déjà reçus)</>}
+                {already > 0 && <> (dont {formatMoney(already)} déjà {tone === "amber" ? "reçus" : "payés"})</>}
               </span>
               <span>
                 {total < expected - 0.005

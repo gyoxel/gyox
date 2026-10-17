@@ -6,7 +6,7 @@ import { flushPendingRefresh, mutate, trackMutation } from "@/lib/use-refresh-da
 import Link from "next/link";
 import { Check, ChevronLeft, ChevronRight, Pencil, Plus, PartyPopper } from "lucide-react";
 import { addMonths, monthKey as toMonthKey, monthLabelFr, monthLabelShortFr, type MonthId } from "@/lib/date";
-import { getAmountForMonth, getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, getMonthLedgerItems, lastPaidAt, type DisplayColor } from "@/lib/engine";
+import { findPayment, getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, getMonthLedgerItems, lastPaidAt, type DisplayColor, type LedgerItem } from "@/lib/engine";
 import type { Expense, Payment, PaymentMethod } from "@/lib/types";
 import { toast } from "sonner";
 import { METHOD_META } from "@/lib/payment-method";
@@ -26,6 +26,11 @@ const TILE_CLASS: Record<DisplayColor, string> = {
   red: "bg-rose-50 dark:bg-rose-950/40",
   blue: "bg-blue-50 dark:bg-blue-950/40",
 };
+
+const round = (n: number) => Math.round(n * 100) / 100;
+
+/** A row of the list: an expense, or what's left of it this month ("X · reste"). */
+const rowKey = (item: { expense: Expense; rest?: boolean }) => (item.rest ? `${item.expense.id}:reste` : item.expense.id);
 
 let optimisticIdCounter = 0;
 function nextOptimisticId(): string {
@@ -86,10 +91,11 @@ export function DueNowList({
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const touchStartX = useRef<number | null>(null);
   const rowRefs = useRef(new Map<string, HTMLElement>());
-  // Ticking asks how it was paid: 💵 or 💳 show in place of the checkbox.
+  // Ticking asks how it was paid: 💵 or 💳 show in place of the checkbox
+  // (keyed by row: an expense and its rest are two rows).
   const [choosingId, setChoosingId] = useState<string | null>(null);
-  // "Autre montant": paid another amount than expected.
-  const [otherAmount, setOtherAmount] = useState<{ expense: Expense; amount: number } | null>(null);
+  // ✏️: paid another amount than what's left (part of it, or more).
+  const [otherAmount, setOtherAmount] = useState<{ expense: Expense; due: number; already: number } | null>(null);
   const chooserRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!choosingId) return;
@@ -100,11 +106,18 @@ export function DueNowList({
     return () => document.removeEventListener("pointerdown", close);
   }, [choosingId]);
 
-  /** How this month's payment of an expense was made, if known. */
-  function paidMethod(expense: Expense): PaymentMethod | null {
+  /** How this month's payment of an expense was made (each way once, when
+   *  paid in several times). */
+  function paidMethods(expense: Expense): PaymentMethod[] {
     const key = toMonthKey(viewMonth);
-    const found = localPayments.filter((p) => p.expenseId === expense.id && p.monthKey === key).at(-1);
-    return found?.method ?? null;
+    const methods = localPayments.filter((p) => p.expenseId === expense.id && p.monthKey === key && p.amountPaid > 0).map((p) => p.method);
+    return [...new Set(methods.filter((m): m is PaymentMethod => m != null))];
+  }
+
+  /** This month's amount due and what's paid of it so far (its parts). */
+  function monthPaid(expense: Expense): { due: number; paid: number } | null {
+    const settled = findPayment(localPayments, expense.id, toMonthKey(viewMonth));
+    return settled ? { due: settled.amountDue, paid: settled.amountPaid } : null;
   }
 
   // Leaving the Dashboard right after ticking: refresh now rather than
@@ -114,9 +127,10 @@ export function DueNowList({
   const emojiById = useMemo(() => new Map(Object.entries(categoryEmoji)), [categoryEmoji]);
   const items = useMemo(() => {
     const key = toMonthKey(viewMonth);
-    // To pay first, the last added on top; then paid, the last ticked on top.
-    const order = (item: { expense: Expense; paid: boolean }) =>
-      item.paid ? lastPaidAt(item.expense.id, localPayments, key) : item.expense.createdAt;
+    // To pay first, the last added on top (a rest: when it was left); then
+    // paid, the last ticked on top.
+    const order = (item: LedgerItem) =>
+      item.paid || item.rest ? lastPaidAt(item.expense.id, localPayments, key) : item.expense.createdAt;
     return getMonthLedgerItems(expenses, localPayments, viewMonth, currentMonth)
       .map((item) => ({ ...item, color: getExpenseDisplayColor(item.expense) }))
       .sort((a, b) => Number(a.paid) - Number(b.paid) || order(b).localeCompare(order(a)));
@@ -138,35 +152,36 @@ export function DueNowList({
     goMonth(addMonths(viewMonth, delta > 0 ? -1 : 1));
   }
 
-  function toggle(expense: Expense, wasPaid: boolean, method: PaymentMethod | null = null) {
-    setChoosingId(null);
+  /** Unticks a paid row: the month's payment goes, all of its parts. */
+  function untick(expense: Expense) {
     setPendingIds((prev) => new Set(prev).add(expense.id));
     const monthKeyValue = toMonthKey(viewMonth);
+    const kept = new Set(removeOptimisticPayment(localPayments, expense, viewMonth));
+    const removed = localPayments.filter((p) => !kept.has(p));
+    animateReorder(rowRefs.current, () =>
+      setLocalPayments((prev) => removeOptimisticPayment(prev, expense, viewMonth)),
+    );
+    const url =
+      expense.type === "credit"
+        ? `/api/expenses/${expense.id}/payments`
+        : `/api/expenses/${expense.id}/payments?monthKey=${monthKeyValue}`;
+    // On failure put back only what this toggle removed — restoring a
+    // whole snapshot would also undo other taps made in the meantime.
+    const restore = () => setLocalPayments((prev) => [...prev, ...removed]);
+    void trackMutation(fetch(url, { method: "DELETE" }))
+      .then((res) => {
+        if (!res.ok) restore();
+      })
+      .catch(restore)
+      .finally(() => settlePending(expense.id, setPendingIds));
+  }
 
-    if (wasPaid) {
-      const kept = new Set(removeOptimisticPayment(localPayments, expense, viewMonth));
-      const removed = localPayments.filter((p) => !kept.has(p));
-      animateReorder(rowRefs.current, () =>
-        setLocalPayments((prev) => removeOptimisticPayment(prev, expense, viewMonth)),
-      );
-      const url =
-        expense.type === "credit"
-          ? `/api/expenses/${expense.id}/payments`
-          : `/api/expenses/${expense.id}/payments?monthKey=${monthKeyValue}`;
-      // On failure put back only what this toggle removed — restoring a
-      // whole snapshot would also undo other taps made in the meantime.
-      const restore = () => setLocalPayments((prev) => [...prev, ...removed]);
-      void trackMutation(fetch(url, { method: "DELETE" }))
-        .then((res) => {
-          if (!res.ok) restore();
-        })
-        .catch(restore)
-        .finally(() => settlePending(expense.id, setPendingIds));
-      return;
-    }
-
-    const optimistic = { ...buildOptimisticPayment(expense, viewMonth, localPayments), method };
-    if (method && balance && optimistic.amountPaid > balance[method] + 0.005) {
+  /** Ticks a row 💵 / 💳: pays it all — the month, or what's left of it. */
+  function pay(expense: Expense, amount: number, method: PaymentMethod) {
+    setChoosingId(null);
+    setPendingIds((prev) => new Set(prev).add(expense.id));
+    const optimistic = { ...buildOptimisticPayment(expense, viewMonth, localPayments, amount), method };
+    if (balance && optimistic.amountPaid > balance[method] + 0.005) {
       settlePending(expense.id, setPendingIds);
       toast.error(insufficientMessage(method, balance[method]));
       return;
@@ -176,7 +191,7 @@ export function DueNowList({
       fetch(`/api/expenses/${expense.id}/payments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ monthKey: monthKeyValue, method }),
+        body: JSON.stringify({ monthKey: toMonthKey(viewMonth), method }),
       }),
     )
       .then(async (res) => {
@@ -193,12 +208,6 @@ export function DueNowList({
   }
 
   const byId = useMemo(() => new Map(expenses.map((e) => [e.id, e])), [expenses]);
-  /** " · au lieu de 700 DH" when this month was paid another amount. */
-  function insteadOf(expense: Expense): string {
-    const key = toMonthKey(viewMonth);
-    if (expense.type === "credit" || expense.monthAmounts?.[key] == null) return "";
-    return ` · au lieu de ${formatMoney(expense.amount, currency)}`;
-  }
   /** "Chaque mois", "Une fois", "Jusqu'à juin 27", "Crédit · reste 2 500 DH". */
   function kindOf(expense: Expense): string {
     if (expense.type === "credit") {
@@ -276,9 +285,12 @@ export function DueNowList({
         </div>
       ) : (
         <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          {items.map(({ expense, amount, paid, color }, index) => {
+          {items.map((item, index) => {
+            const { expense, amount, paid, rest, color } = item;
+            const key = rowKey(item);
             const isPending = pendingIds.has(expense.id);
-            const method = paid ? paidMethod(expense) : null;
+            const methods = paid ? paidMethods(expense) : [];
+            const month = paid || rest ? monthPaid(expense) : null;
             const header =
               index === 0 && !paid ? (
                 <GroupHeader key="h-unpaid" tone="unpaid" label="À payer" count={items.length - paidCount} total={formatMoney(left, currency)} />
@@ -292,17 +304,17 @@ export function DueNowList({
                 />
               ) : null;
             return (
-              <Fragment key={expense.id}>
+              <Fragment key={key}>
               {header}
               <li
-                key={expense.id}
+                key={key}
                 ref={(el) => {
-                  if (el) rowRefs.current.set(expense.id, el);
-                  else rowRefs.current.delete(expense.id);
+                  if (el) rowRefs.current.set(key, el);
+                  else rowRefs.current.delete(key);
                 }}
                 className={cn(
                   "flex items-center border-t border-slate-100 pr-1.5 dark:border-slate-800",
-                  paid ? "bg-emerald-50/40 dark:bg-emerald-950/10" : "bg-white dark:bg-slate-900",
+                  paid ? "bg-emerald-50/40 dark:bg-emerald-950/10" : rest ? "bg-amber-50/50 dark:bg-amber-950/10" : "bg-white dark:bg-slate-900",
                 )}
               >
                 {/* Tapping the row opens the edit page; only the round
@@ -314,41 +326,58 @@ export function DueNowList({
                   <span
                     className={cn(
                       "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl",
-                      paid ? "bg-emerald-50 dark:bg-emerald-950/40" : TILE_CLASS[color],
+                      paid ? "bg-emerald-50 dark:bg-emerald-950/40" : rest ? "bg-amber-50 dark:bg-amber-950/40" : TILE_CLASS[color],
                     )}
                   >
-                    <span className={cn(paid && "opacity-60")}>{displayIcon(expense, emojiById)}</span>
+                    <span className={cn((paid || rest) && "opacity-60")}>{displayIcon(expense, emojiById)}</span>
                     <ColorDot color={color} className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 ring-2 ring-white dark:ring-slate-900" />
                   </span>
                   <span className="min-w-0 flex-1">
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <span
+                        className={cn(
+                          "truncate text-sm font-semibold text-slate-900 dark:text-white",
+                          paid && "text-slate-400 dark:text-slate-500",
+                        )}
+                      >
+                        {expense.name}
+                      </span>
+                      {rest && (
+                        <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-px text-[10px] font-semibold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
+                          reste
+                        </span>
+                      )}
+                    </span>
                     <span
                       className={cn(
-                        "block truncate text-sm font-semibold text-slate-900 dark:text-white",
-                        paid && "text-slate-400 dark:text-slate-500",
+                        "block truncate text-[11px]",
+                        paid ? "font-medium text-emerald-600 dark:text-emerald-400" : rest ? "text-amber-700/80 dark:text-amber-300/80" : "text-slate-400",
                       )}
                     >
-                      {expense.name}
-                    </span>
-                    <span className={cn("block truncate text-[11px]", paid ? "font-medium text-emerald-600 dark:text-emerald-400" : "text-slate-400")}>
-                      {paid ? `✓ Payé${method ? ` ${METHOD_META[method].emoji} ${METHOD_META[method].label}` : ""}${insteadOf(expense)}` : kindOf(expense)}
+                      {paid
+                        ? paidLine(methods, month, currency)
+                        : rest && month
+                          ? `${formatMoney(month.paid, currency)} déjà payés sur ${formatMoney(month.due, currency)}`
+                          : kindOf(expense)}
                     </span>
                   </span>
                   <span
                     className={cn(
-                      "shrink-0 text-sm font-bold tabular-nums text-rose-600",
+                      "shrink-0 text-sm font-bold tabular-nums",
+                      rest ? "text-amber-600 dark:text-amber-400" : "text-rose-600",
                       paid && "font-semibold text-slate-400 line-through dark:text-slate-500",
                     )}
                   >
                     {formatMoney(amount, currency)}
                   </span>
                 </Link>
-                {choosingId === expense.id ? (
+                {choosingId === key ? (
                   <div ref={chooserRef} className="flex shrink-0 items-center gap-1 py-1 pl-1" aria-label="Payé comment ?">
                     {(["cash", "card"] as const).map((m) => (
                       <button
                         key={m}
                         type="button"
-                        onClick={() => toggle(expense, false, m)}
+                        onClick={() => pay(expense, amount, m)}
                         aria-label={`Payé en ${METHOD_META[m].label}`}
                         className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-lg shadow-sm transition-transform active:scale-90 dark:border-slate-700 dark:bg-slate-800"
                       >
@@ -359,7 +388,7 @@ export function DueNowList({
                       type="button"
                       onClick={() => {
                         setChoosingId(null);
-                        setOtherAmount({ expense, amount });
+                        setOtherAmount(rest && month ? { expense, due: month.due, already: month.paid } : { expense, due: amount, already: 0 });
                       }}
                       aria-label="Payé un autre montant"
                       className="flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-600 shadow-sm transition-transform active:scale-90 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300"
@@ -370,9 +399,15 @@ export function DueNowList({
                 ) : (
                   <button
                     type="button"
-                    onClick={() => (paid ? toggle(expense, true) : setChoosingId(expense.id))}
+                    onClick={() => (paid ? untick(expense) : setChoosingId(key))}
                     disabled={isPending}
-                    aria-label={paid ? `Annuler le paiement de ${expense.name}` : `Marquer ${expense.name} comme payé`}
+                    aria-label={
+                      paid
+                        ? `Annuler le paiement de ${expense.name}`
+                        : rest
+                          ? `Marquer le reste de ${expense.name} comme payé`
+                          : `Marquer ${expense.name} comme payé`
+                    }
                     className="group flex h-11 w-11 shrink-0 items-center justify-center"
                   >
                     <span
@@ -380,7 +415,9 @@ export function DueNowList({
                         "flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors group-disabled:opacity-50",
                         paid
                           ? "border-emerald-500 bg-emerald-500"
-                          : "border-rose-300 bg-white dark:border-rose-800 dark:bg-slate-800",
+                          : rest
+                            ? "border-dashed border-amber-400 bg-white dark:border-amber-700 dark:bg-slate-800"
+                            : "border-rose-300 bg-white dark:border-rose-800 dark:bg-slate-800",
                       )}
                     >
                       {paid && <Check className="h-3.5 w-3.5 text-white" />}
@@ -397,7 +434,8 @@ export function DueNowList({
       {otherAmount && (
         <OtherAmountSheet
           expense={otherAmount.expense}
-          expected={otherAmount.amount}
+          due={otherAmount.due}
+          already={otherAmount.already}
           viewMonth={viewMonth}
           currency={currency}
           balance={balance}
@@ -446,6 +484,17 @@ function settlePending(id: string, setPendingIds: React.Dispatch<React.SetStateA
   });
 }
 
+/** "✓ Payé 💵 Espèces"; paid in several times: "✓ Payé 💵 💳"; and "sur
+ *  600 DH" when that's not all of the month. */
+function paidLine(methods: PaymentMethod[], month: { due: number; paid: number } | null, currency: string): string {
+  const how =
+    methods.length === 1 ? ` ${METHOD_META[methods[0]].emoji} ${METHOD_META[methods[0]].label}` : methods.map((m) => ` ${METHOD_META[m].emoji}`).join("");
+  const part = month && month.paid < month.due - 0.005 ? ` · sur ${formatMoney(month.due, currency)}` : "";
+  return `✓ Payé${how}${part}`;
+}
+
+/** Without this month's payment of `expense`: all of its parts (a credit:
+ *  its latest installment, as the server undoes it). */
 function removeOptimisticPayment(payments: Payment[], expense: Expense, viewMonth: MonthId): Payment[] {
   if (expense.type === "credit") {
     let highestIndex = -1;
@@ -453,65 +502,56 @@ function removeOptimisticPayment(payments: Payment[], expense: Expense, viewMont
       if (p.expenseId === expense.id && p.slotIndex != null && p.slotIndex > highestIndex) highestIndex = p.slotIndex;
     }
     if (highestIndex < 0) return payments;
-    let removed = false;
-    return payments.filter((p) => {
-      if (!removed && p.expenseId === expense.id && p.slotIndex === highestIndex) {
-        removed = true;
-        return false;
-      }
-      return true;
-    });
+    return payments.filter((p) => !(p.expenseId === expense.id && p.slotIndex === highestIndex));
   }
   const key = toMonthKey(viewMonth);
   return payments.filter((p) => !(p.expenseId === expense.id && p.monthKey === key));
 }
 
-function buildOptimisticPayment(expense: Expense, viewMonth: MonthId, payments: Payment[]): Payment {
+/**
+ * The payment a tick adds until the server answers: `amount`, the row's —
+ * the month's (a credit: its installment), or what's left of it, then a
+ * part of the month's payment.
+ */
+function buildOptimisticPayment(expense: Expense, viewMonth: MonthId, payments: Payment[], amount: number): Payment {
   const now = new Date().toISOString();
   const key = toMonthKey(viewMonth);
+  const base = { id: nextOptimisticId(), expenseId: expense.id, monthKey: key, amountPaid: amount, paidAt: now, createdAt: now };
 
-  if (expense.type === "credit") {
-    const paidSlots = payments.filter((p) => p.expenseId === expense.id && p.slotIndex != null).length;
-    const state = getCreditRealState(expense, payments, viewMonth);
-    const amount = state.pendingAmount > 0 ? state.pendingAmount : expense.amount;
-    return {
-      id: nextOptimisticId(),
-      expenseId: expense.id,
-      monthKey: key,
-      slotIndex: paidSlots + 1,
-      amountDue: amount,
-      amountPaid: amount,
-      paidAt: now,
-      createdAt: now,
-    };
+  const parts = payments.filter((p) => p.expenseId === expense.id && p.monthKey === key);
+  const settled = findPayment(parts, expense.id, key);
+  if (settled) {
+    const part = Math.max(...parts.map((p) => p.part ?? 0)) + 1;
+    return { ...base, slotIndex: settled.slotIndex, amountDue: settled.amountDue, part };
   }
 
-  return {
-    id: nextOptimisticId(),
-    expenseId: expense.id,
-    monthKey: key,
-    slotIndex: null,
-    amountDue: getAmountForMonth(expense, key),
-    amountPaid: getAmountForMonth(expense, key),
-    paidAt: now,
-    createdAt: now,
-  };
+  if (expense.type === "credit") {
+    // An installment paid in several times is one installment.
+    const paidSlots = payments.filter((p) => p.expenseId === expense.id && p.slotIndex != null && (p.part ?? 0) === 0).length;
+    return { ...base, slotIndex: paidSlots + 1, amountDue: amount, part: 0 };
+  }
+  return { ...base, slotIndex: null, amountDue: amount, part: 0 };
 }
 
 /**
- * "Autre montant": this month was paid another amount than expected — it
- * becomes that month's own amount (see lib/pay-expense.ts).
+ * ✏️ "Tu as payé combien ?": part of the month (the rest stays to pay this
+ * month: "X · reste"), all of it, or more — or, on a rest, part of what's
+ * left. See lib/pay-expense.ts.
  */
 function OtherAmountSheet({
   expense,
-  expected,
+  due,
+  already,
   viewMonth,
   currency,
   balance,
   onClose,
 }: {
   expense: Expense;
-  expected: number;
+  /** The month's amount (a credit: its installment). */
+  due: number;
+  /** Paid of it already. */
+  already: number;
   viewMonth: MonthId;
   currency: string;
   balance?: Record<PaymentMethod, number>;
@@ -519,23 +559,29 @@ function OtherAmountSheet({
 }) {
   const money = (n: number) => formatMoney(n, currency);
   const label = monthLabelFr(viewMonth);
-  const next = monthLabelFr(addMonths(viewMonth, 1)).toLowerCase();
+  const left = round(Math.max(0, due - already));
+  const credit = expense.type === "credit";
   function explain(value: number): string | null {
-    const diff = Math.round((value - expected) * 100) / 100;
-    if (Math.abs(diff) < 0.005) return null;
-    const what = diff > 0 ? `${money(diff)} de plus` : `${money(-diff)} de moins`;
-    if (expense.type === "credit") return `${what} que prévu : la différence passe sur la dernière mensualité du crédit.`;
-    if (expense.frequency === "one-time") return `${what} que prévu : cette dépense compte pour ${money(value)}.`;
-    return `${what} que prévu, juste pour ${label.toLowerCase()} : en ${next}, elle revient à ${money(expense.amount)}.`;
+    const after = round(left - value);
+    if (after > 0.005) {
+      return `Il restera ${money(after)} à payer ce mois-ci (« ${expense.name} · reste »). Pas payés d'ici la fin du mois, ${
+        credit ? "ils s'ajoutent à la dernière mensualité du crédit." : "ils ne passent pas au mois suivant."
+      }`;
+    }
+    if (after < -0.005) {
+      return credit ? `${money(-after)} en avance : la dernière mensualité baisse d'autant.` : `${money(-after)} de plus que prévu ce mois-ci.`;
+    }
+    return "Ce mois est réglé ✓";
   }
   return (
     <AmountSheet
-      title="Tu as payé combien ?"
-      subtitle={`${expense.icon ?? "🧾"} ${expense.name} · ${label} · prévu ${money(expected)}`}
-      expected={expected}
-      initialAmount={expected}
+      title={already > 0 ? "Tu paies combien du reste ?" : "Tu as payé combien ?"}
+      subtitle={`${expense.icon ?? "🧾"} ${expense.name} · ${label} · ${already > 0 ? `${money(already)} déjà payés sur ${money(due)}` : `prévu ${money(due)}`}`}
+      expected={due}
+      already={already}
+      initialAmount={left}
       initialMethod="cash"
-      chips={[["Le montant prévu", expected]]}
+      chips={left > 0 ? [[already > 0 ? "Tout le reste" : "Tout", left]] : []}
       explain={explain}
       methodLabel="Payé en"
       confirmLabel={(v) => `Payé ${money(v)}`}

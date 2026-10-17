@@ -23,9 +23,10 @@ function withMonthAmount(expense: Expense, key: string, amount: number | null): 
   return { ...expense, monthAmounts: Object.keys(next).length > 0 ? next : null };
 }
 
-/** What month `m` asks for, as the Accueil shows it (0: nothing). */
+/** What month `m` asks for, as the Accueil shows it — paid and still to pay
+ *  ("X · reste") added up (0: nothing). */
 function amountIn(expense: Expense, payments: Payment[], m: MonthId, current: MonthId): number {
-  return getMonthLedgerItems([expense], payments, m, current)[0]?.amount ?? 0;
+  return Math.round(getMonthLedgerItems([expense], payments, m, current).reduce((s, i) => s + i.amount, 0) * 100) / 100;
 }
 
 /** A credit's last installment and its month, as things stand. */

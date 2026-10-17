@@ -26,6 +26,7 @@ const backupSchema = z.object({
         amountPaid: z.number(),
         paidAt: z.string(),
         method: z.enum(["cash", "card"]).nullable().default(null),
+        part: z.number().int().min(0).default(0),
         createdAt: z.string(),
       }),
     )
