@@ -139,7 +139,7 @@ export function HomeDashboard({
       <div className="grid grid-cols-4 gap-2">
         {QUICK_ACTIONS.map(({ href, label, icon: Icon }) => (
           <Link key={href} href={href} prefetch className="flex flex-col items-center gap-1.5 active:scale-95">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-emerald-700 shadow-[0_8px_20px_-12px_rgba(15,31,26,0.35)] ring-1 ring-slate-900/[0.04] dark:bg-white/[0.08] dark:text-emerald-300 dark:ring-white/10">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-violet-700 shadow-[0_8px_20px_-12px_rgba(20,18,31,0.35)] ring-1 ring-slate-900/[0.04] dark:bg-white/[0.08] dark:text-violet-300 dark:ring-white/10">
               <Icon className="h-[22px] w-[22px]" strokeWidth={1.9} />
             </span>
             <span className="text-[12px] font-semibold text-slate-700 dark:text-slate-300">{label}</span>

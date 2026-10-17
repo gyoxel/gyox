@@ -106,7 +106,7 @@ export function CategoryPicker({
                       className={cn(
                         "flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm whitespace-nowrap",
                         chip.category.id === value
-                          ? "border-emerald-600 bg-emerald-600/10 font-semibold text-emerald-700 dark:text-teal-300"
+                          ? "border-violet-600 bg-violet-600/10 font-semibold text-violet-700 dark:text-violet-300"
                           : "border-slate-200 bg-white text-slate-600 active:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
                       )}
                     >

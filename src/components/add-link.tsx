@@ -10,7 +10,7 @@ export function AddLink({ href, label, className }: { href: string; label: strin
       href={href}
       prefetch
       className={cn(
-        "flex items-center justify-center gap-2 rounded-full bg-emerald-50 py-3.5 text-[15px] font-semibold text-emerald-800 ring-1 ring-emerald-700/10 active:scale-[0.99] dark:bg-emerald-400/10 dark:text-emerald-200 dark:ring-emerald-300/15",
+        "flex items-center justify-center gap-2 rounded-full bg-violet-50 py-3.5 text-[15px] font-semibold text-violet-800 ring-1 ring-violet-700/10 active:scale-[0.99] dark:bg-violet-400/10 dark:text-violet-200 dark:ring-violet-300/15",
         className,
       )}
     >

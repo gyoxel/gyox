@@ -26,7 +26,7 @@ const ACTIONS = [
 ];
 
 
-/** A tab: its icon and name; the current one's icon on a green pill. */
+/** A tab: its icon and name; the current one's icon on a violet pill. */
 function NavLink({
   href,
   label,
@@ -52,7 +52,7 @@ function NavLink({
         data-tint
         className={cn(
           "flex h-8 w-14 items-center justify-center rounded-full transition-all duration-300",
-          active ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-200" : "text-slate-400 dark:text-slate-500",
+          active ? "bg-violet-100 text-violet-800 dark:bg-violet-400/20 dark:text-violet-200" : "text-slate-400 dark:text-slate-500",
         )}
       >
         <Icon className="h-[21px] w-[21px]" strokeWidth={active ? 2.2 : 1.8} />
@@ -61,7 +61,7 @@ function NavLink({
         data-tint
         className={cn(
           "text-[11px] leading-none transition-colors duration-200",
-          active ? "font-bold text-emerald-900 dark:text-white" : "font-medium text-slate-400 dark:text-slate-500",
+          active ? "font-bold text-violet-950 dark:text-white" : "font-medium text-slate-400 dark:text-slate-500",
         )}
       >
         {label}
@@ -180,7 +180,7 @@ function AppBar({ pathname }: { pathname: string }) {
         aria-hidden
         onClick={() => setOpen(false)}
         className={cn(
-          "fixed inset-0 z-40 bg-[#f3f6f4]/80 transition-opacity duration-300 dark:bg-[#040a08]/75",
+          "fixed inset-0 z-40 bg-[#f5f5f9]/80 transition-opacity duration-300 dark:bg-[#050812]/75",
           open ? "opacity-100 backdrop-blur-sm" : "pointer-events-none opacity-0",
         )}
       />
@@ -193,7 +193,7 @@ function AppBar({ pathname }: { pathname: string }) {
         )}
       >
         <div className="mx-auto flex max-w-md items-end gap-3">
-          <div className="pointer-events-auto flex h-16 flex-1 items-stretch rounded-[24px] bg-white px-1.5 shadow-[0_14px_34px_-14px_rgba(15,31,26,0.3)] ring-1 ring-slate-900/[0.05] dark:bg-[#111c18] dark:shadow-[0_18px_40px_-14px_rgba(0,0,0,0.8)] dark:ring-white/10">
+          <div className="pointer-events-auto flex h-16 flex-1 items-stretch rounded-[24px] bg-white px-1.5 shadow-[0_14px_34px_-14px_rgba(20,18,31,0.3)] ring-1 ring-slate-900/[0.05] dark:bg-[#151a30] dark:shadow-[0_18px_40px_-14px_rgba(0,0,0,0.8)] dark:ring-white/10">
             {ITEMS.map((item) => (
               <NavLink key={item.href} {...item} active={isActive(item.href)} onNavigate={navigateTo} />
             ))}
@@ -216,12 +216,12 @@ function AppBar({ pathname }: { pathname: string }) {
                     open ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0",
                   )}
                 >
-                  <span className="rounded-full bg-white px-3.5 py-2 text-sm font-semibold text-slate-900 shadow-[0_8px_22px_-10px_rgba(15,31,26,0.35)] ring-1 ring-slate-900/[0.05] dark:bg-[#15221d] dark:text-white dark:ring-white/10">
+                  <span className="rounded-full bg-white px-3.5 py-2 text-sm font-semibold text-slate-900 shadow-[0_8px_22px_-10px_rgba(20,18,31,0.35)] ring-1 ring-slate-900/[0.05] dark:bg-[#1a2036] dark:text-white dark:ring-white/10">
                     {label}
                   </span>
                   <span
                     className={cn(
-                      "flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_8px_22px_-10px_rgba(15,31,26,0.35)] ring-1 ring-slate-900/[0.05] transition-transform active:scale-95 dark:bg-[#15221d] dark:ring-white/10",
+                      "flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_8px_22px_-10px_rgba(20,18,31,0.35)] ring-1 ring-slate-900/[0.05] transition-transform active:scale-95 dark:bg-[#1a2036] dark:ring-white/10",
                       tint,
                     )}
                   >
