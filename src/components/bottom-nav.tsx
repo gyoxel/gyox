@@ -198,8 +198,9 @@ function AppBar({ pathname }: { pathname: string }) {
       >
         <div className="mx-auto flex max-w-md flex-col items-end gap-3">
           <div className="pointer-events-auto relative">
-            {/* The + button's menu, rising above it. */}
-            <div className="absolute bottom-full right-0 mb-3 flex flex-col items-end gap-2.5">
+            {/* The + button's menu, rising above it — closed, it lets taps
+                through to the page under it. */}
+            <div className="pointer-events-none absolute bottom-full right-0 mb-3 flex flex-col items-end gap-2.5">
               {ACTIONS.map(({ href, label, icon: Icon, tint }, i) => (
                 <Link
                   key={label}
