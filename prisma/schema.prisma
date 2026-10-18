@@ -118,6 +118,10 @@ model Payment {
   paidAt     String
   /// How it was paid: "cash" or "card" (null for older payments).
   method     String?
+  /// A month (or installment) paid in several times: 0 for the first, then
+  /// 1, 2… for what's added (each with its own amount and cash / card).
+  /// amountDue is the month's, on every part.
+  part       Int     @default(0)
   createdAt  String
 
   expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
@@ -127,8 +131,8 @@ model Payment {
   userId String @default("")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([expenseId, monthKey])
-  @@unique([expenseId, slotIndex])
+  @@unique([expenseId, monthKey, part])
+  @@unique([expenseId, slotIndex, part])
   @@index([userId])
   @@map("payments")
 }
@@ -141,7 +145,7 @@ model Settings {
   currency            String
   savingsTarget       Float
   startMonth          String
-  theme               String  @default("system")
+  theme               String  @default("light")
   /// Day of the month the salary arrives (1-31; clamped to short months).
   payDay              Int     @default(1)
   /// "YYYY-MM" of the last pay day whose salary was confirmed received (the
@@ -213,7 +217,8 @@ model GoalDeposit {
   amount    Float
   /// "YYYY-MM-DD"
   date      String
-  /// Taken from cash or the card ("cash" / "card"); null for older deposits.
+  /// Taken from cash, the card or the savings ("cash" / "card" /
+  /// "savings"); null for older deposits.
   method    String?
   /// The paid one-time expense it shows as in Dépenses (deleted with it).
   expenseId String?
@@ -221,6 +226,8 @@ model GoalDeposit {
 
   goal    Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
   expense Expense? @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  /// Taken from the savings: the move it comes off them as.
+  savingsMove SavingsMove?
 
   /// Whose it is (see lib/user-scope.ts: every query is scoped to the
   /// signed-in user).
@@ -381,7 +388,9 @@ model IncomeCategory {
 
 /// Épargne: money put aside ("in": leaves cash / the card, shows in Dépenses
 /// as a paid expense) or taken back ("out": comes into cash / the card,
-/// shows in Revenus). The savings = what's in (paid) − what's out.
+/// shows in Revenus), savings held already ("existing"), or given to a goal
+/// ("goal": a deposit taken from the savings). The savings = what's in
+/// (paid) − what's out.
 model SavingsMove {
   id        String  @id @default(uuid())
   kind      String
@@ -393,10 +402,13 @@ model SavingsMove {
   date      String
   expenseId String? @unique
   incomeId  String? @unique
+  /// "goal": the deposit it is (deleted with it).
+  goalDepositId String? @unique
   createdAt String
 
-  expense Expense? @relation(fields: [expenseId], references: [id], onDelete: Cascade)
-  income  Income?  @relation(fields: [incomeId], references: [id], onDelete: Cascade)
+  expense     Expense?     @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  income      Income?      @relation(fields: [incomeId], references: [id], onDelete: Cascade)
+  goalDeposit GoalDeposit? @relation(fields: [goalDepositId], references: [id], onDelete: Cascade)
 
   /// Whose it is (see lib/user-scope.ts: every query is scoped to the
   /// signed-in user).
@@ -446,7 +458,7 @@ model Loan {
 model LoanRepayment {
   id        String  @id @default(uuid())
   loanId    String
-  /// 1-based installment number.
+  /// 1-based installment number: its month (the loan's startMonth + slot − 1).
   slot      Int
   amount    Float
   method    String
@@ -463,7 +475,8 @@ model LoanRepayment {
   userId String @default("")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([loanId, slot])
+  /// A month can be given back in several times (one row each).
+  @@index([loanId, slot])
   @@index([userId])
   @@map("loan_repayments")
 }

@@ -1,6 +1,5 @@
 import { getAllCategories } from "@/lib/page-data";
 import { PageHeader } from "@/components/page-header";
-import { CREDIT_COLOR } from "@/lib/page-theme";
 import { ExpenseEditor } from "@/components/expense-editor";
 import { CreditEditor } from "@/components/credit-editor";
 
@@ -11,7 +10,7 @@ export default async function NewExpensePage({ searchParams }: { searchParams: P
   const isCredit = type === "credit";
   return (
     <>
-      <PageHeader title={isCredit ? "Ajouter un crédit" : "Ajouter une dépense"} back tone={isCredit ? CREDIT_COLOR : undefined} />
+      <PageHeader title={isCredit ? "Ajouter une dette" : "Ajouter une dépense"} back />
       <main className="px-4 py-5">
         {isCredit ? <CreditEditor key="credit" /> : <ExpenseEditor key="expense" categories={categories} />}
       </main>

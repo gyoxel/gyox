@@ -7,7 +7,7 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const loan = await getLoan((await params).id);
-  if (!loan) return NextResponse.json({ error: "Prêt introuvable." }, { status: 404 });
+  if (!loan) return NextResponse.json({ error: "Introuvable." }, { status: 404 });
   return NextResponse.json(loan);
 }
 
@@ -18,7 +18,7 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
   const input = toLoanInput(parsed.data);
   if (typeof input === "string") return NextResponse.json({ error: input }, { status: 400 });
   const loan = await getLoan(id);
-  if (!loan) return NextResponse.json({ error: "Prêt introuvable." }, { status: 404 });
+  if (!loan) return NextResponse.json({ error: "Introuvable." }, { status: 404 });
   const lastReceived = Math.max(0, ...loan.repayments.map((r) => r.slot));
   if (input.months < lastReceived) {
     return NextResponse.json(
@@ -31,6 +31,6 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
 
 export const DELETE = withBalanceGuard(async function remove(_req: NextRequest, { params }: Params) {
   const gone = await deleteLoan((await params).id);
-  if (!gone) return NextResponse.json({ error: "Prêt introuvable." }, { status: 404 });
+  if (!gone) return NextResponse.json({ error: "Introuvable." }, { status: 404 });
   return NextResponse.json({ ok: true, gone });
 });

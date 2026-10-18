@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CalendarClock, Check, Clock, Coins, Plus, Sparkles, X } from "lucide-react";
+import { Check, Clock, ClockCountdown, Coins, Plus, Sparkle, X } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { Expense, PaymentMethod } from "@/lib/types";
 import { addMonths, monthKey, monthLabelShortFr, monthOfDateStr, todayDateStr } from "@/lib/date";
@@ -132,7 +132,7 @@ export function CreditEditor({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!(fullTotal > 0)) return setError("Indique le montant total du crédit.");
+    if (!(fullTotal > 0)) return setError("Indique le montant total de la dette.");
     if (!(totalValue > 0)) return setError("Le montant déjà remboursé doit être inférieur au total.");
     if (!name.trim()) return setError("Indique un nom.");
     if (mode === "months" && (monthsValue < 1 || monthsValue > MAX_MONTHS)) return setError("Indique le nombre de mois.");
@@ -166,7 +166,7 @@ export function CreditEditor({
         // the expense as it was too.
         if (!res.ok) return setError(await errorMessage(res));
         if (payCall && pay && !pay.ok) return setError(await errorMessage(pay));
-        toast.success("Crédit enregistré.");
+        toast.success("Dette enregistrée.");
         nav.back();
         return;
       }
@@ -184,7 +184,7 @@ export function CreditEditor({
           linkedExpenseId: null,
           income: received
             ? {
-                name: `Crédit · ${name.trim()}`,
+                name: `Dette · ${name.trim()}`,
                 amount: totalValue,
                 category: "credit",
                 date: todayDateStr(),
@@ -197,9 +197,9 @@ export function CreditEditor({
       });
       if (!res.ok) return setError(await errorMessage(res));
       const created: { problems?: string[] } = await res.json();
-      if (created.problems?.includes("income")) toast.error("Crédit ajouté, mais l'argent reçu n'a pas pu être enregistré.");
+      if (created.problems?.includes("income")) toast.error("Dette ajoutée, mais l'argent reçu n'a pas pu être enregistré.");
       if (created.problems?.includes("paid")) toast.error("Ajouté, mais le paiement n'a pas pu être enregistré.");
-      toast.success("Crédit ajouté.");
+      toast.success("Dette ajoutée.");
       nav.back();
     });
   }
@@ -209,7 +209,7 @@ export function CreditEditor({
       {/* Total */}
       <div className="relative flex flex-col items-center gap-1 overflow-hidden rounded-3xl bg-gradient-to-br from-sky-500 to-blue-700 px-4 py-5 text-white shadow-lg dark:shadow-none">
         <Label htmlFor="total" className="text-xs text-white/80">
-          Montant total du crédit
+          Montant total de la dette
         </Label>
         <div className="flex items-baseline gap-2">
           <input
@@ -246,7 +246,7 @@ export function CreditEditor({
               aria-label="Retirer le montant déjà remboursé"
               className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-white dark:hover:bg-slate-800"
             >
-              <X className="h-4 w-4" />
+              <X weight="bold" className="h-4 w-4" />
             </button>
           </div>
           <div className="flex items-center gap-2">
@@ -267,7 +267,7 @@ export function CreditEditor({
             </p>
           )}
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Déjà remboursé avant d&apos;ajouter ce crédit ici : retiré du total, pas de ton solde.
+            Déjà remboursé avant d&apos;ajouter cette dette ici : retiré du total, pas de ton solde.
           </p>
         </div>
       ) : (
@@ -276,7 +276,7 @@ export function CreditEditor({
           onClick={() => setPriorOpen(true)}
           className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-sky-200 py-3 text-sm font-semibold text-sky-700 active:bg-sky-50 dark:border-sky-900 dark:text-sky-300 dark:active:bg-sky-950/30"
         >
-          <Plus className="h-4 w-4" />
+          <Plus weight="bold" className="h-4 w-4" />
           Montant déjà remboursé
         </button>
       )}
@@ -302,7 +302,7 @@ export function CreditEditor({
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-3.5 dark:border-slate-800">
         {totalValue > 0 && monthlyValue > totalValue && (
           <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
-            Le montant par mois ({money(monthlyValue)}) dépasse {priorValue > 0 ? "le reste à rembourser" : "le total du crédit"} (
+            Le montant par mois ({money(monthlyValue)}) dépasse {priorValue > 0 ? "le reste à rembourser" : "le total de la dette"} (
             {money(totalValue)}).
           </p>
         )}
@@ -336,7 +336,7 @@ export function CreditEditor({
             Par mois
           </ModeButton>
           <span className="text-xs font-semibold uppercase text-slate-400">ou</span>
-          <ModeButton selected={mode === "months"} onClick={() => switchMode("months")} icon={CalendarClock}>
+          <ModeButton selected={mode === "months"} onClick={() => switchMode("months")} icon={ClockCountdown}>
             Nombre de mois
           </ModeButton>
         </div>
@@ -381,7 +381,7 @@ export function CreditEditor({
         {totalValue > 0 && (
           <div className="flex flex-col gap-2">
             <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-              <Sparkles className="h-3.5 w-3.5" />
+              <Sparkle weight="bold" className="h-3.5 w-3.5" />
               Suggestions
             </p>
             <SuggestionRow label="Selon la durée">
@@ -448,7 +448,7 @@ export function CreditEditor({
                 alreadyPaid ? "bg-emerald-500 text-white" : "bg-white text-slate-500 dark:bg-slate-900 dark:text-slate-400",
               )}
             >
-              <Check className="h-4 w-4" />
+              <Check weight="bold" className="h-4 w-4" />
               Payé
             </button>
             <button
@@ -461,7 +461,7 @@ export function CreditEditor({
                 !alreadyPaid ? "bg-rose-500 text-white" : "bg-white text-slate-500 dark:bg-slate-900 dark:text-slate-400",
               )}
             >
-              <Clock className="h-4 w-4" />
+              <Clock weight="bold" className="h-4 w-4" />
               Pas encore
             </button>
           </div>
@@ -489,7 +489,7 @@ export function CreditEditor({
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back()}>
           Annuler
         </Button>
-        <Button type="submit" className="flex-1 bg-blue-600 text-white hover:bg-blue-700" disabled={isPending}>
+        <Button type="submit" className="flex-1 gx-cta" disabled={isPending}>
           {isPending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter"}
         </Button>
       </div>
@@ -517,11 +517,11 @@ function ModeButton({
       className={cn(
         "flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-2 text-[13px] font-medium transition-colors duration-200",
         selected
-          ? "border-blue-600 bg-blue-600 text-white shadow-sm"
+          ? "gx-cta border-transparent"
           : "border-slate-200 bg-white text-slate-600 active:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
       )}
     >
-      <Icon className="h-4 w-4 shrink-0" />
+      <Icon weight="duotone" className="h-[18px] w-[18px] shrink-0" />
       {children}
     </button>
   );
@@ -554,11 +554,11 @@ function PlusChip({ open, onClick, label }: { open: boolean; onClick: () => void
       className={cn(
         "flex w-11 shrink-0 items-center justify-center rounded-xl border border-dashed transition-colors",
         open
-          ? "border-blue-600 bg-blue-600 text-white"
+          ? "gx-cta border-transparent"
           : "border-blue-300 bg-blue-50 text-blue-600 active:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/50 dark:text-sky-300",
       )}
     >
-      <Plus className={cn("h-4 w-4 transition-transform", open && "rotate-45")} />
+      <Plus weight="bold" className={cn("h-4 w-4 transition-transform", open && "rotate-45")} />
     </button>
   );
 }
@@ -602,7 +602,7 @@ function CustomTry({
           aria-label="Fermer"
           className="rounded-lg p-1 text-slate-400 hover:bg-white/70 dark:hover:bg-slate-800"
         >
-          <X className="h-4 w-4" />
+          <X weight="bold" className="h-4 w-4" />
         </button>
       </div>
       <div className="flex items-center gap-2">
@@ -631,11 +631,11 @@ function CustomTry({
         </div>
         <Button
           type="button"
-          className="h-10 shrink-0 bg-blue-600 px-3 text-white hover:bg-blue-700"
+          className="h-10 shrink-0 px-3 gx-cta"
           onClick={onApply}
           disabled={!result}
         >
-          <Check className="h-4 w-4" />
+          <Check weight="bold" className="h-4 w-4" />
           Choisir
         </Button>
       </div>
@@ -660,7 +660,7 @@ function Chip({ selected, onClick, children }: { selected: boolean; onClick: () 
       className={cn(
         "flex shrink-0 flex-col items-center rounded-xl border px-3 py-1.5 text-xs leading-tight transition-colors",
         selected
-          ? "border-blue-600 bg-blue-600 text-white"
+          ? "gx-cta border-transparent"
           : "border-slate-200 bg-white text-slate-700 active:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200",
       )}
     >

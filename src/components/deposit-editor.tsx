@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, Clock } from "lucide-react";
+import { Check, Clock } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { GoalDeposit, PaymentMethod } from "@/lib/types";
 import { useNavBack } from "@/lib/nav-history";
@@ -36,7 +36,8 @@ export function DepositEditor({
   const nav = useNavBack();
   const [amount, setAmount] = useState(toDecimalInput(deposit.amount));
   const [name, setName] = useState(deposit.name === "Versement" ? "" : deposit.name);
-  const [method, setMethod] = useState<PaymentMethod>(deposit.method ?? "cash");
+  const [method, setMethod] = useState<PaymentMethod>(deposit.method === "card" ? "card" : "cash");
+  const fromSavings = deposit.method === "savings";
   const [paid, setPaid] = useState(initialPaid);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -88,16 +89,21 @@ export function DepositEditor({
         <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex : Prime, reste du mois…" maxLength={60} />
       </div>
 
-      {linked ? (
+      {fromSavings ? (
+        <p className="flex items-center gap-2 rounded-xl bg-lime-50 px-3 py-2.5 text-sm text-lime-800 dark:bg-lime-950/40 dark:text-lime-300">
+          <span className="text-base leading-none">🐷</span>
+          Pris de l&apos;épargne : il en sort, ton solde ne bouge pas.
+        </p>
+      ) : linked ? (
         <div className="flex flex-col gap-2">
           <Label>Statut de paiement</Label>
           <div role="radiogroup" aria-label="Statut de paiement" className="grid grid-cols-2 gap-2">
             <StatusButton selected={paid} onClick={() => setPaid(true)} className="bg-emerald-500">
-              <Check className="h-4 w-4" />
+              <Check weight="bold" className="h-4 w-4" />
               Payé
             </StatusButton>
             <StatusButton selected={!paid} onClick={() => setPaid(false)} className="bg-rose-500">
-              <Clock className="h-4 w-4" />
+              <Clock weight="bold" className="h-4 w-4" />
               Pas encore
             </StatusButton>
           </div>
@@ -127,7 +133,7 @@ export function DepositEditor({
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back(`/goals/${goal.id}`)}>
           Annuler
         </Button>
-        <Button type="submit" className="flex-1 bg-orange-500 text-white hover:bg-orange-600" disabled={pending}>
+        <Button type="submit" className="flex-1 gx-cta" disabled={pending}>
           {pending ? "Enregistrement…" : "Enregistrer"}
         </Button>
       </div>

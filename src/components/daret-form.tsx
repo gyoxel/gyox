@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
+import { CaretLeft, CaretRight, Minus, Plus } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import { useNavBack } from "@/lib/nav-history";
 import { mutate } from "@/lib/use-refresh-data";
@@ -72,7 +72,7 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {/* Contribution and pot */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-400 via-emerald-500 to-[#007261] px-4 pb-4 pt-5 text-white shadow-lg shadow-emerald-600/20 dark:shadow-none">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-400 via-emerald-500 to-emerald-700 px-4 pb-4 pt-5 text-white shadow-lg shadow-emerald-600/20 dark:shadow-none">
         <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
         <Label htmlFor="amount" className="relative block text-center text-xs text-white/80">
           Cotisation par mois
@@ -95,7 +95,10 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
           <span className="text-white/85">
             × {members} membres
           </span>
-          <span className="font-bold tabular-nums">🎉 {payout > 0 ? money(payout) : "—"}</span>
+          <span className="tabular-nums">
+            <span className="text-xs text-white/75">Tu reçois </span>
+            <b>{payout > 0 ? `${money(payout)} 🎉` : "—"}</b>
+          </span>
         </div>
       </div>
 
@@ -112,11 +115,11 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
         </span>
         <div className="flex items-center gap-2">
           <StepButton label="Un membre de moins" onClick={() => setMembers((n) => Math.max(MIN_MEMBERS, n - 1))} disabled={members <= MIN_MEMBERS}>
-            <Minus className="h-4 w-4" />
+            <Minus weight="bold" className="h-4 w-4" />
           </StepButton>
           <span className="w-8 text-center text-lg font-bold tabular-nums text-slate-900 dark:text-white">{members}</span>
           <StepButton label="Un membre de plus" onClick={() => setMembers((n) => Math.min(MAX_MEMBERS, n + 1))} disabled={members >= MAX_MEMBERS}>
-            <Plus className="h-4 w-4" />
+            <Plus weight="bold" className="h-4 w-4" />
           </StepButton>
         </div>
       </div>
@@ -126,11 +129,11 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
         <span className="text-sm font-medium text-slate-800 dark:text-slate-100">Premier mois</span>
         <div className="flex items-center gap-1">
           <StepButton label="Mois précédent" onClick={() => setStartMonth(monthKey(addMonths(start, -1)))}>
-            <ChevronLeft className="h-4 w-4" />
+            <CaretLeft weight="bold" className="h-4 w-4" />
           </StepButton>
           <span className="w-32 text-center text-sm font-semibold capitalize text-slate-900 dark:text-white">{monthLabelFr(start)}</span>
           <StepButton label="Mois suivant" onClick={() => setStartMonth(monthKey(addMonths(start, 1)))}>
-            <ChevronRight className="h-4 w-4" />
+            <CaretRight weight="bold" className="h-4 w-4" />
           </StepButton>
         </div>
       </div>
@@ -152,9 +155,9 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
                 aria-checked={selected}
                 onClick={() => setTurnMonth(monthKey(m))}
                 className={cn(
-                  "flex flex-col items-center rounded-xl border px-1 py-2 transition-colors",
+                  "flex flex-col items-center rounded-2xl border px-1 py-2 transition-all active:scale-[0.97]",
                   selected
-                    ? "border-transparent bg-gradient-to-br from-teal-400 to-emerald-600 text-white shadow-md shadow-emerald-500/25"
+                    ? "gx-cta border-transparent"
                     : "border-slate-200 bg-white text-slate-600 active:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
                 )}
               >
@@ -167,7 +170,7 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
       </div>
 
       {/* Summary */}
-      <div className="rounded-2xl bg-[#019c86]/10 px-4 py-3 text-sm text-[#007261] dark:bg-[#019c86]/15 dark:text-teal-200">
+      <div className="rounded-2xl bg-emerald-600/10 px-4 py-3 text-sm text-emerald-700 dark:bg-emerald-600/15 dark:text-teal-200">
         <p>
           Du <b className="capitalize">{monthLabelFr(start)}</b> au <b className="capitalize">{monthLabelFr(end)}</b> · {members} mois
         </p>
@@ -184,7 +187,7 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back("/daret")}>
           Annuler
         </Button>
-        <Button type="submit" className="flex-1 bg-[#019c86] text-white hover:bg-[#007261] dark:bg-[#019c86] dark:text-white" disabled={isPending}>
+        <Button type="submit" className="flex-1 gx-cta" disabled={isPending}>
           {isPending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter la daret"}
         </Button>
       </div>

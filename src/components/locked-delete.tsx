@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Trash2 } from "lucide-react";
+import { Trash } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 
 /**
@@ -16,9 +16,9 @@ export function LockedDelete({ hint, href, linkLabel }: { hint: string; href: st
         type="button"
         disabled
         aria-disabled
-        className="flex h-11 w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-slate-200 text-sm font-medium text-slate-400 dark:bg-slate-800 dark:text-slate-500"
+        className="flex h-12 w-full cursor-not-allowed items-center justify-center gap-2 rounded-full bg-slate-200 text-sm font-medium text-slate-400 dark:bg-slate-800 dark:text-slate-500"
       >
-        <Trash2 className="h-4 w-4" />
+        <Trash weight="bold" className="h-4 w-4" />
         Supprimer
       </button>
       <p className="px-1 text-center text-[11px] leading-snug text-slate-400">
@@ -39,9 +39,9 @@ export function LockedDeleteIcon({ hint }: { hint: string }) {
       aria-label="Supprimer (depuis sa source)"
       aria-disabled
       onClick={() => toast(hint)}
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-white/45 ring-1 ring-white/20"
+      className="gx-pill flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-300 opacity-70 dark:text-white/35"
     >
-      <Trash2 className="h-[18px] w-[18px]" />
+      <Trash weight="bold" className="h-[18px] w-[18px]" />
     </button>
   );
 }

@@ -87,7 +87,7 @@ export function SalaryForm({
       <Button
         type="submit"
         disabled={isPending}
-        className="bg-teal-600 text-white hover:bg-teal-700 dark:bg-teal-600 dark:text-white"
+        className="gx-cta"
       >
         {isPending ? "Enregistrement…" : "Enregistrer"}
       </Button>

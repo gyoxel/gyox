@@ -85,7 +85,9 @@ export function BudgetDonut({
   const rest = salary - total;
   // The ring is the salary; if spending goes over it, the ring is the spending.
   const base = Math.max(salary, total, 1);
-  const pct = (amount: number) => (salary > 0 ? Math.round((amount / salary) * 100) : 0);
+  // Shares of the ring, so the labels match the slices (an overspent month
+  // read "269%" on a slice before).
+  const pct = (amount: number) => Math.round((amount / base) * 100);
 
   const restSlice: Slice | null = rest > 0 ? { key: "rest", label: "Reste", amount: rest, items: [] } : null;
   const parts: Slice[] = [

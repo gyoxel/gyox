@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore, useTransition } from "react";
-import { Banknote, Check, ChevronRight, HandCoins, Trash2, X } from "lucide-react";
+import { CaretRight, Check, HandCoins, Money, Trash, X } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import { errorMessage } from "@/components/expense-editor";
 import type { PaymentMethod, SalaryAdvance, Settings } from "@/lib/types";
@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SalaryForm } from "@/components/salary-form";
+import { MethodIcon } from "@/components/method-icon";
+import { useRevealedBalance } from "@/lib/reveal-balance";
 
 /**
  * Countdown to the next salary, with a check that it actually arrived:
@@ -35,7 +37,8 @@ interface CountdownState {
   period: string;
   /** "YYYY-MM" of the pay day counted down to (can be marked paid early). */
   nextPeriod: string;
-  /** The last and next pay days, e.g. "jeudi 1 octobre". */
+  /** The last and next pay days, e.g. "jeu. 1 octobre" (short: it fits
+   *  Accueil's half-width tile). */
   lastLabel: string;
   nextLabel: string;
   days: number;
@@ -92,7 +95,7 @@ function writeLate(period: string | null) {
   window.dispatchEvent(new Event(LATE_EVENT));
 }
 
-const DAY = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+const DAY = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "long" });
 
 function compute(payDay: number, receivedMonth: string | null): CountdownState {
   const now = new Date();
@@ -174,15 +177,15 @@ function ofMonth(period: string): string {
   return /^[aeiouéèh]/i.test(name) ? `d'${name}` : `de ${name}`;
 }
 
-const RING = 60;
-const RING_STROKE = 6;
+const RING = 58;
+const RING_STROKE = 5.5;
 
-/** The pay period as a ring filling up, with the days left inside. */
-function Ring({ progress, days, late }: { progress: number; days: number; late: boolean }) {
+/** The pay period as a ring filling up, the days left inside. */
+function SalaryRing({ progress, days, late }: { progress: number; days: number; late: boolean }) {
   const r = (RING - RING_STROKE) / 2;
   const c = 2 * Math.PI * r;
   return (
-    <div className="relative shrink-0" style={{ width: RING, height: RING }}>
+    <span className="relative shrink-0" style={{ width: RING, height: RING }}>
       <svg width={RING} height={RING} className="-rotate-90" aria-hidden>
         <defs>
           <linearGradient id="salary-ring" x1="0" y1="0" x2="1" y2="1">
@@ -200,20 +203,25 @@ function Ring({ progress, days, late }: { progress: number; days: number; late: 
           strokeLinecap="round"
           stroke="url(#salary-ring)"
           strokeDasharray={c}
-          strokeDashoffset={c * (1 - progress)}
+          strokeDashoffset={c * (1 - Math.max(0.03, progress))}
           className="transition-[stroke-dashoffset] duration-700"
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={cn("text-xl font-bold leading-none tabular-nums", late && "text-rose-300")}>
-          {late && "−"}
-          {days}
-        </span>
-        <span className="mt-0.5 text-[8px] font-medium uppercase tracking-wider text-white/60">
-          {days > 1 ? "jours" : "jour"}
-        </span>
-      </div>
-    </div>
+      <span className="absolute inset-0 flex flex-col items-center justify-center">
+        {days === 0 && !late ? (
+          // Under a day before the pay day (it starts at midnight).
+          <span className="text-[12px] font-extrabold leading-none">Demain</span>
+        ) : (
+          <>
+            <span className={cn("text-[21px] font-extrabold leading-none tabular-nums", late && "text-rose-300")}>
+              {late && "−"}
+              {days}
+            </span>
+            <span className="mt-0.5 text-[7.5px] font-semibold uppercase tracking-wider text-white/60">{days > 1 ? "jours" : "jour"}</span>
+          </>
+        )}
+      </span>
+    </span>
   );
 }
 
@@ -252,9 +260,18 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
     });
   }
 
+  const [revealed] = useRevealedBalance();
+  // The salary counted down to, less the advances already taken on it.
+  const toReceivePeriod = state.phase === "counting" ? state.nextPeriod : state.period;
+  const toReceive = Math.max(
+    0,
+    settings.salary - advances.filter((a) => a.period === toReceivePeriod).reduce((sum, a) => sum + a.amount, 0),
+  );
   const capitalize = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
   const caption = state.period ? (late ? `prévu le ${state.lastLabel}` : capitalize(state.nextLabel)) : "";
 
+  // A question (or a first step) takes the whole row on Accueil; the
+  // countdown itself is a tile beside the shortcuts.
   const shell =
     "relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white shadow-lg ring-1 ring-white/5 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/80 dark:ring-white/10";
   const glow = (
@@ -272,22 +289,22 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
   if (settings.salary <= 0) {
     return (
       <>
-        <div className={cn(shell, "flex flex-col items-center gap-3 p-4 text-center")}>
+        <div className={cn(shell, "col-span-2 flex flex-col items-center gap-3 p-4 text-center")}>
           {glow}
           <p className="relative text-3xl">👋</p>
           <div className="relative">
             <p className="text-base font-semibold">Commence par ton salaire</p>
             <p className="mt-1 text-sm text-white/70">
-              Son montant, le jour où tu le reçois et où il arrive (cash ou carte) : le compte à rebours et tes calculs
+              Son montant, le jour où tu le reçois et où il arrive (espèces ou carte) : le compte à rebours et tes calculs
               partent de là.
             </p>
           </div>
           <Button
             type="button"
-            className="relative w-full bg-emerald-500 text-white hover:bg-emerald-600 dark:bg-emerald-500 dark:text-white"
+            className="relative w-full gx-cta"
             onClick={() => setEditing(true)}
           >
-            <Banknote className="h-4 w-4" />
+            <Money weight="bold" className="h-4 w-4" />
             Ajouter mon salaire
           </Button>
         </div>
@@ -306,7 +323,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
   return (
     <>
       {state.phase === "ask" ? (
-        <div className={cn(shell, "flex flex-col items-center gap-3 p-4 text-center")}>
+        <div className={cn(shell, "col-span-2 flex flex-col items-center gap-3 p-4 text-center")}>
           {glow}
           <p className="relative text-3xl">💰</p>
           <p className="relative text-base font-semibold">As-tu reçu ton salaire {ofMonth(state.period)} ?</p>
@@ -318,16 +335,16 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
               onClick={() => writeLate(state.period)}
               disabled={saving}
             >
-              <X className="h-4 w-4" />
+              <X weight="bold" className="h-4 w-4" />
               Non, pas encore
             </Button>
             <Button
               type="button"
-              className="bg-emerald-500 text-white hover:bg-emerald-600 dark:bg-emerald-500 dark:text-white"
+              className="gx-cta"
               onClick={confirmReceived}
               disabled={saving}
             >
-              <Check className="h-4 w-4" />
+              <Check weight="bold" className="h-4 w-4" />
               Oui
             </Button>
           </div>
@@ -337,24 +354,42 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
           type="button"
           onClick={() => setEditing(true)}
           aria-label={late ? "Confirmer le salaire" : "Modifier le salaire"}
-          className={cn(shell, "block px-3.5 py-3 text-left transition-transform active:scale-[0.98]")}
+          className={cn(shell, "flex h-full flex-col rounded-[22px] p-3 text-left transition-transform active:scale-[0.98]")}
         >
           {glow}
-          <div className="relative flex items-center gap-3">
-            <Ring progress={state.progress} days={state.days} late={late} />
-            <div className="min-w-0 flex-1">
-              <p
-                className={cn(
-                  "text-[10px] font-semibold uppercase tracking-[0.16em]",
-                  late ? "text-rose-300" : "text-indigo-200/80",
-                )}
+
+          <span className="relative flex items-center justify-between gap-1">
+            <span
+              className={cn(
+                "truncate text-[9.5px] font-semibold uppercase tracking-[0.16em]",
+                late ? "text-rose-300" : "text-indigo-200/80",
+              )}
+            >
+              {late ? "Salaire en retard" : "Prochain salaire"}
+            </span>
+            <CaretRight weight="bold" className="h-3.5 w-3.5 shrink-0 text-white/40" />
+          </span>
+
+          <span className="relative mt-2 flex items-center gap-2.5">
+            <SalaryRing progress={state.progress} days={state.days} late={late} />
+            {/* What arrives, and where: the salary less the advances already
+                taken on it (hidden like Disponible's amounts). */}
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="text-[9.5px] font-medium text-white/60">{late ? "attendu" : "tu reçois"}</span>
+              <span
+                data-private
+                className={cn("truncate text-[15px] font-extrabold leading-tight tabular-nums", !revealed && "tracking-wider")}
               >
-                {late ? "Salaire en retard" : "Prochain salaire"}
-              </p>
-              <p className="mt-0.5 h-5 truncate text-sm font-semibold">{caption}</p>
-            </div>
-            <ChevronRight className="h-4 w-4 shrink-0 text-white/40" />
-          </div>
+                {revealed ? formatMoney(toReceive, settings.currency) : "•••• DH"}
+              </span>
+              <span className="mt-1.5 inline-flex w-fit items-center gap-1 rounded-full bg-white/15 px-2 py-[3px] text-[10px] font-semibold">
+                <MethodIcon method={settings.salaryMethod} className="h-[9px]" />
+                {METHOD_META[settings.salaryMethod].label}
+              </span>
+            </span>
+          </span>
+
+          <span className="relative mt-auto block truncate pt-2 text-[11.5px] font-semibold">{caption}</span>
         </button>
       )}
 
@@ -506,11 +541,11 @@ export function SalaryPanel({
                 />
                 <Button
                   type="button"
-                  className="shrink-0 bg-amber-500 text-white hover:bg-amber-600"
+                  className="shrink-0 gx-cta"
                   onClick={addAdvance}
                   disabled={saving || !(parseDecimalInput(advanceInput) > 0)}
                 >
-                  <Check className="h-4 w-4" />
+                  <Check weight="bold" className="h-4 w-4" />
                   Ajouter
                 </Button>
               </div>
@@ -519,11 +554,11 @@ export function SalaryPanel({
           ) : (
             <Button
               type="button"
-              className="w-full bg-amber-500 text-white hover:bg-amber-600"
+              className="w-full gx-cta"
               onClick={() => setAdvanceOpen(true)}
               disabled={!advancePeriod}
             >
-              <HandCoins className="h-4 w-4" />
+              <HandCoins weight="bold" className="h-4 w-4" />
               Avance sur salaire
             </Button>
           )}
@@ -538,7 +573,7 @@ export function SalaryPanel({
                   <span className="flex-1 text-slate-700 dark:text-slate-200">
                     {money(a.amount)}
                     <span className="ml-1.5 text-[11px] text-slate-400">
-                      le {a.date.slice(8, 10)}/{a.date.slice(5, 7)} · {METHOD_META[a.method].emoji}
+                      le {a.date.slice(8, 10)}/{a.date.slice(5, 7)} · <MethodIcon method={a.method} />
                     </span>
                   </span>
                   <button
@@ -547,7 +582,7 @@ export function SalaryPanel({
                     aria-label="Supprimer l'avance"
                     className="rounded-lg p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash weight="bold" className="h-4 w-4" />
                   </button>
                 </li>
               ))}
@@ -597,13 +632,13 @@ function ActionButton({
         className={cn(
           "h-auto min-h-11 w-full whitespace-normal py-2.5 text-center leading-snug",
           enabled
-            ? "bg-emerald-600 text-white hover:bg-emerald-700"
+            ? "gx-cta"
             : "bg-slate-200 text-slate-400 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-500",
         )}
         onClick={onClick}
         disabled={!enabled || pending}
       >
-        <Check className="h-4 w-4" />
+        <Check weight="bold" className="h-4 w-4" />
         {label}
       </Button>
       <p className="px-1 text-[11px] leading-snug text-slate-400">* {note}</p>

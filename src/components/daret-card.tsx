@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Pencil } from "lucide-react";
+import { Check, PencilSimple } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import { mutate } from "@/lib/use-refresh-data";
 import { errorMessage } from "@/components/expense-editor";
@@ -12,6 +12,7 @@ import type { DaretWithExpense, PaymentMethod } from "@/lib/types";
 import { METHOD_META } from "@/lib/payment-method";
 import { cn, formatMoney } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { MethodIcon } from "@/components/method-icon";
 
 const short = (label: string) => label.replace(/ 20(\d\d)$/, " $1");
 
@@ -93,7 +94,7 @@ export function DaretCard({
           contribution and payout below keep their own buttons. */}
       <Link href={`/daret/${daret.id}`} aria-label={`Modifier ${daret.expense.name}`} className="block pb-0.5 active:opacity-70">
       <div className="flex items-center gap-3 px-4 pt-4">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-600 text-xl shadow-sm">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl gx-tile text-xl">
           {daret.expense.icon ?? "🤝🏻"}
         </span>
         <div className="min-w-0 flex-1">
@@ -115,7 +116,7 @@ export function DaretCard({
           {state.phase === "running" ? `Tour ${state.round}/${daret.members}` : state.phase === "finished" ? "Terminée" : "À venir"}
         </span>
         <span aria-hidden className="-mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400">
-          <Pencil className="h-4 w-4" />
+          <PencilSimple weight="bold" className="h-4 w-4" />
         </span>
       </div>
 
@@ -128,7 +129,6 @@ export function DaretCard({
             const isTurn = key === turnKey;
             return (
               <span key={key} className="relative flex-1">
-                {isTurn && <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[11px] leading-none">🎉</span>}
                 <span
                   className={cn(
                     "block h-2 rounded-full",
@@ -174,7 +174,7 @@ export function DaretCard({
                   paid ? "border-emerald-500 bg-emerald-500" : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800",
                 )}
               >
-                {paid && <Check className="h-3.5 w-3.5 text-white" />}
+                {paid && <Check weight="bold" className="h-3.5 w-3.5 text-white" />}
               </span>
             </button>
           )}
@@ -184,12 +184,12 @@ export function DaretCard({
       {/* My turn */}
       <div className="m-4 mt-3 rounded-2xl bg-gradient-to-br from-teal-400/15 to-emerald-500/15 px-4 py-3 dark:from-teal-400/10 dark:to-emerald-500/10">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-medium text-[#007261] dark:text-teal-300">
+          <p className="text-xs font-medium text-emerald-700 dark:text-teal-300">
             Mon tour · <span className="capitalize">{monthLabelFr(state.turn)}</span>
           </p>
-          <p className="text-xs font-semibold text-[#007261] dark:text-teal-300">
+          <p className="text-xs font-semibold text-emerald-700 dark:text-teal-300">
             {payoutReceived
-              ? `Reçue ✓ ${METHOD_META[daret.payoutMethod!].emoji}`
+              ? <>Reçue ✓ <MethodIcon method={daret.payoutMethod!} /></>
               : state.turnStatus === "now"
                 ? "C'est ce mois-ci 🎉"
                 : state.turnStatus === "received"
@@ -199,13 +199,13 @@ export function DaretCard({
                     : ""}
           </p>
         </div>
-        <p className="mt-0.5 text-2xl font-bold tabular-nums text-[#007261] dark:text-teal-200">
+        <p className="mt-0.5 text-2xl font-bold tabular-nums text-emerald-700 dark:text-teal-200">
           {payoutReceived ? "" : "+ "}
           {money(state.payout)}
         </p>
         {turnReached &&
           (payoutReceived ? (
-            <p className="mt-1 flex items-center justify-between text-[11px] text-[#007261]/80 dark:text-teal-300/80">
+            <p className="mt-1 flex items-center justify-between text-[11px] text-emerald-700/80 dark:text-teal-300/80">
               <span>
                 Reçue en {METHOD_META[daret.payoutMethod!].label.toLowerCase()}
                 {daret.payoutReceivedAt &&
@@ -217,17 +217,17 @@ export function DaretCard({
             </p>
           ) : choosing === "payout" ? (
             <div className="mt-2 flex items-center justify-between gap-2 rounded-xl bg-white/80 py-1 pl-3 pr-1 dark:bg-slate-900/60">
-              <span className="text-xs font-medium text-[#007261] dark:text-teal-300">Reçue comment ?</span>
+              <span className="text-xs font-medium text-emerald-700 dark:text-teal-300">Reçue comment ?</span>
               <MethodChoice label="Reçue" onPick={(m) => setPayout(m)} />
             </div>
           ) : (
             <Button
               type="button"
-              className="mt-2 w-full bg-[#019c86] text-white hover:bg-[#007261] dark:bg-[#019c86] dark:text-white"
+              className="mt-2 w-full gx-cta"
               onClick={() => setChoosing("payout")}
               disabled={busy}
             >
-              <Check className="h-4 w-4" />
+              <Check weight="bold" className="h-4 w-4" />
               J&apos;ai reçu la daret
             </Button>
           ))}
@@ -236,7 +236,7 @@ export function DaretCard({
   );
 }
 
-/** 💵 / 💳: how it was paid / received. */
+/** Cash / card: how it was paid / received. */
 function MethodChoice({ label, onPick }: { label: string; onPick: (method: PaymentMethod) => void }) {
   return (
     <span className="flex shrink-0 items-center gap-1" aria-label={`${label} comment ?`}>
@@ -248,7 +248,7 @@ function MethodChoice({ label, onPick }: { label: string; onPick: (method: Payme
           aria-label={`${label} en ${METHOD_META[m].label}`}
           className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-lg shadow-sm transition-transform active:scale-90 dark:border-slate-700 dark:bg-slate-800"
         >
-          {METHOD_META[m].emoji}
+          <MethodIcon method={m} className="h-[11px]" />
         </button>
       ))}
     </span>

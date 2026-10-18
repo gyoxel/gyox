@@ -139,7 +139,7 @@ export function IncomeEditor({
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back("/incomes")}>
           Annuler
         </Button>
-        <Button type="submit" className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700" disabled={isPending}>
+        <Button type="submit" className="flex-1 gx-cta" disabled={isPending}>
           {isPending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter le revenu"}
         </Button>
       </div>

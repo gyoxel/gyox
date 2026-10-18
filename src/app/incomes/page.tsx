@@ -1,6 +1,6 @@
 import { getAllDarets, getAllIncomes, getIncomeCategories, getSettings } from "@/lib/page-data";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { CaretRight } from "@phosphor-icons/react/ssr";
 
 import { daretPayout } from "@/lib/daret";
 import { incomeCategory, incomesIn } from "@/lib/income";
@@ -11,7 +11,7 @@ import type { Income } from "@/lib/types";
 import { PageHeader } from "@/components/page-header";
 import { HeaderAdd } from "@/components/header-add";
 import { AddLink } from "@/components/add-link";
-import { METHOD_META } from "@/lib/payment-method";
+import { MethodLabel } from "@/components/method-icon";
 
 export const dynamic = "force-dynamic";
 
@@ -53,7 +53,7 @@ export default async function IncomesPage() {
       at: i.createdAt,
       method: i.method,
       amount: i.amount,
-      badge: i.expenseId ? "Crédit" : i.category === "epargne" ? "Épargne" : i.category === "pret" ? "Prêt" : i.category === "budget" ? "Budget" : undefined,
+      badge: i.expenseId ? "Dette" : i.category === "epargne" ? "Épargne" : i.category === "pret" ? "Argent prêté" : i.category === "budget" ? "Budget" : undefined,
     })),
     ...darets
       .filter((d) => d.payoutMethod && d.payoutReceivedAt)
@@ -84,7 +84,7 @@ export default async function IncomesPage() {
           </p>
         </div>
 
-        <AddLink href="/incomes/new" label="Ajouter un revenu" className="border-emerald-200 text-emerald-600 active:bg-emerald-50 dark:border-emerald-900 dark:text-emerald-400 dark:active:bg-emerald-950/30" />
+        <AddLink href="/incomes/new" label="Ajouter un revenu" />
 
         {months.length === 0 ? (
           <p className="rounded-xl border border-dashed border-slate-200 px-3 py-6 text-center text-sm text-slate-400 dark:border-slate-700">
@@ -103,7 +103,7 @@ export default async function IncomesPage() {
                   {list.map((r) => (
                     <li key={r.id} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
                       <Link href={r.href} className="flex items-center gap-3 px-4 py-3 active:bg-slate-50 dark:active:bg-slate-800/60">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-lg dark:bg-emerald-950/50">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl gx-tile text-lg">
                           {r.emoji}
                         </span>
                         <span className="min-w-0 flex-1">
@@ -116,11 +116,11 @@ export default async function IncomesPage() {
                             )}
                           </span>
                           <span className="block text-[11px] text-slate-400">
-                            {r.sub} · {r.date.slice(8, 10)}/{r.date.slice(5, 7)} · {METHOD_META[r.method].emoji} {METHOD_META[r.method].label}
+                            {r.sub} · {r.date.slice(8, 10)}/{r.date.slice(5, 7)} · <MethodLabel method={r.method} />
                           </span>
                         </span>
                         <span className="text-sm font-semibold tabular-nums text-emerald-600">+{money(r.amount)}</span>
-                        <ChevronRight className="h-4 w-4 text-slate-300" />
+                        <CaretRight weight="bold" className="h-4 w-4 text-slate-300" />
                       </Link>
                     </li>
                   ))}

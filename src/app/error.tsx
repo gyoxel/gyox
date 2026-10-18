@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { ArrowsClockwise } from "@phosphor-icons/react/ssr";
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/components/sign-out-button";
 
@@ -36,7 +36,7 @@ export default function Error({ error, retry }: { error: Error & { digest?: stri
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-24 text-center">
-      <RefreshCw className={retrying ? "h-8 w-8 animate-spin text-[#019c86]" : "h-8 w-8 text-slate-400"} />
+      <ArrowsClockwise weight="duotone" className={retrying ? "h-8 w-8 animate-spin text-emerald-600" : "h-8 w-8 text-slate-400"} />
       <div>
         <p className="text-base font-semibold text-slate-900 dark:text-white">
           {retrying ? "Connexion au serveur…" : "Le serveur ne répond pas"}

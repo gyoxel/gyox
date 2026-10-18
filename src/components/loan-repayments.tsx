@@ -1,197 +1,133 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
+import { HandCoins, PencilSimple } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
-import type { PaymentMethod } from "@/lib/types";
+import type { LoanRepayment } from "@/lib/types";
 import { METHOD_META } from "@/lib/payment-method";
 import { mutate } from "@/lib/use-refresh-data";
-import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
+import { cn, formatMoney } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
-import { PaymentMethodPicker } from "@/components/payment-method-picker";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AmountSheet } from "@/components/amount-sheet";
+import { MethodLabel } from "@/components/method-icon";
 
-/** What a different amount does to the next month. */
-function differenceHint(value: number, expected: number): string | null {
-  if (!(value > 0) || Math.abs(value - expected) < 0.005) return null;
-  return value < expected
-    ? `Il manque ${formatMoney(expected - value)} : ils passent au mois suivant.`
-    : `${formatMoney(value - expected)} en avance : le mois suivant attend moins.`;
+const round = (n: number) => Math.round(n * 100) / 100;
+const DAY = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
+
+/** What a repayment of `value` does, `left` being still expected that month. */
+function explain(value: number, left: number): string {
+  const rest = round(left - value);
+  if (rest > 0.005) return `Il restera ${formatMoney(rest)} à recevoir ce mois-ci. Pas reçus d'ici la fin du mois, ils passeront au mois suivant.`;
+  if (rest < -0.005) return `${formatMoney(-rest)} en avance : le mois suivant attendra moins.`;
+  return "Ce mois est réglé ✓";
+}
+
+interface MonthInfo {
+  loanId: string;
+  slot: number;
+  /** Who it was lent to. */
+  name: string;
+  /** "Octobre 2026" */
+  monthLabel: string;
+  /** Expected that month in all. */
+  expected: number;
+  /** Already received that month. */
+  received: number;
 }
 
 /**
- * "Reçu ?" 💵 / 💳: opens what came back — the amount (all of it by
- * default, or what was actually given) and how. An income in Revenus.
+ * "J'ai reçu": money given back for a month — how much (what's left that
+ * month by default, or less, or more) and how. An income in Revenus.
  */
-export function ReceiveRepayment({
-  loanId,
-  slot,
-  amount,
-  className,
-}: {
-  loanId: string;
-  slot: number;
-  /** Expected that month. */
-  amount: number;
-  className?: string;
-}) {
-  const [method, setMethod] = useState<PaymentMethod | null>(null);
-  return (
-    <>
-      <span className={cn("flex shrink-0 items-center gap-1", className)} aria-label="Reçu comment ?">
-        {(["cash", "card"] as const).map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => setMethod(m)}
-            aria-label={`Reçu en ${METHOD_META[m].label}`}
-            className="flex h-9 items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 text-sm font-medium shadow-sm transition-transform active:scale-95 dark:border-slate-700 dark:bg-slate-800"
-          >
-            <span className="text-base leading-none">{METHOD_META[m].emoji}</span>
-            <span className="text-xs text-slate-700 dark:text-slate-200">{METHOD_META[m].label}</span>
-          </button>
-        ))}
-      </span>
-      {method && (
-        <RepaymentDialog
-          title="Remboursement reçu"
-          expected={amount}
-          initialAmount={amount}
-          initialMethod={method}
-          onClose={() => setMethod(null)}
-          submit={(value, m) => ({ method: "POST", path: `/api/loans/${loanId}/repayments`, body: { slot, method: m, amount: value } })}
-          done={(value, m) => `+${formatMoney(value)} ajouté à ton solde (${METHOD_META[m].label}).`}
-        />
-      )}
-    </>
-  );
-}
-
-/** "Modifier": what a received installment brought, and how. */
-export function EditRepayment({
-  loanId,
-  slot,
-  expected,
-  amount,
-  method,
-}: {
-  loanId: string;
-  slot: number;
-  expected: number;
-  amount: number;
-  method: PaymentMethod;
-}) {
+export function ReceiveRepayment({ variant = "full", ...info }: MonthInfo & { variant?: "full" | "compact" }) {
   const [open, setOpen] = useState(false);
+  const left = round(Math.max(0, info.expected - info.received));
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-xs font-medium text-amber-700 underline underline-offset-2 dark:text-amber-400"
+        className={cn(
+          "gx-cta flex shrink-0 items-center justify-center gap-1.5 rounded-full font-semibold transition-transform active:scale-95",
+          variant === "full" ? "h-11 w-full text-sm" : "h-9 px-3 text-xs",
+        )}
       >
-        Modifier
+        <HandCoins weight="bold" className="h-4 w-4" />
+        {variant === "full" ? (info.received > 0 ? "J'ai reçu encore" : "J'ai reçu") : "Reçu ?"}
       </button>
       {open && (
-        <RepaymentDialog
-          title="Modifier le remboursement"
-          expected={expected}
-          initialAmount={amount}
-          initialMethod={method}
+        <AmountSheet
+          title={`${info.name} t'a rendu combien ?`}
+          subtitle={`💸 ${info.monthLabel} · attendu ${formatMoney(info.expected)}`}
+          expected={info.expected}
+          already={info.received}
+          initialAmount={left}
+          initialMethod="cash"
+          chips={left > 0 ? [[info.received > 0 ? "Tout le reste" : "Tout", left]] : []}
+          explain={(v) => explain(v, left)}
+          methodLabel="Reçu en"
+          confirmLabel={(v) => `Enregistrer +${formatMoney(v)}`}
+          tone="amber"
           onClose={() => setOpen(false)}
-          submit={(value, m) => ({ method: "PATCH", path: `/api/loans/${loanId}/repayments/${slot}`, body: { amount: value, method: m } })}
-          done={() => "Remboursement modifié."}
+          onSubmit={async (value, method) => {
+            const res = await mutate({ method: "POST", path: `/api/loans/${info.loanId}/repayments`, body: { slot: info.slot, method, amount: value } });
+            if (!res.ok) return errorMessage(res);
+            toast.success(`+${formatMoney(value)} ajouté à ton solde (${METHOD_META[method].label}).`);
+            return null;
+          }}
         />
       )}
     </>
   );
 }
 
-function RepaymentDialog({
-  title,
-  expected,
-  initialAmount,
-  initialMethod,
-  onClose,
-  submit,
-  done,
-}: {
-  title: string;
-  expected: number;
-  initialAmount: number;
-  initialMethod: PaymentMethod;
-  onClose: () => void;
-  submit: (value: number, method: PaymentMethod) => Parameters<typeof mutate>[0];
-  done: (value: number, method: PaymentMethod) => string;
-}) {
-  const [amount, setAmount] = useState(toDecimalInput(initialAmount));
-  const [method, setMethod] = useState<PaymentMethod>(initialMethod);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
-  const value = parseDecimalInput(amount);
-  const hint = differenceHint(value, expected);
-
-  function confirm(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    if (!(value > 0)) return setError("Indique combien il t'a rendu.");
-    startTransition(async () => {
-      const res = await mutate(submit(value, method));
-      if (!res.ok) return setError(await errorMessage(res));
-      toast.success(done(value, method));
-      onClose();
-    });
-  }
-
+/** One repayment of a month: tap to change it (amount, cash / card) or delete it. */
+export function RepaymentRow({ repayment, ...info }: MonthInfo & { repayment: LoanRepayment }) {
+  const [open, setOpen] = useState(false);
+  const others = round(info.received - repayment.amount);
+  const path = `/api/loans/${info.loanId}/repayments/${repayment.id}`;
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>Attendu ce mois-ci : {formatMoney(expected)}</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={confirm} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="repayment-amount">Il t&apos;a rendu</Label>
-            <Input
-              id="repayment-amount"
-              type="text"
-              inputMode="decimal"
-              autoComplete="off"
-              value={amount}
-              onChange={(e) => setAmount(cleanDecimalInput(e.target.value))}
-              className="text-base font-semibold"
-            />
-            {hint && <p className="text-[11px] text-amber-700 dark:text-amber-300">{hint}</p>}
-          </div>
-          <PaymentMethodPicker value={method} onChange={setMethod} label="Reçu en" />
-          {error && <p className="text-sm text-rose-600">{error}</p>}
-          <Button type="submit" className="bg-amber-600 text-white hover:bg-amber-700" disabled={pending || !(value > 0)}>
-            {pending ? "Enregistrement…" : `Confirmer +${formatMoney(value > 0 ? value : 0)}`}
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-/** Undo a received installment (its income goes with it). */
-export function CancelRepayment({ loanId, slot }: { loanId: string; slot: number }) {
-  const [busy, setBusy] = useState(false);
-  return (
-    <button
-      type="button"
-      disabled={busy}
-      onClick={async () => {
-        setBusy(true);
-        const res = await mutate({ method: "DELETE", path: `/api/loans/${loanId}/repayments/${slot}` });
-        if (!res.ok) toast.error(await errorMessage(res));
-        setBusy(false);
-      }}
-      className="text-xs font-medium text-slate-500 underline underline-offset-2 disabled:opacity-60 dark:text-slate-400"
-    >
-      Annuler
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs active:bg-slate-100 dark:active:bg-slate-800"
+      >
+        <span className="text-slate-500 dark:text-slate-400">{DAY.format(new Date(`${repayment.date}T12:00:00`))}</span>
+        <span className="text-slate-500 dark:text-slate-400">
+          <MethodLabel method={repayment.method} />
+        </span>
+        <span className="ml-auto font-semibold tabular-nums text-emerald-600">+{formatMoney(repayment.amount)}</span>
+        <PencilSimple weight="bold" className="h-3 w-3 text-slate-300" />
+      </button>
+      {open && (
+        <AmountSheet
+          title="Modifier le remboursement"
+          subtitle={`💸 ${info.name} · ${info.monthLabel} · attendu ${formatMoney(info.expected)}`}
+          expected={info.expected}
+          already={others}
+          initialAmount={repayment.amount}
+          initialMethod={repayment.method}
+          chips={[]}
+          explain={(v) => explain(v, round(info.expected - others))}
+          methodLabel="Reçu en"
+          confirmLabel={(v) => `Enregistrer ${formatMoney(v)}`}
+          tone="amber"
+          onClose={() => setOpen(false)}
+          onSubmit={async (value, method) => {
+            const res = await mutate({ method: "PATCH", path, body: { amount: value, method } });
+            if (!res.ok) return errorMessage(res);
+            toast.success("Remboursement modifié.");
+            return null;
+          }}
+          onDelete={async () => {
+            const res = await mutate({ method: "DELETE", path });
+            if (!res.ok) return errorMessage(res);
+            toast.success("Remboursement supprimé.");
+            return null;
+          }}
+        />
+      )}
+    </>
   );
 }

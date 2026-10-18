@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowLeftRight, ArrowUp, ChevronRight, PencilLine, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowsLeftRight, CaretRight, PencilSimpleLine, Trash } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { PaymentMethod } from "@/lib/types";
 import type { WalletEntry, WalletSummary } from "@/lib/wallet";
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MethodIcon, MethodLabel } from "@/components/method-icon";
 
 const TIME_ZONE = "Africa/Casablanca";
 const DAY_KEY = new Intl.DateTimeFormat("en-CA", {
@@ -127,7 +128,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
         <div className="mt-4 grid grid-cols-2 divide-x divide-white/15 rounded-2xl bg-white/10 py-2.5">
           <div className="flex flex-col items-center gap-0.5">
             <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-white/60">
-              <ArrowDown className="h-3 w-3 text-emerald-300" />
+              <ArrowDown weight="bold" className="h-3 w-3 text-emerald-300" />
               Entrées du mois
             </span>
             <span className="text-sm font-bold tabular-nums text-emerald-300">{monthInTotal > 0 && "+"}
@@ -135,7 +136,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
           </div>
           <div className="flex flex-col items-center gap-0.5">
             <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-white/60">
-              <ArrowUp className="h-3 w-3 text-rose-300" />
+              <ArrowUp weight="bold" className="h-3 w-3 text-rose-300" />
               Sorties du mois
             </span>
             <span className="text-sm font-bold tabular-nums text-rose-300">{monthOutTotal > 0 && "−"}
@@ -148,14 +149,14 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
       <div className="grid grid-cols-2 gap-2.5">
         <Button
           type="button"
-          className="h-12 bg-indigo-600 text-white hover:bg-indigo-700"
+          className="h-12 gx-cta"
           onClick={() => setTransferOpen(true)}
         >
-          <ArrowLeftRight className="h-4 w-4" />
+          <ArrowsLeftRight weight="bold" className="h-4 w-4" />
           Transférer
         </Button>
         <Button type="button" variant="outline" className="h-12" onClick={() => setAdjustOpen(true)}>
-          <PencilLine className="h-4 w-4" />
+          <PencilSimpleLine weight="bold" className="h-4 w-4" />
           Ajuster
         </Button>
       </div>
@@ -180,8 +181,8 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
               )}
             >
               <div className="flex items-center gap-3">
-                <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-2xl", a.tile)}>
-                  {METHOD_META[a.key].emoji}
+                <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-2xl", a.tile)}>
+                  <MethodIcon method={a.key} className="h-[15px]" />
                 </span>
                 <span className="flex-1 text-base font-semibold text-slate-900 dark:text-white">{a.name}</span>
                 <span
@@ -199,7 +200,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
                   <span className="flex items-center gap-0.5 text-sm font-semibold tabular-nums text-emerald-600">
                     {wallet.monthIn[a.key] > 0 && "+"}
                     {money(wallet.monthIn[a.key])}
-                    <ArrowDown className="h-3.5 w-3.5" />
+                    <ArrowDown weight="bold" className="h-3.5 w-3.5" />
                   </span>
                 </span>
                 <span className="flex flex-col items-center">
@@ -207,7 +208,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
                   <span className="flex items-center gap-0.5 text-sm font-semibold tabular-nums text-rose-600">
                     {wallet.monthOut[a.key] > 0 && "−"}
                     {money(wallet.monthOut[a.key])}
-                    <ArrowUp className="h-3.5 w-3.5" />
+                    <ArrowUp weight="bold" className="h-3.5 w-3.5" />
                   </span>
                 </span>
               </div>
@@ -219,7 +220,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
           prefetch
           className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm active:scale-[0.99] dark:border-slate-800 dark:bg-slate-900"
         >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-lime-50 text-2xl dark:bg-lime-950/50">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl gx-tile text-2xl">
             🐷
           </span>
           <span className="min-w-0 flex-1">
@@ -227,7 +228,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
             <span className="block text-[11px] text-slate-400">Mise de côté, hors solde actuel</span>
           </span>
           <span className="text-lg font-bold tabular-nums text-lime-700 dark:text-lime-400">{money(wallet.savings)}</span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+          <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300" />
         </Link>
         <p className="px-1 text-[11px] text-slate-400">
           Entrées et sorties de ce mois · touche un compte pour filtrer l&apos;historique.
@@ -258,7 +259,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
                   filter === f && "bg-white text-slate-900 shadow-sm dark:bg-slate-950 dark:text-white",
                 )}
               >
-                {f === "all" ? "Tout" : `${METHOD_META[f].emoji} ${METHOD_META[f].label}`}
+                {f === "all" ? "Tout" : <MethodLabel method={f} />}
               </button>
             ))}
           </div>
@@ -269,7 +270,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
             {wallet.entries.length === 0 ? (
               <>
                 Rien encore. Commence par <b className="text-slate-600 dark:text-slate-300">Ajuster</b> : indique ce que
-                tu as en cash et sur ta carte. Ensuite chaque salaire, revenu, daret et dépense payée s&apos;ajoute ici.
+                tu as en espèces et sur ta carte. Ensuite chaque salaire, revenu, daret et dépense payée s&apos;ajoute ici.
               </>
             ) : (
               "Aucun mouvement sur ce compte."
@@ -331,15 +332,19 @@ function EntryRow({
   // A transfer shows as moving money; filtered on one account, its change there.
   const line = filter === "all" ? entry.lines[entry.lines.length - 1] : entry.lines.find((l) => l.account === filter)!;
   const amount = transfer && filter === "all" ? Math.abs(line.amount) : line.amount;
-  const accounts = transfer
-    ? `${METHOD_META[entry.lines[0].account].emoji} → ${METHOD_META[entry.lines[1].account].emoji}`
-    : `${METHOD_META[line.account].emoji} ${METHOD_META[line.account].label}`;
+  const accounts = transfer ? (
+    <>
+      <MethodIcon method={entry.lines[0].account} /> → <MethodIcon method={entry.lines[1].account} />
+    </>
+  ) : (
+    <MethodLabel method={line.account} />
+  );
 
   const body = (
     <>
       <span
         className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg",
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg",
           transfer || entry.kind === "adjust"
             ? "bg-indigo-50 dark:bg-indigo-950/50"
             : line.amount > 0
@@ -378,7 +383,7 @@ function EntryRow({
         className="flex items-center gap-3 px-3.5 py-3 active:bg-slate-50 dark:active:bg-slate-800/60"
       >
         {body}
-        <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+        <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300" />
       </Link>
     );
   }
@@ -391,7 +396,7 @@ function EntryRow({
         aria-label={`Supprimer « ${entry.label} »`}
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
       >
-        <Trash2 className="h-4 w-4" />
+        <Trash weight="bold" className="h-4 w-4" />
       </button>
     </div>
   );
@@ -476,7 +481,7 @@ function AdjustDialog({
           </div>
           {error && <p className="text-sm text-rose-600">{error}</p>}
           <Button type="submit" disabled={pending}>
-            <PencilLine className="h-4 w-4" />
+            <PencilSimpleLine weight="bold" className="h-4 w-4" />
             {pending ? "Enregistrement…" : "Enregistrer"}
           </Button>
         </form>

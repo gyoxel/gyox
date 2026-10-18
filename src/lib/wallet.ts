@@ -173,8 +173,9 @@ export function buildWallet(input: {
   }
   for (const g of input.goals ?? []) {
     for (const d of g.deposits) {
-      // (Newer deposits are a paid expense: that payment already counts.)
-      if (!d.method || d.expenseId || !(d.amount > 0)) continue;
+      // (Newer deposits are a paid expense: that payment already counts;
+      // one taken from the savings doesn't touch the Solde.)
+      if (!d.method || d.method === "savings" || d.expenseId || !(d.amount > 0)) continue;
       entries.push({
         id: `goal-${d.id}`,
         kind: "goal",
@@ -196,7 +197,7 @@ export function buildWallet(input: {
       emoji: transfer ? "🔁" : "✏️",
       label:
         o.note ||
-        (transfer ? (o.toAccount === "card" ? "Versement sur la carte" : "Retrait en cash") : "Ajustement du solde"),
+        (transfer ? (o.toAccount === "card" ? "Versement sur la carte" : "Retrait en espèces") : "Ajustement du solde"),
       lines: transfer
         ? [
             { account: o.fromAccount!, amount: -o.amount },

@@ -1,49 +1,65 @@
 "use client";
 
+import { useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Settings } from "lucide-react";
-import type { ReactNode } from "react";
-import { pageColor } from "@/lib/page-theme";
+import { GearSix } from "@phosphor-icons/react/ssr";
 import { BackButton } from "@/components/back-button";
 import { HEADER_BUTTON } from "@/components/header-button";
-import { ThemeColor } from "@/components/theme-color";
+import { cn } from "@/lib/utils";
 
 /**
- * Page header in the page's colour — the browser's bar takes the same
- * colour, so the app looks full screen — with a bold title and round back /
- * settings buttons.
+ * Page header, the same on every page: on the page itself while at the top,
+ * glass (the page blurred under it) once the page scrolls under it — the
+ * browser's bar takes the backdrop's colour, so the app looks full screen —
+ * with a bold title and round glass back / settings buttons.
  */
 export function PageHeader({
   title,
   back = false,
   action,
   hideSettings = false,
-  tone,
 }: {
   title: ReactNode;
   /** Back arrow: previous page, or home when this is the first page opened. */
   back?: boolean;
   action?: ReactNode;
   hideSettings?: boolean;
-  /** Overrides the page's colour (e.g. a credit under /expenses). */
-  tone?: string;
 }) {
-  const pathname = usePathname();
-  const color = tone ?? pageColor(pathname);
+  const ref = useScrolledFlag();
+  // A long title ("Ajouter une dépense", "Modifier · Makla" beside a
+  // delete button) would be cut between the buttons: smaller then.
+  const length = typeof title === "string" ? title.length + (action ? 4 : 0) : 0;
   return (
-    <header data-tone className="sticky top-0 z-30 rounded-b-[28px] px-4 pb-3 pt-3 text-white shadow-sm" style={{ backgroundColor: color }}>
-      <ThemeColor color={color} />
-      <div className="flex h-11 items-center gap-3">
+    <header ref={ref} data-tone className="gx-header sticky top-0 z-30 px-5 pb-2 pt-4 text-slate-900 dark:text-white">
+      <div className="flex h-12 items-center gap-3">
         {back && <BackButton />}
-        <h1 className="min-w-0 flex-1 truncate text-xl font-bold tracking-tight">{title}</h1>
+        <h1
+          className={cn(
+            "min-w-0 flex-1 truncate font-extrabold tracking-tight",
+            length > 24 ? "text-[18px]" : length > 17 ? "text-[21px]" : "text-[25px]",
+          )}
+        >
+          {title}
+        </h1>
         {action}
         {!hideSettings && (
           <Link href="/settings" prefetch aria-label="Paramètres" className={HEADER_BUTTON}>
-            <Settings className="h-[18px] w-[18px]" />
+            <GearSix weight="bold" className="h-[19px] w-[19px]" />
           </Link>
         )}
       </div>
     </header>
   );
+}
+
+/** Sets data-scrolled on the element while the page is scrolled down. */
+function useScrolledFlag() {
+  const ref = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const update = () => ref.current?.toggleAttribute("data-scrolled", window.scrollY > 4);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, []);
+  return ref;
 }

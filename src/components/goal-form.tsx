@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useNavBack } from "@/lib/nav-history";
-import { Check, Plus, X } from "lucide-react";
+import { Check, Plus, X } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { Goal, GoalIdea } from "@/lib/types";
 import { monthLabelFr, parseMonthKey } from "@/lib/date";
@@ -224,7 +224,7 @@ export function GoalForm({
                     aria-label={`Retirer l'idée ${p.name}`}
                     className="flex h-8 w-7 items-center justify-center text-rose-500"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <X weight="bold" className="h-3.5 w-3.5" />
                   </button>
                 )}
               </span>
@@ -235,7 +235,7 @@ export function GoalForm({
             onClick={() => setAddingIdea(true)}
             className="flex shrink-0 items-center gap-1.5 rounded-full border border-dashed border-slate-300 px-3.5 py-2 text-sm whitespace-nowrap text-slate-500 dark:border-slate-600 dark:text-slate-400"
           >
-            <Plus className="h-4 w-4" />
+            <Plus weight="bold" className="h-4 w-4" />
             Ajouter
           </button>
         </div>
@@ -313,7 +313,7 @@ export function GoalForm({
                       checked ? "border-orange-500 bg-orange-500" : "border-slate-300 dark:border-slate-600",
                     )}
                   >
-                    {checked && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
+                    {checked && <Check weight="bold" className="h-3.5 w-3.5 text-white" />}
                   </span>
                   <span className="text-lg leading-none">🤝🏻</span>
                   <span className="min-w-0 flex-1">
@@ -343,7 +343,7 @@ export function GoalForm({
         <Button
           type="submit"
           disabled={isPending}
-          className="flex-1 bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-500 dark:text-white"
+          className="flex-1 gx-cta"
         >
           {isPending ? "Enregistrement…" : goal ? "Enregistrer" : "Ajouter l'objectif"}
         </Button>

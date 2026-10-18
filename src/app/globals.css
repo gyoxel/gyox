@@ -5,20 +5,262 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #f5f5f9;
+  --foreground: #14121f;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-app), var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 :root.dark {
-  --background: #020617;
+  --background: #070c19;
   --foreground: #f1f5f9;
+  color-scheme: dark;
+}
+
+/* GX palette: one brand colour (violet) and three meanings — mint: money
+   in / paid, coral: money out / due, gold: loans / warnings. Tailwind's
+   other hues all take the brand: every sky-*, indigo-*, fuchsia-*… class
+   in the app follows. */
+:root {
+  --gx-brand-50: oklch(0.975 0.025 296);
+  --gx-brand-100: oklch(0.945 0.056 296);
+  --gx-brand-200: oklch(0.895 0.102 296);
+  --gx-brand-300: oklch(0.830 0.155 296);
+  --gx-brand-400: oklch(0.755 0.202 296);
+  --gx-brand-500: oklch(0.680 0.225 296);
+  --gx-brand-600: oklch(0.595 0.217 296);
+  --gx-brand-700: oklch(0.510 0.194 296);
+  --gx-brand-800: oklch(0.430 0.163 296);
+  --gx-brand-900: oklch(0.370 0.132 296);
+  --gx-brand-950: oklch(0.280 0.101 296);
+  --gx-mint-50: oklch(0.975 0.016 160);
+  --gx-mint-100: oklch(0.945 0.036 160);
+  --gx-mint-200: oklch(0.895 0.066 160);
+  --gx-mint-300: oklch(0.830 0.100 160);
+  --gx-mint-400: oklch(0.755 0.130 160);
+  --gx-mint-500: oklch(0.680 0.145 160);
+  --gx-mint-600: oklch(0.595 0.140 160);
+  --gx-mint-700: oklch(0.510 0.125 160);
+  --gx-mint-800: oklch(0.430 0.105 160);
+  --gx-mint-900: oklch(0.370 0.085 160);
+  --gx-mint-950: oklch(0.280 0.065 160);
+  --gx-gold-50: oklch(0.975 0.017 72);
+  --gx-gold-100: oklch(0.945 0.038 72);
+  --gx-gold-200: oklch(0.895 0.069 72);
+  --gx-gold-300: oklch(0.830 0.105 72);
+  --gx-gold-400: oklch(0.755 0.137 72);
+  --gx-gold-500: oklch(0.680 0.152 72);
+  --gx-gold-600: oklch(0.595 0.147 72);
+  --gx-gold-700: oklch(0.510 0.131 72);
+  --gx-gold-800: oklch(0.430 0.110 72);
+  --gx-gold-900: oklch(0.370 0.089 72);
+  --gx-gold-950: oklch(0.280 0.068 72);
+  --gx-coral-50: oklch(0.975 0.019 18);
+  --gx-coral-100: oklch(0.945 0.043 18);
+  --gx-coral-200: oklch(0.895 0.079 18);
+  --gx-coral-300: oklch(0.830 0.120 18);
+  --gx-coral-400: oklch(0.755 0.156 18);
+  --gx-coral-500: oklch(0.680 0.174 18);
+  --gx-coral-600: oklch(0.595 0.168 18);
+  --gx-coral-700: oklch(0.510 0.150 18);
+  --gx-coral-800: oklch(0.430 0.126 18);
+  --gx-coral-900: oklch(0.370 0.102 18);
+  --gx-coral-950: oklch(0.280 0.078 18);
+}
+
+@theme {
+  --color-sky-50: var(--gx-brand-50);
+  --color-sky-100: var(--gx-brand-100);
+  --color-sky-200: var(--gx-brand-200);
+  --color-sky-300: var(--gx-brand-300);
+  --color-sky-400: var(--gx-brand-400);
+  --color-sky-500: var(--gx-brand-500);
+  --color-sky-600: var(--gx-brand-600);
+  --color-sky-700: var(--gx-brand-700);
+  --color-sky-800: var(--gx-brand-800);
+  --color-sky-900: var(--gx-brand-900);
+  --color-sky-950: var(--gx-brand-950);
+  --color-blue-50: var(--gx-brand-50);
+  --color-blue-100: var(--gx-brand-100);
+  --color-blue-200: var(--gx-brand-200);
+  --color-blue-300: var(--gx-brand-300);
+  --color-blue-400: var(--gx-brand-400);
+  --color-blue-500: var(--gx-brand-500);
+  --color-blue-600: var(--gx-brand-600);
+  --color-blue-700: var(--gx-brand-700);
+  --color-blue-800: var(--gx-brand-800);
+  --color-blue-900: var(--gx-brand-900);
+  --color-blue-950: var(--gx-brand-950);
+  --color-cyan-50: var(--gx-brand-50);
+  --color-cyan-100: var(--gx-brand-100);
+  --color-cyan-200: var(--gx-brand-200);
+  --color-cyan-300: var(--gx-brand-300);
+  --color-cyan-400: var(--gx-brand-400);
+  --color-cyan-500: var(--gx-brand-500);
+  --color-cyan-600: var(--gx-brand-600);
+  --color-cyan-700: var(--gx-brand-700);
+  --color-cyan-800: var(--gx-brand-800);
+  --color-cyan-900: var(--gx-brand-900);
+  --color-cyan-950: var(--gx-brand-950);
+  --color-indigo-50: var(--gx-brand-50);
+  --color-indigo-100: var(--gx-brand-100);
+  --color-indigo-200: var(--gx-brand-200);
+  --color-indigo-300: var(--gx-brand-300);
+  --color-indigo-400: var(--gx-brand-400);
+  --color-indigo-500: var(--gx-brand-500);
+  --color-indigo-600: var(--gx-brand-600);
+  --color-indigo-700: var(--gx-brand-700);
+  --color-indigo-800: var(--gx-brand-800);
+  --color-indigo-900: var(--gx-brand-900);
+  --color-indigo-950: var(--gx-brand-950);
+  --color-violet-50: var(--gx-brand-50);
+  --color-violet-100: var(--gx-brand-100);
+  --color-violet-200: var(--gx-brand-200);
+  --color-violet-300: var(--gx-brand-300);
+  --color-violet-400: var(--gx-brand-400);
+  --color-violet-500: var(--gx-brand-500);
+  --color-violet-600: var(--gx-brand-600);
+  --color-violet-700: var(--gx-brand-700);
+  --color-violet-800: var(--gx-brand-800);
+  --color-violet-900: var(--gx-brand-900);
+  --color-violet-950: var(--gx-brand-950);
+  --color-purple-50: var(--gx-brand-50);
+  --color-purple-100: var(--gx-brand-100);
+  --color-purple-200: var(--gx-brand-200);
+  --color-purple-300: var(--gx-brand-300);
+  --color-purple-400: var(--gx-brand-400);
+  --color-purple-500: var(--gx-brand-500);
+  --color-purple-600: var(--gx-brand-600);
+  --color-purple-700: var(--gx-brand-700);
+  --color-purple-800: var(--gx-brand-800);
+  --color-purple-900: var(--gx-brand-900);
+  --color-purple-950: var(--gx-brand-950);
+  --color-fuchsia-50: var(--gx-brand-50);
+  --color-fuchsia-100: var(--gx-brand-100);
+  --color-fuchsia-200: var(--gx-brand-200);
+  --color-fuchsia-300: var(--gx-brand-300);
+  --color-fuchsia-400: var(--gx-brand-400);
+  --color-fuchsia-500: var(--gx-brand-500);
+  --color-fuchsia-600: var(--gx-brand-600);
+  --color-fuchsia-700: var(--gx-brand-700);
+  --color-fuchsia-800: var(--gx-brand-800);
+  --color-fuchsia-900: var(--gx-brand-900);
+  --color-fuchsia-950: var(--gx-brand-950);
+  --color-emerald-50: var(--gx-mint-50);
+  --color-emerald-100: var(--gx-mint-100);
+  --color-emerald-200: var(--gx-mint-200);
+  --color-emerald-300: var(--gx-mint-300);
+  --color-emerald-400: var(--gx-mint-400);
+  --color-emerald-500: var(--gx-mint-500);
+  --color-emerald-600: var(--gx-mint-600);
+  --color-emerald-700: var(--gx-mint-700);
+  --color-emerald-800: var(--gx-mint-800);
+  --color-emerald-900: var(--gx-mint-900);
+  --color-emerald-950: var(--gx-mint-950);
+  --color-green-50: var(--gx-mint-50);
+  --color-green-100: var(--gx-mint-100);
+  --color-green-200: var(--gx-mint-200);
+  --color-green-300: var(--gx-mint-300);
+  --color-green-400: var(--gx-mint-400);
+  --color-green-500: var(--gx-mint-500);
+  --color-green-600: var(--gx-mint-600);
+  --color-green-700: var(--gx-mint-700);
+  --color-green-800: var(--gx-mint-800);
+  --color-green-900: var(--gx-mint-900);
+  --color-green-950: var(--gx-mint-950);
+  --color-teal-50: var(--gx-mint-50);
+  --color-teal-100: var(--gx-mint-100);
+  --color-teal-200: var(--gx-mint-200);
+  --color-teal-300: var(--gx-mint-300);
+  --color-teal-400: var(--gx-mint-400);
+  --color-teal-500: var(--gx-mint-500);
+  --color-teal-600: var(--gx-mint-600);
+  --color-teal-700: var(--gx-mint-700);
+  --color-teal-800: var(--gx-mint-800);
+  --color-teal-900: var(--gx-mint-900);
+  --color-teal-950: var(--gx-mint-950);
+  --color-lime-50: var(--gx-mint-50);
+  --color-lime-100: var(--gx-mint-100);
+  --color-lime-200: var(--gx-mint-200);
+  --color-lime-300: var(--gx-mint-300);
+  --color-lime-400: var(--gx-mint-400);
+  --color-lime-500: var(--gx-mint-500);
+  --color-lime-600: var(--gx-mint-600);
+  --color-lime-700: var(--gx-mint-700);
+  --color-lime-800: var(--gx-mint-800);
+  --color-lime-900: var(--gx-mint-900);
+  --color-lime-950: var(--gx-mint-950);
+  --color-amber-50: var(--gx-gold-50);
+  --color-amber-100: var(--gx-gold-100);
+  --color-amber-200: var(--gx-gold-200);
+  --color-amber-300: var(--gx-gold-300);
+  --color-amber-400: var(--gx-gold-400);
+  --color-amber-500: var(--gx-gold-500);
+  --color-amber-600: var(--gx-gold-600);
+  --color-amber-700: var(--gx-gold-700);
+  --color-amber-800: var(--gx-gold-800);
+  --color-amber-900: var(--gx-gold-900);
+  --color-amber-950: var(--gx-gold-950);
+  --color-orange-50: var(--gx-gold-50);
+  --color-orange-100: var(--gx-gold-100);
+  --color-orange-200: var(--gx-gold-200);
+  --color-orange-300: var(--gx-gold-300);
+  --color-orange-400: var(--gx-gold-400);
+  --color-orange-500: var(--gx-gold-500);
+  --color-orange-600: var(--gx-gold-600);
+  --color-orange-700: var(--gx-gold-700);
+  --color-orange-800: var(--gx-gold-800);
+  --color-orange-900: var(--gx-gold-900);
+  --color-orange-950: var(--gx-gold-950);
+  --color-yellow-50: var(--gx-gold-50);
+  --color-yellow-100: var(--gx-gold-100);
+  --color-yellow-200: var(--gx-gold-200);
+  --color-yellow-300: var(--gx-gold-300);
+  --color-yellow-400: var(--gx-gold-400);
+  --color-yellow-500: var(--gx-gold-500);
+  --color-yellow-600: var(--gx-gold-600);
+  --color-yellow-700: var(--gx-gold-700);
+  --color-yellow-800: var(--gx-gold-800);
+  --color-yellow-900: var(--gx-gold-900);
+  --color-yellow-950: var(--gx-gold-950);
+  --color-rose-50: var(--gx-coral-50);
+  --color-rose-100: var(--gx-coral-100);
+  --color-rose-200: var(--gx-coral-200);
+  --color-rose-300: var(--gx-coral-300);
+  --color-rose-400: var(--gx-coral-400);
+  --color-rose-500: var(--gx-coral-500);
+  --color-rose-600: var(--gx-coral-600);
+  --color-rose-700: var(--gx-coral-700);
+  --color-rose-800: var(--gx-coral-800);
+  --color-rose-900: var(--gx-coral-900);
+  --color-rose-950: var(--gx-coral-950);
+  --color-red-50: var(--gx-coral-50);
+  --color-red-100: var(--gx-coral-100);
+  --color-red-200: var(--gx-coral-200);
+  --color-red-300: var(--gx-coral-300);
+  --color-red-400: var(--gx-coral-400);
+  --color-red-500: var(--gx-coral-500);
+  --color-red-600: var(--gx-coral-600);
+  --color-red-700: var(--gx-coral-700);
+  --color-red-800: var(--gx-coral-800);
+  --color-red-900: var(--gx-coral-900);
+  --color-red-950: var(--gx-coral-950);
+  --color-pink-50: var(--gx-coral-50);
+  --color-pink-100: var(--gx-coral-100);
+  --color-pink-200: var(--gx-coral-200);
+  --color-pink-300: var(--gx-coral-300);
+  --color-pink-400: var(--gx-coral-400);
+  --color-pink-500: var(--gx-coral-500);
+  --color-pink-600: var(--gx-coral-600);
+  --color-pink-700: var(--gx-coral-700);
+  --color-pink-800: var(--gx-coral-800);
+  --color-pink-900: var(--gx-coral-900);
+  --color-pink-950: var(--gx-coral-950);
 }
 
 /* Thème simple: the coloured headers, hero cards and tiles (white text on a
@@ -70,7 +312,428 @@
 }
 
 body {
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-app), var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* ------------------------------------------------------------------------
+   GX Violet — clean like the banking apps, with Apple's glass where it
+   floats. Light: a calm background, Accueil's balance big and centred on a
+   soft violet light, white cards without borders, hero cards white washed
+   with violet (their text dark), the main action a violet pill; the bar,
+   the + and the sheets in frosted glass, the icons in violet glass tiles.
+   Dark: the night lit violet and cyan, the surfaces smoky glass. "simple"
+   keeps its own plain rules above.
+   ------------------------------------------------------------------------ */
+:root {
+  --gx-ink: #14121f;
+  /* Fields and chips: a hint of violet. */
+  --gx-chip: #f3f2f8;
+  --gx-tile-ink: var(--gx-brand-600);
+  --gx-line: rgb(255 255 255 / 0.085);
+  --gx-line-strong: rgb(255 255 255 / 0.14);
+  --gx-glass-strong: rgb(255 255 255 / 0.09);
+  /* A card: white, no border, a soft shadow. */
+  --gx-glass-fill: linear-gradient(180deg, #ffffff, #ffffff);
+  --gx-glass-edge: transparent;
+  --gx-glass-shadow: 0 1px 2px rgb(20 18 31 / 0.04), 0 12px 32px -20px rgb(20 18 31 / 0.22);
+  /* Floating glass (bar, sheets, dialogs): see-through, blurring behind. */
+  --gx-float-fill: linear-gradient(180deg, rgb(255 255 255 / 0.86), rgb(255 255 255 / 0.74));
+  --gx-float-shadow: inset 0 1px 0 rgb(255 255 255 / 0.95), inset 0 0 0 1px rgb(255 255 255 / 0.55), 0 20px 44px -18px rgb(48 28 130 / 0.38), 0 3px 8px -3px rgb(48 28 130 / 0.14);
+  /* White pills (and the round quick actions). */
+  --gx-pill-fill: linear-gradient(180deg, #ffffff, #fdfcff);
+  --gx-pill-shadow: inset 0 0 0 1px rgb(20 18 31 / 0.04), 0 6px 18px -10px rgb(20 18 31 / 0.3);
+  /* Dark hero cards: the night lit violet and cyan. */
+  --gx-hero:
+    radial-gradient(120% 85% at 8% -12%, rgb(139 92 246 / 0.55), transparent 58%),
+    radial-gradient(95% 95% at 108% 6%, rgb(34 211 238 / 0.32), transparent 62%),
+    linear-gradient(158deg, #1d1a48 0%, #121334 55%, #0b0d26 100%);
+}
+:root.dark {
+  --gx-chip: rgb(255 255 255 / 0.06);
+  --gx-tile-ink: var(--gx-brand-200);
+  --gx-glass-fill: linear-gradient(180deg, rgb(255 255 255 / 0.075), rgb(255 255 255 / 0.04));
+  --gx-glass-edge: rgb(255 255 255 / 0.085);
+  --gx-glass-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 12px 32px -18px rgb(0 0 0 / 0.7);
+  --gx-float-fill: linear-gradient(180deg, rgb(36 31 74 / 0.84), rgb(20 17 46 / 0.8));
+  --gx-float-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), inset 0 0 0 1px rgb(255 255 255 / 0.08), 0 22px 48px -18px rgb(0 0 0 / 0.85);
+  --gx-pill-fill: linear-gradient(180deg, rgb(255 255 255 / 0.12), rgb(255 255 255 / 0.06));
+  --gx-pill-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), inset 0 0 0 1px rgb(255 255 255 / 0.08), 0 12px 26px -16px rgb(0 0 0 / 0.85);
+}
+
+/* The background: calm in light; in the dark, the night lit from the top
+   corners (fixed, so it doesn't move or repaint while scrolling). */
+:root:not(.simple) body {
+  background-color: var(--background);
+}
+:root.dark:not(.simple) body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(75% 42% at 10% -6%, rgb(124 58 237 / 0.34), transparent 70%),
+    radial-gradient(65% 40% at 102% 2%, rgb(34 211 238 / 0.18), transparent 70%),
+    radial-gradient(60% 40% at -10% 60%, rgb(20 184 166 / 0.07), transparent 70%),
+    radial-gradient(60% 40% at 110% 78%, rgb(124 58 237 / 0.11), transparent 70%);
+}
+
+/* Accueil: the brand's soft light behind the greeting and the balance. */
+.gx-home-glow {
+  background:
+    radial-gradient(70% 60% at 85% 10%, color-mix(in oklab, var(--gx-brand-200) 55%, transparent), transparent 70%),
+    radial-gradient(60% 55% at 0% 30%, rgb(253 230 238 / 0.7), transparent 70%),
+    linear-gradient(180deg, #fbfaff 0%, var(--background) 100%);
+}
+.dark .gx-home-glow,
+.simple .gx-home-glow {
+  background: none;
+}
+
+/* Accueil's living card (Disponible): a violet mesh with light coming in
+   from its corners, a sheen of glass sweeping over it now and then,
+   sparkles twinkling. */
+.gx-vivid {
+  color: #fff;
+  background-color: #5b2fd6;
+  background-image:
+    linear-gradient(180deg, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0) 46%),
+    radial-gradient(95% 75% at 0% 0%, rgb(196 181 253 / 0.85), transparent 62%),
+    radial-gradient(75% 85% at 100% 0%, rgb(99 160 250 / 0.55), transparent 62%),
+    radial-gradient(85% 95% at 100% 100%, rgb(232 90 170 / 0.5), transparent 62%),
+    linear-gradient(150deg, #7c4dff 0%, #5b2fd6 50%, #3d1e9e 100%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4), inset 0 0 0 1px rgb(255 255 255 / 0.16), 0 18px 34px -18px rgb(91 33 182 / 0.8), 0 4px 10px -4px rgb(91 33 182 / 0.35);
+}
+.gx-vivid::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.26) 46%, transparent 62%);
+  transform: translateX(-130%);
+  animation: gx-sheen 7s ease-in-out infinite;
+}
+@keyframes gx-sheen {
+  0%,
+  60% {
+    transform: translateX(-130%);
+  }
+  85%,
+  100% {
+    transform: translateX(130%);
+  }
+}
+.gx-vivid-chip {
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.22), rgb(255 255 255 / 0.08));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35), inset 0 0 0 1px rgb(255 255 255 / 0.16);
+}
+.gx-twinkle {
+  animation: gx-twinkle 3.2s ease-in-out infinite;
+}
+@keyframes gx-twinkle {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gx-vivid::after,
+  .gx-twinkle {
+    animation: none;
+  }
+}
+/* "simple": a plain card, its text the ink. */
+.simple .gx-vivid {
+  --color-white: var(--simple-ink);
+  color: var(--simple-ink);
+  background: var(--simple-surface);
+  box-shadow: none;
+  border: 1px solid var(--simple-line);
+}
+.simple .gx-vivid::after,
+.simple .gx-twinkle {
+  display: none;
+}
+.simple .gx-vivid-chip {
+  background: var(--simple-chip);
+  box-shadow: none;
+}
+
+/* Cards, rows and chips: white on the calm background, a soft shadow;
+   light glass over the night in the dark. */
+:root:not(.simple) :is(.gx-glass, [class~="bg-white"][class*="border-slate-200"]) {
+  background-color: transparent;
+  background-image: var(--gx-glass-fill);
+  border-color: var(--gx-glass-edge);
+  box-shadow: var(--gx-glass-shadow);
+}
+.dark:not(.simple) :is(.gx-glass, [class~="dark:bg-slate-900"], [class*="dark:bg-slate-900/"]) {
+  background-color: transparent;
+  background-image: var(--gx-glass-fill);
+  border-color: var(--gx-line);
+}
+.dark:not(.simple) :is(.gx-glass, [class~="dark:bg-slate-900"]:is([class*="rounded-3xl"], [class*="rounded-2xl"])) {
+  box-shadow: var(--gx-glass-shadow);
+}
+.dark:not(.simple) [class*="dark:bg-slate-800"] {
+  background-color: var(--gx-glass-strong);
+}
+.dark:not(.simple) [class*="dark:border-slate-800"] {
+  border-color: var(--gx-line);
+}
+.dark:not(.simple) [class*="dark:border-slate-700"] {
+  border-color: var(--gx-line-strong);
+}
+.dark:not(.simple) :is([class*="dark:active:bg-slate-800"], [class*="dark:active:bg-slate-900"]):active {
+  background-color: rgb(255 255 255 / 0.1);
+}
+/* Lines between rows: the faintest violet, not grey. */
+:root:not(.dark):not(.simple) :is(.divide-slate-100, .divide-slate-200) > :not(:last-child),
+:root:not(.dark):not(.simple) .border-slate-100 {
+  border-color: rgb(70 50 160 / 0.07);
+}
+
+/* Icon tiles (and every little white-icon-on-a-gradient tile): violet
+   glass, the icon in violet (two-tone with Phosphor's duotone). */
+:root:not(.simple) :is(.gx-tile, .text-white[class*="bg-gradient-to"]:is([class^="h-"], [class*=" h-"]):is([class^="w-"], [class*=" w-"]):not([class*="w-full"])) {
+  background-color: transparent !important;
+  background-image: linear-gradient(150deg, #ffffff 0%, var(--gx-brand-50) 55%, var(--gx-brand-100) 100%) !important;
+  color: var(--gx-tile-ink) !important;
+  box-shadow: inset 0 1px 0 #fff, inset 0 0 0 1px rgb(255 255 255 / 0.85), 0 6px 14px -8px rgb(91 33 182 / 0.4) !important;
+}
+:root.dark:not(.simple) :is(.gx-tile, .text-white[class*="bg-gradient-to"]:is([class^="h-"], [class*=" h-"]):is([class^="w-"], [class*=" w-"]):not([class*="w-full"])) {
+  background-image: linear-gradient(150deg, rgb(167 139 250 / 0.3) 0%, rgb(124 58 237 / 0.14) 100%) !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.16), inset 0 0 0 1px rgb(255 255 255 / 0.08), 0 8px 18px -10px rgb(0 0 0 / 0.7) !important;
+}
+:root:not(.simple) .text-white[class*="bg-gradient-to"]:is([class^="h-"], [class*=" h-"]):is([class^="w-"], [class*=" w-"]):not([class*="w-full"]):not([class*="rounded-full"]) {
+  border-radius: 16px;
+}
+
+/* Hero cards (white text on a gradient), all alike whatever the page —
+   light: a white card washed with violet, its text dark; dark: the night
+   lit violet and cyan. */
+:root:not(.dark):not(.simple) .text-white[class*="bg-gradient-to"]:not(main):not(:is([class^="h-"], [class*=" h-"]):is([class^="w-"], [class*=" w-"]):not([class*="w-full"])) {
+  --color-white: var(--gx-ink);
+  background-image:
+    radial-gradient(120% 90% at 100% 0%, color-mix(in oklab, var(--gx-brand-200) 45%, transparent), transparent 60%),
+    linear-gradient(180deg, #ffffff, #fcfbff) !important;
+  background-color: #fff;
+  border: 1px solid color-mix(in oklab, var(--gx-brand-200) 45%, transparent);
+  box-shadow: 0 1px 2px rgb(20 18 31 / 0.04), 0 18px 38px -24px color-mix(in oklab, var(--gx-brand-700) 60%, transparent) !important;
+}
+:root:not(.dark):not(.simple) .text-white[class*="bg-gradient-to"]:not(main):not(:is([class^="h-"], [class*=" h-"]):is([class^="w-"], [class*=" w-"]):not([class*="w-full"])) :is(.bg-white:not(.h-full), [class*="bg-white/"]:not(:has(> .h-full)), [class*="bg-gradient-to"]:not(:is([class^="h-"], [class*=" h-"]):is([class^="w-"], [class*=" w-"]))) {
+  background-image: none;
+  background-color: var(--gx-chip);
+  box-shadow: none;
+}
+:root:not(.dark):not(.simple) .text-white[class*="bg-gradient-to"]:not(main) [class*="bg-white/"]:has(> .h-full) {
+  background-color: color-mix(in oklab, var(--gx-brand-200) 45%, transparent);
+}
+:root:not(.dark):not(.simple) .text-white[class*="bg-gradient-to"]:not(main) .bg-white.h-full {
+  background-color: var(--gx-brand-600);
+}
+:root:not(.dark):not(.simple) .text-white[class*="bg-gradient-to"]:not(main) > [aria-hidden].absolute {
+  background-color: color-mix(in oklab, var(--gx-brand-100) 55%, transparent);
+  filter: none;
+}
+/* Their light tints (made for a dark gradient) take a readable shade:
+   money in, money out, loans keep their meaning; the rest turns grey. */
+:root:not(.dark):not(.simple) .text-white[class*="bg-gradient-to"]:not(main) :is([class*="text-"][class*="-100"], [class*="text-"][class*="-200"], [class*="text-"][class*="-300"]) {
+  color: color-mix(in oklab, var(--gx-ink) 55%, transparent);
+}
+:root:not(.dark):not(.simple) .text-white[class*="bg-gradient-to"]:not(main) :is([class*="text-emerald-1"], [class*="text-emerald-2"], [class*="text-emerald-3"], [class*="text-green-1"], [class*="text-green-2"], [class*="text-green-3"], [class*="text-teal-1"], [class*="text-teal-2"], [class*="text-teal-3"], [class*="text-lime-1"], [class*="text-lime-2"], [class*="text-lime-3"]) {
+  color: var(--gx-mint-700);
+}
+:root:not(.dark):not(.simple) .text-white[class*="bg-gradient-to"]:not(main) :is([class*="text-rose-1"], [class*="text-rose-2"], [class*="text-rose-3"], [class*="text-red-1"], [class*="text-red-2"], [class*="text-red-3"], [class*="text-pink-1"], [class*="text-pink-2"], [class*="text-pink-3"]) {
+  color: var(--gx-coral-600);
+}
+:root:not(.dark):not(.simple) .text-white[class*="bg-gradient-to"]:not(main) :is([class*="text-amber-1"], [class*="text-amber-2"], [class*="text-amber-3"], [class*="text-orange-1"], [class*="text-orange-2"], [class*="text-orange-3"], [class*="text-yellow-1"], [class*="text-yellow-2"], [class*="text-yellow-3"]) {
+  color: var(--gx-gold-700);
+}
+:root.dark:not(.simple) .text-white[class*="bg-gradient-to"]:not(main):not(:is([class^="h-"], [class*=" h-"]):is([class^="w-"], [class*=" w-"]):not([class*="w-full"])) {
+  background-image: var(--gx-hero) !important;
+  background-color: #121334;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow: 0 24px 48px -24px rgb(2 6 23 / 0.75), inset 0 1px 0 rgb(255 255 255 / 0.1) !important;
+}
+:root.dark:not(.simple) .text-white[class*="bg-gradient-to"]:not(main) [class*="bg-white/"]:is([class*="rounded-2xl"], [class*="rounded-xl"], [class*="rounded-full"]):not(:has(> .h-full)) {
+  background-color: rgb(255 255 255 / 0.08);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), inset 0 0 0 1px rgb(255 255 255 / 0.07);
+}
+
+/* The header of every page: on the page while at the top; frosted glass
+   (the page blurred under it) once the page scrolls under it. */
+.gx-header {
+  background-color: transparent;
+  transition: background-color 0.25s, box-shadow 0.25s;
+}
+.gx-header[data-scrolled] {
+  background-color: rgb(245 245 249 / 0.72);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 1px 0 rgb(60 40 150 / 0.07);
+}
+.dark .gx-header[data-scrolled] {
+  background-color: rgb(7 12 25 / 0.7);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.06);
+}
+
+/* Floating glass: the bar, the + menu, sheets and dialogs. */
+.gx-float {
+  background-image: var(--gx-float-fill);
+  box-shadow: var(--gx-float-shadow);
+  -webkit-backdrop-filter: blur(30px) saturate(190%);
+  backdrop-filter: blur(30px) saturate(190%);
+}
+/* Dialogs and sheets: the same glass, denser — they carry forms. */
+.gx-dialog {
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.95), rgb(255 255 255 / 0.88));
+}
+.dark .gx-dialog {
+  background-image: linear-gradient(180deg, rgb(28 30 62 / 0.94), rgb(14 17 40 / 0.92));
+}
+
+/* The + floating above the bar: an orb of glass with a violet heart. */
+.gx-fab {
+  background-image:
+    radial-gradient(circle at 50% 40%, rgb(139 92 246 / 0.2), rgb(139 92 246 / 0.06) 60%, transparent 74%),
+    var(--gx-float-fill);
+  box-shadow: var(--gx-float-shadow), inset 0 0 0 1.5px rgb(139 92 246 / 0.16);
+  -webkit-backdrop-filter: blur(30px) saturate(190%);
+  backdrop-filter: blur(30px) saturate(190%);
+}
+.dark .gx-fab {
+  background-image:
+    radial-gradient(circle at 50% 40%, rgb(167 139 250 / 0.34), rgb(139 92 246 / 0.1) 60%, transparent 74%),
+    var(--gx-float-fill);
+}
+.simple .gx-fab {
+  background-image: none;
+  background-color: var(--simple-surface);
+  box-shadow: none;
+  border: 1px solid var(--simple-line);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* The bar's current tab: a lens of violet glass sliding under it. */
+.gx-lens {
+  background-image: linear-gradient(180deg, rgb(139 92 246 / 0.18), rgb(139 92 246 / 0.1));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.75), inset 0 0 0 1px rgb(124 58 237 / 0.1), 0 6px 14px -8px rgb(91 33 182 / 0.45);
+}
+.dark .gx-lens {
+  background-image: linear-gradient(180deg, rgb(167 139 250 / 0.28), rgb(139 92 246 / 0.16));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.16), inset 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+
+/* White pills: header buttons, quick actions, secondary actions. */
+.gx-pill {
+  background-image: var(--gx-pill-fill);
+  box-shadow: var(--gx-pill-shadow);
+}
+
+/* The main action: the brand colour, lit a little from the top, softly
+   glowing. */
+.gx-cta {
+  color: #fff;
+  background-color: var(--gx-brand-600);
+  background-image: linear-gradient(180deg, var(--gx-brand-500) 0%, var(--gx-brand-600) 100%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 12px 26px -12px color-mix(in oklab, var(--gx-brand-600) 85%, transparent);
+}
+
+/* Accueil's wheel of shortcuts: stacked cards, so solid glass (the card
+   under one mustn't show through it). */
+.gx-wheel-card {
+  background-image: linear-gradient(180deg, #ffffff, #f7f5ff);
+  box-shadow: inset 0 1px 0 #fff, inset 0 0 0 1px rgb(255 255 255 / 0.9), 0 12px 30px -12px rgb(48 28 130 / 0.32);
+}
+.dark .gx-wheel-card {
+  background-image: linear-gradient(180deg, #241f4c, #18143a);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), inset 0 0 0 1px rgb(255 255 255 / 0.07), 0 14px 32px -14px rgb(0 0 0 / 0.85);
+}
+.simple .gx-wheel-card {
+  background-image: none;
+  background-color: var(--simple-surface);
+  box-shadow: none;
+  border: 1px solid var(--simple-line);
+}
+
+/* Initials when there's no photo: a pearl of white glass, violet letter. */
+.gx-avatar {
+  color: var(--gx-brand-700);
+  background-image: linear-gradient(150deg, #ffffff 0%, var(--gx-brand-100) 100%);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -2px 6px rgb(91 33 182 / 0.12), 0 8px 20px -10px rgb(30 10 90 / 0.5);
+}
+.simple .gx-avatar {
+  background-image: none;
+  background-color: var(--simple-chip);
+  box-shadow: none;
+}
+
+/* Connexion: the whole page is a violet mesh. */
+.gx-login {
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0) 46%),
+    radial-gradient(95% 75% at 0% 0%, rgb(196 181 253 / 0.8), transparent 62%),
+    radial-gradient(75% 85% at 100% 0%, rgb(99 160 250 / 0.5), transparent 62%),
+    radial-gradient(85% 95% at 100% 100%, rgb(232 90 170 / 0.42), transparent 62%),
+    linear-gradient(150deg, #7c4dff 0%, #5b2fd6 50%, #3d1e9e 100%);
+  background-color: #4b23b8;
+}
+.dark .gx-login {
+  background:
+    radial-gradient(95% 75% at 0% 0%, rgb(139 92 246 / 0.75), transparent 62%),
+    radial-gradient(75% 85% at 100% 0%, rgb(56 120 240 / 0.38), transparent 62%),
+    radial-gradient(85% 95% at 100% 100%, rgb(200 60 160 / 0.32), transparent 62%),
+    linear-gradient(150deg, #4b23b8 0%, #321782 50%, #1d1052 100%);
+}
+
+/* Its chips: glass on the mesh. */
+.gx-wallet-chip {
+  background-color: rgb(255 255 255 / 0.12);
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0.04));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.32), inset 0 0 0 1px rgb(255 255 255 / 0.14);
+}
+
+/* Deleting: the same pill, in coral. */
+.gx-danger {
+  color: #fff;
+  background-color: var(--gx-coral-600);
+  background-image: linear-gradient(180deg, var(--gx-coral-500) 0%, var(--gx-coral-600) 100%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 12px 26px -12px color-mix(in oklab, var(--gx-coral-600) 80%, transparent);
+}
+.simple .gx-danger {
+  background-image: none;
+  box-shadow: none;
+}
+
+/* "simple": the glass and the glow turn into plain surfaces. */
+.simple :is(.gx-glass, .gx-float, .gx-pill, .gx-tile) {
+  background-image: none;
+  background-color: var(--simple-surface);
+  box-shadow: none;
+  border: 1px solid var(--simple-line);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.simple .gx-tile {
+  background-color: var(--simple-chip);
+  border: 0;
+}
+.simple .gx-lens {
+  background-color: var(--simple-chip);
+}
+.simple .gx-cta {
+  background-image: none;
+  box-shadow: none;
+}
+.simple .gx-header {
+  background-color: var(--simple-surface);
 }
 
 /* No horizontal scroll on any screen size. `clip`, not `hidden`: hidden

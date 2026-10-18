@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { Toaster } from "sonner";
+import { Geist, Geist_Mono, Manrope } from "next/font/google";
 import { BottomNav } from "@/components/bottom-nav";
+import { AppToaster } from "@/components/app-toaster";
 import { NavHistoryTracker } from "@/lib/nav-history";
 import { ThemeColorKeeper } from "@/components/theme-color";
 import { TabSwipe } from "@/components/tab-swipe";
@@ -20,7 +20,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const DESCRIPTION = "Ton budget du mois, simple et clair : salaire, dépenses, crédits, darets et épargne.";
+// The app's type, like the banking apps'.
+const manrope = Manrope({
+  variable: "--font-app",
+  subsets: ["latin"],
+});
+
+const DESCRIPTION = "Ton budget du mois, simple et clair : salaire, dépenses, dettes, darets et épargne.";
 
 export const metadata: Metadata = {
   // Absolute links for the shared-link preview (opengraph-image.jpg).
@@ -53,24 +59,24 @@ export const viewport: Viewport = {
   interactiveWidget: "resizes-content",
   // No themeColor here: Next would put its meta back on every navigation,
   // and the phone shows that colour for a frame. THEME_COLOR_BOOT_SCRIPT
-  // adds the page's own colour instead, and ThemeColor keeps it.
+  // adds the header's colour instead, and ThemeColorKeeper keeps it.
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="fr" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="fr" className={`${geistSans.variable} ${geistMono.variable} ${manrope.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT + THEME_COLOR_BOOT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-        <div id="page-root" className="mx-auto flex w-full max-w-lg flex-1 flex-col pb-28">
+        <div id="page-root" className="relative mx-auto flex w-full max-w-lg flex-1 flex-col pb-[calc(env(safe-area-inset-bottom)+10.5rem)]">
           {children}
         </div>
         <BottomNav />
         <NavHistoryTracker />
         <ThemeColorKeeper />
         <TabSwipe />
-        <Toaster position="top-center" richColors />
+        <AppToaster />
         <ServiceWorkerRegister />
       </body>
     </html>

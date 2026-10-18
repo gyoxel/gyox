@@ -27,6 +27,6 @@ export const POST = withBalanceGuard(async function post(req: NextRequest, { par
     }
   }
   const repayment = await receiveRepayment(id, parsed.data.slot, parsed.data.method, amount);
-  if (!repayment) return NextResponse.json({ error: "Remboursement introuvable ou déjà reçu." }, { status: 400 });
+  if (!repayment) return NextResponse.json({ error: "Ce mois n'attend plus rien." }, { status: 400 });
   return NextResponse.json(repayment, { status: 201 });
 });

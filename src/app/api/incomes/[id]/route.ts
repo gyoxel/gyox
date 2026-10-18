@@ -18,11 +18,11 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
 export const DELETE = withBalanceGuard(async function remove(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const income = await getIncomeById(id);
-  if (income?.expenseId) return NextResponse.json({ error: "Ce revenu vient d'un crédit : supprime le crédit." }, { status: 409 });
+  if (income?.expenseId) return NextResponse.json({ error: "Ce revenu vient d'une dette : supprime la dette." }, { status: 409 });
   const [move, loan, budget] = await Promise.all([getSavingsMoveOfIncome(id), getLoanOfIncome(id), budgetIdOfIncome(id)]);
   if (budget) return NextResponse.json({ error: "Ce revenu est le reste d'un budget : il suit ses dépenses." }, { status: 409 });
   if (move) return NextResponse.json({ error: "Ce revenu vient de l'épargne : supprime-le depuis l'épargne." }, { status: 409 });
-  if (loan) return NextResponse.json({ error: "Ce revenu est un remboursement de prêt : annule-le depuis le prêt." }, { status: 409 });
+  if (loan) return NextResponse.json({ error: "Cet argent prêté t'a été rendu : annule-le depuis « Argent prêté »." }, { status: 409 });
   const ok = await deleteIncome(id);
   if (!ok) return NextResponse.json({ error: "Revenu introuvable." }, { status: 404 });
   return NextResponse.json({ ok: true, gone: [`/incomes/${id}`] });

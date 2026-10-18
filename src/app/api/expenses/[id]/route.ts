@@ -52,7 +52,7 @@ export const DELETE = withBalanceGuard(async function remove(_req: NextRequest, 
   if (daret) return NextResponse.json({ error: "Cette dépense vient d'une daret : supprime la daret." }, { status: 409 });
   if (deposit) return NextResponse.json({ error: "Cette dépense vient d'un versement : supprime le versement." }, { status: 409 });
   if (move) return NextResponse.json({ error: "Cette dépense vient de l'épargne : supprime-la depuis l'épargne." }, { status: 409 });
-  if (loan) return NextResponse.json({ error: "Cette dépense vient d'un prêt : supprime le prêt." }, { status: 409 });
+  if (loan) return NextResponse.json({ error: "Cette dépense est de l'argent prêté : supprime-la depuis « Argent prêté »." }, { status: 409 });
   const gone = await pagesGoneWithExpenses([id]);
   const ok = await deleteExpense(id);
   if (!ok) return NextResponse.json({ error: "Dépense introuvable." }, { status: 404 });

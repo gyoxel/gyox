@@ -1,6 +1,6 @@
 import { getAllLoans, getSettings } from "@/lib/page-data";
 import Link from "next/link";
-import { ChevronRight, Handshake } from "lucide-react";
+import { CaretRight, HandCoins } from "@phosphor-icons/react/ssr";
 
 import { loanState } from "@/lib/loans";
 import { monthLabelFr, todayMonth } from "@/lib/date";
@@ -25,7 +25,7 @@ export default async function LoansPage() {
 
   return (
     <>
-      <PageHeader title="Prêts" back action={<HeaderAdd href="/prets/new" label="Ajouter un prêt" />} />
+      <PageHeader title="Argent prêté" back action={<HeaderAdd href="/prets/new" label="Prêter de l'argent" />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-amber-700 px-5 py-4 text-white shadow-lg shadow-orange-600/20 dark:shadow-none">
           <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
@@ -33,7 +33,7 @@ export default async function LoansPage() {
           <p className="relative mt-1 text-3xl font-bold tabular-nums">{money(remaining)}</p>
           <div className="relative mt-3 grid grid-cols-2 gap-2">
             <div className="rounded-2xl bg-white/15 px-3 py-2">
-              <p className="text-[10px] uppercase tracking-wide text-white/75">Prêts en cours</p>
+              <p className="text-[10px] uppercase tracking-wide text-white/75">En cours</p>
               <p className="text-sm font-bold tabular-nums">{rows.filter((r) => !r.state.done).length}</p>
             </div>
             <div className="rounded-2xl bg-white/15 px-3 py-2">
@@ -43,16 +43,12 @@ export default async function LoansPage() {
           </div>
         </div>
 
-        <AddLink
-          href="/prets/new"
-          label="Ajouter un prêt"
-          className="border-amber-200 text-amber-700 active:bg-amber-50 dark:border-amber-900 dark:text-amber-300 dark:active:bg-amber-950/30"
-        />
+        <AddLink href="/prets/new" label="Prêter de l'argent" />
 
         {rows.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-slate-200 px-4 py-10 text-center dark:border-slate-700">
-            <Handshake className="h-9 w-9 text-amber-500" />
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Aucun prêt pour le moment</p>
+            <HandCoins weight="duotone" className="h-9 w-9 text-amber-500" />
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Rien de prêté pour le moment</p>
             <p className="text-xs text-slate-400">
               L&apos;argent que tu prêtes sort de ton solde ; chaque remboursement reçu y revient.
             </p>
@@ -68,8 +64,8 @@ export default async function LoansPage() {
               >
                 <Link href={`/prets/${loan.id}`} className="flex flex-col gap-2.5 px-4 pb-3 pt-4 active:bg-slate-50 dark:active:bg-slate-800/60">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 text-xl shadow-sm">
-                      🤝
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl gx-tile text-xl">
+                      💸
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-base font-semibold text-slate-900 dark:text-white">{loan.name}</span>
@@ -83,7 +79,7 @@ export default async function LoansPage() {
                       </span>
                       {!state.done && <span className="block text-[10px] text-slate-400">reste</span>}
                     </span>
-                    <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+                    <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300" />
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                     <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500" style={{ width: `${percent}%` }} />
@@ -98,9 +94,18 @@ export default async function LoansPage() {
                 {nextDue && (
                   <div className="mx-4 mb-4 flex items-center justify-between gap-2 rounded-2xl bg-amber-50 py-1.5 pl-3 pr-1.5 dark:bg-amber-950/40">
                     <span className="min-w-0 text-xs font-medium text-amber-800 dark:text-amber-200">
-                      <span className="capitalize">{monthLabelFr(nextDue.month)}</span> · {money(nextDue.amount)} reçu ?
+                      <span className="capitalize">{monthLabelFr(nextDue.month)}</span> ·{" "}
+                      {nextDue.received > 0 ? `reste ${money(nextDue.left)}` : `${money(nextDue.left)} reçu ?`}
                     </span>
-                    <ReceiveRepayment loanId={loan.id} slot={nextDue.slot} amount={nextDue.amount} />
+                    <ReceiveRepayment
+                      variant="compact"
+                      loanId={loan.id}
+                      slot={nextDue.slot}
+                      name={loan.name}
+                      monthLabel={monthLabelFr(nextDue.month)}
+                      expected={nextDue.amount}
+                      received={nextDue.received}
+                    />
                   </div>
                 )}
               </div>

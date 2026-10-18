@@ -4,23 +4,25 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-400",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-[15px] font-semibold transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-[18px] [&_svg]:shrink-0 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-500/20",
   {
     variants: {
       variant: {
-        default: "bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white",
-        outline:
-          "border border-slate-200 bg-white text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800",
-        ghost: "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
-        destructive: "bg-rose-600 text-white hover:bg-rose-700",
-        subtle: "bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100",
+        /** The main action: the brand colour (globals.css). */
+        default: "gx-cta hover:brightness-110",
+        /** The other actions: clear glass, violet text. */
+        outline: "gx-pill text-violet-800 hover:brightness-[1.03] dark:text-violet-100",
+        ghost: "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10",
+        /** Deleting: the same tinted glass, in coral. */
+        destructive: "gx-danger hover:brightness-110",
+        subtle: "bg-[var(--gx-chip)] text-slate-900 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-100",
         /** Colours come from className only (see below). */
         plain: "",
       },
       size: {
-        default: "h-11 px-4 py-2",
-        sm: "h-9 px-3 text-xs",
-        lg: "h-12 px-6 text-base",
+        default: "h-12 px-5 py-2",
+        sm: "h-9 px-3.5 text-[13px]",
+        lg: "h-14 px-6 text-base",
         icon: "h-10 w-10",
       },
     },

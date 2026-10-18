@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft } from "lucide-react";
+import { CaretLeft } from "@phosphor-icons/react/ssr";
 import { useNavBack } from "@/lib/nav-history";
 import { HEADER_BUTTON } from "@/components/header-button";
 
@@ -9,7 +9,7 @@ export function BackButton() {
   const nav = useNavBack();
   return (
     <button type="button" onClick={() => nav.back()} aria-label="Retour" className={HEADER_BUTTON}>
-      <ChevronLeft className="h-5 w-5" />
+      <CaretLeft weight="bold" className="h-5 w-5" />
     </button>
   );
 }

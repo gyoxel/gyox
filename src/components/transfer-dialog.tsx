@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ArrowLeftRight } from "lucide-react";
+import { ArrowsLeftRight } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { PaymentMethod } from "@/lib/types";
 import { mutate } from "@/lib/use-refresh-data";
@@ -12,11 +12,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MethodIcon } from "@/components/method-icon";
 
 export type Account = PaymentMethod | "savings";
 
 export const ACCOUNT_META: Record<Account, { emoji: string; label: string }> = {
-  cash: { emoji: "💵", label: "Cash" },
+  cash: { emoji: "💵", label: "Espèces" },
   card: { emoji: "💳", label: "Carte" },
   savings: { emoji: "🐷", label: "Épargne" },
 };
@@ -161,8 +162,8 @@ export function TransferDialog({
             />
           </div>
           {error && <p className="text-sm text-rose-600">{error}</p>}
-          <Button type="submit" className="bg-indigo-600 text-white hover:bg-indigo-700" disabled={pending || !(value > 0)}>
-            <ArrowLeftRight className="h-4 w-4" />
+          <Button type="submit" className="gx-cta" disabled={pending || !(value > 0)}>
+            <ArrowsLeftRight weight="bold" className="h-4 w-4" />
             {pending ? "Enregistrement…" : mode === "in" ? "Mettre de côté" : mode === "out" ? "Retirer" : "Transférer"}
           </Button>
         </form>
@@ -201,7 +202,7 @@ function AccountRow({
                 : "border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300",
             )}
           >
-            <span className="text-xl leading-none">{ACCOUNT_META[a].emoji}</span>
+            <MethodIcon method={a} className={a === "savings" ? "text-xl" : "h-[15px]"} />
             {ACCOUNT_META[a].label}
           </button>
         ))}

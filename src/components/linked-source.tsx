@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Pencil } from "lucide-react";
+import { PencilSimple } from "@phosphor-icons/react/ssr";
 import { LockedDelete, LockedDeleteIcon } from "@/components/locked-delete";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,6 @@ import { cn } from "@/lib/utils";
  */
 export function LinkedSourcePage({
   title,
-  tone,
   gradient,
   eyebrow,
   amount,
@@ -24,13 +23,11 @@ export function LinkedSourcePage({
   sourceLabel,
 }: {
   title: string;
-  /** Header colour. */
-  tone: string;
   /** Hero card's gradient classes. */
   gradient: string;
   eyebrow: string;
   amount: string;
-  subtitle: string;
+  subtitle: React.ReactNode;
   text: string;
   href: string;
   editLabel: string;
@@ -40,7 +37,7 @@ export function LinkedSourcePage({
 }) {
   return (
     <>
-      <PageHeader title={title} back tone={tone} action={<LockedDeleteIcon hint={`Supprime-le depuis ${sourceLabel}.`} />} />
+      <PageHeader title={title} back action={<LockedDeleteIcon hint={`Supprime-le depuis ${sourceLabel}.`} />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         <div className={cn("relative overflow-hidden rounded-3xl bg-gradient-to-br p-5 text-white shadow-lg dark:shadow-none", gradient)}>
           <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
@@ -51,7 +48,7 @@ export function LinkedSourcePage({
         <p className="px-1 text-sm text-slate-500 dark:text-slate-400">{text}</p>
         <Button asChild className={buttonClass}>
           <Link href={href}>
-            <Pencil className="h-4 w-4" />
+            <PencilSimple weight="bold" className="h-4 w-4" />
             {editLabel}
           </Link>
         </Button>

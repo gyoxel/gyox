@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeSlash, HandArrowDown, HandArrowUp, PiggyBank, Swap } from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import type { MonthId } from "@/lib/date";
 import type { Expense, Payment, PaymentMethod, SalaryAdvance, Settings } from "@/lib/types";
 import { walletPaidOut } from "@/lib/wallet";
@@ -12,7 +13,36 @@ import { useRevealedBalance } from "@/lib/reveal-balance";
 import { CountdownNextSalary } from "@/components/countdown-next-salary";
 import { DueNowList } from "@/components/due-now-list";
 import { DueRepayments, type DueRepayment } from "@/components/due-repayments";
+import { DueDaretPayouts, type DueDaretPayout } from "@/components/due-daret-payouts";
 import { ShortcutWheel } from "@/components/shortcut-wheel";
+import { TransferDialog } from "@/components/transfer-dialog";
+import { MethodIcon } from "@/components/method-icon";
+
+// Transfert has no page of its own: it opens the transfer right here.
+const QUICK_ACTIONS: { href?: string; label: string; icon: PhosphorIcon }[] = [
+  { href: "/expenses/new", label: "Dépense", icon: HandArrowUp },
+  { href: "/incomes/new", label: "Revenu", icon: HandArrowDown },
+  { href: "/epargne", label: "Épargne", icon: PiggyBank },
+  { label: "Transfert", icon: Swap },
+];
+
+/** Disponible's card: the living violet one (a link once the amounts
+ *  show, a plain card hidden). */
+const BALANCE_CARD = "gx-vivid relative flex flex-col items-center overflow-hidden rounded-[28px] px-3.5 pb-3.5 pt-4 text-center";
+
+/** "20 449,50 DH": the whole number, the decimals and currency softer. */
+function BigAmount({ text }: { text: string }) {
+  const match = /^(.*?\d)((?:,\d+)?\s*\S+)$/.exec(text);
+  if (!match) return <>{text}</>;
+  return (
+    <>
+      {/* The narrow space between thousands nearly vanishes this big and
+          bold: a full one ("20 449"). */}
+      {match[1].replace(/\u202f/g, "\u00a0")}
+      <span className="text-white/60">{match[2].replace(/^(,\d+)?\s*/, (m) => m.trim() + " ")}</span>
+    </>
+  );
+}
 
 /**
  * Dashboard body. Owns a local copy of the payments, seeded once from the
@@ -25,6 +55,7 @@ import { ShortcutWheel } from "@/components/shortcut-wheel";
  */
 export function HomeDashboard({
   solde,
+  savings,
   currency,
   expenses,
   payments,
@@ -33,9 +64,12 @@ export function HomeDashboard({
   settings,
   advances,
   dueRepayments,
+  dueDaretPayouts,
 }: {
   /** Solde of each account (cash, card) as of the server's payments. */
   solde: Record<PaymentMethod, number>;
+  /** Épargne (for the transfer's savings side). */
+  savings: number;
   currency: string;
   expenses: Expense[];
   payments: Payment[];
@@ -46,6 +80,8 @@ export function HomeDashboard({
   advances: SalaryAdvance[];
   /** Loans' installments whose month has come, not received yet. */
   dueRepayments: DueRepayment[];
+  /** Darets whose turn has come, the pot not confirmed yet. */
+  dueDaretPayouts: DueDaretPayout[];
 }) {
   const [localPayments, setLocalPayments] = useState<Payment[]>(payments);
   const [seenPayments, setSeenPayments] = useState(payments);
@@ -61,74 +97,108 @@ export function HomeDashboard({
     return { cash: solde.cash + saved.cash - local.cash, card: solde.card + saved.card - local.card };
   }, [solde, payments, localPayments, expenses]);
   const [revealed, setRevealed] = useRevealedBalance();
+  const [transferOpen, setTransferOpen] = useState(false);
   const show = (n: number) => (revealed ? formatMoney(n, currency) : "•••• DH");
+
+  const balanceCard = (
+    <>
+      {/* A few sparkles twinkling in its corners. */}
+      <span aria-hidden className="gx-twinkle absolute left-5 top-5 text-[9px] text-white/75">✦</span>
+      <span aria-hidden className="gx-twinkle absolute right-6 top-4 text-[11px] text-white/80 [animation-delay:1.4s]">✦</span>
+      <span aria-hidden className="gx-twinkle absolute right-12 top-10 text-[6px] text-white/60 [animation-delay:2.3s]">✦</span>
+      <p className="relative text-[15px] font-semibold text-white/85">Disponible maintenant</p>
+      <div className="relative mt-2.5 flex items-center gap-2">
+        <p
+          data-private
+          className={cn(
+            "text-[2.6rem] font-extrabold leading-none tabular-nums text-white",
+            revealed ? "tracking-tight" : "tracking-widest",
+          )}
+        >
+          <BigAmount text={show(balance.cash + balance.card)} />
+        </p>
+        <button
+          type="button"
+          onClick={(e) => {
+            // On the card (a link once shown): the eye only shows / hides.
+            e.preventDefault();
+            e.stopPropagation();
+            setRevealed(!revealed);
+          }}
+          aria-label={revealed ? "Masquer le montant" : "Afficher le montant"}
+          className="flex h-9 w-9 items-center justify-center rounded-full text-white/90 transition-colors active:bg-white/15"
+        >
+          {revealed ? <EyeSlash weight="bold" className="h-5 w-5" /> : <Eye weight="bold" className="h-5 w-5" />}
+        </button>
+      </div>
+      {/* Cash | card: each on its chip, its picture beside its name and
+          amount. */}
+      <div className="relative mt-4 grid w-full grid-cols-2 gap-2">
+        {(["cash", "card"] as const).map((m) => (
+          <span key={m} className="gx-vivid-chip flex min-w-0 items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left">
+            <MethodIcon method={m} className="h-[14px]" />
+            <span className="min-w-0">
+              <span className="block text-[11px] font-medium leading-tight text-white/70">
+                {m === "cash" ? "Espèces" : "Carte"}
+              </span>
+              <span data-private className="block truncate text-[14px] font-bold leading-tight tabular-nums text-white">
+                {show(balance[m])}
+              </span>
+            </span>
+          </span>
+        ))}
+      </div>
+    </>
+  );
 
   return (
     <>
-      {/* Tapping it opens the Solde page (the eye only shows / hides). */}
-      <Link
-        href="/solde"
-        prefetch
-        aria-label="Disponible maintenant · voir le solde"
-        className="block transition-transform active:scale-[0.98]"
-      >
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 px-5 pb-4 pt-4 text-white shadow-lg shadow-emerald-600/20 dark:from-emerald-600 dark:via-teal-700 dark:to-cyan-800 dark:shadow-none">
-          <span aria-hidden className="pointer-events-none absolute -right-10 -top-14 h-40 w-40 rounded-full bg-white/10" />
-          <span aria-hidden className="pointer-events-none absolute -bottom-16 -left-8 h-32 w-32 rounded-full bg-white/10" />
-          <div className="relative flex items-center justify-between">
-            <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/85">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-lime-300 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-lime-300" />
+      {/* What's available now, big and centred on the living violet card —
+          the first thing on Accueil. Once shown, the whole card opens the
+          Solde; hidden (the dots), it doesn't. */}
+      {revealed ? (
+        <Link href="/solde" prefetch className={cn(BALANCE_CARD, "transition-transform active:scale-[0.99]")}>
+          {balanceCard}
+        </Link>
+      ) : (
+        <section className={BALANCE_CARD}>{balanceCard}</section>
+      )}
+
+      {/* Quick actions: round clear-glass buttons, their name under them. */}
+      <div className="grid grid-cols-4 gap-2">
+        {QUICK_ACTIONS.map(({ href, label, icon: Icon }) => {
+          const look = (
+            <>
+              <span className="gx-pill flex h-[58px] w-[58px] items-center justify-center rounded-full text-violet-700 dark:text-violet-200">
+                <Icon weight="duotone" className="h-6 w-6" />
               </span>
-              Disponible maintenant
-            </p>
-            <button
-              type="button"
-              onClick={(e) => {
-                // The card is a link: the eye only shows / hides the amounts.
-                e.preventDefault();
-                e.stopPropagation();
-                setRevealed(!revealed);
-              }}
-              aria-label={revealed ? "Masquer le montant" : "Afficher le montant"}
-              className="-mr-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/15 transition-colors active:bg-white/25"
-            >
-              {revealed ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <span className="text-[12px] font-semibold text-slate-700 dark:text-slate-300">{label}</span>
+            </>
+          );
+          const className = "flex flex-col items-center gap-1.5 transition-transform active:scale-95";
+          return href ? (
+            <Link key={label} href={href} prefetch className={className}>
+              {look}
+            </Link>
+          ) : (
+            <button key={label} type="button" onClick={() => setTransferOpen(true)} className={className}>
+              {look}
             </button>
-          </div>
-          <p
-            className={cn(
-              "relative mt-1 text-[2.5rem] font-bold leading-tight tabular-nums",
-              !revealed && "tracking-widest",
-            )}
-            data-private
-          >
-            {show(balance.cash + balance.card)}
-          </p>
-          <div className="relative mt-3 grid grid-cols-2 gap-2">
-            {(["cash", "card"] as const).map((m) => (
-              <div key={m} className="flex items-center gap-2 rounded-2xl bg-white/15 px-3 py-2 backdrop-blur-sm">
-                <span className="text-lg leading-none">{m === "cash" ? "💵" : "💳"}</span>
-                <span className="min-w-0">
-                  <span className="block text-[10px] font-medium uppercase tracking-wide text-white/75">
-                    {m === "cash" ? "Espèces" : "Carte"}
-                  </span>
-                  <span data-private className="block truncate text-sm font-bold tabular-nums">
-                    {show(balance[m])}
-                  </span>
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </Link>
+          );
+        })}
+      </div>
+
+      <DueDaretPayouts items={dueDaretPayouts} currency={currency} />
 
       <DueRepayments items={dueRepayments} currency={currency} />
 
-      <CountdownNextSalary settings={settings} advances={advances} />
-
-      <ShortcutWheel />
+      {/* Side by side: the countdown to the salary and the shortcuts. (When
+          the salary asks a question it takes the whole row, and so do the
+          shortcuts under it.) */}
+      <div className="grid grid-cols-2 gap-3 [&:has(>.col-span-2)>*]:col-span-2">
+        <CountdownNextSalary settings={settings} advances={advances} />
+        <ShortcutWheel />
+      </div>
 
       <section className="flex flex-col gap-2.5">
         <DueNowList
@@ -141,6 +211,14 @@ export function HomeDashboard({
           balance={balance}
         />
       </section>
+
+      <TransferDialog
+        open={transferOpen}
+        onOpenChange={setTransferOpen}
+        balance={balance}
+        savings={savings}
+        money={(n) => formatMoney(n, currency)}
+      />
     </>
   );
 }

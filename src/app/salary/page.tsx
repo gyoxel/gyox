@@ -1,9 +1,9 @@
 import { getAllSalaryAdvances, getAllSalaryReceipts, getSettings } from "@/lib/page-data";
 import { monthLabelFr, parseMonthKey } from "@/lib/date";
-import { METHOD_META } from "@/lib/payment-method";
 import { formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { SalaryPanel } from "@/components/countdown-next-salary";
+import { MethodLabel } from "@/components/method-icon";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +30,6 @@ export default async function SalaryPage() {
   const money = (n: number) => formatMoney(n, settings.currency);
   const next = nextPayDay(settings.payDay);
   const nextLabel = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(next.date);
-  const method = METHOD_META[settings.salaryMethod];
 
   return (
     <>
@@ -48,7 +47,7 @@ export default async function SalaryPage() {
             <div className="rounded-2xl bg-white/15 px-2 py-2">
               <p className="text-[10px] uppercase tracking-wide text-white/75">Reçu en</p>
               <p className="text-sm font-bold">
-                {method.emoji} {method.label}
+                <MethodLabel method={settings.salaryMethod} />
               </p>
             </div>
             <div className="rounded-2xl bg-white/15 px-2 py-2">
@@ -69,7 +68,7 @@ export default async function SalaryPage() {
             <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
               {[...receipts].reverse().map((r) => (
                 <li key={r.id} className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 first:border-t-0 dark:border-slate-800">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-base dark:bg-emerald-950/50">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl gx-tile text-base">
                     💼
                   </span>
                   <span className="min-w-0 flex-1">
@@ -77,7 +76,7 @@ export default async function SalaryPage() {
                       {monthLabelFr(parseMonthKey(r.period))}
                     </span>
                     <span className="block text-[11px] text-slate-400">
-                      Reçu le {RECEIVED.format(new Date(r.createdAt))} · {METHOD_META[r.method].emoji} {METHOD_META[r.method].label}
+                      Reçu le {RECEIVED.format(new Date(r.createdAt))} · <MethodLabel method={r.method} />
                     </span>
                   </span>
                   <span className="text-sm font-semibold tabular-nums text-emerald-600">+{money(r.amount)}</span>

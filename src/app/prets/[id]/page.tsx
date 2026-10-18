@@ -1,21 +1,20 @@
 import { getLoan, getSettings } from "@/lib/page-data";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Check, Clock, Pencil } from "lucide-react";
+import { Check, Clock, PencilSimple } from "@phosphor-icons/react/ssr";
 
 import { loanState, type LoanSlot } from "@/lib/loans";
 import { loanDelete } from "@/lib/delete-specs";
 import { compareMonths, monthLabelFr, todayMonth } from "@/lib/date";
-import { METHOD_META } from "@/lib/payment-method";
 import { cn, formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { DeleteButton } from "@/components/delete-button";
-import { CancelRepayment, EditRepayment, ReceiveRepayment } from "@/components/loan-repayments";
+import { ReceiveRepayment, RepaymentRow } from "@/components/loan-repayments";
 import { Button } from "@/components/ui/button";
+import { MethodLabel } from "@/components/method-icon";
 
 export const dynamic = "force-dynamic";
 
-const DAY = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit" });
 
 /** One loan: what came back, every installment (received, due, to come). */
 export default async function LoanPage({ params }: { params: Promise<{ id: string }> }) {
@@ -33,7 +32,7 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-amber-700 px-5 pb-4 pt-5 text-white shadow-lg shadow-orange-600/20 dark:shadow-none">
           <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
           <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">
-            {state.done ? "Prêt rendu ✓" : "Reste à te rendre"}
+            {state.done ? "Tout est rendu ✓" : "Reste à te rendre"}
           </p>
           <p className="relative mt-1 text-4xl font-bold tabular-nums">{money(state.remaining)}</p>
           <p className="relative text-sm text-white/85">
@@ -54,7 +53,7 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
             </div>
             <div className="rounded-2xl bg-white/15 px-2 py-2">
               <p className="text-[10px] uppercase tracking-wide text-white/75">Sorti de</p>
-              <p className="text-sm font-bold">{loan.method ? `${METHOD_META[loan.method].emoji} ${METHOD_META[loan.method].label}` : "—"}</p>
+              <p className="text-sm font-bold">{loan.method ? <MethodLabel method={loan.method} /> : "—"}</p>
             </div>
           </div>
         </div>
@@ -63,62 +62,83 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
           <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Remboursements</h2>
           <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
             {state.slots.map((s) => {
-              const isDue = !s.repayment && compareMonths(s.month, current) <= 0;
+              const isDue = s.open && compareMonths(s.month, current) <= 0;
+              const full = !s.open && s.received > 0 && s.received >= s.amount - 0.005;
               return (
-                <li key={s.slot} className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 first:border-t-0 dark:border-slate-800">
+                <li key={s.slot} className="flex items-start gap-3 border-t border-slate-100 px-4 py-3 first:border-t-0 dark:border-slate-800">
                   <span
                     className={cn(
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold",
-                      s.repayment
+                      "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold",
+                      full
                         ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50"
                         : isDue
                           ? "bg-amber-50 text-amber-600 dark:bg-amber-950/50"
-                          : "bg-slate-100 text-slate-400 dark:bg-slate-800",
+                          : !s.open
+                            ? "bg-slate-100 text-slate-500 dark:bg-slate-800"
+                            : "bg-slate-100 text-slate-400 dark:bg-slate-800",
                     )}
                   >
-                    {s.repayment ? <Check className="h-4 w-4" /> : isDue ? <Clock className="h-4 w-4" /> : s.slot}
+                    {full ? <Check weight="bold" className="h-4 w-4" /> : isDue ? <Clock weight="bold" className="h-4 w-4" /> : s.slot}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium capitalize text-slate-800 dark:text-slate-100">{monthLabelFr(s.month)}</span>
-                    <span className="block text-[11px] text-slate-400">
-                      {s.repayment ? (
-                        <>
-                          Reçu le {DAY.format(new Date(`${s.repayment.date}T12:00:00`))} · {METHOD_META[s.repayment.method].emoji}{" "}
-                          {METHOD_META[s.repayment.method].label} ·{" "}
-                          <EditRepayment
+                    <span className="flex items-baseline justify-between gap-2">
+                      <span className="text-sm font-medium capitalize text-slate-800 dark:text-slate-100">{monthLabelFr(s.month)}</span>
+                      <span
+                        className={cn(
+                          "text-sm font-semibold tabular-nums",
+                          s.open ? "text-slate-900 dark:text-white" : s.received > 0 ? "text-emerald-600" : "text-slate-400",
+                        )}
+                      >
+                        {s.open ? (s.received > 0 ? `reste ${money(s.left)}` : money(s.amount)) : `+${money(s.received)}`}
+                      </span>
+                    </span>
+                    {s.received > 0 && (
+                      <span className="mt-1.5 block">
+                        <span className="flex h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                          <span
+                            className={cn("h-full rounded-full", s.received >= s.amount - 0.005 ? "bg-emerald-500" : "bg-amber-500")}
+                            style={{ width: `${Math.min(100, (s.received / Math.max(s.amount, 0.01)) * 100)}%` }}
+                          />
+                        </span>
+                        <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">
+                          {money(s.received)} reçus sur {money(s.amount)}
+                        </span>
+                      </span>
+                    )}
+                    {s.repayments.length > 0 && (
+                      <span className="-mx-2 mt-1 block">
+                        {s.repayments.map((r) => (
+                          <RepaymentRow
+                            key={r.id}
+                            repayment={r}
                             loanId={loan.id}
                             slot={s.slot}
+                            name={loan.name}
+                            monthLabel={monthLabelFr(s.month)}
                             expected={s.amount}
-                            amount={s.repayment.amount}
-                            method={s.repayment.method}
-                          />{" "}
-                          · <CancelRepayment loanId={loan.id} slot={s.slot} />
-                        </>
-                      ) : isDue ? (
-                        "Tu l'as reçu ?"
-                      ) : (
-                        "À venir"
-                      )}
-                    </span>
+                            received={s.received}
+                          />
+                        ))}
+                      </span>
+                    )}
                     {slotNote(s, money) && (
                       <span className="mt-0.5 block text-[11px] font-medium text-amber-700 dark:text-amber-400">{slotNote(s, money)}</span>
                     )}
+                    {isDue ? (
+                      <span className="mt-2 block">
+                        <ReceiveRepayment
+                          loanId={loan.id}
+                          slot={s.slot}
+                          name={loan.name}
+                          monthLabel={monthLabelFr(s.month)}
+                          expected={s.amount}
+                          received={s.received}
+                        />
+                      </span>
+                    ) : (
+                      s.open && s.received === 0 && <span className="block text-[11px] text-slate-400">À venir</span>
+                    )}
                   </span>
-                  {isDue ? (
-                    <span className="flex flex-col items-end gap-1">
-                      <span className="text-sm font-semibold tabular-nums text-slate-900 dark:text-white">{money(s.amount)}</span>
-                      <ReceiveRepayment loanId={loan.id} slot={s.slot} amount={s.amount} />
-                    </span>
-                  ) : (
-                    <span
-                      className={cn(
-                        "text-sm font-semibold tabular-nums",
-                        s.repayment ? "text-emerald-600" : "text-slate-500 dark:text-slate-400",
-                      )}
-                    >
-                      {s.repayment ? `+${money(s.repayment.amount)}` : money(s.amount)}
-                    </span>
-                  )}
                 </li>
               );
             })}
@@ -126,10 +146,10 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
           {loan.note && <p className="px-1 text-xs text-slate-500 dark:text-slate-400">📝 {loan.note}</p>}
         </section>
 
-        <Button asChild className="bg-amber-600 text-white hover:bg-amber-700">
+        <Button asChild className="gx-cta">
           <Link href={`/prets/${loan.id}/edit`}>
-            <Pencil className="h-4 w-4" />
-            Modifier le prêt
+            <PencilSimple weight="bold" className="h-4 w-4" />
+            Modifier
           </Link>
         </Button>
 
@@ -139,12 +159,17 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
   );
 }
 
-/** What moved between months: given less / more, or carried from the month before. */
+/** Where a month stands, and what moved between months. */
 function slotNote(s: LoanSlot, money: (n: number) => string): string | null {
-  if (s.repayment) {
-    const diff = Math.round((s.amount - s.repayment.amount) * 100) / 100;
-    if (diff > 0) return `Reçu ${money(s.repayment.amount)} sur ${money(s.amount)} · ${money(diff)} passent au mois suivant`;
-    if (diff < 0) return `${money(-diff)} en avance sur les mois suivants`;
+  if (s.open && s.received > 0) return `Reste ${money(s.left)} à recevoir ce mois-ci`;
+  if (!s.open) {
+    const diff = Math.round((s.amount - s.received) * 100) / 100;
+    if (diff > 0.005) {
+      return s.received > 0
+        ? `Reçu ${money(s.received)} sur ${money(s.amount)} · ${money(diff)} passés au mois suivant`
+        : `Pas reçu · ${money(diff)} passés au mois suivant`;
+    }
+    if (diff < -0.005) return `${money(-diff)} en avance sur les mois suivants`;
     return null;
   }
   if (s.planned === 0) return "Ce qui reste des mois précédents";

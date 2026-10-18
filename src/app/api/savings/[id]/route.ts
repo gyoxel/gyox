@@ -8,6 +8,8 @@ import { withBalanceGuard } from "@/lib/balance-guard";
 
 type Params = { params: Promise<{ id: string }> };
 
+const FROM_GOAL = "Ce versement à un objectif se change depuis l'objectif.";
+
 /** PATCH { amount, method, note, date }: edits a move (its expense / income follows). */
 export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { params }: Params) {
   const { id } = await params;
@@ -15,6 +17,7 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const move = await getSavingsMove(id);
   if (!move) return NextResponse.json({ error: "Opération introuvable." }, { status: 404 });
+  if (move.kind === "goal") return NextResponse.json({ error: FROM_GOAL }, { status: 409 });
   const amount = Math.round(parsed.data.amount * 100) / 100;
   if (move.kind === "out" && amount > move.amount) {
     // Taking more out: the savings must hold it.
@@ -30,6 +33,7 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
 
 export const DELETE = withBalanceGuard(async function remove(_req: NextRequest, { params }: Params) {
   const { id } = await params;
+  if ((await getSavingsMove(id))?.kind === "goal") return NextResponse.json({ error: FROM_GOAL }, { status: 409 });
   const gone = await deleteSavingsMove(id);
   if (!gone) return NextResponse.json({ error: "Opération introuvable." }, { status: 404 });
   return NextResponse.json({ ok: true, gone });

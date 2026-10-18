@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CalendarClock, Check, ChevronRight, Pencil, Plus, Sparkles, Target, TrendingUp } from "lucide-react";
+import { CaretRight, Check, ClockCountdown, PencilSimple, Plus, Sparkle, Target, TrendUp } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import { errorMessage } from "@/components/expense-editor";
-import type { Goal, PaymentMethod } from "@/lib/types";
-import { PaymentMethodPicker } from "@/components/payment-method-picker";
-import { METHOD_META } from "@/lib/payment-method";
+import type { DepositSource, Goal } from "@/lib/types";
+import { DepositSourcePicker } from "@/components/payment-method-picker";
 import type { GoalProgress } from "@/lib/goals";
 import { monthLabelFr, monthLabelShortFr } from "@/lib/date";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput } from "@/lib/utils";
@@ -16,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MethodIcon } from "@/components/method-icon";
 
 /** Progress ring around the goal's emoji: solid = in hand, light = with darets. */
 function GoalRing({
@@ -91,6 +91,7 @@ export function GoalCard({
   currency,
   linkToDetail = false,
   depositsPaid,
+  savings,
 }: {
   goal: Goal;
   progress: GoalProgress;
@@ -98,6 +99,8 @@ export function GoalCard({
   linkToDetail?: boolean;
   /** Detail page: whether each deposit is paid (ticked in Dépenses). */
   depositsPaid?: Record<string, boolean>;
+  /** Detail page: what's in the savings (a deposit can come from there). */
+  savings?: number;
 }) {
   const [adding, setAdding] = useState(false);
   const p = progress;
@@ -127,7 +130,7 @@ export function GoalCard({
             )}
           </div>
           <span className="shrink-0 text-xl font-bold tabular-nums text-orange-600 dark:text-amber-400">{p.percentNow}%</span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+          <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300" />
         </Link>
         <div className="grid grid-cols-2 border-t border-slate-100 dark:border-slate-800">
           <button
@@ -135,18 +138,18 @@ export function GoalCard({
             onClick={() => setAdding(true)}
             className="flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-orange-600 active:bg-slate-50 dark:text-amber-400 dark:active:bg-slate-800"
           >
-            <Plus className="h-4 w-4" />
+            <Plus weight="bold" className="h-4 w-4" />
             Versement
           </button>
           <Link
             href={`/goals/${goal.id}/edit`}
             className="flex items-center justify-center gap-1.5 border-l border-slate-100 py-2.5 text-sm font-medium text-slate-600 active:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:active:bg-slate-800"
           >
-            <Pencil className="h-4 w-4" />
+            <PencilSimple weight="bold" className="h-4 w-4" />
             Modifier
           </Link>
         </div>
-        <DepositDialog goal={goal} currency={currency} open={adding} onOpenChange={setAdding} />
+        <DepositDialog goal={goal} currency={currency} savings={savings} open={adding} onOpenChange={setAdding} />
       </div>
     );
   }
@@ -204,12 +207,12 @@ export function GoalCard({
         )}
         <div className="relative mt-4 grid grid-cols-2 gap-2">
           <Button type="button" onClick={() => setAdding(true)} className="bg-white text-orange-600 hover:bg-white/90 dark:bg-white dark:text-orange-600">
-            <Plus className="h-4 w-4" />
+            <Plus weight="bold" className="h-4 w-4" />
             Versement
           </Button>
           <Button asChild className="bg-white/20 text-white hover:bg-white/30 dark:bg-white/20 dark:text-white">
             <Link href={`/goals/${goal.id}/edit`}>
-              <Pencil className="h-4 w-4" />
+              <PencilSimple weight="bold" className="h-4 w-4" />
               Modifier
             </Link>
           </Button>
@@ -228,14 +231,22 @@ export function GoalCard({
                     href={`/goals/${goal.id}/deposits/${row.deposit.id}`}
                     className="flex items-center gap-3 px-4 py-3 text-sm active:bg-slate-50 dark:active:bg-slate-800/60"
                   >
-                    <StepIcon>💵</StepIcon>
+                    <StepIcon>
+                      {row.deposit.method === "savings" ? "🐷" : <MethodIcon method={row.deposit.method ?? "cash"} className="h-3" />}
+                    </StepIcon>
                     <span className="min-w-0 flex-1">
                       <span className={cn("block truncate font-medium text-slate-800 dark:text-slate-100", !row.paid && "text-slate-400")}>
                         {row.deposit.name}
                       </span>
                       <span className="block text-[11px] text-slate-400">
                         {DEPOSIT_DATE.format(new Date(`${row.deposit.date}T12:00:00`))}
-                        {row.deposit.method && ` · ${METHOD_META[row.deposit.method].emoji}`}
+                        {row.deposit.method && (
+                          <>
+                            {" "}
+                            · <MethodIcon method={row.deposit.method} />
+                            {row.deposit.method === "savings" ? " Épargne" : ""}
+                          </>
+                        )}
                         {!row.paid && <span className="ml-1 font-semibold text-rose-500">· Non payé</span>}
                       </span>
                     </span>
@@ -254,7 +265,7 @@ export function GoalCard({
                         </span>
                       )}
                     </span>
-                    <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+                    <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300" />
                   </Link>
                 </li>
               ) : (
@@ -287,7 +298,7 @@ export function GoalCard({
       {!p.completed && (
         <div className="flex flex-col gap-2 rounded-3xl bg-amber-50 px-4 py-3.5 text-sm text-slate-700 dark:bg-amber-950/30 dark:text-slate-200">
           {p.reachedByDaretsIn ? (
-            <Insight icon={Sparkles}>
+            <Insight icon={Sparkle}>
               Tes darets suffisent : objectif atteint en <b>{monthLabelFr(p.reachedByDaretsIn)}</b>.
             </Insight>
           ) : (
@@ -298,7 +309,7 @@ export function GoalCard({
             )
           )}
           {p.deadline && p.monthlyNeeded != null && p.monthsToDeadline != null && (
-            <Insight icon={CalendarClock}>
+            <Insight icon={ClockCountdown}>
               {p.monthsToDeadline <= 0 ? (
                 <>
                   Date limite ({monthLabelShortFr(p.deadline)}) dépassée — il manque <b>{money(p.monthlyNeeded)}</b>.
@@ -313,7 +324,7 @@ export function GoalCard({
             </Insight>
           )}
           {goal.monthlySaving ? (
-            <Insight icon={TrendingUp}>
+            <Insight icon={TrendUp}>
               {p.estimatedMonth ? (
                 <>
                   En mettant {money(goal.monthlySaving)}/mois : atteint en <b>{monthLabelFr(p.estimatedMonth)}</b>.
@@ -334,26 +345,29 @@ export function GoalCard({
         </div>
       )}
 
-      <DepositDialog goal={goal} currency={currency} open={adding} onOpenChange={setAdding} />
+      <DepositDialog goal={goal} currency={currency} savings={savings} open={adding} onOpenChange={setAdding} />
     </>
   );
 }
 
-/** "+ Versement": money put aside for the goal, with an optional label. */
+/** "+ Versement": money put aside for the goal (from cash, the card or the
+ *  savings), with an optional label. */
 function DepositDialog({
   goal,
   currency,
+  savings,
   open,
   onOpenChange,
 }: {
   goal: Goal;
   currency: string;
+  savings?: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
   const [deposit, setDeposit] = useState("");
   const [depositName, setDepositName] = useState("");
-  const [method, setMethod] = useState<PaymentMethod>("cash");
+  const [method, setMethod] = useState<DepositSource>("cash");
   const [saving, setSaving] = useState(false);
 
   async function addDeposit() {
@@ -367,7 +381,7 @@ function DepositDialog({
     });
     setSaving(false);
     if (!res.ok) return toast.error(await errorMessage(res));
-    toast.success(`+${formatMoney(value, currency)} pour ${goal.name} · ajouté aux dépenses`);
+    toast.success(`+${formatMoney(value, currency)} pour ${goal.name} · ${method === "savings" ? "pris de l'épargne" : "ajouté aux dépenses"}`);
     onOpenChange(false);
     setDeposit("");
     setDepositName("");
@@ -404,8 +418,12 @@ function DepositDialog({
             maxLength={60}
           />
         </div>
-        <PaymentMethodPicker value={method} onChange={setMethod} label="Pris en" />
-        <p className="text-[11px] text-slate-400">Il s&apos;ajoute à l&apos;objectif et à tes dépenses (payé), et sort de ton solde.</p>
+        <DepositSourcePicker value={method} onChange={setMethod} />
+        <p className="text-[11px] text-slate-400">
+          {method === "savings"
+            ? `Il s'ajoute à l'objectif et sort de ton épargne${savings != null ? ` (${formatMoney(savings, currency)} dedans)` : ""}. Ton solde et tes dépenses ne bougent pas.`
+            : "Il s'ajoute à l'objectif et à tes dépenses (payé), et sort de ton solde."}
+        </p>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Annuler
@@ -414,9 +432,9 @@ function DepositDialog({
             type="button"
             onClick={addDeposit}
             disabled={saving || parseDecimalInput(deposit) <= 0}
-            className="bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-500 dark:text-white"
+            className="gx-cta"
           >
-            <Check className="h-4 w-4" />
+            <Check weight="bold" className="h-4 w-4" />
             {saving ? "Ajout…" : "Ajouter"}
           </Button>
         </DialogFooter>
@@ -429,7 +447,7 @@ const DEPOSIT_DATE = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "
 
 function StepIcon({ children }: { children: React.ReactNode }) {
   return (
-    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-base dark:bg-amber-950/40">
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl gx-tile text-base">
       {children}
     </span>
   );
@@ -438,7 +456,7 @@ function StepIcon({ children }: { children: React.ReactNode }) {
 function Insight({ icon: Icon, children }: { icon: typeof Target; children: React.ReactNode }) {
   return (
     <p className="flex items-start gap-2">
-      <Icon className={cn("mt-0.5 h-4 w-4 shrink-0 text-orange-500")} />
+      <Icon weight="duotone" className="mt-0.5 h-[18px] w-[18px] shrink-0 text-orange-500" />
       <span>{children}</span>
     </p>
   );

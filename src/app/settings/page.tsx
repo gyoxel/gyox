@@ -1,6 +1,6 @@
 import { getSettings } from "@/lib/page-data";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { CaretRight } from "@phosphor-icons/react/ssr";
 
 import { currentAccount } from "@/lib/accounts";
 import { PageHeader } from "@/components/page-header";
@@ -27,7 +27,7 @@ export default async function SettingsPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={account.image} alt="" referrerPolicy="no-referrer" className="h-12 w-12 rounded-2xl object-cover shadow-sm" />
             ) : (
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#00c3ab] to-[#007261] text-lg font-bold shadow-sm">
+              <span className="gx-avatar flex h-12 w-12 items-center justify-center rounded-2xl text-lg font-extrabold">
                 {name.charAt(0).toUpperCase()}
               </span>
             )}
@@ -35,7 +35,7 @@ export default async function SettingsPage() {
               <span className="block truncate text-base font-semibold">{name}</span>
               <span className="block truncate text-xs text-white/70">{account?.email ?? "Profil, déconnexion"}</span>
             </span>
-            <ChevronRight className="h-5 w-5 shrink-0 text-white/60" />
+            <CaretRight weight="bold" className="h-5 w-5 shrink-0 text-white/60" />
           </div>
         </Link>
         <SettingsForm settings={settings} />

@@ -2,13 +2,12 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ChevronRight, Plus, Trash2 } from "lucide-react";
+import { CaretRight, Plus, Trash } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { BudgetEntry, BudgetWithExpense, PaymentMethod } from "@/lib/types";
 import type { BudgetMonthState } from "@/lib/budgets";
 import { lastDayOfMonth } from "@/lib/daret";
 import { addMonths, monthLabelFr, parseMonthKey } from "@/lib/date";
-import { METHOD_META } from "@/lib/payment-method";
 import { mutate } from "@/lib/use-refresh-data";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { errorMessage, keepAboveKeyboard } from "@/components/expense-editor";
@@ -17,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MethodIcon, MethodLabel } from "@/components/method-icon";
 
 const DAY_FMT = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short" });
 const dayLabel = (date: string) => DAY_FMT.format(new Date(`${date}T12:00:00`));
@@ -85,7 +85,7 @@ export function BudgetDetail({
         </div>
         <p className="relative mt-2 text-[11px] text-white/85">
           {state.taken
-            ? `✓ Pris${state.takenMethod ? ` · ${METHOD_META[state.takenMethod].emoji} ${METHOD_META[state.takenMethod].label}` : ""}`
+            ? <>✓ Pris{state.takenMethod && <> · <MethodLabel method={state.takenMethod} /></>}</>
             : runs
               ? "Pas encore pris"
               : "Ce budget ne court pas ce mois-là."}
@@ -148,7 +148,7 @@ export function BudgetDetail({
                         <span className="min-w-0 flex-1 truncate text-sm text-slate-800 dark:text-slate-100">{e.note || "Dépense"}</span>
                         {over > 0 && (
                           <span className="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-950 dark:text-rose-300">
-                            +{money(over)} {METHOD_META[e.method].emoji}
+                            +{money(over)} <MethodIcon method={e.method} />
                           </span>
                         )}
                         <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-900 dark:text-white">{money(e.amount)}</span>
@@ -194,7 +194,7 @@ function SourceLink({ href, tone, text }: { href: string | null; tone: "rose" | 
   return (
     <Link href={href} className={cls}>
       <span className="flex-1">{text}</span>
-      <ChevronRight className="h-4 w-4 shrink-0 opacity-60" />
+      <CaretRight weight="bold" className="h-4 w-4 shrink-0 opacity-60" />
     </Link>
   );
 }
@@ -219,7 +219,7 @@ function TakeBudget({ expenseId, monthKey, amount }: { expenseId: string; monthK
       </p>
       <PaymentMethodPicker value={method} onChange={setMethod} label="Pris en" />
       {error && <p className="text-sm text-rose-600">{error}</p>}
-      <Button type="button" className="bg-purple-600 text-white hover:bg-purple-700" disabled={pending} onClick={take}>
+      <Button type="button" className="gx-cta" disabled={pending} onClick={take}>
         {pending ? "…" : `Prendre ${amount}`}
       </Button>
     </div>
@@ -302,8 +302,8 @@ function AddLine({
         </div>
       )}
       {error && <p className="text-sm text-rose-600">{error}</p>}
-      <Button type="submit" className="bg-purple-600 text-white hover:bg-purple-700" disabled={pending || !(value > 0)}>
-        <Plus className="h-4 w-4" />
+      <Button type="submit" className="gx-cta" disabled={pending || !(value > 0)}>
+        <Plus weight="bold" className="h-4 w-4" />
         {pending ? "Enregistrement…" : "Ajouter"}
       </Button>
     </form>
@@ -370,7 +370,7 @@ function EditLine({
           <Input aria-label="Date" type="date" value={date} min={min} max={max} onChange={(e) => setDate(e.target.value || entry.date)} />
           <PaymentMethodPicker value={method} onChange={setMethod} label="Si ça dépasse" />
           {error && <p className="text-sm text-rose-600">{error}</p>}
-          <Button type="submit" className="bg-purple-600 text-white hover:bg-purple-700" disabled={pending}>
+          <Button type="submit" className="gx-cta" disabled={pending}>
             {pending ? "…" : "Enregistrer"}
           </Button>
           <Button
@@ -380,7 +380,7 @@ function EditLine({
             disabled={pending}
             onClick={() => run({ method: "DELETE", path }, "Supprimé.")}
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash weight="bold" className="h-4 w-4" />
             Supprimer
           </Button>
         </form>

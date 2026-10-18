@@ -18,9 +18,9 @@ const DEFAULT_INCOME_CATEGORIES = [
 /** Set by the app only (not offered in the form): a credit's money, money
  *  taken back from the savings, a loan's repayment, what's left of a budget. */
 const SYSTEM_CATEGORIES = [
-  { key: "credit", label: "Crédit / prêt", emoji: "🏦" },
+  { key: "credit", label: "Argent emprunté", emoji: "🏦" },
   { key: "epargne", label: "Épargne", emoji: "🐷" },
-  { key: "pret", label: "Prêt rendu", emoji: "🤝" },
+  { key: "pret", label: "Argent rendu", emoji: "💸" },
   { key: "budget", label: "Reste de budget", emoji: "👛" },
 ];
 

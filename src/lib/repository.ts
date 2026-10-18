@@ -6,7 +6,21 @@ import { defaultSettings } from "./user-defaults";
 import { getAllSavingsMoves } from "./savings-repo";
 import { getAllLoanRepayments, getAllLoans } from "./loans-repo";
 import { getIncomeCategories } from "./income-categories-repo";
-import type { Budget, BudgetEntry, BudgetMonth, Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote, SalaryAdvance, Income, PaymentMethod, SalaryReceipt, WalletOp, SavingsMove, Loan, LoanRepayment } from "./types";
+import type { Budget, BudgetEntry, BudgetMonth, Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote, DepositSource, SalaryAdvance, Income, PaymentMethod, SalaryReceipt, WalletOp, SavingsMove, Loan, LoanRepayment } from "./types";
+
+/** Names the app gave before Crédits / Prêts became Dettes / Argent prêté
+ *  ("Prêt · Ahmed", "Crédit · Banque") read with the new words; what's
+ *  stored isn't touched. */
+function currentName(name: string): string {
+  if (name.startsWith("Prêt · ")) return `Argent prêté · ${name.slice(7)}`;
+  if (name.startsWith("Crédit · ")) return `Dette · ${name.slice(9)}`;
+  return name;
+}
+
+/** Money lent had 🤝 (the darets' hands): it's 💸 now. */
+function currentIcon(name: string, icon: string | null): string | null {
+  return icon === "🤝" && (name.startsWith("Prêt · ") || name.startsWith("Argent prêté · ")) ? "💸" : icon;
+}
 
 export function mapExpense(row: {
   id: string;
@@ -30,7 +44,7 @@ export function mapExpense(row: {
 }): Expense {
   return {
     id: row.id,
-    name: row.name,
+    name: currentName(row.name),
     amount: row.amount,
     type: row.type as Expense["type"],
     frequency: row.frequency as Expense["frequency"],
@@ -42,7 +56,7 @@ export function mapExpense(row: {
     creditInitialAmount: row.creditInitialAmount,
     creditPriorPaid: row.creditPriorPaid,
     linkedExpenseId: row.linkedExpenseId,
-    icon: row.icon,
+    icon: currentIcon(row.name, row.icon),
     categoryId: row.categoryId,
     monthAmounts: asMonthAmounts(row.monthAmounts),
     createdAt: row.createdAt,
@@ -57,26 +71,6 @@ export function asMonthAmounts(value: unknown): Record<string, number> | null {
     ([key, amount]) => /^\d{4}-\d{2}$/.test(key) && typeof amount === "number" && Number.isFinite(amount) && amount >= 0,
   );
   return entries.length > 0 ? (Object.fromEntries(entries) as Record<string, number>) : null;
-}
-
-/**
- * Sets (or with null, removes) one month's own amount. Returns the expense,
- * null if it doesn't exist.
- */
-export async function setMonthAmount(id: string, key: string, amount: number | null): Promise<Expense | null> {
-  const existing = await getExpenseById(id);
-  if (!existing) return null;
-  const next = { ...(existing.monthAmounts ?? {}) };
-  if (amount == null) delete next[key];
-  else next[key] = amount;
-  const row = await prisma.expense.update({
-    where: { id },
-    data: {
-      monthAmounts: Object.keys(next).length > 0 ? next : Prisma.DbNull,
-      updatedAt: new Date().toISOString(),
-    },
-  });
-  return mapExpense(row);
 }
 
 export async function getAllExpenses(): Promise<Expense[]> {
@@ -324,7 +318,13 @@ function withFreshIds(data: BackupData): BackupData {
     incomes: data.incomes?.map((i) => ({ ...i, id: id(i.id), expenseId: ref(i.expenseId) })),
     salaryReceipts: data.salaryReceipts?.map((r) => ({ ...r, id: id(r.id) })),
     walletOps: data.walletOps?.map((o) => ({ ...o, id: id(o.id) })),
-    savingsMoves: data.savingsMoves?.map((m) => ({ ...m, id: id(m.id), expenseId: ref(m.expenseId), incomeId: ref(m.incomeId) })),
+    savingsMoves: data.savingsMoves?.map((m) => ({
+      ...m,
+      id: id(m.id),
+      expenseId: ref(m.expenseId),
+      incomeId: ref(m.incomeId),
+      goalDepositId: ref(m.goalDepositId),
+    })),
     loans: data.loans?.map((l) => ({ ...l, id: id(l.id), expenseId: ref(l.expenseId) })),
     loanRepayments: data.loanRepayments?.map((r) => ({ ...r, id: id(r.id), loanId: id(r.loanId), incomeId: ref(r.incomeId) })),
     budgets: data.budgets?.map((b) => ({ ...b, id: id(b.id), expenseId: id(b.expenseId) })),
@@ -353,6 +353,10 @@ export async function importData(backup: BackupData): Promise<void> {
     data.incomes ? data.incomes.map((i) => i.id) : (await prisma.income.findMany({ select: { id: true } })).map((i) => i.id),
   );
   const loanIds = new Set((data.loans ?? []).map((l) => l.id));
+  // Goal deposits kept when the backup has no goals; savings may point at them.
+  const depositIds = new Set(
+    data.goals ? (data.goalDeposits ?? []).map((d) => d.id) : (await prisma.goalDeposit.findMany({ select: { id: true } })).map((d) => d.id),
+  );
   const known = (id: string | null | undefined, ids: Set<string>) => (id && ids.has(id) ? id : null);
   await prisma.$transaction([
     prisma.expense.deleteMany({}),
@@ -399,6 +403,7 @@ export async function importData(backup: BackupData): Promise<void> {
           amountPaid: p.amountPaid,
           paidAt: p.paidAt,
           method: p.method ?? null,
+          part: p.part ?? 0,
           createdAt: p.createdAt,
         })),
     }),
@@ -441,9 +446,14 @@ export async function importData(backup: BackupData): Promise<void> {
           prisma.savingsMove.deleteMany({}),
           prisma.savingsMove.createMany({
             data: data.savingsMoves
-              .map((m) => ({ ...m, expenseId: known(m.expenseId, expenseIds), incomeId: known(m.incomeId, incomeIds) }))
-              // A move whose expense / income isn't there would count with nothing behind it.
-              .filter((m) => m.kind === "existing" || (m.kind === "in" ? m.expenseId : m.incomeId)),
+              .map((m) => ({
+                ...m,
+                expenseId: known(m.expenseId, expenseIds),
+                incomeId: known(m.incomeId, incomeIds),
+                goalDepositId: known(m.goalDepositId, depositIds),
+              }))
+              // A move whose expense / income / deposit isn't there would count with nothing behind it.
+              .filter((m) => m.kind === "existing" || (m.kind === "in" ? m.expenseId : m.kind === "goal" ? m.goalDepositId : m.incomeId)),
           }),
         ]
       : []),
@@ -485,6 +495,7 @@ export function mapPayment(row: {
   amountPaid: number;
   paidAt: string;
   method: string | null;
+  part?: number;
   createdAt: string;
 }): Payment {
   return {
@@ -496,6 +507,7 @@ export function mapPayment(row: {
     amountPaid: row.amountPaid,
     paidAt: row.paidAt,
     method: row.method === "cash" || row.method === "card" ? row.method : null,
+    part: row.part ?? 0,
     createdAt: row.createdAt,
   };
 }
@@ -510,7 +522,7 @@ export async function getPaymentsForExpense(expenseId: string): Promise<Payment[
   return rows.map(mapPayment);
 }
 
-/** Non-credit expenses: one payment row per due month, upserted by month. */
+/** Non-credit expenses: a month's (first) payment, upserted by month. */
 export async function markMonthPaid(
   expenseId: string,
   monthKeyValue: string,
@@ -520,7 +532,7 @@ export async function markMonthPaid(
 ): Promise<Payment> {
   const now = new Date().toISOString();
   const row = await prisma.payment.upsert({
-    where: { expenseId_monthKey: { expenseId, monthKey: monthKeyValue } },
+    where: { expenseId_monthKey_part: { expenseId, monthKey: monthKeyValue, part: 0 } },
     update: { amountDue, amountPaid, paidAt: now, method },
     create: {
       method,
@@ -537,13 +549,45 @@ export async function markMonthPaid(
   return mapPayment(row);
 }
 
+/** Unticks a month: all of its parts. */
 export async function markMonthUnpaid(expenseId: string, monthKeyValue: string): Promise<boolean> {
-  try {
-    await prisma.payment.delete({ where: { expenseId_monthKey: { expenseId, monthKey: monthKeyValue } } });
-    return true;
-  } catch {
-    return false;
-  }
+  const { count } = await prisma.payment.deleteMany({ where: { expenseId, monthKey: monthKeyValue } });
+  return count > 0;
+}
+
+/**
+ * Adds to a month (or credit installment) already paid in part: a new part
+ * with its own amount and cash / card, the month's amount due on it.
+ */
+export async function addPaymentPart(
+  expenseId: string,
+  monthKeyValue: string,
+  slotIndex: number | null,
+  amountDue: number,
+  amountPaid: number,
+  method: PaymentMethod | null,
+): Promise<Payment> {
+  const now = new Date().toISOString();
+  const last = await prisma.payment.findFirst({
+    where: { expenseId, monthKey: monthKeyValue },
+    orderBy: { part: "desc" },
+    select: { part: true },
+  });
+  const row = await prisma.payment.create({
+    data: {
+      id: randomUUID(),
+      expenseId,
+      monthKey: monthKeyValue,
+      slotIndex,
+      amountDue,
+      amountPaid,
+      method,
+      part: (last?.part ?? -1) + 1,
+      paidAt: now,
+      createdAt: now,
+    },
+  });
+  return mapPayment(row);
 }
 
 /**
@@ -559,7 +603,8 @@ export async function markCreditSlotPaid(
   method: PaymentMethod | null = null,
 ): Promise<Payment> {
   const now = new Date().toISOString();
-  const existingCount = await prisma.payment.count({ where: { expenseId, slotIndex: { not: null } } });
+  // Installments paid in several times count once.
+  const existingCount = await prisma.payment.count({ where: { expenseId, slotIndex: { not: null }, part: 0 } });
   const row = await prisma.payment.create({
     data: {
       method,
@@ -576,14 +621,48 @@ export async function markCreditSlotPaid(
   return mapPayment(row);
 }
 
-/** Undo: removes the most recently confirmed installment (highest slot). */
+/** Changes one part of a month's payment: how much, cash or card. */
+export async function updatePaymentPart(
+  expenseId: string,
+  paymentId: string,
+  input: { amountPaid: number; method: PaymentMethod },
+): Promise<Payment | null> {
+  const payment = await prisma.payment.findFirst({ where: { id: paymentId, expenseId } });
+  if (!payment) return null;
+  const [row] = await prisma.$transaction([prisma.payment.update({ where: { id: payment.id }, data: input })]);
+  return mapPayment(row);
+}
+
+/**
+ * Removes one part of a month's payment (a mistake). The month's other parts
+ * close up, the first staying part 0; a credit installment gone entirely
+ * moves the later ones down one, so they stay 1, 2, 3…
+ */
+export async function deletePaymentPart(expenseId: string, paymentId: string): Promise<boolean> {
+  const payment = await prisma.payment.findFirst({ where: { id: paymentId, expenseId } });
+  if (!payment) return false;
+  const month = payment.slotIndex != null ? { slotIndex: payment.slotIndex } : { monthKey: payment.monthKey, slotIndex: null };
+  const others = await prisma.payment.findMany({ where: { expenseId, id: { not: payment.id }, ...month }, orderBy: { part: "asc" } });
+  const later =
+    payment.slotIndex != null && others.length === 0
+      ? await prisma.payment.findMany({ where: { expenseId, slotIndex: { gt: payment.slotIndex } }, orderBy: [{ slotIndex: "asc" }, { part: "asc" }] })
+      : [];
+  await prisma.$transaction([
+    prisma.payment.delete({ where: { id: payment.id } }),
+    ...others.flatMap((p, i) => (p.part === i ? [] : [prisma.payment.update({ where: { id: p.id }, data: { part: i } })])),
+    ...later.map((p) => prisma.payment.update({ where: { id: p.id }, data: { slotIndex: (p.slotIndex ?? 0) - 1 } })),
+  ]);
+  return true;
+}
+
+/** Undo: removes the most recently confirmed installment (highest slot), all its parts. */
 export async function undoLastCreditSlot(expenseId: string): Promise<boolean> {
   const last = await prisma.payment.findFirst({
     where: { expenseId, slotIndex: { not: null } },
     orderBy: { slotIndex: "desc" },
   });
   if (!last) return false;
-  await prisma.payment.delete({ where: { id: last.id } });
+  await prisma.payment.deleteMany({ where: { expenseId, slotIndex: last.slotIndex } });
   return true;
 }
 
@@ -798,8 +877,12 @@ type GoalRow = Omit<Goal, "deposits"> & { deposits?: (Omit<GoalDeposit, "method"
 
 export const mapDeposit = (d: Omit<GoalDeposit, "method"> & { method: string | null }): GoalDeposit => ({
   ...d,
-  method: d.method === "cash" || d.method === "card" ? d.method : null,
+  method: d.method === "cash" || d.method === "card" || d.method === "savings" ? d.method : null,
 });
+
+/** How a goal deposit taken from the savings shows there. */
+const savingsNote = (goal: { emoji: string; name: string }, name: string) =>
+  `${goal.emoji} ${goal.name}${name && name !== "Versement" ? ` · ${name}` : ""}`;
 
 export function mapGoal(row: GoalRow): Goal {
   const deposits = (row.deposits ?? []).map(mapDeposit).sort(
@@ -865,12 +948,33 @@ export async function deleteGoal(id: string): Promise<boolean> {
 
 export async function addGoalDeposit(
   goalId: string,
-  input: { name: string; amount: number; date: string; method: PaymentMethod | null },
+  input: { name: string; amount: number; date: string; method: DepositSource | null },
 ): Promise<GoalDeposit> {
   const now = new Date().toISOString();
   const goal = await prisma.goal.findUniqueOrThrow({ where: { id: goalId } });
   if (!input.method) {
     return mapDeposit(await prisma.goalDeposit.create({ data: { id: randomUUID(), goalId, ...input, createdAt: now } }));
+  }
+  if (input.method === "savings") {
+    // Taken from the savings: it comes off them (a "goal" move in Épargne),
+    // not off the Solde, and isn't an expense.
+    const id = randomUUID();
+    const [deposit] = await prisma.$transaction([
+      prisma.goalDeposit.create({ data: { id, goalId, ...input, createdAt: now } }),
+      prisma.savingsMove.create({
+        data: {
+          id: randomUUID(),
+          kind: "goal",
+          amount: input.amount,
+          method: "cash",
+          note: savingsNote(goal, input.name),
+          date: input.date,
+          goalDepositId: id,
+          createdAt: now,
+        },
+      }),
+    ]);
+    return mapDeposit(deposit);
   }
   // Taken from cash / the card: it also shows in Dépenses as a paid one-time
   // expense (that payment is what comes off the Solde).
@@ -932,17 +1036,28 @@ export async function getGoalDeposit(goalId: string, depositId: string): Promise
 
 /**
  * Edits a deposit; for a newer one, its expense in Dépenses follows (amount,
- * note) and so does its payment: paid (cash / card) or not paid.
+ * note) and so does its payment: paid (cash / card) or not paid. One taken
+ * from the savings stays so: its move there follows (amount, note).
  */
 export async function updateGoalDeposit(
   goalId: string,
   depositId: string,
   input: { name: string; amount: number; method: PaymentMethod | null; paid: boolean },
 ): Promise<GoalDeposit | null> {
-  const deposit = await prisma.goalDeposit.findFirst({ where: { id: depositId, goalId } });
+  const deposit = await prisma.goalDeposit.findFirst({ where: { id: depositId, goalId }, include: { goal: true } });
   if (!deposit) return null;
   const now = new Date().toISOString();
   const name = input.name || "Versement";
+  if (deposit.method === "savings") {
+    const [row] = await prisma.$transaction([
+      prisma.goalDeposit.update({ where: { id: depositId }, data: { name, amount: input.amount } }),
+      prisma.savingsMove.updateMany({
+        where: { goalDepositId: depositId },
+        data: { amount: input.amount, note: savingsNote(deposit.goal, name) },
+      }),
+    ]);
+    return mapDeposit(row);
+  }
   if (deposit.expenseId) {
     const expenseId = deposit.expenseId;
     const monthKeyValue = deposit.date.slice(0, 7);
@@ -954,7 +1069,7 @@ export async function updateGoalDeposit(
       await prisma.$transaction([
         expenseUpdate,
         prisma.payment.upsert({
-          where: { expenseId_monthKey: { expenseId, monthKey: monthKeyValue } },
+          where: { expenseId_monthKey_part: { expenseId, monthKey: monthKeyValue, part: 0 } },
           update: { amountDue: input.amount, amountPaid: input.amount, method: input.method },
           create: {
             id: randomUUID(),
@@ -1096,6 +1211,7 @@ export type IncomeInput = Omit<Income, "id" | "createdAt">;
 
 export const mapIncome = (row: Omit<Income, "method"> & { method: string }): Income => ({
   ...row,
+  name: currentName(row.name),
   method: row.method === "card" ? "card" : "cash",
 });
 

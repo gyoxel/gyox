@@ -15,7 +15,7 @@ export function RefreshLogo() {
         setReloading(true);
         window.location.reload();
       }}
-      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-[15px] font-black tracking-tight text-[#007261] shadow-md transition-transform active:scale-90"
+      className="gx-cta flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-[15px] font-black tracking-tight ring-2 ring-white transition-transform active:scale-90 dark:ring-white/10"
     >
       <span className={cn(reloading && "animate-spin")}>GX</span>
     </button>

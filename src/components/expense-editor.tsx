@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { Check, Clock } from "lucide-react";
+import { CalendarDots, Check, Clock, NumberCircleOne, Repeat, Target } from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { useNavBack } from "@/lib/nav-history";
 import { toast } from "sonner";
 import type { Category, Expense, ExpenseType, Frequency, PaymentMethod } from "@/lib/types";
@@ -14,6 +15,7 @@ import type { ApiCall } from "@/app/api-actions";
 import { CategoryPicker } from "@/components/category-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ChoiceNote, Segmented } from "@/components/ui/segmented";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -122,7 +124,7 @@ export function ExpenseEditor({
   const summary = useMemo(() => {
     if (!recurring || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
     const start = monthOfDateStr(date);
-    if (mode === "permanent") return "Permanent : chaque mois, sans fin.";
+    if (mode === "permanent") return "Chaque mois, sans date de fin.";
     if (amountValue <= 0) return null;
     if (mode === "months") {
       if (monthsValue <= 0) return null;
@@ -237,16 +239,16 @@ export function ExpenseEditor({
       const created: { problems?: string[] } = await res.json();
       if (created.problems?.includes("paid")) toast.error("Ajoutée, mais le paiement n'a pas pu être enregistré.");
 
-      toast.success(isCredit ? "Crédit ajouté." : "Dépense ajoutée.");
+      toast.success(isCredit ? "Dette ajoutée." : "Dépense ajoutée.");
       nav.back();
     });
   }
 
-  const kinds: { key: "once" | RecurrenceKind; emoji: string; label: string; hint: string }[] = [
-    { key: "once", emoji: "1️⃣", label: "Une fois", hint: "Ce mois-ci" },
-    { key: "permanent", emoji: "🔁", label: "Chaque mois", hint: "Sans fin" },
-    { key: "months", emoji: "📅", label: "X mois", hint: "Pendant…" },
-    { key: "until", emoji: "🎯", label: "Jusqu'à", hint: "Un total" },
+  const kinds: { key: "once" | RecurrenceKind; icon: PhosphorIcon; label: string; note: string }[] = [
+    { key: "once", icon: NumberCircleOne, label: "Une fois", note: "Une seule fois, ce mois-ci." },
+    { key: "permanent", icon: Repeat, label: "Chaque mois", note: "Chaque mois, sans date de fin." },
+    { key: "months", icon: CalendarDots, label: "X mois", note: "Pendant combien de mois ?" },
+    { key: "until", icon: Target, label: "Jusqu'à", note: "Jusqu'à atteindre un total." },
   ];
   function pickKind(key: "once" | RecurrenceKind) {
     if (key === "once") return setRecurring(false);
@@ -300,30 +302,7 @@ export function ExpenseEditor({
       {/* How often */}
       <div className="flex flex-col gap-2">
         <Label>Fréquence</Label>
-        <div role="radiogroup" aria-label="Fréquence" className="grid grid-cols-4 gap-2">
-          {kinds.map((k) => {
-            const selected = mode === k.key;
-            return (
-              <button
-                key={k.key}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                onClick={() => pickKind(k.key)}
-                className={cn(
-                  "flex flex-col items-center gap-0.5 rounded-xl border px-1 py-2.5 text-center transition-colors",
-                  selected
-                    ? "border-rose-500 bg-rose-50 text-rose-800 ring-1 ring-rose-500 dark:bg-rose-950/50 dark:text-rose-200"
-                    : "border-slate-200 bg-white text-slate-600 active:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
-                )}
-              >
-                <span className="text-lg leading-none">{k.emoji}</span>
-                <span className="text-xs font-semibold">{k.label}</span>
-                <span className="text-[10px] text-slate-400">{k.hint}</span>
-              </button>
-            );
-          })}
-        </div>
+        <Segmented label="Fréquence" value={mode} onChange={pickKind} options={kinds} />
         {mode === "months" && (
           <div className="flex items-center gap-2">
             <Input
@@ -358,9 +337,7 @@ export function ExpenseEditor({
             <span className="shrink-0 text-sm text-slate-500">DH</span>
           </div>
         )}
-        {summary && (
-          <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">{summary}</p>
-        )}
+        <ChoiceNote>{summary ?? kinds.find((k) => k.key === mode)?.note}</ChoiceNote>
       </div>
 
       {(!isEdit || paymentStatus) && (
@@ -382,7 +359,7 @@ export function ExpenseEditor({
                   : "border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400",
               )}
             >
-              <Check className="h-4 w-4" />
+              <Check weight="bold" className="h-4 w-4" />
               Payé
             </button>
             <button
@@ -397,7 +374,7 @@ export function ExpenseEditor({
                   : "border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400",
               )}
             >
-              <Clock className="h-4 w-4" />
+              <Clock weight="bold" className="h-4 w-4" />
               Pas encore
             </button>
           </div>
@@ -418,7 +395,7 @@ export function ExpenseEditor({
         </Button>
         <Button
           type="submit"
-          className="flex-1 bg-rose-600 text-white hover:bg-rose-700 dark:bg-rose-600 dark:text-white"
+          className="flex-1 gx-cta"
           disabled={isPending}
         >
           {isPending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter la dépense"}

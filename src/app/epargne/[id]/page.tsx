@@ -1,5 +1,5 @@
-import { getAllPayments, getSavingsMove, getSettings } from "@/lib/page-data";
-import { notFound } from "next/navigation";
+import { getAllGoals, getAllPayments, getSavingsMove, getSettings } from "@/lib/page-data";
+import { notFound, redirect } from "next/navigation";
 
 import { isMoveCounted } from "@/lib/savings";
 import { savingsDelete } from "@/lib/delete-specs";
@@ -14,6 +14,11 @@ export default async function EditSavingsPage({ params }: { params: Promise<{ id
   const { id } = await params;
   const [settings, move, payments] = await Promise.all([getSettings(), getSavingsMove(id), getAllPayments()]);
   if (!move) notFound();
+  if (move.kind === "goal") {
+    // Given to a goal: changed from that goal's deposit.
+    const goal = (await getAllGoals()).find((g) => g.deposits.some((d) => d.id === move.goalDepositId));
+    redirect(goal ? `/goals/${goal.id}/deposits/${move.goalDepositId}` : "/epargne");
+  }
   return (
     <>
       <PageHeader

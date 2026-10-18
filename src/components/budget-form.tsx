@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, Clock } from "lucide-react";
+import { CalendarDots, Check, Clock, NumberCircleOne, Repeat } from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useNavBack } from "@/lib/nav-history";
 import { mutate } from "@/lib/use-refresh-data";
@@ -14,16 +15,17 @@ import { DeleteButton } from "@/components/delete-button";
 import { budgetDelete } from "@/lib/delete-specs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ChoiceNote, Segmented } from "@/components/ui/segmented";
 import { Label } from "@/components/ui/label";
 
 const EMOJIS = ["🚌", "🚕", "⛽", "🍔", "🛒", "☕", "🚬", "📱", "🎉", "👕", "💊", "🧾"];
 
 type Kind = "once" | "monthly" | "months";
 
-const KINDS: { key: Kind; emoji: string; label: string; hint: string }[] = [
-  { key: "once", emoji: "1️⃣", label: "Une fois", hint: "Ce mois-ci" },
-  { key: "monthly", emoji: "🔁", label: "Chaque mois", hint: "Sans fin" },
-  { key: "months", emoji: "📅", label: "X mois", hint: "Pendant…" },
+const KINDS: { key: Kind; icon: PhosphorIcon; label: string }[] = [
+  { key: "once", icon: NumberCircleOne, label: "Une fois" },
+  { key: "monthly", icon: Repeat, label: "Chaque mois" },
+  { key: "months", icon: CalendarDots, label: "X mois" },
 ];
 
 /** The recurrence the form opens on for an existing budget. */
@@ -153,27 +155,7 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
 
       <div className="flex flex-col gap-2">
         <Label>Durée</Label>
-        <div role="radiogroup" aria-label="Durée" className="grid grid-cols-3 gap-2">
-          {KINDS.map((k) => (
-            <button
-              key={k.key}
-              type="button"
-              role="radio"
-              aria-checked={kind === k.key}
-              onClick={() => setKind(k.key)}
-              className={cn(
-                "flex flex-col items-center gap-0.5 rounded-xl border px-1 py-2.5 transition-colors",
-                kind === k.key
-                  ? "border-transparent bg-gradient-to-br from-fuchsia-500 to-purple-600 text-white shadow-md shadow-purple-500/25"
-                  : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
-              )}
-            >
-              <span className="text-lg">{k.emoji}</span>
-              <span className="text-xs font-semibold">{k.label}</span>
-              <span className={cn("text-[10px]", kind === k.key ? "text-white/80" : "text-slate-400")}>{k.hint}</span>
-            </button>
-          ))}
-        </div>
+        <Segmented label="Durée" value={kind} onChange={setKind} options={KINDS} />
         {kind === "months" && (
           <div className="flex items-center gap-2">
             <Input
@@ -187,12 +169,10 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
             <span className="shrink-0 text-sm text-slate-500">mois</span>
           </div>
         )}
-        {summary && (
-          <p className="rounded-xl bg-purple-50 px-3 py-2 text-xs text-purple-700 dark:bg-purple-950/40 dark:text-purple-300">
-            {summary}
-            {amountValue > 0 && kind !== "once" && <> · {money(amountValue)} par mois</>}
-          </p>
-        )}
+        <ChoiceNote>
+          {summary ?? "Pendant combien de mois ?"}
+          {summary && amountValue > 0 && kind !== "once" && <> · {money(amountValue)} par mois</>}
+        </ChoiceNote>
       </div>
 
       {!isEdit && (
@@ -211,7 +191,7 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
                   : "border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400",
               )}
             >
-              <Check className="h-4 w-4" />
+              <Check weight="bold" className="h-4 w-4" />
               Pris
             </button>
             <button
@@ -226,7 +206,7 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
                   : "border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400",
               )}
             >
-              <Clock className="h-4 w-4" />
+              <Clock weight="bold" className="h-4 w-4" />
               Pas encore
             </button>
           </div>
@@ -244,7 +224,7 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back("/budgets")}>
           Annuler
         </Button>
-        <Button type="submit" className="flex-1 bg-purple-600 text-white hover:bg-purple-700" disabled={isPending}>
+        <Button type="submit" className="flex-1 gx-cta" disabled={isPending}>
           {isPending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter le budget"}
         </Button>
       </div>

@@ -5,10 +5,16 @@ export const THEME_CHOICES = ["light", "dark", "system", "simple", "simple-light
 export type ThemeChoice = (typeof THEME_CHOICES)[number];
 export type ThemeBase = "light" | "dark" | "system";
 
-export const THEME_STORAGE_KEY = "gx-theme";
+// v2: the premium look came with light as everyone's start (an older
+// device's "system" doesn't carry over).
+export const THEME_STORAGE_KEY = "gx-theme-v2";
 
 /** Colour of the plain headers in the simple theme (the browser's bar too). */
 export const SIMPLE_HEADER = { light: "#ffffff", dark: "#0f172a" };
+
+/** The browser's bar above every page: the page's calm background — the
+ *  night's in dark. */
+export const HEADER_COLOR = { light: "#f5f5f9", dark: "#090e1e" };
 
 export function parseTheme(choice: ThemeChoice): { base: ThemeBase; simple: boolean } {
   if (choice === "simple") return { base: "system", simple: true };
@@ -23,7 +29,7 @@ export function composeTheme(base: ThemeBase, simple: boolean): ThemeChoice {
 
 /** Runs before the page paints (inlined in the root layout) so the right
  *  theme shows from the first frame: the saved choice, or the system's. */
-export const THEME_BOOT_SCRIPT = `(function(){try{var t=localStorage.getItem("${THEME_STORAGE_KEY}")||"system";var s=t.indexOf("simple")===0;var b=t==="simple"?"system":t.replace("simple-","");var m=window.matchMedia("(prefers-color-scheme: dark)");var r=document.documentElement;var a=function(){r.classList.toggle("dark",b==="dark"||(b==="system"&&m.matches))};r.classList.toggle("simple",s);a();if(b==="system"&&m.addEventListener)m.addEventListener("change",a)}catch(e){}})();`;
+export const THEME_BOOT_SCRIPT = `(function(){try{var t=localStorage.getItem("${THEME_STORAGE_KEY}")||"light";var s=t.indexOf("simple")===0;var b=t==="simple"?"system":t.replace("simple-","");var m=window.matchMedia("(prefers-color-scheme: dark)");var r=document.documentElement;var a=function(){r.classList.toggle("dark",b==="dark"||(b==="system"&&m.matches))};r.classList.toggle("simple",s);a();if(b==="system"&&m.addEventListener)m.addEventListener("change",a)}catch(e){}})();`;
 
 let followSystem: (() => void) | null = null;
 

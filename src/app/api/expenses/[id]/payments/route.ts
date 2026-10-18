@@ -10,7 +10,8 @@ interface Params {
 
 /**
  * Marks the next due amount paid.
- * Body: { monthKey?: string } —
+ * Body: { monthKey?: string, method?, amount? } — `amount`: paid only part
+ * (or more); the rest stays to pay that month.
  * - Non-credit: which month to settle; omitted, settles the oldest unpaid
  *   month (the Dashboard's quick action).
  * - Credit: which month to evaluate "is anything pending" against —
@@ -20,9 +21,11 @@ interface Params {
  */
 export const POST = withBalanceGuard(async function post(req: NextRequest, { params }: Params) {
   const { id } = await params;
-  const body = (await req.json().catch(() => ({}))) as { monthKey?: string; method?: string };
+  const body = (await req.json().catch(() => ({}))) as { monthKey?: string; method?: string; amount?: unknown };
   const method = body.method === "cash" || body.method === "card" ? body.method : null;
-  const result = await payExpense(id, body.monthKey, method);
+  const amount = typeof body.amount === "number" && Number.isFinite(body.amount) ? body.amount : undefined;
+  if (amount != null && (amount <= 0 || amount > 1e9)) return NextResponse.json({ error: "Montant invalide." }, { status: 400 });
+  const result = await payExpense(id, body.monthKey, method, amount);
   if ("error" in result) return NextResponse.json({ error: result.error }, { status: result.status });
   return NextResponse.json(result.payment, { status: 201 });
 });
@@ -31,7 +34,7 @@ export const POST = withBalanceGuard(async function post(req: NextRequest, { par
  * Undoes a payment.
  * Body: { monthKey?: string } — for non-credit expenses, which month to
  * unmark. Ignored for credits, which always undo the most recent
- * installment.
+ * installment (all of its parts).
  */
 export const DELETE = withBalanceGuard(async function remove(req: NextRequest, { params }: Params) {
   const { id } = await params;

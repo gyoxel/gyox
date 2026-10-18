@@ -1,6 +1,6 @@
 import { getAllCategories, getAllExpenses, getAllIncomes, getAllPayments, getAllSalaryAdvances, getSettings } from "@/lib/page-data";
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { Sparkle } from "@phosphor-icons/react/ssr";
 
 import { incomesIn } from "@/lib/income";
 import { addMonths, compareMonths, monthFromSearchParams, monthKey, monthLabelFr, todayMonth } from "@/lib/date";
@@ -20,7 +20,7 @@ const FORECAST_MONTHS = 6;
 // Ring order (checked for colorblind separation between neighbours).
 const SEGMENTS: { color: DisplayColor; label: string }[] = [
   { color: "orange", label: "Dépenses permanentes" },
-  { color: "blue", label: "Crédits" },
+  { color: "blue", label: "Dettes" },
   { color: "red", label: "Dépenses" },
 ];
 
@@ -125,13 +125,13 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
         {transition && (
           <div className="flex gap-3 rounded-3xl bg-gradient-to-br from-emerald-50 to-teal-50 px-4 py-3.5 dark:from-emerald-950/40 dark:to-teal-950/40">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow-sm">
-              <Sparkles className="h-4 w-4" />
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow-sm">
+              <Sparkle weight="bold" className="h-4 w-4" />
             </span>
             <div className="text-sm text-emerald-900 dark:text-emerald-200">
               <p className="font-semibold">Dès {transition.monthLabel}</p>
               <p className="mt-0.5 text-emerald-800/90 dark:text-emerald-300/90">
-                Crédits et obligations temporaires terminés. Dépenses permanentes :{" "}
+                Dettes et obligations temporaires terminées. Dépenses permanentes :{" "}
                 {formatMoney(transition.totalPermanent, currency)} — reste estimé :{" "}
                 <b>{formatMoney(transition.remaining, currency)}</b>
               </p>

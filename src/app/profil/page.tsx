@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronRight, Mail, ShieldCheck, Users } from "lucide-react";
+import { CalendarDots, CaretRight, Envelope, ShieldCheck, Users } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { SignOutButton } from "@/components/sign-out-button";
@@ -34,7 +34,7 @@ export default async function ProfilPage() {
                     className="h-20 w-20 rounded-full object-cover shadow-md ring-4 ring-white/15"
                   />
                 ) : (
-                  <span className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#00c3ab] to-[#007261] text-3xl font-bold shadow-md ring-4 ring-white/15">
+                  <span className="gx-avatar flex h-20 w-20 items-center justify-center rounded-full text-3xl font-extrabold ring-4 ring-white/15">
                     {name.charAt(0).toUpperCase()}
                   </span>
                 )}
@@ -44,8 +44,8 @@ export default async function ProfilPage() {
             </div>
 
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <Row icon={Mail} label="Connecté avec Google" value={account.email} />
-              <Row icon={CalendarDays} label="Membre depuis" value={memberSince(account.createdAt)} />
+              <Row icon={Envelope} label="Connecté avec Google" value={account.email} />
+              <Row icon={CalendarDots} label="Membre depuis" value={memberSince(account.createdAt)} />
               <Row icon={ShieldCheck} label="Sécurité" value="Tes informations sont protégées" />
             </div>
 
@@ -55,14 +55,14 @@ export default async function ProfilPage() {
                 prefetch
                 className="flex items-center gap-3.5 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm active:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:active:bg-slate-800"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-500 to-slate-700 text-white">
-                  <Users className="h-[18px] w-[18px]" />
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-slate-500 to-slate-700 text-white">
+                  <Users weight="bold" className="h-[18px] w-[18px]" />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[15px] font-semibold text-slate-900 dark:text-white">Admin</span>
                   <span className="block truncate text-xs text-slate-500 dark:text-slate-400">Les comptes inscrits</span>
                 </span>
-                <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+                <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300" />
               </Link>
             )}
 
@@ -88,11 +88,11 @@ export default async function ProfilPage() {
   );
 }
 
-function Row({ icon: Icon, label, value }: { icon: typeof Mail; label: string; value: string }) {
+function Row({ icon: Icon, label, value }: { icon: typeof Envelope; label: string; value: string }) {
   return (
     <div className="flex items-center gap-3.5 border-t border-slate-100 px-4 py-3.5 first:border-t-0 dark:border-slate-800">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-        <Icon className="h-[18px] w-[18px]" />
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl gx-tile text-slate-600 dark:text-slate-300">
+        <Icon weight="duotone" className="h-5 w-5" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-xs text-slate-500 dark:text-slate-400">{label}</span>

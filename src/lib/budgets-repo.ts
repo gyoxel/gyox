@@ -245,7 +245,7 @@ export async function reconcileBudget(budgetId: string): Promise<void> {
           await prisma.expense.update({ where: { id: over.id }, data: { ...fields, updatedAt: now } });
           await prisma.payment.deleteMany({ where: { expenseId: over.id, NOT: { monthKey: key } } });
           await prisma.payment.upsert({
-            where: { expenseId_monthKey: { expenseId: over.id, monthKey: key } },
+            where: { expenseId_monthKey_part: { expenseId: over.id, monthKey: key, part: 0 } },
             update: { ...paid, paidAt: now },
             create: { id: randomUUID(), expenseId: over.id, monthKey: key, slotIndex: null, ...paid, paidAt: now, createdAt: now },
           });

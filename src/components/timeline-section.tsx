@@ -1,54 +1,55 @@
 import type { DaretWithExpense, Expense, Payment } from "@/lib/types";
-import { addMonths, compareMonths, monthLabelFr, monthOfDateStr, monthsBetween, todayMonth, type MonthId } from "@/lib/date";
+import { addMonths, compareMonths, monthKey, monthLabelFr, monthsBetween, parseMonthKey, todayMonth, type MonthId } from "@/lib/date";
 import { getDaretState } from "@/lib/daret";
-import { getCreditDisplayProgress, getCreditRealState, getEffectiveEndMonth } from "@/lib/engine";
+import { findPayment, getCreditDisplayProgress, getCreditRealState, projectCreditSchedule } from "@/lib/engine";
 import { cn, formatMoney } from "@/lib/utils";
 import { displayIcon } from "@/lib/category";
-import { ScrollToFraction } from "@/components/scroll-to-fraction";
+import { CreditStairs, type StairMonth } from "@/components/credit-stairs";
 
-const INITIALS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
-const SHORT = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
-/** "juin 27" — fits next to the remaining amount. */
-const monthShort = (m: MonthId) => `${SHORT[m.month - 1]} ${String(m.year).slice(2)}`;
-/** Longest span drawn (beyond it, bars are cut at the edge). */
-const MAX_MONTHS = 36;
-/** Narrowest a month gets, so every month keeps its letter: a longer span
- *  scrolls sideways instead of skipping months. */
-const MONTH_PX = 11;
-/** The name column (88px) and the gap after it. */
-const NAME_PX = 96;
+const SHORT = ["Janv.", "Févr.", "Mars", "Avr.", "Mai", "Juin", "Juil.", "Août", "Sept.", "Oct.", "Nov.", "Déc."];
+/** Months drawn one by one at most (a longer credit's end is still among
+ *  the milestones). */
+const MAX_MONTHS = 48;
 
-interface Row {
+/** A credit from this month on. */
+interface Plan {
   expense: Expense;
-  kind: "credit" | "daret";
-  start: MonthId;
-  end: MonthId | null;
-  /** Share actually repaid, 0-100. */
-  percent: number;
-  paid: number;
+  icon: string;
+  /** What it costs each month ("YYYY-MM"): this month, what was paid plus
+   *  what's still due; after, its projected installments. */
+  months: Map<string, number>;
+  /** This month's installment is paid. */
+  paidNow: boolean;
+  /** Starts in a month to come. */
+  startsLater: boolean;
+  first: string | null;
+  last: string | null;
+  remaining: number;
   total: number;
-  /** Daret: the month the user collects the pot. */
-  turn?: MonthId;
+  paid: number;
 }
 
-const STYLE = {
-  credit: {
-    paid: "bg-gradient-to-r from-sky-400 to-blue-600",
-    rest: "bg-blue-100 dark:bg-blue-950/70",
-    text: "text-blue-700 dark:text-blue-300",
-  },
-  daret: {
-    paid: "bg-gradient-to-r from-rose-400 to-rose-600",
-    rest: "bg-rose-100 dark:bg-rose-950/60",
-    text: "text-rose-700 dark:text-rose-300",
-  },
-} as const;
+interface Milestone {
+  key: string;
+  order: number;
+  icon: string;
+  title: string;
+  detail?: string;
+  amount?: string;
+  /** Money coming in (a daret's pot). */
+  income?: boolean;
+  /** A credit's last installment: what's left to pay after it follows. */
+  creditEnd?: boolean;
+}
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
 
 /**
- * Timeline of every commitment with an end (credits and darets), drawn as a
- * planning: one bar per commitment from its first to its last month on a
- * shared month axis, filled with what has really been paid, a line on the
- * current month and a 🏁 on the day everything is paid off.
+ * Timeline of the credits (and darets): when everything is paid off, what
+ * the credits cost each month until then — a staircase going down, one step
+ * per credit ending, each month tappable — and the milestones on the way (a
+ * credit's last installment and what's left to pay after it, a credit
+ * starting, a daret's turn and end), down to the 🏁.
  */
 export function TimelineSection({
   expenses,
@@ -63,209 +64,241 @@ export function TimelineSection({
   currency: string;
   categoryEmoji: ReadonlyMap<string, string>;
 }) {
-  const byId = new Map(expenses.map((e) => [e.id, e]));
   const current = todayMonth();
+  const currentKey = monthKey(current);
   const money = (n: number) => formatMoney(n, currency);
 
-  const creditRows: Row[] = expenses
+  const plans: Plan[] = expenses
     .filter((e) => e.active && e.type === "credit")
     .map((expense) => {
       const state = getCreditRealState(expense, payments, current);
+      const months = new Map<string, number>();
+      const payment = findPayment(payments, expense.id, currentKey);
+      if (payment && payment.amountPaid > 0) months.set(currentKey, payment.amountPaid);
+      for (const { month, payment: amount } of projectCreditSchedule(expense, payments, current)) {
+        const key = monthKey(month);
+        months.set(key, round2((months.get(key) ?? 0) + amount));
+      }
+      const keys = [...months.keys()].sort();
       return {
         expense,
-        kind: "credit",
-        start: monthOfDateStr(expense.startDate),
-        end: state.projectedEndMonth ?? getEffectiveEndMonth(expense, byId),
+        icon: displayIcon(expense, categoryEmoji),
+        months,
+        paidNow: payment != null,
+        startsLater: state.status === "not-started",
+        first: keys[0] ?? null,
+        last: keys[keys.length - 1] ?? null,
+        remaining: state.remaining,
         ...getCreditDisplayProgress(expense, state),
       };
-    });
+    })
+    .filter((p) => p.months.size > 0);
 
-  const daretRows: Row[] = darets
-    .filter((d) => d.expense.active)
-    .map((daret) => {
-      const state = getDaretState(daret, payments, current);
-      return {
-        expense: daret.expense,
-        kind: "daret",
-        start: state.start,
-        end: state.end,
-        turn: state.turn,
-        percent: Math.round((state.paidRounds / Math.max(1, daret.members)) * 100),
-        paid: state.paidRounds * daret.expense.amount,
-        total: state.totalContribution,
-      };
-    });
+  const daretStates = darets.filter((d) => d.expense.active).map((daret) => ({ daret, state: getDaretState(daret, payments, current) }));
+  if (plans.length === 0 && !daretStates.some(({ state }) => compareMonths(state.end, current) >= 0)) return null;
 
-  // Soonest end first.
-  const rows = [...creditRows, ...daretRows].sort((a, b) => {
-    if (!a.end || !b.end) return a.end ? -1 : b.end ? 1 : 0;
-    return compareMonths(a.end, b.end);
+  // Month by month, from this one to the last installment.
+  const totals = new Map<string, number>();
+  for (const p of plans) for (const [key, amount] of p.months) totals.set(key, round2((totals.get(key) ?? 0) + amount));
+  const lastKey = [...totals.keys()].sort().pop() ?? null;
+  const freeAt = lastKey ? parseMonthKey(lastKey) : null;
+  const totalAt = (m: MonthId) => totals.get(monthKey(m)) ?? 0;
+
+  const span = freeAt ? Math.min(MAX_MONTHS, monthsBetween(current, freeAt) + 1) : 0;
+  const stairs: StairMonth[] = Array.from({ length: span }, (_, i) => {
+    const m = addMonths(current, i);
+    const key = monthKey(m);
+    return {
+      key,
+      short: SHORT[m.month - 1],
+      label: monthLabelFr(m),
+      year: i === 0 || m.month === 1 ? String(m.year) : undefined,
+      total: totalAt(m),
+      items: plans
+        .filter((p) => p.months.has(key))
+        .map((p) => ({
+          id: p.expense.id,
+          name: p.expense.name,
+          icon: p.icon,
+          amount: p.months.get(key)!,
+          note:
+            key === currentKey && p.paidNow
+              ? "payé ✓"
+              : key === p.last
+                ? "dernière"
+                : key === p.first && p.startsLater
+                  ? "1ère"
+                  : undefined,
+        }))
+        .sort((a, b) => b.amount - a.amount),
+    };
   });
-  if (rows.length === 0) return null;
 
-  // Shared axis: from the earliest start (or this month) to the last end.
-  const ends = rows.map((r) => r.end ?? addMonths(current, MAX_MONTHS - 1));
-  const lastEnd = ends.reduce((a, b) => (compareMonths(a, b) >= 0 ? a : b));
-  let axisStart = rows.map((r) => r.start).reduce((a, b) => (compareMonths(a, b) <= 0 ? a : b), current);
-  if (compareMonths(axisStart, current) > 0) axisStart = current;
-  let axisEnd = compareMonths(lastEnd, current) < 0 ? current : lastEnd;
-  if (monthsBetween(axisStart, axisEnd) + 1 > MAX_MONTHS) axisEnd = addMonths(axisStart, MAX_MONTHS - 1);
-  const span = monthsBetween(axisStart, axisEnd) + 1;
-  const clamp = (n: number) => Math.min(100, Math.max(0, n));
-  /** Left edge of a month on the axis, in %. */
-  const at = (m: MonthId) => clamp((monthsBetween(axisStart, m) / span) * 100);
-  const months = Array.from({ length: span }, (_, i) => addMonths(axisStart, i));
-  const todayLeft = at(current) + 50 / span;
+  // Milestones: credits starting and ending, darets' turn and end.
+  const milestones: Milestone[] = [];
+  for (const p of plans) {
+    if (p.startsLater && p.first) {
+      milestones.push({ key: p.first, order: 0, icon: p.icon, title: p.expense.name, detail: "Première mensualité", amount: money(p.months.get(p.first)!) });
+    }
+    if (p.last) {
+      const done = p.last === currentKey && p.paidNow && p.remaining <= 0;
+      milestones.push({
+        key: p.last,
+        order: 2,
+        icon: p.icon,
+        title: p.expense.name,
+        detail: done ? "Remboursé ✓" : "Dernière mensualité",
+        amount: money(p.months.get(p.last)!),
+        creditEnd: true,
+      });
+    }
+  }
+  for (const { daret, state } of daretStates) {
+    if (compareMonths(state.turn, current) >= 0) {
+      milestones.push({
+        key: monthKey(state.turn),
+        order: 1,
+        icon: "💰",
+        title: daret.expense.name,
+        detail: daret.payoutMethod ? "Ton tour · reçue ✓" : "Ton tour · tu reçois la daret",
+        amount: `+${money(state.payout)}`,
+        income: true,
+      });
+    }
+    if (compareMonths(state.end, current) >= 0) {
+      milestones.push({
+        key: monthKey(state.end),
+        order: 2,
+        icon: displayIcon(daret.expense, categoryEmoji),
+        title: daret.expense.name,
+        detail: "Dernière cotisation",
+        amount: money(daret.expense.amount),
+      });
+    }
+  }
+  milestones.sort((a, b) => a.key.localeCompare(b.key) || a.order - b.order);
+  const groups: { key: string; items: Milestone[] }[] = [];
+  for (const m of milestones) {
+    const group = groups.at(-1);
+    if (group?.key === m.key) group.items.push(m);
+    else groups.push({ key: m.key, items: [m] });
+  }
 
-  // Summary: what's left on the credits, per month now, and the day it's all over.
-  const credits = rows.filter((r) => r.kind === "credit");
-  const remaining = credits.reduce((s, r) => s + Math.max(0, r.total - r.paid), 0);
-  const monthly = credits
-    .filter((r) => r.end && compareMonths(r.end, current) >= 0 && r.percent < 100)
-    .reduce((s, r) => s + r.expense.amount, 0);
-  const freeAt = credits
-    .map((r) => r.end)
-    .filter((m): m is MonthId => m != null)
-    .reduce<MonthId | null>((a, b) => (!a || compareMonths(b, a) > 0 ? b : a), null);
+  // Summary of the credits still running.
+  const remaining = plans.reduce((s, p) => s + p.remaining, 0);
+  const total = plans.reduce((s, p) => s + p.total, 0);
+  const paid = plans.reduce((s, p) => s + p.paid, 0);
+  const percent = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+  const monthsLeft = freeAt ? monthsBetween(current, freeAt) : 0;
 
   return (
     <section className="flex flex-col gap-2.5">
       <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Timeline</h2>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        {/* Summary */}
-        {credits.length > 0 && (
-          <div className="bg-gradient-to-br from-sky-500 to-blue-700 px-4 pb-4 pt-3.5 text-white">
-            <p className="text-xs font-medium text-white/80">Libre de tous tes crédits</p>
-            <p className="mt-0.5 flex items-center gap-2 text-xl font-bold capitalize">
-              🏁 {freeAt ? monthLabelFr(freeAt) : "—"}
-              {freeAt && compareMonths(freeAt, current) > 0 && (
-                <span className="rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold normal-case">
-                  dans {monthsBetween(current, freeAt)} mois
-                </span>
-              )}
-            </p>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <div className="rounded-xl bg-white/15 px-3 py-2">
-                <p className="text-[11px] text-white/75">Reste à payer</p>
-                <p className="text-sm font-bold tabular-nums">{money(remaining)}</p>
-              </div>
-              <div className="rounded-xl bg-white/15 px-3 py-2">
-                <p className="text-[11px] text-white/75">Par mois</p>
-                <p className="text-sm font-bold tabular-nums">{money(monthly)}</p>
-              </div>
+      {freeAt && (
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-500 to-violet-700 px-5 pb-4 pt-5 text-white">
+          <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
+          <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Libre de toutes tes dettes</p>
+          <p className="relative mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[27px] font-extrabold leading-tight">
+            🏁 {monthLabelFr(freeAt)}
+            <span className="rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-semibold">
+              {monthsLeft === 0 ? "ce mois-ci" : `dans ${monthsLeft} mois`}
+            </span>
+          </p>
+          <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-white/25">
+            <div className="h-full rounded-full bg-white" style={{ width: `${percent}%` }} />
+          </div>
+          <p className="relative mt-1.5 text-[11.5px] text-white/80">
+            <b className="text-white">{percent}% remboursé</b> · {money(paid)} sur {money(total)}
+          </p>
+          <div className="relative mt-3 grid grid-cols-2 gap-2">
+            <div className="rounded-2xl bg-white/15 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-white/75">Reste à payer</p>
+              <p className="text-sm font-bold tabular-nums">{money(remaining)}</p>
+            </div>
+            <div className="rounded-2xl bg-white/15 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-white/75">Ce mois-ci</p>
+              <p className="text-sm font-bold tabular-nums">{money(totalAt(current))}</p>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        <div className="flex flex-col px-3 pb-3 pt-3">
-          <ScrollToFraction fraction={(NAME_PX + (todayLeft / 100) * span * MONTH_PX) / (NAME_PX + span * MONTH_PX)}>
-          <div style={{ minWidth: NAME_PX + span * MONTH_PX }}>
-          {/* Month axis: every month */}
-          <div className="flex items-end gap-2">
-            <div className="sticky left-0 z-10 w-[88px] shrink-0 self-stretch bg-white dark:bg-slate-900" />
-            <div className="relative h-8 flex-1">
-              {months.map((m, i) => (
-                <span
-                  key={i}
-                  className={cn(
-                    "absolute bottom-0 -translate-x-1/2 text-center text-[9px] leading-tight",
-                    compareMonths(m, current) === 0 ? "font-bold text-blue-600 dark:text-sky-300" : "text-slate-400",
-                  )}
-                  style={{ left: `${at(m) + 50 / span}%` }}
-                >
-                  {m.month === 1 || i === 0 ? (
-                    <span className="block text-[9px] font-semibold text-slate-500 dark:text-slate-400">
-                      {String(m.year).slice(2)}
-                    </span>
-                  ) : null}
-                  {INITIALS[m.month - 1]}
-                </span>
-              ))}
-            </div>
+      {stairs.length > 0 && (
+        <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-baseline justify-between gap-2">
+            <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">Chaque mois</h3>
+            <p className="text-[11px] text-slate-400">Touche un mois pour le détail</p>
           </div>
+          <CreditStairs months={stairs} currency={currency} />
+        </div>
+      )}
 
-          {/* Rows */}
-          <div className="relative mt-1 flex flex-col">
-            {rows.map((r) => {
-              const s = STYLE[r.kind];
-              const left = at(r.start);
-              const right = r.end ? clamp(at(r.end) + 100 / span) : 100;
-              const width = Math.max(right - left, 100 / span);
-              const done = r.percent >= 100;
+      {groups.length > 0 && (
+        <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">Les étapes</h3>
+          <ol className="mt-3 flex flex-col">
+            {groups.map((group) => {
+              const month = parseMonthKey(group.key);
+              // After a credit's last installment: what the credits cost then.
+              const after =
+                freeAt && compareMonths(month, freeAt) < 0 && group.items.some((m) => m.creditEnd) ? totalAt(addMonths(month, 1)) : null;
               return (
-                <div key={r.expense.id} className="flex items-center gap-2 border-t border-slate-100 py-2.5 first:border-t-0 dark:border-slate-800">
-                  <div className="sticky left-0 z-10 flex w-[88px] shrink-0 items-center gap-1.5 self-stretch bg-white dark:bg-slate-900">
-                    <span className="text-lg leading-none">{displayIcon(r.expense, categoryEmoji)}</span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-[13px] font-semibold text-slate-800 dark:text-slate-100">
-                        {r.expense.name}
-                      </span>
-                      <span className="block truncate text-[10px] text-slate-400">{money(r.expense.amount)}/m</span>
-                    </span>
-                  </div>
-                  <div className="relative flex-1">
-                    {/* Today */}
-                    <div
-                      className="pointer-events-none absolute -bottom-2.5 -top-2.5 w-px bg-blue-500/50 dark:bg-sky-400/40"
-                      style={{ left: `${todayLeft}%` }}
-                    />
-                    {/* Bar: whole span, filled with what's paid */}
-                    <div className="relative h-4">
-                      <div
-                        className={cn("absolute inset-y-0 overflow-hidden rounded-full", s.rest)}
-                        style={{ left: `${left}%`, width: `${width}%` }}
-                      >
-                        <div className={cn("h-full rounded-full", s.paid)} style={{ width: `${r.percent}%` }} />
-                      </div>
-                      {r.turn && (
-                        <span
-                          className="absolute -top-1 -translate-x-1/2 text-[13px] leading-none"
-                          style={{ left: `${at(r.turn) + 50 / span}%` }}
-                          title={`Ton tour : ${monthLabelFr(r.turn)}`}
-                        >
-                          💰
-                        </span>
-                      )}
-                    </div>
-                    {/* Stays in view while the bars scroll sideways. */}
-                    <p
-                      className="sticky mt-1 flex items-baseline justify-between gap-1 text-[10px]"
-                      style={{ left: NAME_PX, maxWidth: `calc(100vw - ${NAME_PX + 56}px)` }}
-                    >
-                      <span className={cn("font-semibold tabular-nums", s.text)}>{done ? "Terminé ✓" : `${r.percent}%`}</span>
-                      <span className="truncate text-slate-400">
-                        {!done && (
-                          <>
-                            <b className={cn("text-[11px] tabular-nums", s.text)}>{money(Math.max(0, r.total - r.paid))}</b>{" "}
-                            restants ·{" "}
-                          </>
-                        )}
-                        {r.end ? `fin ${monthShort(r.end)}` : "sans fin"}
-                      </span>
+                <li key={group.key} className="relative flex gap-3 pb-5">
+                  {/* The rail, from this step down to the next. */}
+                  <span aria-hidden className="absolute bottom-0 left-[11px] top-3 w-0.5 rounded-full bg-violet-200 dark:bg-violet-400/25" />
+                  <span aria-hidden className="relative mt-[3px] flex h-6 w-6 shrink-0 items-center justify-center">
+                    <span className="h-3 w-3 rounded-full bg-violet-500 ring-4 ring-violet-100 dark:bg-violet-300 dark:ring-violet-400/20" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-violet-600 dark:text-violet-300">
+                      {monthLabelFr(month)}
+                      {group.key === currentKey && <span className="font-semibold normal-case tracking-normal text-slate-400"> · ce mois-ci</span>}
                     </p>
+                    <ul className="mt-2 flex flex-col gap-2">
+                      {group.items.map((m, i) => (
+                        <li key={i} className="flex items-center gap-2.5">
+                          <span className="gx-tile flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base">{m.icon}</span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[13.5px] font-semibold text-slate-900 dark:text-white">{m.title}</span>
+                            {m.detail && <span className="block text-[11.5px] text-slate-500 dark:text-slate-400">{m.detail}</span>}
+                          </span>
+                          {m.amount && (
+                            <span
+                              className={cn(
+                                "shrink-0 text-[13px] font-bold tabular-nums",
+                                m.income ? "text-emerald-600 dark:text-emerald-300" : "text-slate-700 dark:text-slate-200",
+                              )}
+                            >
+                              {m.amount}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                    {after != null && Math.abs(after - totalAt(month)) > 0.5 && (
+                      <p className="mt-2 text-[12px] text-slate-500 dark:text-slate-400">
+                        Ensuite <b className="text-slate-800 dark:text-slate-100">{money(after)}</b> de dettes par mois
+                      </p>
+                    )}
                   </div>
-                </div>
+                </li>
               );
             })}
-          </div>
-          </div>
-          </ScrollToFraction>
-
-          <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-[10px] text-slate-400">
-            <span className="flex items-center gap-1">
-              <span className="h-2 w-3 rounded-full bg-gradient-to-r from-sky-400 to-blue-600" /> Payé
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="h-2 w-3 rounded-full bg-blue-100 dark:bg-blue-950" /> Restant
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="h-2.5 w-px bg-blue-500/60" /> Aujourd&apos;hui
-            </span>
-            {daretRows.length > 0 && <span>💰 Ton tour de daret</span>}
-          </p>
+            {freeAt && (
+              <li className="flex gap-3">
+                <span aria-hidden className="gx-cta flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[13px]">
+                  🏁
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[15px] font-extrabold text-violet-700 dark:text-violet-200">Libre de toutes tes dettes !</p>
+                  <p className="text-[12px] text-slate-500 dark:text-slate-400">Après {monthLabelFr(freeAt)}, plus aucune mensualité à rembourser.</p>
+                </div>
+              </li>
+            )}
+          </ol>
         </div>
-      </div>
+      )}
     </section>
   );
 }

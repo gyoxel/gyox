@@ -2,19 +2,20 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, ChartNoAxesCombined, ChevronRight, HandCoins, Handshake, PiggyBank, Settings, Target, TrendingUp, Wallet, type LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { CalendarDots, Cardholder, CaretRight, ChartLineUp, HandCoins, Handshake, Target, TrendUp } from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
-const ITEMS: { href: string; label: string; hint: string; icon: LucideIcon; tint: string }[] = [
-  { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau…", icon: TrendingUp, tint: "from-emerald-400 to-green-600" },
-  { href: "/solde", label: "Solde", hint: "Cash, carte, historique", icon: Wallet, tint: "from-indigo-400 to-violet-600" },
-  { href: "/epargne", label: "Épargne", hint: "Argent mis de côté", icon: PiggyBank, tint: "from-lime-400 to-green-600" },
-  { href: "/prets", label: "Prêts", hint: "Ce qu'on doit te rendre", icon: Handshake, tint: "from-amber-500 to-orange-700" },
-  { href: "/daret", label: "Daret", hint: "Tes darets et ton tour", icon: HandCoins, tint: "from-teal-400 to-emerald-600" },
-  { href: "/goals", label: "Objectifs", hint: "Voiture, maison, voyage…", icon: Target, tint: "from-amber-400 to-orange-500" },
-  { href: "/stats", label: "Statistiques", hint: "Répartition, prévisions", icon: ChartNoAxesCombined, tint: "from-sky-400 to-blue-600" },
-  { href: "/calendar", label: "Calendrier", hint: "Jour par jour", icon: CalendarDays, tint: "from-rose-400 to-pink-600" },
-  { href: "/settings", label: "Paramètres", hint: "Thème, sauvegarde", icon: Settings, tint: "from-slate-400 to-slate-600" },
+// Every page worth a shortcut — not the ones the bar, the + menu or
+// Accueil itself already open (Dépenses, Crédits, Solde, Épargne, Salaire),
+// nor Profil / Paramètres / Catégories.
+const ITEMS: { href: string; label: string; hint: string; icon: PhosphorIcon }[] = [
+  { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau…", icon: TrendUp },
+  { href: "/budgets", label: "Budgets", hint: "Transport, courses…", icon: Cardholder },
+  { href: "/daret", label: "Daret", hint: "Tes darets et ton tour", icon: Handshake },
+  { href: "/prets", label: "Argent prêté", hint: "Ce qu'on doit te rendre", icon: HandCoins },
+  { href: "/goals", label: "Objectifs", hint: "Voiture, maison, voyage…", icon: Target },
+  { href: "/calendar", label: "Calendrier", hint: "Jour par jour", icon: CalendarDots },
+  { href: "/stats", label: "Statistiques", hint: "Répartition, prévisions", icon: ChartLineUp },
 ];
 const N = ITEMS.length;
 
@@ -22,7 +23,14 @@ const ITEM_PX = 48; // finger travel for one item
 const TAU = 325; // ms: how long a fling keeps going (exponential decay)
 const MAX_FLING = 3 * N; // items, at most
 const FLICK_PX_MS = 0.35; // slower than this on release: no momentum
-const HEIGHT = 128;
+// The wheel is as tall as the countdown tile beside it on Accueil: the
+// centre card, one neighbour tucked under it on each side, and a second,
+// fainter one under that, its far edge on the wheel's top / bottom.
+const HEIGHT = 136;
+const CARD_PX = 60; // a card's height
+const SCALE = [1, 0.93, 0.86];
+const OFFSET = [0, 24, (HEIGHT - CARD_PX * SCALE[2]) / 2]; // centre to centre, px
+const OPACITY = [1, 0.85, 0.5];
 
 /** Where the wheel was left, kept while the app stays open. */
 let savedPos = 0;
@@ -35,27 +43,34 @@ function offsetOf(i: number, pos: number): number {
   return d;
 }
 
-/** Look of a card `d` items away from the centre: closer cards bigger and
- *  sharper, the far ones small, faded and blurred. */
-function styleFor(d: number): React.CSSProperties {
+/** `steps[0]` at 0, `steps[1]` at 1, `steps[2]` at 2, in between linearly. */
+function along(steps: number[], a: number): number {
+  const i = Math.min(1, Math.floor(a));
+  return steps[i] + (steps[i + 1] - steps[i]) * Math.min(1, a - i);
+}
+
+/** Look of a card `d` items away from the centre: the closer, the bigger
+ *  and clearer; two each side show as the edges of a stack (their content
+ *  fades out first), the next ones fade away. */
+function styleFor(d: number): React.CSSProperties & { "--wheel-content": string } {
   const a = Math.abs(d);
-  // Neighbours tucked under the centre card, only their edge showing.
-  const y = Math.sign(d) * (a <= 1 ? a * 30 : 30 + (a - 1) * 14);
-  const scale = Math.max(0.78, 1 - 0.08 * a);
-  const opacity = a <= 1 ? 1 - 0.15 * a : Math.max(0, 0.85 - 0.75 * (a - 1));
-  const blur = Math.max(0, a - 0.6) * 1.6;
+  const beyond = Math.max(0, a - 2); // past the second neighbour: going away
+  const y = Math.sign(d) * (along(OFFSET, Math.min(a, 2)) + beyond * 6);
+  const scale = along(SCALE, Math.min(a, 2)) - beyond * 0.04;
+  const opacity = a <= 2 ? along(OPACITY, a) : Math.max(0, OPACITY[2] * (1 - beyond / 0.6));
+  const content = Math.min(1, Math.max(0, 1 - (a - 0.3) / 0.45));
   return {
+    "--wheel-content": content.toFixed(3),
     transform: `translate3d(0, calc(-50% + ${y.toFixed(2)}px), 0) scale(${scale.toFixed(4)})`,
-    opacity: a > 2.2 ? 0 : Number(opacity.toFixed(3)),
-    filter: blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none",
+    opacity: Number(opacity.toFixed(3)),
     zIndex: 100 - Math.round(a * 10),
-    pointerEvents: a > 1.6 ? "none" : "auto",
+    pointerEvents: a > 2.4 ? "none" : "auto",
   };
 }
 
 /**
- * Accueil shortcuts as a wheel of cards: the centre one big, its neighbours
- * smaller above and below, the next ones faded and blurred. Drag it like a
+ * Accueil shortcuts as a wheel of cards: the centre one big, two
+ * neighbours each side stacked under it, smaller and fainter. Drag it like a
  * game wheel: slowly and it follows, flick it and it spins on, slowing down
  * until it settles on a card. Tap the centre card to open it, a side one
  * to bring it to the centre. It loops around.
@@ -82,9 +97,9 @@ export function ShortcutWheel() {
         const s = styleFor(offsetOf(i, pos));
         card.style.transform = s.transform as string;
         card.style.opacity = String(s.opacity);
-        card.style.filter = s.filter as string;
         card.style.zIndex = String(s.zIndex);
         card.style.pointerEvents = s.pointerEvents as string;
+        card.style.setProperty("--wheel-content", s["--wheel-content"]);
         card.setAttribute("aria-selected", Math.abs(offsetOf(i, pos)) < 0.5 ? "true" : "false");
       });
       const tick = Math.round(pos);
@@ -206,14 +221,12 @@ export function ShortcutWheel() {
       role="listbox"
       aria-label="Raccourcis"
       tabIndex={0}
-      className="relative touch-none select-none outline-none"
-      style={{
-        height: HEIGHT,
-        maskImage: "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
-        WebkitMaskImage: "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
-      }}
+      // isolate: the cards' z-index stays inside the wheel (it would put
+      // them over the bar's + menu).
+      className="@container relative isolate touch-none select-none outline-none"
+      style={{ height: HEIGHT }}
     >
-      {ITEMS.map(({ href, label, hint, icon: Icon, tint }, i) => (
+      {ITEMS.map(({ href, label, hint, icon: Icon }, i) => (
         <button
           key={href}
           ref={(node) => {
@@ -226,25 +239,18 @@ export function ShortcutWheel() {
           aria-label={label}
           tabIndex={-1}
           // Same look as the first frame drawn by the effect (centre: Revenus).
-          style={styleFor(offsetOf(i, 0))}
-          className={cn(
-            "absolute inset-x-0 top-1/2 flex items-center gap-3 rounded-2xl bg-white px-3.5 py-3 text-left will-change-transform",
-            "shadow-[0_10px_30px_-8px_rgba(15,23,42,0.25)] ring-1 ring-slate-900/5 dark:bg-slate-900 dark:ring-white/10",
-          )}
+          style={{ ...styleFor(offsetOf(i, 0)), height: CARD_PX }}
+          className="gx-wheel-card absolute inset-x-0 top-1/2 flex items-center gap-2.5 rounded-[22px] px-3 text-left will-change-transform @min-[16rem]:gap-3 @min-[16rem]:px-3.5"
         >
-          <span
-            className={cn(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-sm",
-              tint,
-            )}
-          >
-            <Icon className="h-5 w-5" />
+          <span className="gx-tile flex h-9 w-9 shrink-0 items-center justify-center rounded-xl opacity-[var(--wheel-content)] @min-[16rem]:h-10 @min-[16rem]:w-10 @min-[16rem]:rounded-2xl">
+            <Icon weight="duotone" className="h-5 w-5 @min-[16rem]:h-[22px] @min-[16rem]:w-[22px]" />
           </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-base font-semibold text-slate-900 dark:text-white">{label}</span>
-            <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{hint}</span>
+          <span className="min-w-0 flex-1 opacity-[var(--wheel-content)]">
+            <span className="block truncate text-[15px] font-semibold text-slate-900 @min-[16rem]:text-base dark:text-white">{label}</span>
+            <span className="block truncate text-[11.5px] text-slate-500 @min-[16rem]:text-xs dark:text-slate-400">{hint}</span>
           </span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+          {/* Narrow (beside the countdown): no room for the arrow. */}
+          <CaretRight weight="bold" className="hidden h-4 w-4 shrink-0 text-slate-300 opacity-[var(--wheel-content)] @min-[16rem]:block" />
         </button>
       ))}
     </div>

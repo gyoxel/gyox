@@ -46,7 +46,7 @@ export default async function AdminPage() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={u.image} alt="" referrerPolicy="no-referrer" className="h-11 w-11 shrink-0 rounded-full object-cover" />
                 ) : (
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#00c3ab] to-[#007261] text-lg font-bold text-white">
+                  <span className="gx-avatar flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg font-extrabold">
                     {name.charAt(0).toUpperCase()}
                   </span>
                 )}
