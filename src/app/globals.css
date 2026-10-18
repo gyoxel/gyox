@@ -429,6 +429,99 @@ body {
   border: 0;
 }
 
+/* Accueil's countdown to the salary: a violet mesh with light coming in
+   from its corners, a sheen of glass sweeping over it now and then, its
+   ring glowing; coral when the salary is late. */
+.gx-salary {
+  color: #fff;
+  background-color: #5b2fd6;
+  background-image:
+    linear-gradient(180deg, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0) 46%),
+    radial-gradient(95% 75% at 0% 0%, rgb(196 181 253 / 0.85), transparent 62%),
+    radial-gradient(75% 85% at 100% 0%, rgb(99 160 250 / 0.55), transparent 62%),
+    radial-gradient(85% 95% at 100% 100%, rgb(232 90 170 / 0.5), transparent 62%),
+    linear-gradient(150deg, #7c4dff 0%, #5b2fd6 50%, #3d1e9e 100%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4), inset 0 0 0 1px rgb(255 255 255 / 0.16), 0 18px 34px -18px rgb(91 33 182 / 0.8), 0 4px 10px -4px rgb(91 33 182 / 0.35);
+}
+.gx-salary-late {
+  background-color: #e11d48;
+  background-image:
+    linear-gradient(180deg, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0) 46%),
+    radial-gradient(95% 75% at 0% 0%, rgb(254 205 211 / 0.8), transparent 62%),
+    radial-gradient(85% 95% at 100% 100%, rgb(244 114 182 / 0.5), transparent 62%),
+    linear-gradient(150deg, #fb7185 0%, #e11d48 55%, #9f1239 100%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4), inset 0 0 0 1px rgb(255 255 255 / 0.16), 0 18px 34px -18px rgb(190 18 60 / 0.8);
+}
+.gx-salary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.26) 46%, transparent 62%);
+  transform: translateX(-130%);
+  animation: gx-sheen 7s ease-in-out infinite;
+}
+@keyframes gx-sheen {
+  0%,
+  60% {
+    transform: translateX(-130%);
+  }
+  85%,
+  100% {
+    transform: translateX(130%);
+  }
+}
+.gx-salary-chip {
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.22), rgb(255 255 255 / 0.08));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35), inset 0 0 0 1px rgb(255 255 255 / 0.16);
+}
+.gx-salary-ring {
+  filter: drop-shadow(0 0 5px rgb(233 213 255 / 0.7));
+  animation: gx-ring-glow 2.6s ease-in-out infinite alternate;
+}
+@keyframes gx-ring-glow {
+  to {
+    filter: drop-shadow(0 0 10px rgb(233 213 255 / 0.95));
+  }
+}
+.gx-twinkle {
+  animation: gx-twinkle 3.2s ease-in-out infinite;
+}
+@keyframes gx-twinkle {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gx-salary::after,
+  .gx-salary-ring,
+  .gx-twinkle {
+    animation: none;
+  }
+}
+/* "simple": a plain card, its text the ink. */
+.simple .gx-salary {
+  --color-white: var(--simple-ink);
+  color: var(--simple-ink);
+  background: var(--simple-surface);
+  box-shadow: none;
+  border: 1px solid var(--simple-line);
+}
+.simple .gx-salary::after,
+.simple .gx-twinkle {
+  display: none;
+}
+.simple .gx-salary-chip {
+  background: var(--simple-chip);
+  box-shadow: none;
+}
+
 /* Cards, rows and chips: white on the calm background, a soft shadow;
    light glass over the night in the dark. */
 :root:not(.simple) :is(.gx-glass, [class~="bg-white"][class*="border-slate-200"]) {
