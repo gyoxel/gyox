@@ -211,7 +211,8 @@ export function TabSwipe() {
       if (!path) return;
       const box = document.createElement("div");
       box.setAttribute("aria-hidden", "true");
-      box.className = "fixed inset-0 z-40 overflow-hidden bg-slate-50 dark:bg-slate-950 pointer-events-none";
+      // See-through: the neighbour sits on the same backdrop as the page.
+      box.className = "fixed inset-0 z-40 overflow-hidden pointer-events-none";
       const inner = document.createElement("div");
       inner.className = "mx-auto flex w-full max-w-lg flex-col";
       inner.innerHTML = snapshots.get(path) ?? placeholder(path);

@@ -511,7 +511,7 @@ export function CategoryManager({
       />
 
       {orderChanged && !draggingId && (
-        <div className="sticky bottom-28 z-20 flex gap-2 rounded-2xl border border-violet-200 bg-white/95 p-2 shadow-lg backdrop-blur dark:border-violet-900 dark:bg-[#10162a]/95">
+        <div className="gx-float sticky bottom-[calc(env(safe-area-inset-bottom)+10.25rem)] z-20 flex gap-2 rounded-[26px] p-2">
           <Button type="button" variant="outline" className="flex-1" onClick={resetOrder} disabled={busy}>
             <ArrowCounterClockwise weight="bold" className="h-4 w-4" />
             Annuler

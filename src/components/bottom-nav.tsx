@@ -187,32 +187,19 @@ function AppBar({ pathname }: { pathname: string }) {
         )}
       />
 
-      {/* The tabs on a capsule of glass — a lens sliding under the current
-          one — and the + apart, on its right, a drop of violet glass. */}
+      {/* The tabs on a capsule of glass, a lens sliding under the current
+          one; floating above them on the left, the + — an orb of glass, its
+          menu rising above it. Both stay put while the page scrolls. */}
       <nav
         className={cn(
           "pointer-events-none fixed inset-x-0 bottom-0 z-50 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)]",
           typing && "hidden",
         )}
       >
-        <div className="mx-auto flex max-w-md items-end gap-3">
-          <div className="gx-float pointer-events-auto relative flex h-[66px] flex-1 items-stretch rounded-full p-1.5">
-            <span
-              aria-hidden
-              className={cn(
-                "gx-lens absolute inset-y-1.5 left-1.5 rounded-full transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.3,1.25,0.5,1)]",
-                activeIndex < 0 && "opacity-0",
-              )}
-              style={{ width: "calc((100% - 12px) / 4)", transform: `translateX(${Math.max(0, activeIndex) * 100}%)` }}
-            />
-            {ITEMS.map((item) => (
-              <NavLink key={item.href} {...item} active={isActive(item.href)} onNavigate={navigateTo} />
-            ))}
-          </div>
-
+        <div className="mx-auto flex max-w-md flex-col items-start gap-3">
           <div className="pointer-events-auto relative">
             {/* The + button's menu, rising above it. */}
-            <div className="absolute bottom-full right-0 mb-3 flex flex-col items-end gap-2.5">
+            <div className="absolute bottom-full left-0 mb-3 flex flex-col items-start gap-2.5">
               {ACTIONS.map(({ href, label, icon: Icon, tint }, i) => (
                 <Link
                   key={label}
@@ -227,7 +214,6 @@ function AppBar({ pathname }: { pathname: string }) {
                     open ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0",
                   )}
                 >
-                  <span className="gx-float rounded-full px-4 py-2 text-sm font-bold text-slate-900 dark:text-white">{label}</span>
                   <span
                     className={cn(
                       "gx-float flex h-[52px] w-[52px] items-center justify-center rounded-full transition-transform active:scale-95",
@@ -236,6 +222,7 @@ function AppBar({ pathname }: { pathname: string }) {
                   >
                     <Icon weight="duotone" className="h-6 w-6" />
                   </span>
+                  <span className="gx-float rounded-full px-4 py-2 text-sm font-bold text-slate-900 dark:text-white">{label}</span>
                 </Link>
               ))}
             </div>
@@ -245,10 +232,24 @@ function AppBar({ pathname }: { pathname: string }) {
               onClick={toggle}
               aria-expanded={open}
               aria-label={open ? "Fermer le menu d'ajout" : "Ajouter"}
-              className="gx-cta relative flex h-[66px] w-[66px] items-center justify-center rounded-full transition-transform duration-200 active:scale-95"
+              className="gx-fab relative flex h-[60px] w-[60px] items-center justify-center rounded-full text-violet-700 transition-transform duration-200 active:scale-95 dark:text-violet-100"
             >
               <Plus weight="bold" className={cn("h-7 w-7 transition-transform duration-300", open && "rotate-[135deg]")} />
             </button>
+          </div>
+
+          <div className="gx-float pointer-events-auto relative flex h-[66px] w-full items-stretch rounded-full p-1.5">
+            <span
+              aria-hidden
+              className={cn(
+                "gx-lens absolute inset-y-1.5 left-1.5 rounded-full transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.3,1.25,0.5,1)]",
+                activeIndex < 0 && "opacity-0",
+              )}
+              style={{ width: "calc((100% - 12px) / 4)", transform: `translateX(${Math.max(0, activeIndex) * 100}%)` }}
+            />
+            {ITEMS.map((item) => (
+              <NavLink key={item.href} {...item} active={isActive(item.href)} onNavigate={navigateTo} />
+            ))}
           </div>
         </div>
       </nav>

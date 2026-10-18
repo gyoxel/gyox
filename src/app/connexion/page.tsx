@@ -30,7 +30,7 @@ export default async function ConnexionPage({ searchParams }: PageProps<"/connex
   const href = next === "/" ? "/api/auth/google" : `/api/auth/google?suite=${encodeURIComponent(next)}`;
 
   return (
-    <main className="gx-login relative -mb-28 flex min-h-dvh flex-col overflow-hidden px-6 pb-8 pt-14 text-white">
+    <main className="gx-login relative -mb-[calc(env(safe-area-inset-bottom)+10.5rem)] flex min-h-dvh flex-col overflow-hidden px-6 pb-8 pt-14 text-white">
       <ForgetOnMount />
       <LoginBackdrop />
       <div className="relative flex flex-col items-center text-center">

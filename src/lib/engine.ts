@@ -354,11 +354,23 @@ export function projectCreditInstallment(
   viewMonth: MonthId,
   currentMonth: MonthId,
 ): number | null {
+  const installment = projectCreditSchedule(expense, payments, currentMonth).find((i) => compareMonths(i.month, viewMonth) === 0);
+  return installment ? installment.payment : null; // null: paid off before viewMonth
+}
+
+/**
+ * Every installment a credit still has to pay, month by month from the next
+ * one, on the same projection as projectCreditInstallment (today's real
+ * balance and pace, each one paid on time from here on). Empty once it's
+ * paid off.
+ */
+export function projectCreditSchedule(
+  expense: Expense,
+  payments: Payment[],
+  currentMonth: MonthId,
+): { month: MonthId; payment: number }[] {
   const today = getCreditRealState(expense, payments, currentMonth);
-  if (today.status === "completed") return null;
-
-  if (expense.amount <= 0) return null;
-
+  if (today.status === "completed" || expense.amount <= 0) return [];
   const from: MonthId =
     today.status === "not-started"
       ? monthOfDateStr(expense.startDate)
@@ -366,10 +378,10 @@ export function projectCreditInstallment(
         ? currentMonth
         : (today.dueMonth ?? currentMonth);
   const creditPayments = payments.filter((p) => p.expenseId === expense.id && p.slotIndex != null);
-  const installment = creditInstallmentsFrom(expense, today.remaining, creditCustomDrift(expense, creditPayments), from).find(
-    (i) => compareMonths(i.month, viewMonth) === 0,
-  );
-  return installment ? installment.payment : null; // null: paid off before viewMonth
+  return creditInstallmentsFrom(expense, today.remaining, creditCustomDrift(expense, creditPayments), from).map(({ month, payment }) => ({
+    month,
+    payment,
+  }));
 }
 
 /**
