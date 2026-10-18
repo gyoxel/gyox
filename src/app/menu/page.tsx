@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDots, Cardholder, CaretRight, ChartLineUp, GearSix, HandCoins, Handshake, Money, PiggyBank, Tag, Target, TrendUp, UserCircle, Wallet } from "@phosphor-icons/react/ssr";
+import { Bank, CalendarDots, Cardholder, CaretRight, ChartLineUp, GearSix, HandCoins, Handshake, Money, PiggyBank, Receipt, Tag, Target, TrendUp, UserCircle, Wallet } from "@phosphor-icons/react/ssr";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/page-header";
 
@@ -11,6 +11,8 @@ const GROUPS: { title: string; items: { href: string; label: string; hint: strin
   { title: "Mon argent", items: [
     { href: "/salary", label: "Salaire", hint: "Montant, jour de paie, avances", icon: Money },
     { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau, vente…", icon: TrendUp },
+    { href: "/budget", label: "Dépenses", hint: "Ce que tu paies ce mois-ci", icon: Receipt },
+    { href: "/credits", label: "Dettes", hint: "Ce que tu rembourses chaque mois", icon: Bank },
     { href: "/solde", label: "Solde", hint: "Espèces et carte, transferts, historique", icon: Wallet },
     { href: "/epargne", label: "Épargne", hint: "Argent mis de côté, avec tes notes", icon: PiggyBank },
   ] },
@@ -30,7 +32,7 @@ const GROUPS: { title: string; items: { href: string; label: string; hint: strin
   ] },
 ];
 
-/** Menu tab: everything that isn't a daily screen. */
+/** Menu tab: every page of the app (the bar's Dépenses and Dettes too). */
 export default function MenuPage() {
   return (
     <>
