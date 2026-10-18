@@ -211,7 +211,7 @@ export function ShortcutWheel() {
       role="listbox"
       aria-label="Raccourcis"
       tabIndex={0}
-      className="relative touch-none select-none outline-none"
+      className="@container relative touch-none select-none outline-none"
       style={{
         height: HEIGHT,
         maskImage: "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
@@ -232,16 +232,17 @@ export function ShortcutWheel() {
           tabIndex={-1}
           // Same look as the first frame drawn by the effect (centre: Revenus).
           style={styleFor(offsetOf(i, 0))}
-          className="gx-wheel-card absolute inset-x-0 top-1/2 flex items-center gap-3 rounded-[22px] px-3.5 py-3 text-left will-change-transform"
+          className="gx-wheel-card absolute inset-x-0 top-1/2 flex items-center gap-2.5 rounded-[22px] px-3 py-3 text-left will-change-transform @min-[16rem]:gap-3 @min-[16rem]:px-3.5"
         >
-          <span className="gx-tile flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl opacity-[var(--wheel-content)]">
-            <Icon weight="duotone" className="h-[22px] w-[22px]" />
+          <span className="gx-tile flex h-9 w-9 shrink-0 items-center justify-center rounded-xl opacity-[var(--wheel-content)] @min-[16rem]:h-10 @min-[16rem]:w-10 @min-[16rem]:rounded-2xl">
+            <Icon weight="duotone" className="h-5 w-5 @min-[16rem]:h-[22px] @min-[16rem]:w-[22px]" />
           </span>
           <span className="min-w-0 flex-1 opacity-[var(--wheel-content)]">
-            <span className="block text-base font-semibold text-slate-900 dark:text-white">{label}</span>
-            <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{hint}</span>
+            <span className="block truncate text-[15px] font-semibold text-slate-900 @min-[16rem]:text-base dark:text-white">{label}</span>
+            <span className="block truncate text-[11.5px] text-slate-500 @min-[16rem]:text-xs dark:text-slate-400">{hint}</span>
           </span>
-          <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300 opacity-[var(--wheel-content)]" />
+          {/* Narrow (beside the countdown): no room for the arrow. */}
+          <CaretRight weight="bold" className="hidden h-4 w-4 shrink-0 text-slate-300 opacity-[var(--wheel-content)] @min-[16rem]:block" />
         </button>
       ))}
     </div>

@@ -149,9 +149,13 @@ export function HomeDashboard({
 
       <DueRepayments items={dueRepayments} currency={currency} />
 
-      <CountdownNextSalary settings={settings} advances={advances} />
-
-      <ShortcutWheel />
+      {/* Side by side: the countdown to the salary and the shortcuts. (When
+          the salary asks a question it takes the whole row, and so do the
+          shortcuts under it.) */}
+      <div className="grid grid-cols-2 gap-3 [&:has(>.col-span-2)>*]:col-span-2">
+        <CountdownNextSalary settings={settings} advances={advances} />
+        <ShortcutWheel />
+      </div>
 
       <section className="flex flex-col gap-2.5">
         <DueNowList
