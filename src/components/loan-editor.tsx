@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CalendarClock, ChevronLeft, ChevronRight, Coins, Plus, X } from "lucide-react";
+import { CaretLeft, CaretRight, ClockCountdown, Coins, Plus, X } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { Loan, PaymentMethod } from "@/lib/types";
 import { addMonths, monthKey, monthLabelFr, monthLabelShortFr, parseMonthKey, todayDateStr, todayMonth } from "@/lib/date";
@@ -130,7 +130,7 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
               aria-label="Retirer le montant déjà rendu"
               className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-white dark:hover:bg-slate-800"
             >
-              <X className="h-4 w-4" />
+              <X weight="bold" className="h-4 w-4" />
             </button>
           </div>
           <div className="flex items-center gap-2">
@@ -160,7 +160,7 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
           onClick={() => setPriorOpen(true)}
           className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-amber-200 py-3 text-sm font-semibold text-amber-700 active:bg-amber-50 dark:border-amber-900 dark:text-amber-300 dark:active:bg-amber-950/30"
         >
-          <Plus className="h-4 w-4" />
+          <Plus weight="bold" className="h-4 w-4" />
           Montant déjà rendu
         </button>
       )}
@@ -198,7 +198,7 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
         )}
 
         <div role="radiogroup" aria-label="Mode de remboursement" className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-          <ModeButton selected={mode === "months"} onClick={() => switchMode("months")} icon={CalendarClock}>
+          <ModeButton selected={mode === "months"} onClick={() => switchMode("months")} icon={ClockCountdown}>
             Nombre de mois
           </ModeButton>
           <span className="text-xs font-semibold uppercase text-slate-400">ou</span>
@@ -250,7 +250,7 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
                     className={cn(
                       "flex shrink-0 flex-col items-center rounded-xl border px-3 py-1.5 text-xs leading-tight transition-colors",
                       monthsValue === n
-                        ? "border-amber-600 bg-amber-600 text-white"
+                        ? "gx-cta border-transparent"
                         : "border-slate-200 bg-white text-slate-700 active:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200",
                     )}
                   >
@@ -272,7 +272,7 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
               onClick={() => setStart((m) => addMonths(m, -1))}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <CaretLeft weight="bold" className="h-4 w-4" />
             </button>
             <span className="min-w-28 text-center text-sm font-semibold capitalize text-slate-800 dark:text-slate-100">
               {monthLabelFr(start)}
@@ -283,7 +283,7 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
               onClick={() => setStart((m) => addMonths(m, 1))}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700"
             >
-              <ChevronRight className="h-4 w-4" />
+              <CaretRight weight="bold" className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -330,11 +330,11 @@ function ModeButton({
       className={cn(
         "flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-2 text-[13px] font-medium transition-colors duration-200",
         selected
-          ? "border-amber-600 bg-amber-600 text-white shadow-sm"
+          ? "gx-cta border-transparent"
           : "border-slate-200 bg-white text-slate-600 active:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
       )}
     >
-      <Icon className="h-4 w-4 shrink-0" />
+      <Icon weight="duotone" className="h-[18px] w-[18px] shrink-0" />
       {children}
     </button>
   );

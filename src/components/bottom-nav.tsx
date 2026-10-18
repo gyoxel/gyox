@@ -4,14 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { DATA_CHANGED_EVENT } from "@/lib/use-refresh-data";
-import { ArrowDownToLine, ArrowUpFromLine, House, Landmark, LayoutGrid, Plus, ReceiptText } from "lucide-react";
+import { Bank, HandArrowDown, HandArrowUp, House, Plus, Receipt, SquaresFour } from "@phosphor-icons/react/ssr";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
   { href: "/", label: "Accueil", icon: House },
-  { href: "/budget", label: "Dépenses", icon: ReceiptText },
-  { href: "/credits", label: "Crédits", icon: Landmark },
-  { href: "/menu", label: "Menu", icon: LayoutGrid },
+  { href: "/budget", label: "Dépenses", icon: Receipt },
+  { href: "/credits", label: "Crédits", icon: Bank },
+  { href: "/menu", label: "Menu", icon: SquaresFour },
 ];
 
 // Pages opened from the Menu tab keep it highlighted.
@@ -20,13 +20,14 @@ const MENU_PATHS = ["/menu", "/budgets", "/daret", "/goals", "/calendar", "/stat
 // The + button's menu: a short list rising above it, each one with its own
 // colour of meaning (money in, out, a credit).
 const ACTIONS = [
-  { href: "/expenses/new?type=credit", label: "Crédit", icon: Landmark, tint: "text-violet-600 dark:text-violet-300" },
-  { href: "/incomes/new", label: "Revenu", icon: ArrowDownToLine, tint: "text-emerald-600 dark:text-emerald-300" },
-  { href: "/expenses/new", label: "Dépense", icon: ArrowUpFromLine, tint: "text-rose-600 dark:text-rose-300" },
+  { href: "/expenses/new?type=credit", label: "Crédit", icon: Bank, tint: "text-violet-600 dark:text-violet-300" },
+  { href: "/incomes/new", label: "Revenu", icon: HandArrowDown, tint: "text-emerald-600 dark:text-emerald-300" },
+  { href: "/expenses/new", label: "Dépense", icon: HandArrowUp, tint: "text-rose-600 dark:text-rose-300" },
 ];
 
 
-/** A tab: its icon and name; the current one's icon on a violet pill. */
+/** A tab: its icon and name — the current one filled, in violet, over the
+ *  bar's glass lens. */
 function NavLink({
   href,
   label,
@@ -46,22 +47,21 @@ function NavLink({
       prefetch
       onClick={() => !active && onNavigate(href)}
       aria-current={active ? "page" : undefined}
-      className="flex flex-1 touch-manipulation select-none flex-col items-center justify-center gap-0.5 active:opacity-70"
+      className="relative z-10 flex flex-1 touch-manipulation select-none flex-col items-center justify-center gap-1 transition-transform active:scale-95"
     >
-      <span
+      <Icon
         data-tint
+        weight={active ? "fill" : "regular"}
         className={cn(
-          "flex h-8 w-14 items-center justify-center rounded-full transition-all duration-300",
-          active ? "bg-violet-100 text-violet-800 dark:bg-violet-400/20 dark:text-violet-200" : "text-slate-400 dark:text-slate-500",
+          "h-6 w-6 transition-colors duration-200",
+          active ? "text-violet-700 dark:text-violet-200" : "text-slate-500 dark:text-slate-400",
         )}
-      >
-        <Icon className="h-[21px] w-[21px]" strokeWidth={active ? 2.2 : 1.8} />
-      </span>
+      />
       <span
         data-tint
         className={cn(
           "text-[11px] leading-none transition-colors duration-200",
-          active ? "font-bold text-violet-950 dark:text-white" : "font-medium text-slate-400 dark:text-slate-500",
+          active ? "font-bold text-violet-800 dark:text-white" : "font-semibold text-slate-500 dark:text-slate-400",
         )}
       >
         {label}
@@ -169,6 +169,8 @@ function AppBar({ pathname }: { pathname: string }) {
         ? MENU_PATHS.some((p) => current === p || current.startsWith(`${p}/`))
         : current === href || current.startsWith(`${href}/`);
 
+  const activeIndex = ITEMS.findIndex((item) => isActive(item.href));
+
   function toggle() {
     setOpenedAt(pathname);
     setOpen((v) => !v);
@@ -180,12 +182,13 @@ function AppBar({ pathname }: { pathname: string }) {
         aria-hidden
         onClick={() => setOpen(false)}
         className={cn(
-          "fixed inset-0 z-40 bg-[#f5f5f9]/80 transition-opacity duration-300 dark:bg-[#050812]/75",
-          open ? "opacity-100 backdrop-blur-sm" : "pointer-events-none opacity-0",
+          "fixed inset-0 z-40 bg-[#efeafc]/55 transition-opacity duration-300 dark:bg-[#05040f]/60",
+          open ? "opacity-100 backdrop-blur-md" : "pointer-events-none opacity-0",
         )}
       />
 
-      {/* The tabs on a white pill, and the + apart, on its right. */}
+      {/* The tabs on a capsule of glass — a lens sliding under the current
+          one — and the + apart, on its right, a drop of violet glass. */}
       <nav
         className={cn(
           "pointer-events-none fixed inset-x-0 bottom-0 z-50 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)]",
@@ -193,7 +196,15 @@ function AppBar({ pathname }: { pathname: string }) {
         )}
       >
         <div className="mx-auto flex max-w-md items-end gap-3">
-          <div className="pointer-events-auto flex h-16 flex-1 items-stretch rounded-[24px] bg-white px-1.5 shadow-[0_14px_34px_-14px_rgba(20,18,31,0.3)] ring-1 ring-slate-900/[0.05] dark:bg-[#151a30] dark:shadow-[0_18px_40px_-14px_rgba(0,0,0,0.8)] dark:ring-white/10">
+          <div className="gx-float pointer-events-auto relative flex h-[66px] flex-1 items-stretch rounded-full p-1.5">
+            <span
+              aria-hidden
+              className={cn(
+                "gx-lens absolute inset-y-1.5 left-1.5 rounded-full transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.3,1.25,0.5,1)]",
+                activeIndex < 0 && "opacity-0",
+              )}
+              style={{ width: "calc((100% - 12px) / 4)", transform: `translateX(${Math.max(0, activeIndex) * 100}%)` }}
+            />
             {ITEMS.map((item) => (
               <NavLink key={item.href} {...item} active={isActive(item.href)} onNavigate={navigateTo} />
             ))}
@@ -216,16 +227,14 @@ function AppBar({ pathname }: { pathname: string }) {
                     open ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0",
                   )}
                 >
-                  <span className="rounded-full bg-white px-3.5 py-2 text-sm font-semibold text-slate-900 shadow-[0_8px_22px_-10px_rgba(20,18,31,0.35)] ring-1 ring-slate-900/[0.05] dark:bg-[#1a2036] dark:text-white dark:ring-white/10">
-                    {label}
-                  </span>
+                  <span className="gx-float rounded-full px-4 py-2 text-sm font-bold text-slate-900 dark:text-white">{label}</span>
                   <span
                     className={cn(
-                      "flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_8px_22px_-10px_rgba(20,18,31,0.35)] ring-1 ring-slate-900/[0.05] transition-transform active:scale-95 dark:bg-[#1a2036] dark:ring-white/10",
+                      "gx-float flex h-[52px] w-[52px] items-center justify-center rounded-full transition-transform active:scale-95",
                       tint,
                     )}
                   >
-                    <Icon className="h-5 w-5" strokeWidth={2} />
+                    <Icon weight="duotone" className="h-6 w-6" />
                   </span>
                 </Link>
               ))}
@@ -236,9 +245,9 @@ function AppBar({ pathname }: { pathname: string }) {
               onClick={toggle}
               aria-expanded={open}
               aria-label={open ? "Fermer le menu d'ajout" : "Ajouter"}
-              className="gx-cta relative flex h-16 w-16 items-center justify-center rounded-[22px] transition-transform duration-200 active:scale-95"
+              className="gx-cta relative flex h-[66px] w-[66px] items-center justify-center rounded-full transition-transform duration-200 active:scale-95"
             >
-              <Plus className={cn("h-7 w-7 transition-transform duration-300", open && "rotate-[135deg]")} strokeWidth={2.2} />
+              <Plus weight="bold" className={cn("h-7 w-7 transition-transform duration-300", open && "rotate-[135deg]")} />
             </button>
           </div>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, type ReactNode } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import { pagesGone, useNavBack } from "@/lib/nav-history";
 import { mutate } from "@/lib/use-refresh-data";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 
 /** Round red bin, in the page header. */
 export const DELETE_ICON_BUTTON =
-  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-600 ring-1 ring-rose-500/15 transition-transform active:scale-95 dark:bg-rose-500/15 dark:text-rose-300 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] dark:ring-rose-300/25";
+  "gx-pill flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-rose-600 transition-transform active:scale-95 dark:text-rose-300";
 
 /**
  * Deletes something after a confirmation: the red bin in the page header
@@ -61,11 +61,11 @@ export function DeleteButton({
     <>
       {variant === "icon" ? (
         <button type="button" onClick={() => setOpen(true)} aria-label={label} className={DELETE_ICON_BUTTON}>
-          <Trash2 className="h-[18px] w-[18px]" />
+          <Trash weight="bold" className="h-[18px] w-[18px]" />
         </button>
       ) : (
         <Button type="button" variant="destructive" className="w-full" onClick={() => setOpen(true)} disabled={pending}>
-          <Trash2 className="h-4 w-4" />
+          <Trash weight="bold" className="h-4 w-4" />
           {label}
         </Button>
       )}

@@ -4,7 +4,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { flushPendingRefresh, mutate, trackMutation } from "@/lib/use-refresh-data";
 import Link from "next/link";
-import { Check, ChevronLeft, ChevronRight, Pencil, Plus, PartyPopper, Undo2 } from "lucide-react";
+import { ArrowUUpLeft, CaretLeft, CaretRight, Check, Confetti, PencilSimple, Plus } from "@phosphor-icons/react/ssr";
 import { addMonths, monthKey as toMonthKey, monthLabelFr, monthLabelShortFr, type MonthId } from "@/lib/date";
 import { findPayment, getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, getMonthLedgerItems, lastPaidAt, type DisplayColor, type LedgerItem } from "@/lib/engine";
 import type { Expense, Payment, PaymentMethod } from "@/lib/types";
@@ -24,9 +24,9 @@ const SWIPE_THRESHOLD_PX = 40;
 
 /** Icon tile tinted like the expense's colour (permanent, temporary, credit). */
 const TILE_CLASS: Record<DisplayColor, string> = {
-  orange: "bg-[var(--gx-tile)] dark:bg-white/10",
-  red: "bg-[var(--gx-tile)] dark:bg-white/10",
-  blue: "bg-[var(--gx-tile)] dark:bg-white/10",
+  orange: "gx-tile",
+  red: "gx-tile",
+  blue: "gx-tile",
 };
 
 const round = (n: number) => Math.round(n * 100) / 100;
@@ -263,7 +263,7 @@ export function DueNowList({
           aria-label="Mois précédent"
           className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 active:bg-slate-100 dark:text-slate-400 dark:active:bg-slate-800"
         >
-          <ChevronLeft className="h-4 w-4" />
+          <CaretLeft weight="bold" className="h-4 w-4" />
         </button>
         <div className="min-w-0 text-center">
           <p className="text-[15px] font-semibold capitalize text-slate-900 dark:text-white">{monthLabelFr(viewMonth)}</p>
@@ -290,13 +290,13 @@ export function DueNowList({
           aria-label="Mois suivant"
           className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 active:bg-slate-100 dark:text-slate-400 dark:active:bg-slate-800"
         >
-          <ChevronRight className="h-4 w-4" />
+          <CaretRight weight="bold" className="h-4 w-4" />
         </button>
       </div>
 
       {items.length === 0 ? (
         <div className="flex items-center justify-center gap-2 rounded-3xl border border-emerald-200 bg-emerald-50/60 py-5 text-sm font-medium text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-300">
-          <PartyPopper className="h-4 w-4" />
+          <Confetti weight="bold" className="h-4 w-4" />
           Rien à payer pour le moment
         </div>
       ) : (
@@ -398,7 +398,7 @@ export function DueNowList({
                       aria-label="Modifier le paiement"
                       className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm transition-transform active:scale-90 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <PencilSimple weight="bold" className="h-4 w-4" />
                     </button>
                     <button
                       type="button"
@@ -409,7 +409,7 @@ export function DueNowList({
                       aria-label="Annuler le paiement"
                       className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 shadow-sm transition-transform active:scale-90 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                     >
-                      <Undo2 className="h-4 w-4" />
+                      <ArrowUUpLeft weight="bold" className="h-4 w-4" />
                     </button>
                   </div>
                 ) : choosingId === key ? (
@@ -434,7 +434,7 @@ export function DueNowList({
                       aria-label="Payé un autre montant"
                       className="flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-600 shadow-sm transition-transform active:scale-90 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <PencilSimple weight="bold" className="h-4 w-4" />
                     </button>
                   </div>
                 ) : (
@@ -461,7 +461,7 @@ export function DueNowList({
                             : "border-rose-300 bg-white dark:border-rose-800 dark:bg-slate-800",
                       )}
                     >
-                      {paid && <Check className="h-3.5 w-3.5 text-white" />}
+                      {paid && <Check weight="bold" className="h-3.5 w-3.5 text-white" />}
                     </span>
                   </button>
                 )}
@@ -500,7 +500,7 @@ export function DueNowList({
         prefetch
         className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-rose-200 py-3 text-sm font-semibold text-rose-600 active:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:active:bg-rose-950/30"
       >
-        <Plus className="h-4 w-4" />
+        <Plus weight="bold" className="h-4 w-4" />
         Ajouter une dépense
       </Link>
     </div>

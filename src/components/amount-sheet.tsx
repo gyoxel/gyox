@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash } from "@phosphor-icons/react/ssr";
 import type { PaymentMethod } from "@/lib/types";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
@@ -155,7 +155,7 @@ export function AmountSheet(props: AmountSheetProps) {
           </Button>
           {props.onDelete && (
             <Button type="button" variant="outline" className="text-rose-600" disabled={pending} onClick={() => run(props.onDelete!)}>
-              <Trash2 className="h-4 w-4" />
+              <Trash weight="bold" className="h-4 w-4" />
               Supprimer
             </Button>
           )}

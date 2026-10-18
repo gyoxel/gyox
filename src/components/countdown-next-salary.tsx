@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore, useTransition } from "react";
-import { Banknote, Check, ChevronRight, HandCoins, Trash2, X } from "lucide-react";
+import { CaretRight, Check, HandCoins, Money, Trash, X } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import { errorMessage } from "@/components/expense-editor";
 import type { PaymentMethod, SalaryAdvance, Settings } from "@/lib/types";
@@ -287,7 +287,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
             className="relative w-full gx-cta"
             onClick={() => setEditing(true)}
           >
-            <Banknote className="h-4 w-4" />
+            <Money weight="bold" className="h-4 w-4" />
             Ajouter mon salaire
           </Button>
         </div>
@@ -318,7 +318,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
               onClick={() => writeLate(state.period)}
               disabled={saving}
             >
-              <X className="h-4 w-4" />
+              <X weight="bold" className="h-4 w-4" />
               Non, pas encore
             </Button>
             <Button
@@ -327,7 +327,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
               onClick={confirmReceived}
               disabled={saving}
             >
-              <Check className="h-4 w-4" />
+              <Check weight="bold" className="h-4 w-4" />
               Oui
             </Button>
           </div>
@@ -353,7 +353,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
               </p>
               <p className="mt-0.5 h-5 truncate text-sm font-semibold">{caption}</p>
             </div>
-            <ChevronRight className="h-4 w-4 shrink-0 text-white/40" />
+            <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-white/40" />
           </div>
         </button>
       )}
@@ -510,7 +510,7 @@ export function SalaryPanel({
                   onClick={addAdvance}
                   disabled={saving || !(parseDecimalInput(advanceInput) > 0)}
                 >
-                  <Check className="h-4 w-4" />
+                  <Check weight="bold" className="h-4 w-4" />
                   Ajouter
                 </Button>
               </div>
@@ -523,7 +523,7 @@ export function SalaryPanel({
               onClick={() => setAdvanceOpen(true)}
               disabled={!advancePeriod}
             >
-              <HandCoins className="h-4 w-4" />
+              <HandCoins weight="bold" className="h-4 w-4" />
               Avance sur salaire
             </Button>
           )}
@@ -547,7 +547,7 @@ export function SalaryPanel({
                     aria-label="Supprimer l'avance"
                     className="rounded-lg p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash weight="bold" className="h-4 w-4" />
                   </button>
                 </li>
               ))}
@@ -603,7 +603,7 @@ function ActionButton({
         onClick={onClick}
         disabled={!enabled || pending}
       >
-        <Check className="h-4 w-4" />
+        <Check weight="bold" className="h-4 w-4" />
         {label}
       </Button>
       <p className="px-1 text-[11px] leading-snug text-slate-400">* {note}</p>

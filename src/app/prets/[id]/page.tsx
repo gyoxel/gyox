@@ -1,7 +1,7 @@
 import { getLoan, getSettings } from "@/lib/page-data";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Check, Clock, Pencil } from "lucide-react";
+import { Check, Clock, PencilSimple } from "@phosphor-icons/react/ssr";
 
 import { loanState, type LoanSlot } from "@/lib/loans";
 import { loanDelete } from "@/lib/delete-specs";
@@ -78,7 +78,7 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
                             : "bg-slate-100 text-slate-400 dark:bg-slate-800",
                     )}
                   >
-                    {full ? <Check className="h-4 w-4" /> : isDue ? <Clock className="h-4 w-4" /> : s.slot}
+                    {full ? <Check weight="bold" className="h-4 w-4" /> : isDue ? <Clock weight="bold" className="h-4 w-4" /> : s.slot}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-baseline justify-between gap-2">
@@ -148,7 +148,7 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
 
         <Button asChild className="gx-cta">
           <Link href={`/prets/${loan.id}/edit`}>
-            <Pencil className="h-4 w-4" />
+            <PencilSimple weight="bold" className="h-4 w-4" />
             Modifier le prêt
           </Link>
         </Button>

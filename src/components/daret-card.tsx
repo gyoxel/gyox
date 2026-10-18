@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Pencil } from "lucide-react";
+import { Check, PencilSimple } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import { mutate } from "@/lib/use-refresh-data";
 import { errorMessage } from "@/components/expense-editor";
@@ -93,7 +93,7 @@ export function DaretCard({
           contribution and payout below keep their own buttons. */}
       <Link href={`/daret/${daret.id}`} aria-label={`Modifier ${daret.expense.name}`} className="block pb-0.5 active:opacity-70">
       <div className="flex items-center gap-3 px-4 pt-4">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--gx-tile)] text-xl dark:bg-white/10">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl gx-tile text-xl">
           {daret.expense.icon ?? "🤝🏻"}
         </span>
         <div className="min-w-0 flex-1">
@@ -115,7 +115,7 @@ export function DaretCard({
           {state.phase === "running" ? `Tour ${state.round}/${daret.members}` : state.phase === "finished" ? "Terminée" : "À venir"}
         </span>
         <span aria-hidden className="-mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400">
-          <Pencil className="h-4 w-4" />
+          <PencilSimple weight="bold" className="h-4 w-4" />
         </span>
       </div>
 
@@ -128,7 +128,6 @@ export function DaretCard({
             const isTurn = key === turnKey;
             return (
               <span key={key} className="relative flex-1">
-                {isTurn && <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[11px] leading-none">🎉</span>}
                 <span
                   className={cn(
                     "block h-2 rounded-full",
@@ -174,7 +173,7 @@ export function DaretCard({
                   paid ? "border-emerald-500 bg-emerald-500" : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800",
                 )}
               >
-                {paid && <Check className="h-3.5 w-3.5 text-white" />}
+                {paid && <Check weight="bold" className="h-3.5 w-3.5 text-white" />}
               </span>
             </button>
           )}
@@ -227,7 +226,7 @@ export function DaretCard({
               onClick={() => setChoosing("payout")}
               disabled={busy}
             >
-              <Check className="h-4 w-4" />
+              <Check weight="bold" className="h-4 w-4" />
               J&apos;ai reçu la daret
             </Button>
           ))}

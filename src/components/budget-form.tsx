@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, Clock } from "lucide-react";
+import { CalendarDots, Check, Clock, NumberCircleOne, Repeat } from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useNavBack } from "@/lib/nav-history";
 import { mutate } from "@/lib/use-refresh-data";
@@ -20,10 +21,10 @@ const EMOJIS = ["🚌", "🚕", "⛽", "🍔", "🛒", "☕", "🚬", "📱", "�
 
 type Kind = "once" | "monthly" | "months";
 
-const KINDS: { key: Kind; emoji: string; label: string; hint: string }[] = [
-  { key: "once", emoji: "1️⃣", label: "Une fois", hint: "Ce mois-ci" },
-  { key: "monthly", emoji: "🔁", label: "Chaque mois", hint: "Sans fin" },
-  { key: "months", emoji: "📅", label: "X mois", hint: "Pendant…" },
+const KINDS: { key: Kind; icon: PhosphorIcon; label: string; hint: string }[] = [
+  { key: "once", icon: NumberCircleOne, label: "Une fois", hint: "Ce mois-ci" },
+  { key: "monthly", icon: Repeat, label: "Chaque mois", hint: "Sans fin" },
+  { key: "months", icon: CalendarDots, label: "X mois", hint: "Pendant…" },
 ];
 
 /** The recurrence the form opens on for an existing budget. */
@@ -154,23 +155,23 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
       <div className="flex flex-col gap-2">
         <Label>Durée</Label>
         <div role="radiogroup" aria-label="Durée" className="grid grid-cols-3 gap-2">
-          {KINDS.map((k) => (
+          {KINDS.map(({ key, icon: Icon, label, hint }) => (
             <button
-              key={k.key}
+              key={key}
               type="button"
               role="radio"
-              aria-checked={kind === k.key}
-              onClick={() => setKind(k.key)}
+              aria-checked={kind === key}
+              onClick={() => setKind(key)}
               className={cn(
-                "flex flex-col items-center gap-0.5 rounded-xl border px-1 py-2.5 transition-colors",
-                kind === k.key
-                  ? "border-transparent bg-gradient-to-br from-fuchsia-500 to-purple-600 text-white shadow-md shadow-purple-500/25"
+                "flex flex-col items-center gap-1 rounded-2xl border px-1 py-2.5 transition-all active:scale-[0.97]",
+                kind === key
+                  ? "gx-cta border-transparent"
                   : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
               )}
             >
-              <span className="text-lg">{k.emoji}</span>
-              <span className="text-xs font-semibold">{k.label}</span>
-              <span className={cn("text-[10px]", kind === k.key ? "text-white/80" : "text-slate-400")}>{k.hint}</span>
+              <Icon weight="duotone" className={cn("h-6 w-6", kind === key ? "text-white" : "text-violet-600 dark:text-violet-300")} />
+              <span className="text-xs font-semibold">{label}</span>
+              <span className={cn("text-[10px]", kind === key ? "text-white/75" : "text-slate-400")}>{hint}</span>
             </button>
           ))}
         </div>
@@ -211,7 +212,7 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
                   : "border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400",
               )}
             >
-              <Check className="h-4 w-4" />
+              <Check weight="bold" className="h-4 w-4" />
               Pris
             </button>
             <button
@@ -226,7 +227,7 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
                   : "border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400",
               )}
             >
-              <Clock className="h-4 w-4" />
+              <Clock weight="bold" className="h-4 w-4" />
               Pas encore
             </button>
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus } from "@phosphor-icons/react/ssr";
 import type { Category } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useRefreshData } from "@/lib/use-refresh-data";
@@ -92,7 +92,7 @@ export function CategoryPicker({
                       onClick={() => setAdding(true)}
                       className="flex shrink-0 items-center gap-1.5 rounded-full border border-dashed border-slate-300 px-3.5 py-2 text-sm whitespace-nowrap text-slate-500 active:bg-slate-50 dark:border-slate-600 dark:text-slate-400"
                     >
-                      <Plus className="h-4 w-4" />
+                      <Plus weight="bold" className="h-4 w-4" />
                       Ajouter
                     </button>
                   ) : (

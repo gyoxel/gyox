@@ -1,5 +1,5 @@
 import { getAllDarets, getAllGoals, getAllPayments, getSettings } from "@/lib/page-data";
-import { Target } from "lucide-react";
+import { Target } from "@phosphor-icons/react/ssr";
 
 import { getGoalProgress } from "@/lib/goals";
 import { todayMonth } from "@/lib/date";
@@ -51,7 +51,7 @@ export default async function GoalsPage() {
         {rows.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-slate-200 px-6 py-10 text-center dark:border-slate-700">
             <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm">
-              <Target className="h-7 w-7" />
+              <Target weight="duotone" className="h-7 w-7" />
             </span>
             <p className="text-base font-semibold text-slate-900 dark:text-white">Aucun objectif</p>
             <p className="text-sm text-slate-500 dark:text-slate-400">

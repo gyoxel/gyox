@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowDownToLine, ArrowUpFromLine, ChevronRight, Landmark } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Bank, CaretRight } from "@phosphor-icons/react/ssr";
 import type { PaymentMethod, SavingsMove } from "@/lib/types";
 import { monthKey, monthLabelFr, parseMonthKey, todayMonth } from "@/lib/date";
 import { METHOD_META } from "@/lib/payment-method";
@@ -66,11 +66,11 @@ export function EpargneView({
 
       <div className="grid grid-cols-2 gap-2.5">
         <Button type="button" className="h-12 gx-cta" onClick={() => setDialog({ from: "card", to: "savings" })}>
-          <ArrowDownToLine className="h-4 w-4" />
+          <ArrowDownLeft weight="bold" className="h-4 w-4" />
           Mettre de côté
         </Button>
         <Button type="button" variant="outline" className="h-12" onClick={() => setDialog({ from: "savings", to: "cash" })}>
-          <ArrowUpFromLine className="h-4 w-4" />
+          <ArrowUpRight weight="bold" className="h-4 w-4" />
           Retirer
         </Button>
         <Button
@@ -79,7 +79,7 @@ export function EpargneView({
           className="col-span-2 h-11 border-dashed border-lime-300 text-lime-800 dark:border-lime-800 dark:text-lime-300"
           onClick={() => setExistingOpen(true)}
         >
-          <Landmark className="h-4 w-4" />
+          <Bank weight="bold" className="h-4 w-4" />
           J&apos;ai déjà une épargne
         </Button>
       </div>
@@ -104,7 +104,7 @@ export function EpargneView({
                       <span
                         className={cn(
                           "flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl text-lg",
-                          "bg-[var(--gx-tile)] dark:bg-white/10",
+                          "gx-tile",
                         )}
                       >
                         {x.kind === "existing" ? "🏦" : x.kind === "in" ? "🐷" : x.kind === "goal" ? "🎯" : "↩️"}
@@ -144,7 +144,7 @@ export function EpargneView({
                         {x.kind === "out" || x.kind === "goal" ? "−" : "+"}
                         {money(x.amount)}
                       </span>
-                      <ChevronRight className="h-4 w-4 text-slate-300" />
+                      <CaretRight weight="bold" className="h-4 w-4 text-slate-300" />
                     </Link>
                   </li>
                 ))}

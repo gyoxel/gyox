@@ -1,7 +1,7 @@
 import { getAllCategories, getAllExpenses, getAllPayments, getBudgetOfExpense, getDaretOfExpense, getDepositOfExpense, getLoanOfExpense, getSavingsMoveOfExpense, getSettings } from "@/lib/page-data";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Pencil } from "lucide-react";
+import { PencilSimple } from "@phosphor-icons/react/ssr";
 
 import { LockedDelete, LockedDeleteIcon } from "@/components/locked-delete";
 import { LinkedSourcePage } from "@/components/linked-source";
@@ -66,7 +66,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
           </p>
           <Button asChild className="gx-cta">
             <Link href={`/goals/${goal.id}/deposits/${deposit.id}`}>
-              <Pencil className="h-4 w-4" />
+              <PencilSimple weight="bold" className="h-4 w-4" />
               Modifier le versement
             </Link>
           </Button>
@@ -166,7 +166,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
           </p>
           <Button asChild className="gx-cta">
             <Link href={`/daret/${linkedDaret.id}`}>
-              <Pencil className="h-4 w-4" />
+              <PencilSimple weight="bold" className="h-4 w-4" />
               Modifier la daret
             </Link>
           </Button>

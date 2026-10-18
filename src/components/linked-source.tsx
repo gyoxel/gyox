@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Pencil } from "lucide-react";
+import { PencilSimple } from "@phosphor-icons/react/ssr";
 import { LockedDelete, LockedDeleteIcon } from "@/components/locked-delete";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -48,7 +48,7 @@ export function LinkedSourcePage({
         <p className="px-1 text-sm text-slate-500 dark:text-slate-400">{text}</p>
         <Button asChild className={buttonClass}>
           <Link href={href}>
-            <Pencil className="h-4 w-4" />
+            <PencilSimple weight="bold" className="h-4 w-4" />
             {editLabel}
           </Link>
         </Button>

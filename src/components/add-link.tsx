@@ -1,20 +1,22 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus } from "@phosphor-icons/react/ssr";
 import { cn } from "@/lib/utils";
 
 /** The "+ Ajouter …" pill that sits right under a page's hero card — the
- *  same on every page, in the brand colour. */
+ *  same on every page: clear glass, its + on a drop of violet glass. */
 export function AddLink({ href, label, className }: { href: string; label: string; className?: string }) {
   return (
     <Link
       href={href}
       prefetch
       className={cn(
-        "flex items-center justify-center gap-2 rounded-full bg-violet-50 py-3.5 text-[15px] font-semibold text-violet-800 ring-1 ring-violet-700/10 active:scale-[0.99] dark:bg-violet-400/10 dark:text-violet-200 dark:ring-violet-300/15",
+        "gx-pill flex items-center justify-center gap-2.5 rounded-full py-2.5 pl-3 pr-5 text-[15px] font-semibold text-violet-800 transition-transform active:scale-[0.99] dark:text-violet-100",
         className,
       )}
     >
-      <Plus className="h-[18px] w-[18px]" strokeWidth={2.2} />
+      <span className="gx-cta flex h-8 w-8 items-center justify-center rounded-full">
+        <Plus weight="bold" className="h-4 w-4" />
+      </span>
       {label}
     </Link>
   );

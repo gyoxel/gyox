@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Settings } from "lucide-react";
+import { GearSix } from "@phosphor-icons/react/ssr";
 import { HEADER_BUTTON } from "@/components/header-button";
 import { RefreshLogo } from "@/components/refresh-logo";
 
@@ -37,7 +37,7 @@ export function HomeHeader({ name }: { name: string }) {
           <span className="text-[15px] font-bold">{part({ day: "numeric" })}</span>
         </Link>
         <Link href="/settings" prefetch aria-label="Paramètres" className={HEADER_BUTTON}>
-          <Settings className="h-[19px] w-[19px]" />
+          <GearSix weight="bold" className="h-[19px] w-[19px]" />
         </Link>
       </div>
     </header>

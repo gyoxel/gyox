@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil } from "lucide-react";
+import { PencilSimple } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { Expense, Payment, PaymentMethod } from "@/lib/types";
 import { METHOD_META } from "@/lib/payment-method";
@@ -44,7 +44,7 @@ export function PaymentPartRow({ payment, currency, onClick }: { payment: Paymen
         </span>
       )}
       <span className="ml-auto font-semibold tabular-nums text-slate-900 dark:text-white">{formatMoney(payment.amountPaid, currency)}</span>
-      <Pencil className="h-3.5 w-3.5 text-slate-300" />
+      <PencilSimple weight="bold" className="h-3.5 w-3.5 text-slate-300" />
     </button>
   );
 }

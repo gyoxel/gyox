@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Landmark } from "lucide-react";
+import { Bank } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import { mutate } from "@/lib/use-refresh-data";
 import { cleanDecimalInput, parseDecimalInput } from "@/lib/utils";
@@ -81,7 +81,7 @@ export function ExistingSavingsDialog({ open, onOpenChange }: { open: boolean; o
           </div>
           {error && <p className="text-sm text-rose-600">{error}</p>}
           <Button type="submit" className="gx-cta" disabled={pending || !(value > 0)}>
-            <Landmark className="h-4 w-4" />
+            <Bank weight="bold" className="h-4 w-4" />
             {pending ? "Enregistrement…" : "Ajouter à l'épargne"}
           </Button>
         </form>

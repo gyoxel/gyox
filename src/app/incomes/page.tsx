@@ -1,6 +1,6 @@
 import { getAllDarets, getAllIncomes, getIncomeCategories, getSettings } from "@/lib/page-data";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { CaretRight } from "@phosphor-icons/react/ssr";
 
 import { daretPayout } from "@/lib/daret";
 import { incomeCategory, incomesIn } from "@/lib/income";
@@ -103,7 +103,7 @@ export default async function IncomesPage() {
                   {list.map((r) => (
                     <li key={r.id} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
                       <Link href={r.href} className="flex items-center gap-3 px-4 py-3 active:bg-slate-50 dark:active:bg-slate-800/60">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[var(--gx-tile)] text-lg dark:bg-white/10">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl gx-tile text-lg">
                           {r.emoji}
                         </span>
                         <span className="min-w-0 flex-1">
@@ -120,7 +120,7 @@ export default async function IncomesPage() {
                           </span>
                         </span>
                         <span className="text-sm font-semibold tabular-nums text-emerald-600">+{money(r.amount)}</span>
-                        <ChevronRight className="h-4 w-4 text-slate-300" />
+                        <CaretRight weight="bold" className="h-4 w-4 text-slate-300" />
                       </Link>
                     </li>
                   ))}

@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Info, StickyNote } from "lucide-react";
+import { CaretLeft, CaretRight, Info, Note } from "@phosphor-icons/react/ssr";
 import { cn, formatMoney } from "@/lib/utils";
 import { DayNoteEditor } from "@/components/day-note-editor";
 import { METHOD_META } from "@/lib/payment-method";
@@ -121,11 +121,11 @@ export function CalendarView({
         <span aria-hidden className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10" />
         <div className="relative flex items-center justify-between gap-2">
           <NavArrow href={prevHref} label="Mois précédent">
-            <ChevronLeft className="h-4 w-4" />
+            <CaretLeft weight="bold" className="h-4 w-4" />
           </NavArrow>
           <div className="text-lg font-bold capitalize">{monthLabel}</div>
           <NavArrow href={nextHref} label="Mois suivant">
-            <ChevronRight className="h-4 w-4" />
+            <CaretRight weight="bold" className="h-4 w-4" />
           </NavArrow>
         </div>
         <div className="relative mt-3 grid grid-cols-3 gap-2 text-center">
@@ -184,7 +184,7 @@ export function CalendarView({
                 className={cn(
                   "flex min-h-[58px] flex-col items-center rounded-xl px-0.5 pb-1 pt-1.5 transition-colors",
                   isSelected
-                    ? "bg-pink-50 ring-2 ring-pink-500 dark:bg-pink-950/40"
+                    ? "bg-violet-50 ring-2 ring-violet-500 dark:bg-violet-500/15"
                     : list.length > 0
                       ? "bg-slate-50 active:bg-slate-100 dark:bg-slate-800/60 dark:active:bg-slate-800"
                       : "active:bg-slate-50 dark:active:bg-slate-800/60",
@@ -194,7 +194,7 @@ export function CalendarView({
                   className={cn(
                     "flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold",
                     isToday
-                      ? "bg-gradient-to-br from-rose-400 to-pink-600 text-white shadow-sm"
+                      ? "gx-cta"
                       : future
                         ? "text-slate-400 dark:text-slate-500"
                         : "text-slate-700 dark:text-slate-200",
@@ -242,7 +242,7 @@ export function CalendarView({
                     <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">{i.label}</span>
                     {i.detail && <span className="block text-xs text-violet-700 dark:text-violet-300">{i.detail}</span>}
                   </span>
-                  <Info className="h-4 w-4 shrink-0 text-violet-400" />
+                  <Info weight="bold" className="h-4 w-4 shrink-0 text-violet-400" />
                 </li>
               ))}
             </ul>
@@ -282,7 +282,7 @@ export function CalendarView({
             )
           )}
           <h3 className="mt-1 flex items-center gap-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
-            <StickyNote className="h-3.5 w-3.5" />
+            <Note weight="bold" className="h-3.5 w-3.5" />
             Note
           </h3>
           <DayNoteEditor key={`${selected}:${notes[selected] ?? ""}`} date={selected} text={notes[selected] ?? ""} />

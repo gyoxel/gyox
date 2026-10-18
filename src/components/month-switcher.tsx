@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CaretLeft, CaretRight } from "@phosphor-icons/react/ssr";
 import { addMonths, monthKey, monthLabelFr, type MonthId } from "@/lib/date";
 import type { ReactNode } from "react";
 
@@ -56,14 +56,14 @@ export function MonthSwitcher({
       onTouchEnd={onTouchEnd}
     >
       <Link href={prevHref} prefetch replace scroll={false} aria-label="Mois précédent" className={ARROW}>
-        <ChevronLeft className="h-4 w-4" />
+        <CaretLeft weight="bold" className="h-4 w-4" />
       </Link>
       <div className="min-w-0 text-center">
         <p className="text-[15px] font-semibold capitalize text-slate-900 dark:text-white">{monthLabelFr(month)}</p>
         {caption && <p className="text-[11px] text-slate-400">{caption}</p>}
       </div>
       <Link href={nextHref} prefetch replace scroll={false} aria-label="Mois suivant" className={ARROW}>
-        <ChevronRight className="h-4 w-4" />
+        <CaretRight weight="bold" className="h-4 w-4" />
       </Link>
     </div>
   );

@@ -2,19 +2,19 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, ChartNoAxesCombined, ChevronRight, HandCoins, Handshake, PiggyBank, Settings, Target, TrendingUp, Wallet, type LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { CalendarDots, CaretRight, ChartLineUp, GearSix, HandCoins, Handshake, PiggyBank, Target, TrendUp, Wallet } from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
-const ITEMS: { href: string; label: string; hint: string; icon: LucideIcon; tint: string }[] = [
-  { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau…", icon: TrendingUp, tint: "from-emerald-400 to-green-600" },
-  { href: "/solde", label: "Solde", hint: "Cash, carte, historique", icon: Wallet, tint: "from-indigo-400 to-violet-600" },
-  { href: "/epargne", label: "Épargne", hint: "Argent mis de côté", icon: PiggyBank, tint: "from-lime-400 to-green-600" },
-  { href: "/prets", label: "Prêts", hint: "Ce qu'on doit te rendre", icon: Handshake, tint: "from-amber-500 to-orange-700" },
-  { href: "/daret", label: "Daret", hint: "Tes darets et ton tour", icon: HandCoins, tint: "from-teal-400 to-emerald-600" },
-  { href: "/goals", label: "Objectifs", hint: "Voiture, maison, voyage…", icon: Target, tint: "from-amber-400 to-orange-500" },
-  { href: "/stats", label: "Statistiques", hint: "Répartition, prévisions", icon: ChartNoAxesCombined, tint: "from-sky-400 to-blue-600" },
-  { href: "/calendar", label: "Calendrier", hint: "Jour par jour", icon: CalendarDays, tint: "from-rose-400 to-pink-600" },
-  { href: "/settings", label: "Paramètres", hint: "Thème, sauvegarde", icon: Settings, tint: "from-slate-400 to-slate-600" },
+const ITEMS: { href: string; label: string; hint: string; icon: PhosphorIcon }[] = [
+  { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau…", icon: TrendUp },
+  { href: "/solde", label: "Solde", hint: "Cash, carte, historique", icon: Wallet },
+  { href: "/epargne", label: "Épargne", hint: "Argent mis de côté", icon: PiggyBank },
+  { href: "/prets", label: "Prêts", hint: "Ce qu'on doit te rendre", icon: Handshake },
+  { href: "/daret", label: "Daret", hint: "Tes darets et ton tour", icon: HandCoins },
+  { href: "/goals", label: "Objectifs", hint: "Voiture, maison, voyage…", icon: Target },
+  { href: "/stats", label: "Statistiques", hint: "Répartition, prévisions", icon: ChartLineUp },
+  { href: "/calendar", label: "Calendrier", hint: "Jour par jour", icon: CalendarDots },
+  { href: "/settings", label: "Paramètres", hint: "Thème, sauvegarde", icon: GearSix },
 ];
 const N = ITEMS.length;
 
@@ -36,15 +36,19 @@ function offsetOf(i: number, pos: number): number {
 }
 
 /** Look of a card `d` items away from the centre: closer cards bigger and
- *  sharper, the far ones small, faded and blurred. */
-function styleFor(d: number): React.CSSProperties {
+ *  sharper, the far ones small, faded and blurred — their content fading
+ *  out first, so the neighbours show as the edges of a stack, not as
+ *  half-hidden text. */
+function styleFor(d: number): React.CSSProperties & { "--wheel-content": string } {
   const a = Math.abs(d);
   // Neighbours tucked under the centre card, only their edge showing.
-  const y = Math.sign(d) * (a <= 1 ? a * 30 : 30 + (a - 1) * 14);
-  const scale = Math.max(0.78, 1 - 0.08 * a);
-  const opacity = a <= 1 ? 1 - 0.15 * a : Math.max(0, 0.85 - 0.75 * (a - 1));
-  const blur = Math.max(0, a - 0.6) * 1.6;
+  const y = Math.sign(d) * (a <= 1 ? a * 24 : 24 + (a - 1) * 10);
+  const scale = Math.max(0.8, 1 - 0.07 * a);
+  const opacity = a <= 1 ? 1 - 0.22 * a : Math.max(0, 0.78 - 0.7 * (a - 1));
+  const blur = Math.max(0, a - 0.5) * 1.4;
+  const content = Math.min(1, Math.max(0, 1 - (a - 0.3) / 0.45));
   return {
+    "--wheel-content": content.toFixed(3),
     transform: `translate3d(0, calc(-50% + ${y.toFixed(2)}px), 0) scale(${scale.toFixed(4)})`,
     opacity: a > 2.2 ? 0 : Number(opacity.toFixed(3)),
     filter: blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none",
@@ -85,6 +89,7 @@ export function ShortcutWheel() {
         card.style.filter = s.filter as string;
         card.style.zIndex = String(s.zIndex);
         card.style.pointerEvents = s.pointerEvents as string;
+        card.style.setProperty("--wheel-content", s["--wheel-content"]);
         card.setAttribute("aria-selected", Math.abs(offsetOf(i, pos)) < 0.5 ? "true" : "false");
       });
       const tick = Math.round(pos);
@@ -213,7 +218,7 @@ export function ShortcutWheel() {
         WebkitMaskImage: "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
       }}
     >
-      {ITEMS.map(({ href, label, hint, icon: Icon, tint }, i) => (
+      {ITEMS.map(({ href, label, hint, icon: Icon }, i) => (
         <button
           key={href}
           ref={(node) => {
@@ -227,24 +232,16 @@ export function ShortcutWheel() {
           tabIndex={-1}
           // Same look as the first frame drawn by the effect (centre: Revenus).
           style={styleFor(offsetOf(i, 0))}
-          className={cn(
-            "absolute inset-x-0 top-1/2 flex items-center gap-3 rounded-2xl bg-white px-3.5 py-3 text-left will-change-transform",
-            "shadow-[0_10px_30px_-8px_rgba(15,23,42,0.25)] ring-1 ring-slate-900/5 dark:bg-[#141a2f] dark:ring-white/10",
-          )}
+          className="gx-wheel-card absolute inset-x-0 top-1/2 flex items-center gap-3 rounded-[22px] px-3.5 py-3 text-left will-change-transform"
         >
-          <span
-            className={cn(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-white shadow-sm",
-              tint,
-            )}
-          >
-            <Icon className="h-5 w-5" />
+          <span className="gx-tile flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl opacity-[var(--wheel-content)]">
+            <Icon weight="duotone" className="h-[22px] w-[22px]" />
           </span>
-          <span className="min-w-0 flex-1">
+          <span className="min-w-0 flex-1 opacity-[var(--wheel-content)]">
             <span className="block text-base font-semibold text-slate-900 dark:text-white">{label}</span>
             <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{hint}</span>
           </span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+          <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300 opacity-[var(--wheel-content)]" />
         </button>
       ))}
     </div>

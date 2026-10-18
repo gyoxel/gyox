@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Pencil } from "lucide-react";
+import { PencilSimple } from "@phosphor-icons/react/ssr";
 import { getAllBudgetEntries, getAllBudgetMonths, getAllPayments, getBudgetById, getSettings } from "@/lib/page-data";
 import { budgetMonthState, entriesOf } from "@/lib/budgets";
 import { monthKey, parseMonthKey, todayDateStr, todayMonth } from "@/lib/date";
@@ -41,7 +41,7 @@ export default async function BudgetPage({
         back
         action={
           <Link href={`/budgets/${id}/edit`} prefetch aria-label="Modifier le budget" className={HEADER_BUTTON}>
-            <Pencil className="h-5 w-5" />
+            <PencilSimple weight="bold" className="h-5 w-5" />
           </Link>
         }
       />

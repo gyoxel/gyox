@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Check, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { ArrowCounterClockwise, Check, Plus, Trash } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { Category } from "@/lib/types";
 import { useRefreshData } from "@/lib/use-refresh-data";
@@ -478,8 +478,8 @@ export function CategoryManager({
           onClick={() => open({ mode: "new" })}
           className="flex min-h-[96px] flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-slate-300 text-slate-500 transition-colors active:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:active:bg-slate-900"
         >
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--gx-tile)] dark:bg-slate-800">
-            <Plus className="h-5 w-5" />
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl gx-tile">
+            <Plus weight="bold" className="h-5 w-5" />
           </span>
           <span className="text-sm font-semibold">Ajouter</span>
         </button>
@@ -490,7 +490,7 @@ export function CategoryManager({
         onClick={() => setConfirmReset(true)}
         className="mx-auto flex items-center gap-1.5 text-xs font-medium text-slate-400 underline underline-offset-2 active:text-slate-600 dark:active:text-slate-200"
       >
-        <RotateCcw className="h-3.5 w-3.5" />
+        <ArrowCounterClockwise weight="bold" className="h-3.5 w-3.5" />
         Réinitialiser les catégories
       </button>
 
@@ -513,11 +513,11 @@ export function CategoryManager({
       {orderChanged && !draggingId && (
         <div className="sticky bottom-28 z-20 flex gap-2 rounded-2xl border border-violet-200 bg-white/95 p-2 shadow-lg backdrop-blur dark:border-violet-900 dark:bg-[#10162a]/95">
           <Button type="button" variant="outline" className="flex-1" onClick={resetOrder} disabled={busy}>
-            <RotateCcw className="h-4 w-4" />
+            <ArrowCounterClockwise weight="bold" className="h-4 w-4" />
             Annuler
           </Button>
           <Button type="button" className="flex-1 gx-cta" onClick={saveOrder} disabled={busy}>
-            <Check className="h-4 w-4" />
+            <Check weight="bold" className="h-4 w-4" />
             Enregistrer l&apos;ordre
           </Button>
         </div>
@@ -580,12 +580,12 @@ export function CategoryManager({
             </div>
 
             <Button type="button" onClick={submit} disabled={busy} className="gx-cta">
-              <Check className="h-4 w-4" />
+              <Check weight="bold" className="h-4 w-4" />
               {editing?.mode === "new" ? "Ajouter" : "Enregistrer"}
             </Button>
             {editing?.mode === "edit" && !(income && editing.category.id === "autre") && (
               <Button type="button" variant="destructive" onClick={() => setToDelete(editing.category)} disabled={busy}>
-                <Trash2 className="h-4 w-4" />
+                <Trash weight="bold" className="h-4 w-4" />
                 Supprimer la catégorie
               </Button>
             )}

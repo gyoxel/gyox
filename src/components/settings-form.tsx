@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { mutate, useRefreshData } from "@/lib/use-refresh-data";
 import Link from "next/link";
-import { Banknote, ChevronRight, Download, Leaf, Monitor, Moon, Sun, Tags, Upload } from "lucide-react";
+import { CaretRight, DownloadSimple, Leaf, Money, Monitor, Moon, Sun, Tag, UploadSimple } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { Settings } from "@/lib/types";
 import { THEME_STORAGE_KEY, applyTheme, composeTheme, parseTheme, type ThemeBase, type ThemeChoice } from "@/lib/theme";
@@ -105,7 +105,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
               >
                 <ThemePreview kind={value} simple={simple} />
                 <span className="flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
-                  <Icon className="h-3.5 w-3.5" />
+                  <Icon weight="bold" className="h-3.5 w-3.5" />
                   {label}
                 </span>
               </button>
@@ -113,8 +113,8 @@ export function SettingsForm({ settings }: { settings: Settings }) {
           })}
         </div>
         <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[var(--gx-tile)] text-slate-500 dark:bg-slate-800 dark:text-slate-300">
-            <Leaf className="h-4 w-4" />
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl gx-tile text-slate-500 dark:text-slate-300">
+            <Leaf weight="bold" className="h-4 w-4" />
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Mode simple</span>
@@ -129,23 +129,23 @@ export function SettingsForm({ settings }: { settings: Settings }) {
         <div className={section}>
           <Link href="/salary" className={rowClass}>
             <RowIcon className="from-emerald-400 to-teal-600">
-              <Banknote className="h-4 w-4" />
+              <Money weight="bold" className="h-4 w-4" />
             </RowIcon>
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Salaire</span>
               <span className="block text-xs text-slate-400">Montant, jour de paie, cash ou carte</span>
             </span>
-            <ChevronRight className="h-4 w-4 text-slate-300" />
+            <CaretRight weight="bold" className="h-4 w-4 text-slate-300" />
           </Link>
           <Link href="/categories" className={rowClass}>
             <RowIcon className="from-violet-400 to-purple-600">
-              <Tags className="h-4 w-4" />
+              <Tag weight="bold" className="h-4 w-4" />
             </RowIcon>
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Catégories</span>
               <span className="block text-xs text-slate-400">Ajouter, renommer, ordonner</span>
             </span>
-            <ChevronRight className="h-4 w-4 text-slate-300" />
+            <CaretRight weight="bold" className="h-4 w-4 text-slate-300" />
           </Link>
         </div>
       </section>
@@ -155,7 +155,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
         <div className={section}>
           <a href="/api/export" download className={rowClass}>
             <RowIcon className="from-sky-400 to-blue-600">
-              <Download className="h-4 w-4" />
+              <DownloadSimple weight="bold" className="h-4 w-4" />
             </RowIcon>
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Exporter</span>
@@ -164,7 +164,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
           </a>
           <button type="button" onClick={() => fileInputRef.current?.click()} className={rowClass}>
             <RowIcon className="from-amber-400 to-orange-500">
-              <Upload className="h-4 w-4" />
+              <UploadSimple weight="bold" className="h-4 w-4" />
             </RowIcon>
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Importer</span>

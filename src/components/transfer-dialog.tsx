@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ArrowLeftRight } from "lucide-react";
+import { ArrowsLeftRight } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { PaymentMethod } from "@/lib/types";
 import { mutate } from "@/lib/use-refresh-data";
@@ -162,7 +162,7 @@ export function TransferDialog({
           </div>
           {error && <p className="text-sm text-rose-600">{error}</p>}
           <Button type="submit" className="gx-cta" disabled={pending || !(value > 0)}>
-            <ArrowLeftRight className="h-4 w-4" />
+            <ArrowsLeftRight weight="bold" className="h-4 w-4" />
             {pending ? "Enregistrement…" : mode === "in" ? "Mettre de côté" : mode === "out" ? "Retirer" : "Transférer"}
           </Button>
         </form>

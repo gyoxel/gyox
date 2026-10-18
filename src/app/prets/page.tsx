@@ -1,6 +1,6 @@
 import { getAllLoans, getSettings } from "@/lib/page-data";
 import Link from "next/link";
-import { ChevronRight, Handshake } from "lucide-react";
+import { CaretRight, Handshake } from "@phosphor-icons/react/ssr";
 
 import { loanState } from "@/lib/loans";
 import { monthLabelFr, todayMonth } from "@/lib/date";
@@ -47,7 +47,7 @@ export default async function LoansPage() {
 
         {rows.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-slate-200 px-4 py-10 text-center dark:border-slate-700">
-            <Handshake className="h-9 w-9 text-amber-500" />
+            <Handshake weight="duotone" className="h-9 w-9 text-amber-500" />
             <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Aucun prêt pour le moment</p>
             <p className="text-xs text-slate-400">
               L&apos;argent que tu prêtes sort de ton solde ; chaque remboursement reçu y revient.
@@ -64,7 +64,7 @@ export default async function LoansPage() {
               >
                 <Link href={`/prets/${loan.id}`} className="flex flex-col gap-2.5 px-4 pb-3 pt-4 active:bg-slate-50 dark:active:bg-slate-800/60">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--gx-tile)] text-xl dark:bg-white/10">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl gx-tile text-xl">
                       🤝
                     </span>
                     <span className="min-w-0 flex-1">
@@ -79,7 +79,7 @@ export default async function LoansPage() {
                       </span>
                       {!state.done && <span className="block text-[10px] text-slate-400">reste</span>}
                     </span>
-                    <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+                    <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300" />
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                     <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500" style={{ width: `${percent}%` }} />

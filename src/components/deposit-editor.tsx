@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, Clock } from "lucide-react";
+import { Check, Clock } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { GoalDeposit, PaymentMethod } from "@/lib/types";
 import { useNavBack } from "@/lib/nav-history";
@@ -99,11 +99,11 @@ export function DepositEditor({
           <Label>Statut de paiement</Label>
           <div role="radiogroup" aria-label="Statut de paiement" className="grid grid-cols-2 gap-2">
             <StatusButton selected={paid} onClick={() => setPaid(true)} className="bg-emerald-500">
-              <Check className="h-4 w-4" />
+              <Check weight="bold" className="h-4 w-4" />
               Payé
             </StatusButton>
             <StatusButton selected={!paid} onClick={() => setPaid(false)} className="bg-rose-500">
-              <Clock className="h-4 w-4" />
+              <Clock weight="bold" className="h-4 w-4" />
               Pas encore
             </StatusButton>
           </div>

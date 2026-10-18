@@ -69,7 +69,7 @@ export default async function SalaryPage() {
             <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
               {[...receipts].reverse().map((r) => (
                 <li key={r.id} className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 first:border-t-0 dark:border-slate-800">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[var(--gx-tile)] text-base dark:bg-white/10">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl gx-tile text-base">
                     💼
                   </span>
                   <span className="min-w-0 flex-1">

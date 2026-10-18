@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { CaretRight } from "@phosphor-icons/react/ssr";
 import type { Expense, Payment } from "@/lib/types";
 import { getCreditDisplayProgress, getCreditEndMonth, getCreditRealState } from "@/lib/engine";
 import { compareMonths, monthLabelShortFr, monthsBetween, todayMonth } from "@/lib/date";
@@ -109,7 +109,7 @@ export function CreditCard({
           </p>
           <p className="text-[10px] uppercase tracking-wide text-slate-400">{done ? "soldé" : "restant"}</p>
         </div>
-        <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+        <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300" />
       </div>
     </Link>
   );

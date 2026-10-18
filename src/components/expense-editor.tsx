@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { Check, Clock } from "lucide-react";
+import { CalendarDots, Check, Clock, NumberCircleOne, Repeat, Target } from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { useNavBack } from "@/lib/nav-history";
 import { toast } from "sonner";
 import type { Category, Expense, ExpenseType, Frequency, PaymentMethod } from "@/lib/types";
@@ -242,11 +243,11 @@ export function ExpenseEditor({
     });
   }
 
-  const kinds: { key: "once" | RecurrenceKind; emoji: string; label: string; hint: string }[] = [
-    { key: "once", emoji: "1️⃣", label: "Une fois", hint: "Ce mois-ci" },
-    { key: "permanent", emoji: "🔁", label: "Chaque mois", hint: "Sans fin" },
-    { key: "months", emoji: "📅", label: "X mois", hint: "Pendant…" },
-    { key: "until", emoji: "🎯", label: "Jusqu'à", hint: "Un total" },
+  const kinds: { key: "once" | RecurrenceKind; icon: PhosphorIcon; label: string; hint: string }[] = [
+    { key: "once", icon: NumberCircleOne, label: "Une fois", hint: "Ce mois-ci" },
+    { key: "permanent", icon: Repeat, label: "Chaque mois", hint: "Sans fin" },
+    { key: "months", icon: CalendarDots, label: "X mois", hint: "Pendant…" },
+    { key: "until", icon: Target, label: "Jusqu'à", hint: "Un total" },
   ];
   function pickKind(key: "once" | RecurrenceKind) {
     if (key === "once") return setRecurring(false);
@@ -303,6 +304,7 @@ export function ExpenseEditor({
         <div role="radiogroup" aria-label="Fréquence" className="grid grid-cols-4 gap-2">
           {kinds.map((k) => {
             const selected = mode === k.key;
+            const Icon = k.icon;
             return (
               <button
                 key={k.key}
@@ -311,15 +313,15 @@ export function ExpenseEditor({
                 aria-checked={selected}
                 onClick={() => pickKind(k.key)}
                 className={cn(
-                  "flex flex-col items-center gap-0.5 rounded-xl border px-1 py-2.5 text-center transition-colors",
+                  "flex flex-col items-center gap-1 rounded-2xl border px-1 py-2.5 text-center transition-all active:scale-[0.97]",
                   selected
-                    ? "border-rose-500 bg-rose-50 text-rose-800 ring-1 ring-rose-500 dark:bg-rose-950/50 dark:text-rose-200"
-                    : "border-slate-200 bg-white text-slate-600 active:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
+                    ? "gx-cta border-transparent"
+                    : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
                 )}
               >
-                <span className="text-lg leading-none">{k.emoji}</span>
+                <Icon weight="duotone" className={cn("h-6 w-6", selected ? "text-white" : "text-violet-600 dark:text-violet-300")} />
                 <span className="text-xs font-semibold">{k.label}</span>
-                <span className="text-[10px] text-slate-400">{k.hint}</span>
+                <span className={cn("text-[10px]", selected ? "text-white/75" : "text-slate-400")}>{k.hint}</span>
               </button>
             );
           })}
@@ -382,7 +384,7 @@ export function ExpenseEditor({
                   : "border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400",
               )}
             >
-              <Check className="h-4 w-4" />
+              <Check weight="bold" className="h-4 w-4" />
               Payé
             </button>
             <button
@@ -397,7 +399,7 @@ export function ExpenseEditor({
                   : "border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400",
               )}
             >
-              <Clock className="h-4 w-4" />
+              <Clock weight="bold" className="h-4 w-4" />
               Pas encore
             </button>
           </div>

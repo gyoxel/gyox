@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Trash2 } from "lucide-react";
+import { Check, Trash } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import { mutate } from "@/lib/use-refresh-data";
 import { Button } from "@/components/ui/button";
@@ -38,13 +38,13 @@ export function DayNoteEditor({ date, text }: { date: string; text: string }) {
         <div className="flex gap-2">
           {text && (
             <Button type="button" variant="destructive" onClick={() => setConfirming(true)} disabled={saving}>
-              <Trash2 className="h-4 w-4" />
+              <Trash weight="bold" className="h-4 w-4" />
               Supprimer
             </Button>
           )}
           {changed && draft.trim() && (
             <Button type="button" className="flex-1" onClick={() => save(draft)} disabled={saving}>
-              <Check className="h-4 w-4" />
+              <Check weight="bold" className="h-4 w-4" />
               {saving ? "Enregistrement…" : "Enregistrer la note"}
             </Button>
           )}

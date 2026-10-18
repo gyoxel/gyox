@@ -1,6 +1,6 @@
 import { getAllCategories, getAllExpenses, getAllPayments, getSettings } from "@/lib/page-data";
 import Link from "next/link";
-import { Check, ChevronRight, Clock } from "lucide-react";
+import { CaretRight, Check, Clock } from "@phosphor-icons/react/ssr";
 
 import { monthFromSearchParams, monthKey, monthLabelFr, monthLabelShortFr, todayMonth } from "@/lib/date";
 import { findPayment, getEffectiveEndMonth, getMonthPaymentStatus, getMonthSummary, lastPaidAt } from "@/lib/engine";
@@ -155,7 +155,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
                         <span
                           className={cn(
                             "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xl",
-                            "bg-[var(--gx-tile)] dark:bg-white/10",
+                            "gx-tile",
                           )}
                         >
                           {r.icon}
@@ -184,12 +184,12 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
                           </span>
                           {isPaid ? (
                             <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-                              <Check className="h-3 w-3" />
+                              <Check weight="bold" className="h-3 w-3" />
                               Payé{r.method && ` ${METHOD_META[r.method].emoji}`}
                             </span>
                           ) : partly ? (
                             <span className="flex items-center gap-1 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
-                              <Clock className="h-3 w-3" />
+                              <Clock weight="bold" className="h-3 w-3" />
                               Reste {money(Math.max(0, r.amount - r.paid))}
                             </span>
                           ) : (
@@ -201,12 +201,12 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
                                   : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
                               )}
                             >
-                              <Clock className="h-3 w-3" />
+                              <Clock weight="bold" className="h-3 w-3" />
                               {r.status === "unpaid" ? "À payer" : "À venir"}
                             </span>
                           )}
                         </span>
-                        <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+                        <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300" />
                       </Link>
                     </li>
                   );

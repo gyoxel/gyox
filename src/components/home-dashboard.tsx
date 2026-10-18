@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Eye, EyeOff, PiggyBank, type LucideIcon } from "lucide-react";
+import { CreditCard, Eye, EyeSlash, HandArrowDown, HandArrowUp, Money, PiggyBank, Swap } from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import type { MonthId } from "@/lib/date";
 import type { Expense, Payment, PaymentMethod, SalaryAdvance, Settings } from "@/lib/types";
 import { walletPaidOut } from "@/lib/wallet";
@@ -14,11 +15,11 @@ import { DueNowList } from "@/components/due-now-list";
 import { DueRepayments, type DueRepayment } from "@/components/due-repayments";
 import { ShortcutWheel } from "@/components/shortcut-wheel";
 
-const QUICK_ACTIONS: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/expenses/new", label: "Dépense", icon: ArrowUpFromLine },
-  { href: "/incomes/new", label: "Revenu", icon: ArrowDownToLine },
+const QUICK_ACTIONS: { href: string; label: string; icon: PhosphorIcon }[] = [
+  { href: "/expenses/new", label: "Dépense", icon: HandArrowUp },
+  { href: "/incomes/new", label: "Revenu", icon: HandArrowDown },
   { href: "/epargne", label: "Épargne", icon: PiggyBank },
-  { href: "/solde", label: "Transfert", icon: ArrowLeftRight },
+  { href: "/solde", label: "Transfert", icon: Swap },
 ];
 
 /** The cash share of what's available (0-1; half and half when nothing). */
@@ -92,10 +93,11 @@ export function HomeDashboard({
   return (
     <>
       {/* The wallet card: what's available now (the Solde), and how it splits
-          between cash and the card. Tapping it opens the Solde. */}
-      <Link href="/solde" prefetch aria-label="Disponible maintenant · voir le solde" className="gx-wallet block rounded-[28px] px-5 pb-5 pt-4 transition-transform active:scale-[0.99]">
+          between cash and the card, each on a glass chip. Tapping it opens
+          the Solde. */}
+      <Link href="/solde" prefetch aria-label="Disponible maintenant · voir le solde" className="gx-wallet block rounded-[30px] px-5 pb-4 pt-4 transition-transform active:scale-[0.99]">
         <div className="relative flex items-center justify-between">
-          <p className="text-[13px] font-semibold text-white/80">Disponible maintenant</p>
+          <p className="text-[13px] font-semibold text-white/85">Disponible maintenant</p>
           <button
             type="button"
             onClick={(e) => {
@@ -105,9 +107,9 @@ export function HomeDashboard({
               setRevealed(!revealed);
             }}
             aria-label={revealed ? "Masquer le montant" : "Afficher le montant"}
-            className="-mr-1 flex h-9 w-9 items-center justify-center rounded-full bg-white/15 transition-colors active:bg-white/25"
+            className="gx-wallet-chip -mr-1 flex h-9 w-9 items-center justify-center rounded-full transition-transform active:scale-90"
           >
-            {revealed ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
+            {revealed ? <EyeSlash weight="bold" className="h-[18px] w-[18px]" /> : <Eye weight="bold" className="h-[18px] w-[18px]" />}
           </button>
         </div>
         <p
@@ -116,31 +118,35 @@ export function HomeDashboard({
         >
           <BigAmount text={show(balance.cash + balance.card)} />
         </p>
-        {/* Cash | card: a bar of their shares, then each one. */}
-        <div className="relative mt-4 flex h-1.5 overflow-hidden rounded-full bg-white/20">
-          <span className="h-full bg-white" style={{ width: `${cashShare(balance) * 100}%` }} />
+        {/* Cash | card: a bar of their shares, then each one on its chip. */}
+        <div className="relative mt-3 flex h-1.5 overflow-hidden rounded-full bg-white/20">
+          <span className="h-full rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.7)]" style={{ width: `${cashShare(balance) * 100}%` }} />
         </div>
-        <div className="relative mt-3 grid grid-cols-2 gap-3">
-          {(["cash", "card"] as const).map((m) => (
-            <div key={m} className={cn("min-w-0", m === "card" && "text-right")}>
-              <p className={cn("flex items-center gap-1.5 text-[12px] font-medium text-white/75", m === "card" && "justify-end")}>
-                <span className={cn("h-2 w-2 rounded-full", m === "cash" ? "bg-white" : "bg-white/35")} />
-                {m === "cash" ? "Espèces" : "Carte"}
-              </p>
-              <p data-private className="truncate text-[17px] font-bold tabular-nums">
-                {show(balance[m])}
-              </p>
-            </div>
-          ))}
+        <div className="relative mt-3.5 grid grid-cols-2 gap-2.5">
+          {(["cash", "card"] as const).map((m) => {
+            const Icon = m === "cash" ? Money : CreditCard;
+            return (
+              <div key={m} className="gx-wallet-chip min-w-0 rounded-2xl px-3 py-2.5">
+                <p className="flex items-center gap-1.5 text-[12px] font-semibold text-white/80">
+                  <Icon weight="duotone" className="h-4 w-4" />
+                  {m === "cash" ? "Espèces" : "Carte"}
+                  <span className={cn("ml-auto h-2 w-2 rounded-full", m === "cash" ? "bg-white" : "bg-white/35")} />
+                </p>
+                <p data-private className="mt-0.5 truncate text-[17px] font-bold tabular-nums">
+                  {show(balance[m])}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </Link>
 
-      {/* Quick actions: round buttons, their name under them. */}
+      {/* Quick actions: round clear-glass buttons, their name under them. */}
       <div className="grid grid-cols-4 gap-2">
         {QUICK_ACTIONS.map(({ href, label, icon: Icon }) => (
-          <Link key={href} href={href} prefetch className="flex flex-col items-center gap-1.5 active:scale-95">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-violet-700 shadow-[0_8px_20px_-12px_rgba(20,18,31,0.35)] ring-1 ring-slate-900/[0.04] dark:bg-white/[0.08] dark:text-violet-300 dark:ring-white/10">
-              <Icon className="h-[22px] w-[22px]" strokeWidth={1.9} />
+          <Link key={href} href={href} prefetch className="flex flex-col items-center gap-1.5 transition-transform active:scale-95">
+            <span className="gx-pill flex h-[58px] w-[58px] items-center justify-center rounded-full text-violet-700 dark:text-violet-200">
+              <Icon weight="duotone" className="h-6 w-6" />
             </span>
             <span className="text-[12px] font-semibold text-slate-700 dark:text-slate-300">{label}</span>
           </Link>

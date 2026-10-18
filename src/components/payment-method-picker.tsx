@@ -33,7 +33,7 @@ function AccountPicker<T extends string>({
             className={cn(
               "flex h-11 items-center justify-center gap-1.5 rounded-full text-sm font-semibold transition-colors",
               value === m
-                ? "bg-violet-600 text-white shadow-[0_8px_18px_-10px] shadow-violet-600/70 dark:bg-violet-500"
+                ? "gx-cta"
                 : "bg-[var(--gx-chip)] text-slate-600 active:bg-slate-200 dark:bg-white/[0.07] dark:text-slate-300",
             )}
           >

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarCheck, HandCoins, ShieldCheck, Wallet } from "lucide-react";
+import { CalendarCheck, HandCoins, ShieldCheck, Wallet } from "@phosphor-icons/react/ssr";
 import { GoogleIcon } from "@/components/google-icon";
 import { ForgetOnMount } from "@/components/forget-on-mount";
 import { LoginBackdrop } from "@/components/login-backdrop";
@@ -30,11 +30,11 @@ export default async function ConnexionPage({ searchParams }: PageProps<"/connex
   const href = next === "/" ? "/api/auth/google" : `/api/auth/google?suite=${encodeURIComponent(next)}`;
 
   return (
-    <main className="relative -mb-28 flex min-h-dvh flex-col overflow-hidden bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-900 px-6 pb-8 pt-14 text-white">
+    <main className="gx-login relative -mb-28 flex min-h-dvh flex-col overflow-hidden px-6 pb-8 pt-14 text-white">
       <ForgetOnMount />
       <LoginBackdrop />
       <div className="relative flex flex-col items-center text-center">
-        <span className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-white text-3xl font-black tracking-tight text-emerald-700 shadow-xl shadow-black/20">
+        <span className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-white text-3xl font-black tracking-tight text-violet-700 shadow-[0_20px_40px_-16px_rgba(20,8,60,0.6),inset_0_-3px_8px_rgba(91,33,182,0.12)]">
           GX
         </span>
         <h1 className="mt-5 text-3xl font-extrabold tracking-tight">
@@ -45,8 +45,8 @@ export default async function ConnexionPage({ searchParams }: PageProps<"/connex
 
       <ul className="relative mx-auto mt-10 flex w-full max-w-sm flex-col gap-3">
         {FEATURES.map(({ icon: Icon, text }) => (
-          <li key={text} className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 text-sm ring-1 ring-white/15 backdrop-blur-sm">
-            <Icon className="h-5 w-5 shrink-0 text-lime-200" />
+          <li key={text} className="gx-wallet-chip flex items-center gap-3 rounded-2xl px-4 py-3 text-sm">
+            <Icon weight="duotone" className="h-5 w-5 shrink-0 text-violet-100" />
             <span>{text}</span>
           </li>
         ))}
@@ -61,7 +61,7 @@ export default async function ConnexionPage({ searchParams }: PageProps<"/connex
         {/* A plain link: the sign-in leaves for Google and comes back. */}
         <a
           href={href}
-          className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-white text-base font-semibold text-slate-800 shadow-lg shadow-black/20 transition-transform active:scale-[0.98]"
+          className="flex h-14 w-full items-center justify-center gap-3 rounded-full bg-white text-base font-semibold text-slate-800 shadow-[0_18px_36px_-16px_rgba(20,8,60,0.65),inset_0_-2px_6px_rgba(91,33,182,0.1)] transition-transform active:scale-[0.98]"
         >
           <GoogleIcon className="h-5 w-5" />
           Continuer avec Google

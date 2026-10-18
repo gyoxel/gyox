@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Plus } from "lucide-react";
+import { CaretRight, Plus } from "@phosphor-icons/react/ssr";
 import { getAllBudgetEntries, getAllBudgets, getAllPayments, getSettings } from "@/lib/page-data";
 import { budgetMonthState } from "@/lib/budgets";
 import { monthKey, monthLabelFr, todayMonth } from "@/lib/date";
@@ -52,7 +52,7 @@ export default async function BudgetsPage() {
               href="/budgets/new"
               className="mx-auto inline-flex items-center gap-1.5 rounded-xl bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white active:bg-purple-700"
             >
-              <Plus className="h-4 w-4" />
+              <Plus weight="bold" className="h-4 w-4" />
               Créer un budget
             </Link>
           </div>
@@ -68,7 +68,7 @@ export default async function BudgetsPage() {
                       className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm active:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:active:bg-slate-800/60"
                     >
                       <span className="flex items-center gap-3">
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--gx-tile)] text-xl dark:bg-white/10">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl gx-tile text-xl">
                           {budget.expense.icon ?? "👛"}
                         </span>
                         <span className="min-w-0 flex-1">
@@ -95,7 +95,7 @@ export default async function BudgetsPage() {
                           </span>
                           <span className="text-[10px] uppercase tracking-wide text-slate-400">{state.over > 0 ? "dépassé" : "reste"}</span>
                         </span>
-                        <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+                        <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300" />
                       </span>
                       <span className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                         <span
@@ -118,7 +118,7 @@ export default async function BudgetsPage() {
                         <span className="text-lg">{budget.expense.icon ?? "👛"}</span>
                         <span className="flex-1 truncate text-sm text-slate-600 dark:text-slate-300">{budget.expense.name}</span>
                         <span className="text-xs text-slate-400">{money(budget.expense.amount)}</span>
-                        <ChevronRight className="h-4 w-4 text-slate-300" />
+                        <CaretRight weight="bold" className="h-4 w-4 text-slate-300" />
                       </Link>
                     </li>
                   ))}

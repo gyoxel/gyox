@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { HandCoins, Pencil } from "lucide-react";
+import { HandCoins, PencilSimple } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { LoanRepayment } from "@/lib/types";
 import { METHOD_META } from "@/lib/payment-method";
@@ -51,7 +51,7 @@ export function ReceiveRepayment({ variant = "full", ...info }: MonthInfo & { va
           variant === "full" ? "h-11 w-full text-sm" : "h-9 px-3 text-xs",
         )}
       >
-        <HandCoins className="h-4 w-4" />
+        <HandCoins weight="bold" className="h-4 w-4" />
         {variant === "full" ? (info.received > 0 ? "J'ai reçu encore" : "J'ai reçu") : "Reçu ?"}
       </button>
       {open && (
@@ -97,7 +97,7 @@ export function RepaymentRow({ repayment, ...info }: MonthInfo & { repayment: Lo
           {METHOD_META[repayment.method].emoji} {METHOD_META[repayment.method].label}
         </span>
         <span className="ml-auto font-semibold tabular-nums text-emerald-600">+{formatMoney(repayment.amount)}</span>
-        <Pencil className="h-3 w-3 text-slate-300" />
+        <PencilSimple weight="bold" className="h-3 w-3 text-slate-300" />
       </button>
       {open && (
         <AmountSheet

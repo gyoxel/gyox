@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ChevronRight, Plus, Trash2 } from "lucide-react";
+import { CaretRight, Plus, Trash } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { BudgetEntry, BudgetWithExpense, PaymentMethod } from "@/lib/types";
 import type { BudgetMonthState } from "@/lib/budgets";
@@ -194,7 +194,7 @@ function SourceLink({ href, tone, text }: { href: string | null; tone: "rose" | 
   return (
     <Link href={href} className={cls}>
       <span className="flex-1">{text}</span>
-      <ChevronRight className="h-4 w-4 shrink-0 opacity-60" />
+      <CaretRight weight="bold" className="h-4 w-4 shrink-0 opacity-60" />
     </Link>
   );
 }
@@ -303,7 +303,7 @@ function AddLine({
       )}
       {error && <p className="text-sm text-rose-600">{error}</p>}
       <Button type="submit" className="gx-cta" disabled={pending || !(value > 0)}>
-        <Plus className="h-4 w-4" />
+        <Plus weight="bold" className="h-4 w-4" />
         {pending ? "Enregistrement…" : "Ajouter"}
       </Button>
     </form>
@@ -380,7 +380,7 @@ function EditLine({
             disabled={pending}
             onClick={() => run({ method: "DELETE", path }, "Supprimé.")}
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash weight="bold" className="h-4 w-4" />
             Supprimer
           </Button>
         </form>

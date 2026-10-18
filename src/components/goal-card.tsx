@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CalendarClock, Check, ChevronRight, Pencil, Plus, Sparkles, Target, TrendingUp } from "lucide-react";
+import { CaretRight, Check, ClockCountdown, PencilSimple, Plus, Sparkle, Target, TrendUp } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import { errorMessage } from "@/components/expense-editor";
 import type { DepositSource, Goal } from "@/lib/types";
@@ -130,7 +130,7 @@ export function GoalCard({
             )}
           </div>
           <span className="shrink-0 text-xl font-bold tabular-nums text-orange-600 dark:text-amber-400">{p.percentNow}%</span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+          <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300" />
         </Link>
         <div className="grid grid-cols-2 border-t border-slate-100 dark:border-slate-800">
           <button
@@ -138,14 +138,14 @@ export function GoalCard({
             onClick={() => setAdding(true)}
             className="flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-orange-600 active:bg-slate-50 dark:text-amber-400 dark:active:bg-slate-800"
           >
-            <Plus className="h-4 w-4" />
+            <Plus weight="bold" className="h-4 w-4" />
             Versement
           </button>
           <Link
             href={`/goals/${goal.id}/edit`}
             className="flex items-center justify-center gap-1.5 border-l border-slate-100 py-2.5 text-sm font-medium text-slate-600 active:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:active:bg-slate-800"
           >
-            <Pencil className="h-4 w-4" />
+            <PencilSimple weight="bold" className="h-4 w-4" />
             Modifier
           </Link>
         </div>
@@ -207,12 +207,12 @@ export function GoalCard({
         )}
         <div className="relative mt-4 grid grid-cols-2 gap-2">
           <Button type="button" onClick={() => setAdding(true)} className="bg-white text-orange-600 hover:bg-white/90 dark:bg-white dark:text-orange-600">
-            <Plus className="h-4 w-4" />
+            <Plus weight="bold" className="h-4 w-4" />
             Versement
           </Button>
           <Button asChild className="bg-white/20 text-white hover:bg-white/30 dark:bg-white/20 dark:text-white">
             <Link href={`/goals/${goal.id}/edit`}>
-              <Pencil className="h-4 w-4" />
+              <PencilSimple weight="bold" className="h-4 w-4" />
               Modifier
             </Link>
           </Button>
@@ -258,7 +258,7 @@ export function GoalCard({
                         </span>
                       )}
                     </span>
-                    <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+                    <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300" />
                   </Link>
                 </li>
               ) : (
@@ -291,7 +291,7 @@ export function GoalCard({
       {!p.completed && (
         <div className="flex flex-col gap-2 rounded-3xl bg-amber-50 px-4 py-3.5 text-sm text-slate-700 dark:bg-amber-950/30 dark:text-slate-200">
           {p.reachedByDaretsIn ? (
-            <Insight icon={Sparkles}>
+            <Insight icon={Sparkle}>
               Tes darets suffisent : objectif atteint en <b>{monthLabelFr(p.reachedByDaretsIn)}</b>.
             </Insight>
           ) : (
@@ -302,7 +302,7 @@ export function GoalCard({
             )
           )}
           {p.deadline && p.monthlyNeeded != null && p.monthsToDeadline != null && (
-            <Insight icon={CalendarClock}>
+            <Insight icon={ClockCountdown}>
               {p.monthsToDeadline <= 0 ? (
                 <>
                   Date limite ({monthLabelShortFr(p.deadline)}) dépassée — il manque <b>{money(p.monthlyNeeded)}</b>.
@@ -317,7 +317,7 @@ export function GoalCard({
             </Insight>
           )}
           {goal.monthlySaving ? (
-            <Insight icon={TrendingUp}>
+            <Insight icon={TrendUp}>
               {p.estimatedMonth ? (
                 <>
                   En mettant {money(goal.monthlySaving)}/mois : atteint en <b>{monthLabelFr(p.estimatedMonth)}</b>.
@@ -427,7 +427,7 @@ function DepositDialog({
             disabled={saving || parseDecimalInput(deposit) <= 0}
             className="gx-cta"
           >
-            <Check className="h-4 w-4" />
+            <Check weight="bold" className="h-4 w-4" />
             {saving ? "Ajout…" : "Ajouter"}
           </Button>
         </DialogFooter>
@@ -440,7 +440,7 @@ const DEPOSIT_DATE = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "
 
 function StepIcon({ children }: { children: React.ReactNode }) {
   return (
-    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[var(--gx-tile)] text-base dark:bg-white/10">
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl gx-tile text-base">
       {children}
     </span>
   );
@@ -449,7 +449,7 @@ function StepIcon({ children }: { children: React.ReactNode }) {
 function Insight({ icon: Icon, children }: { icon: typeof Target; children: React.ReactNode }) {
   return (
     <p className="flex items-start gap-2">
-      <Icon className={cn("mt-0.5 h-4 w-4 shrink-0 text-orange-500")} />
+      <Icon weight="duotone" className="mt-0.5 h-[18px] w-[18px] shrink-0 text-orange-500" />
       <span>{children}</span>
     </p>
   );
