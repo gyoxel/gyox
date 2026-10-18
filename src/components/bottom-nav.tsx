@@ -26,7 +26,7 @@ const ACTIONS = [
 ];
 
 
-/** A tab: its icon and name — the current one filled, in blue, over the
+/** A tab: its icon and name — the current one filled, in green, over the
  *  bar's glass lens. */
 function NavLink({
   href,

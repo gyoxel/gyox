@@ -12,9 +12,9 @@ export const THEME_STORAGE_KEY = "gx-theme-v2";
 /** Colour of the plain headers in the simple theme (the browser's bar too). */
 export const SIMPLE_HEADER = { light: "#ffffff", dark: "#0f172a" };
 
-/** The browser's bar above every page: the top of the page's sky — its
- *  blue in light, navy in dark. */
-export const HEADER_COLOR = { light: "#4b8cf7", dark: "#1b3a78" };
+/** The browser's bar above every page: the top of the page's green —
+ *  emerald in light, deep green in dark. */
+export const HEADER_COLOR = { light: "#13866a", dark: "#0f3d2f" };
 
 export function parseTheme(choice: ThemeChoice): { base: ThemeBase; simple: boolean } {
   if (choice === "simple") return { base: "system", simple: true };
