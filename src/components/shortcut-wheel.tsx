@@ -220,7 +220,9 @@ export function ShortcutWheel() {
       role="listbox"
       aria-label="Raccourcis"
       tabIndex={0}
-      className="@container relative touch-none select-none outline-none"
+      // isolate: the cards' z-index stays inside the wheel (it would put
+      // them over the bar's + menu).
+      className="@container relative isolate touch-none select-none outline-none"
       style={{ height: HEIGHT }}
     >
       {ITEMS.map(({ href, label, hint, icon: Icon }, i) => (

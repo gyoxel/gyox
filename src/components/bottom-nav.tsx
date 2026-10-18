@@ -18,17 +18,17 @@ const ITEMS = [
 const MENU_PATHS = ["/menu", "/budgets", "/daret", "/goals", "/calendar", "/stats", "/categories", "/salary", "/incomes", "/solde", "/epargne", "/prets", "/settings", "/profil", "/admin"];
 
 // The + button's menu: everything that can be added, in one panel of
-// glass just above it — each in its colour of meaning (money out, in, a
-// credit or budget, savings and goals…).
+// glass just above it — each in its colour of meaning. The everyday ones
+// on the bottom row, Dépense in the corner next to the + itself.
 const ACTIONS = [
-  { href: "/expenses/new", label: "Dépense", icon: HandArrowUp, tint: "text-rose-600 dark:text-rose-300" },
-  { href: "/incomes/new", label: "Revenu", icon: HandArrowDown, tint: "text-emerald-600 dark:text-emerald-300" },
-  { href: "/expenses/new?type=credit", label: "Crédit", icon: Bank, tint: "text-violet-600 dark:text-violet-300" },
-  { href: "/budgets/new", label: "Budget", icon: Wallet, tint: "text-violet-600 dark:text-violet-300" },
-  { href: "/epargne?ajouter=1", label: "Épargne", icon: PiggyBank, tint: "text-emerald-600 dark:text-emerald-300" },
-  { href: "/goals/new", label: "Objectif", icon: Target, tint: "text-amber-600 dark:text-amber-300" },
   { href: "/daret/new", label: "Daret", icon: HandCoins, tint: "text-amber-600 dark:text-amber-300" },
   { href: "/prets/new", label: "Prêt", icon: Handshake, tint: "text-rose-600 dark:text-rose-300" },
+  { href: "/goals/new", label: "Objectif", icon: Target, tint: "text-amber-600 dark:text-amber-300" },
+  { href: "/epargne?ajouter=1", label: "Épargne", icon: PiggyBank, tint: "text-emerald-600 dark:text-emerald-300" },
+  { href: "/budgets/new", label: "Budget", icon: Wallet, tint: "text-violet-600 dark:text-violet-300" },
+  { href: "/expenses/new?type=credit", label: "Crédit", icon: Bank, tint: "text-violet-600 dark:text-violet-300" },
+  { href: "/incomes/new", label: "Revenu", icon: HandArrowDown, tint: "text-emerald-600 dark:text-emerald-300" },
+  { href: "/expenses/new", label: "Dépense", icon: HandArrowUp, tint: "text-rose-600 dark:text-rose-300" },
 ];
 
 /** A tab: its icon and name — the current one filled, in violet, over the
