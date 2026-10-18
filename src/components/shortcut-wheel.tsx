@@ -5,16 +5,16 @@ import { useRouter } from "next/navigation";
 import { CalendarDots, CaretRight, ChartLineUp, GearSix, HandCoins, Handshake, PiggyBank, Target, TrendUp, Wallet } from "@phosphor-icons/react/ssr";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
-const ITEMS: { href: string; label: string; hint: string; icon: PhosphorIcon }[] = [
-  { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau…", icon: TrendUp },
-  { href: "/solde", label: "Solde", hint: "Cash, carte, historique", icon: Wallet },
-  { href: "/epargne", label: "Épargne", hint: "Argent mis de côté", icon: PiggyBank },
-  { href: "/prets", label: "Prêts", hint: "Ce qu'on doit te rendre", icon: Handshake },
-  { href: "/daret", label: "Daret", hint: "Tes darets et ton tour", icon: HandCoins },
-  { href: "/goals", label: "Objectifs", hint: "Voiture, maison, voyage…", icon: Target },
-  { href: "/stats", label: "Statistiques", hint: "Répartition, prévisions", icon: ChartLineUp },
-  { href: "/calendar", label: "Calendrier", hint: "Jour par jour", icon: CalendarDots },
-  { href: "/settings", label: "Paramètres", hint: "Thème, sauvegarde", icon: GearSix },
+const ITEMS: { href: string; label: string; hint: string; icon: PhosphorIcon; tone: string }[] = [
+  { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau…", icon: TrendUp, tone: "cyan" },
+  { href: "/solde", label: "Solde", hint: "Cash, carte, historique", icon: Wallet, tone: "blue" },
+  { href: "/epargne", label: "Épargne", hint: "Argent mis de côté", icon: PiggyBank, tone: "violet" },
+  { href: "/prets", label: "Prêts", hint: "Ce qu'on doit te rendre", icon: Handshake, tone: "rose" },
+  { href: "/daret", label: "Daret", hint: "Tes darets et ton tour", icon: HandCoins, tone: "amber" },
+  { href: "/goals", label: "Objectifs", hint: "Voiture, maison, voyage…", icon: Target, tone: "violet" },
+  { href: "/stats", label: "Statistiques", hint: "Répartition, prévisions", icon: ChartLineUp, tone: "blue" },
+  { href: "/calendar", label: "Calendrier", hint: "Jour par jour", icon: CalendarDots, tone: "cyan" },
+  { href: "/settings", label: "Paramètres", hint: "Thème, sauvegarde", icon: GearSix, tone: "slate" },
 ];
 const N = ITEMS.length;
 
@@ -218,7 +218,7 @@ export function ShortcutWheel() {
         WebkitMaskImage: "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
       }}
     >
-      {ITEMS.map(({ href, label, hint, icon: Icon }, i) => (
+      {ITEMS.map(({ href, label, hint, icon: Icon, tone }, i) => (
         <button
           key={href}
           ref={(node) => {
@@ -234,7 +234,7 @@ export function ShortcutWheel() {
           style={styleFor(offsetOf(i, 0))}
           className="gx-wheel-card absolute inset-x-0 top-1/2 flex items-center gap-3 rounded-[22px] px-3.5 py-3 text-left will-change-transform"
         >
-          <span className="gx-tile flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl opacity-[var(--wheel-content)]">
+          <span className={`gx-tile gx-tone-${tone} flex h-10 w-10 shrink-0 items-center justify-center rounded-full opacity-[var(--wheel-content)]`}>
             <Icon weight="duotone" className="h-[22px] w-[22px]" />
           </span>
           <span className="min-w-0 flex-1 opacity-[var(--wheel-content)]">

@@ -15,11 +15,11 @@ import { DueNowList } from "@/components/due-now-list";
 import { DueRepayments, type DueRepayment } from "@/components/due-repayments";
 import { ShortcutWheel } from "@/components/shortcut-wheel";
 
-const QUICK_ACTIONS: { href: string; label: string; icon: PhosphorIcon }[] = [
-  { href: "/expenses/new", label: "Dépense", icon: HandArrowUp },
-  { href: "/incomes/new", label: "Revenu", icon: HandArrowDown },
-  { href: "/epargne", label: "Épargne", icon: PiggyBank },
-  { href: "/solde", label: "Transfert", icon: Swap },
+const QUICK_ACTIONS: { href: string; label: string; icon: PhosphorIcon; tone: string }[] = [
+  { href: "/expenses/new", label: "Dépense", icon: HandArrowUp, tone: "rose" },
+  { href: "/incomes/new", label: "Revenu", icon: HandArrowDown, tone: "green" },
+  { href: "/epargne", label: "Épargne", icon: PiggyBank, tone: "violet" },
+  { href: "/solde", label: "Transfert", icon: Swap, tone: "amber" },
 ];
 
 /** The cash share of what's available (0-1; half and half when nothing). */
@@ -93,59 +93,63 @@ export function HomeDashboard({
   return (
     <>
       {/* The wallet card: what's available now (the Solde), and how it splits
-          between cash and the card, each on a glass chip. Tapping it opens
-          the Solde. */}
-      <Link href="/solde" prefetch aria-label="Disponible maintenant · voir le solde" className="gx-wallet block rounded-[30px] px-5 pb-4 pt-4 transition-transform active:scale-[0.99]">
-        <div className="relative flex items-center justify-between">
-          <p className="text-[13px] font-semibold text-white/85">Disponible maintenant</p>
-          <button
-            type="button"
-            onClick={(e) => {
-              // The card is a link: the eye only shows / hides the amounts.
-              e.preventDefault();
-              e.stopPropagation();
-              setRevealed(!revealed);
-            }}
-            aria-label={revealed ? "Masquer le montant" : "Afficher le montant"}
-            className="gx-wallet-chip -mr-1 flex h-9 w-9 items-center justify-center rounded-full transition-transform active:scale-90"
+          between cash and the card, each on a glass chip — the edges of two
+          more cards behind it, like a wallet. Tapping it opens the Solde. */}
+      <div className="relative pt-5">
+        <span aria-hidden className="gx-stack absolute inset-x-8 top-0 h-12 rounded-t-[24px]" />
+        <span aria-hidden className="gx-stack absolute inset-x-4 top-2.5 h-12 rounded-t-[28px]" />
+        <Link href="/solde" prefetch aria-label="Disponible maintenant · voir le solde" className="gx-wallet block rounded-[30px] px-5 pb-4 pt-4 transition-transform active:scale-[0.99]">
+          <div className="relative flex items-center justify-between">
+            <p className="text-[13px] font-semibold text-white/85">Disponible maintenant</p>
+            <button
+              type="button"
+              onClick={(e) => {
+                // The card is a link: the eye only shows / hides the amounts.
+                e.preventDefault();
+                e.stopPropagation();
+                setRevealed(!revealed);
+              }}
+              aria-label={revealed ? "Masquer le montant" : "Afficher le montant"}
+              className="gx-wallet-chip -mr-1 flex h-9 w-9 items-center justify-center rounded-full transition-transform active:scale-90"
+            >
+              {revealed ? <EyeSlash weight="bold" className="h-[18px] w-[18px]" /> : <Eye weight="bold" className="h-[18px] w-[18px]" />}
+            </button>
+          </div>
+          <p
+            data-private
+            className={cn("relative mt-1 text-[2.6rem] font-extrabold leading-tight tracking-tight tabular-nums", !revealed && "tracking-widest")}
           >
-            {revealed ? <EyeSlash weight="bold" className="h-[18px] w-[18px]" /> : <Eye weight="bold" className="h-[18px] w-[18px]" />}
-          </button>
-        </div>
-        <p
-          data-private
-          className={cn("relative mt-1 text-[2.6rem] font-extrabold leading-tight tracking-tight tabular-nums", !revealed && "tracking-widest")}
-        >
-          <BigAmount text={show(balance.cash + balance.card)} />
-        </p>
-        {/* Cash | card: a bar of their shares, then each one on its chip. */}
-        <div className="relative mt-3 flex h-1.5 overflow-hidden rounded-full bg-white/20">
-          <span className="h-full rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.7)]" style={{ width: `${cashShare(balance) * 100}%` }} />
-        </div>
-        <div className="relative mt-3.5 grid grid-cols-2 gap-2.5">
-          {(["cash", "card"] as const).map((m) => {
-            const Icon = m === "cash" ? Money : CreditCard;
-            return (
-              <div key={m} className="gx-wallet-chip min-w-0 rounded-2xl px-3 py-2.5">
-                <p className="flex items-center gap-1.5 text-[12px] font-semibold text-white/80">
-                  <Icon weight="duotone" className="h-4 w-4" />
-                  {m === "cash" ? "Espèces" : "Carte"}
-                  <span className={cn("ml-auto h-2 w-2 rounded-full", m === "cash" ? "bg-white" : "bg-white/35")} />
-                </p>
-                <p data-private className="mt-0.5 truncate text-[17px] font-bold tabular-nums">
-                  {show(balance[m])}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </Link>
+            <BigAmount text={show(balance.cash + balance.card)} />
+          </p>
+          {/* Cash | card: a bar of their shares, then each one on its chip. */}
+          <div className="relative mt-3 flex h-1.5 overflow-hidden rounded-full bg-white/20">
+            <span className="h-full rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.7)]" style={{ width: `${cashShare(balance) * 100}%` }} />
+          </div>
+          <div className="relative mt-3.5 grid grid-cols-2 gap-2.5">
+            {(["cash", "card"] as const).map((m) => {
+              const Icon = m === "cash" ? Money : CreditCard;
+              return (
+                <div key={m} className="gx-wallet-chip min-w-0 rounded-2xl px-3 py-2.5">
+                  <p className="flex items-center gap-1.5 text-[12px] font-semibold text-white/80">
+                    <Icon weight="duotone" className="h-4 w-4" />
+                    {m === "cash" ? "Espèces" : "Carte"}
+                    <span className={cn("ml-auto h-2 w-2 rounded-full", m === "cash" ? "bg-white" : "bg-white/35")} />
+                  </p>
+                  <p data-private className="mt-0.5 truncate text-[17px] font-bold tabular-nums">
+                    {show(balance[m])}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </Link>
+      </div>
 
-      {/* Quick actions: round clear-glass buttons, their name under them. */}
+      {/* Quick actions: pastel circles, each its colour, their name under them. */}
       <div className="grid grid-cols-4 gap-2">
-        {QUICK_ACTIONS.map(({ href, label, icon: Icon }) => (
-          <Link key={href} href={href} prefetch className="flex flex-col items-center gap-1.5 transition-transform active:scale-95">
-            <span className="gx-pill flex h-[58px] w-[58px] items-center justify-center rounded-full text-violet-700 dark:text-violet-200">
+        {QUICK_ACTIONS.map(({ href, label, icon: Icon, tone }) => (
+          <Link key={href} href={href} prefetch className="flex flex-col items-center gap-2 transition-transform active:scale-95">
+            <span className={`gx-tile gx-tone-${tone} flex h-[54px] w-[54px] items-center justify-center rounded-full`}>
               <Icon weight="duotone" className="h-6 w-6" />
             </span>
             <span className="text-[12px] font-semibold text-slate-700 dark:text-slate-300">{label}</span>

@@ -18,11 +18,11 @@ export function HomeHeader({ name }: { name: string }) {
   const firstName = name.split(" ")[0];
 
   return (
-    <header data-tone className="relative z-10 px-5 pb-1 pt-4 text-slate-900 dark:text-white">
+    <header data-tone className="gx-onblue relative z-10 px-5 pb-1 pt-4 text-slate-900 dark:text-white">
       <div className="flex h-12 items-center gap-3">
         <RefreshLogo />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-medium text-slate-500 dark:text-white/60">{greeting} 👋</p>
+          <p className="gx-soft truncate text-[13px] font-medium text-slate-500 dark:text-white/60">{greeting} 👋</p>
           <h1 className="truncate text-[19px] font-bold leading-tight tracking-tight">{firstName || "GX Salaire"}</h1>
         </div>
         <Link

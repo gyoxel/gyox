@@ -3,30 +3,25 @@ import { CalendarDots, Cardholder, CaretRight, ChartLineUp, GearSix, HandCoins, 
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/page-header";
 
-const GROUPS: { title: string; items: { href: string; label: string; hint: string; icon: PhosphorIcon }[] }[] = [
+const GROUPS: { title: string; items: { href: string; label: string; hint: string; icon: PhosphorIcon; tone: string }[] }[] = [
   { title: "Mon compte", items: [
-    { href: "/profil", label: "Profil", hint: "Ton compte Google, déconnexion", icon: UserCircle },
-    { href: "/settings", label: "Paramètres", hint: "Thème, sauvegarde", icon: GearSix },
+    { href: "/profil", label: "Profil", hint: "Ton compte Google, déconnexion", icon: UserCircle, tone: "blue" },
+    { href: "/settings", label: "Paramètres", hint: "Thème, sauvegarde", icon: GearSix, tone: "slate" },
   ] },
   { title: "Mon argent", items: [
-    { href: "/salary", label: "Salaire", hint: "Montant, jour de paie, avances", icon: Money },
-    { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau, vente…", icon: TrendUp },
-    { href: "/solde", label: "Solde", hint: "Cash et carte, transferts, historique", icon: Wallet },
-    { href: "/epargne", label: "Épargne", hint: "Argent mis de côté, avec tes notes", icon: PiggyBank },
+    { href: "/salary", label: "Salaire", hint: "Montant, jour de paie, avances", icon: Money, tone: "green" },
+    { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau, vente…", icon: TrendUp, tone: "cyan" },
+    { href: "/solde", label: "Solde", hint: "Cash et carte, transferts, historique", icon: Wallet, tone: "blue" },
+    { href: "/epargne", label: "Épargne", hint: "Argent mis de côté, avec tes notes", icon: PiggyBank, tone: "violet" },
   ] },
   { title: "Organiser", items: [
-    { href: "/budgets", label: "Budgets", hint: "Transport, courses… : note ce que tu dépenses chaque jour", icon: Cardholder },
-    { href: "/daret", label: "Daret", hint: "Tes darets et ton tour", icon: HandCoins },
-    { href: "/prets", label: "Prêts", hint: "L'argent que tu as prêté, et ce qu'on te rend", icon: Handshake },
-    { href: "/goals", label: "Objectifs", hint: "Voiture, maison, voyage…", icon: Target },
-    { href: "/calendar", label: "Calendrier", hint: "Jour par jour : entrées, sorties, rappels et notes", icon: CalendarDots },
-    {
-      href: "/stats",
-      label: "Statistiques",
-      hint: "Répartition, prévisions",
-      icon: ChartLineUp,
-    },
-    { href: "/categories", label: "Catégories", hint: "Ajouter, renommer, ordonner", icon: Tag },
+    { href: "/budgets", label: "Budgets", hint: "Transport, courses… : note ce que tu dépenses chaque jour", icon: Cardholder, tone: "orange" },
+    { href: "/daret", label: "Daret", hint: "Tes darets et ton tour", icon: HandCoins, tone: "amber" },
+    { href: "/prets", label: "Prêts", hint: "L'argent que tu as prêté, et ce qu'on te rend", icon: Handshake, tone: "rose" },
+    { href: "/goals", label: "Objectifs", hint: "Voiture, maison, voyage…", icon: Target, tone: "violet" },
+    { href: "/calendar", label: "Calendrier", hint: "Jour par jour : entrées, sorties, rappels et notes", icon: CalendarDots, tone: "cyan" },
+    { href: "/stats", label: "Statistiques", hint: "Répartition, prévisions", icon: ChartLineUp, tone: "blue" },
+    { href: "/categories", label: "Catégories", hint: "Ajouter, renommer, ordonner", icon: Tag, tone: "slate" },
   ] },
 ];
 
@@ -40,14 +35,14 @@ export default function MenuPage() {
           <section key={title} className="flex flex-col gap-2">
             <h2 className="px-1 text-[13px] font-semibold text-slate-500 dark:text-slate-400">{title}</h2>
             <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              {items.map(({ href, label, hint, icon: Icon }) => (
+              {items.map(({ href, label, hint, icon: Icon, tone }) => (
                 <Link
                   key={href}
                   href={href}
                   prefetch
                   className="flex items-center gap-3.5 border-t border-slate-100 px-4 py-3.5 first:border-t-0 active:bg-slate-50 dark:border-slate-800 dark:active:bg-slate-800"
                 >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl gx-tile text-[var(--gx-tile-ink)]">
+                  <span className={`gx-tile gx-tone-${tone} flex h-11 w-11 shrink-0 items-center justify-center rounded-full`}>
                     <Icon weight="duotone" className="h-[22px] w-[22px]" />
                   </span>
                   <span className="min-w-0 flex-1">
