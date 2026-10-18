@@ -35,12 +35,12 @@ export default async function HomePage() {
 
   return (
     <div className="relative">
+      <div aria-hidden className="gx-home-glow pointer-events-none absolute inset-x-0 top-0 -z-0 h-[440px]" />
       <HomeHeader name={account?.name || account?.email.split("@")[0] || ""} />
 
-      <main className="relative flex flex-col gap-4 px-4 pb-5 pt-2">
+      <main className="relative flex flex-col gap-5 px-4 pb-5 pt-3">
         <HomeDashboard
           solde={wallet.balance}
-          savings={wallet.savings}
           currency={settings.currency}
           expenses={expenses}
           payments={payments}

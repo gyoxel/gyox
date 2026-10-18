@@ -17,17 +17,17 @@ const ITEMS = [
 // Pages opened from the Menu tab keep it highlighted.
 const MENU_PATHS = ["/menu", "/budgets", "/daret", "/goals", "/calendar", "/stats", "/categories", "/salary", "/incomes", "/solde", "/epargne", "/prets", "/settings", "/profil", "/admin"];
 
-// The + button's menu: a short list rising above it, each one in its own
-// pastel colour of meaning (a credit, money in, money out).
+// The + button's menu: a short list rising above it, each one with its own
+// colour of meaning (money in, out, a credit).
 const ACTIONS = [
-  { href: "/expenses/new?type=credit", label: "Crédit", icon: Bank, tone: "blue" },
-  { href: "/incomes/new", label: "Revenu", icon: HandArrowDown, tone: "green" },
-  { href: "/expenses/new", label: "Dépense", icon: HandArrowUp, tone: "rose" },
+  { href: "/expenses/new?type=credit", label: "Crédit", icon: Bank, tint: "text-violet-600 dark:text-violet-300" },
+  { href: "/incomes/new", label: "Revenu", icon: HandArrowDown, tint: "text-emerald-600 dark:text-emerald-300" },
+  { href: "/expenses/new", label: "Dépense", icon: HandArrowUp, tint: "text-rose-600 dark:text-rose-300" },
 ];
 
 
-/** A tab: its icon and name — the current one filled, in ink, over the
- *  bar's lime lens. */
+/** A tab: its icon and name — the current one filled, in violet, over the
+ *  bar's glass lens. */
 function NavLink({
   href,
   label,
@@ -54,14 +54,14 @@ function NavLink({
         weight={active ? "fill" : "regular"}
         className={cn(
           "h-6 w-6 transition-colors duration-200",
-          active ? "gx-on-lens" : "text-slate-500 dark:text-slate-400",
+          active ? "text-violet-700 dark:text-violet-200" : "text-slate-500 dark:text-slate-400",
         )}
       />
       <span
         data-tint
         className={cn(
           "text-[11px] leading-none transition-colors duration-200",
-          active ? "gx-on-lens font-bold" : "font-semibold text-slate-500 dark:text-slate-400",
+          active ? "font-bold text-violet-800 dark:text-white" : "font-semibold text-slate-500 dark:text-slate-400",
         )}
       >
         {label}
@@ -182,15 +182,14 @@ function AppBar({ pathname }: { pathname: string }) {
         aria-hidden
         onClick={() => setOpen(false)}
         className={cn(
-          "fixed inset-0 z-40 bg-[#f3f4f0]/60 transition-opacity duration-300 dark:bg-[#050604]/60",
+          "fixed inset-0 z-40 bg-[#efeafc]/55 transition-opacity duration-300 dark:bg-[#05040f]/60",
           open ? "opacity-100 backdrop-blur-md" : "pointer-events-none opacity-0",
         )}
       />
 
-      {/* The tabs on a capsule of frosted glass, a lime lens sliding under
-          the current one; floating above them on the right, the + — a lime
-          orb, its menu rising above it. Both stay put while the page
-          scrolls. */}
+      {/* The tabs on a capsule of glass, a lens sliding under the current
+          one; floating above them on the right, the + — an orb of glass, its
+          menu rising above it. Both stay put while the page scrolls. */}
       <nav
         className={cn(
           "pointer-events-none fixed inset-x-0 bottom-0 z-50 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)]",
@@ -202,7 +201,7 @@ function AppBar({ pathname }: { pathname: string }) {
             {/* The + button's menu, rising above it — closed, it lets taps
                 through to the page under it. */}
             <div className="pointer-events-none absolute bottom-full right-0 mb-3 flex flex-col items-end gap-2.5">
-              {ACTIONS.map(({ href, label, icon: Icon, tone }, i) => (
+              {ACTIONS.map(({ href, label, icon: Icon, tint }, i) => (
                 <Link
                   key={label}
                   href={href}
@@ -218,7 +217,10 @@ function AppBar({ pathname }: { pathname: string }) {
                 >
                   <span className="gx-float rounded-full px-4 py-2 text-sm font-bold text-slate-900 dark:text-white">{label}</span>
                   <span
-                    className={`gx-tile gx-tone-${tone} flex h-[52px] w-[52px] items-center justify-center rounded-full transition-transform active:scale-95`}
+                    className={cn(
+                      "gx-float flex h-[52px] w-[52px] items-center justify-center rounded-full transition-transform active:scale-95",
+                      tint,
+                    )}
                   >
                     <Icon weight="duotone" className="h-6 w-6" />
                   </span>
@@ -231,7 +233,7 @@ function AppBar({ pathname }: { pathname: string }) {
               onClick={toggle}
               aria-expanded={open}
               aria-label={open ? "Fermer le menu d'ajout" : "Ajouter"}
-              className="gx-fab relative flex h-[60px] w-[60px] items-center justify-center rounded-full transition-transform duration-200 active:scale-95"
+              className="gx-fab relative flex h-[60px] w-[60px] items-center justify-center rounded-full text-violet-700 transition-transform duration-200 active:scale-95 dark:text-violet-100"
             >
               <Plus weight="bold" className={cn("h-7 w-7 transition-transform duration-300", open && "rotate-[135deg]")} />
             </button>

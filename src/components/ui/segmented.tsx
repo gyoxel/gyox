@@ -4,9 +4,9 @@ import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 /**
- * A choice among a few, as one track: each option an icon and a word, the
- * chosen one on a lime lens that slides over to it (like the bar's current
- * tab).
+ * A choice among a few, as one track of glass: each option an icon and a
+ * word, the chosen one on a lens of violet glass that slides over to it
+ * (like the bar's current tab).
  */
 export function Segmented<T extends string>({
   label,
@@ -24,7 +24,7 @@ export function Segmented<T extends string>({
     <div
       role="radiogroup"
       aria-label={label}
-      className="relative grid rounded-[22px] bg-[var(--gx-chip)] p-1 shadow-[inset_0_1px_2px_rgba(21,24,15,0.06)]"
+      className="relative grid rounded-[22px] bg-[var(--gx-chip)] p-1 shadow-[inset_0_1px_2px_rgba(40,24,110,0.06)]"
       style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
     >
       <span
@@ -43,7 +43,7 @@ export function Segmented<T extends string>({
             onClick={() => onChange(key)}
             className={cn(
               "relative z-10 flex flex-col items-center gap-1 rounded-[18px] px-1 py-2.5 transition-colors duration-300",
-              selected ? "text-[var(--gx-on-lime)]" : "text-slate-600 active:bg-white/60 dark:text-slate-300 dark:active:bg-white/10",
+              selected ? "text-white" : "text-slate-600 active:bg-white/60 dark:text-slate-300 dark:active:bg-white/10",
             )}
           >
             <Icon
@@ -58,7 +58,7 @@ export function Segmented<T extends string>({
   );
 }
 
-/** The line under a choice saying what it means: calm, on a lime tint. */
+/** The line under a choice saying what it means: calm, in violet. */
 export function ChoiceNote({ children }: { children: React.ReactNode }) {
   return (
     <p className="rounded-2xl bg-violet-50 px-3.5 py-2.5 text-[12.5px] leading-snug text-violet-900 dark:bg-violet-500/10 dark:text-violet-100">

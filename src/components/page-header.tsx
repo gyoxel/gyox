@@ -8,10 +8,10 @@ import { HEADER_BUTTON } from "@/components/header-button";
 import { cn } from "@/lib/utils";
 
 /**
- * Page header, the same on every page: on the page itself while at the
- * top, frosted glass once the page scrolls under it — the browser's bar
- * takes the page's colour, so the app looks full screen — with a bold ink
- * title and round white back / settings buttons.
+ * Page header, the same on every page: on the page itself while at the top,
+ * glass (the page blurred under it) once the page scrolls under it — the
+ * browser's bar takes the backdrop's colour, so the app looks full screen —
+ * with a bold title and round glass back / settings buttons.
  */
 export function PageHeader({
   title,

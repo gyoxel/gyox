@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore, useTransition } from "react";
-import { Check, HandCoins, Money, Trash, X } from "@phosphor-icons/react/ssr";
+import { CaretRight, Check, HandCoins, Money, Trash, X } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import { errorMessage } from "@/components/expense-editor";
 import type { PaymentMethod, SalaryAdvance, Settings } from "@/lib/types";
@@ -174,35 +174,46 @@ function ofMonth(period: string): string {
   return /^[aeiouéèh]/i.test(name) ? `d'${name}` : `de ${name}`;
 }
 
-const RING = 32;
-const RING_STROKE = 4;
+const RING = 60;
+const RING_STROKE = 6;
 
-/** The pay period as a ring filling up: lime, coral when late. */
-function Ring({ progress, late }: { progress: number; late: boolean }) {
+/** The pay period as a ring filling up, with the days left inside. */
+function Ring({ progress, days, late }: { progress: number; days: number; late: boolean }) {
   const r = (RING - RING_STROKE) / 2;
   const c = 2 * Math.PI * r;
   return (
-    <svg width={RING} height={RING} className="shrink-0 -rotate-90" aria-hidden>
-      <defs>
-        <linearGradient id="salary-ring" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor={late ? "#fb7185" : "#d4f46f"} />
-          <stop offset="100%" stopColor={late ? "#e11d48" : "#8cc63f"} />
-        </linearGradient>
-      </defs>
-      <circle cx={RING / 2} cy={RING / 2} r={r} fill="none" strokeWidth={RING_STROKE} className="stroke-slate-200/80 dark:stroke-white/10" />
-      <circle
-        cx={RING / 2}
-        cy={RING / 2}
-        r={r}
-        fill="none"
-        strokeWidth={RING_STROKE}
-        strokeLinecap="round"
-        stroke="url(#salary-ring)"
-        strokeDasharray={c}
-        strokeDashoffset={c * (1 - progress)}
-        className="transition-[stroke-dashoffset] duration-700"
-      />
-    </svg>
+    <div className="relative shrink-0" style={{ width: RING, height: RING }}>
+      <svg width={RING} height={RING} className="-rotate-90" aria-hidden>
+        <defs>
+          <linearGradient id="salary-ring" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={late ? "#fb7185" : "#34d399"} />
+            <stop offset="100%" stopColor={late ? "#e11d48" : "#22d3ee"} />
+          </linearGradient>
+        </defs>
+        <circle cx={RING / 2} cy={RING / 2} r={r} fill="none" strokeWidth={RING_STROKE} className="stroke-white/10" />
+        <circle
+          cx={RING / 2}
+          cy={RING / 2}
+          r={r}
+          fill="none"
+          strokeWidth={RING_STROKE}
+          strokeLinecap="round"
+          stroke="url(#salary-ring)"
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - progress)}
+          className="transition-[stroke-dashoffset] duration-700"
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className={cn("text-xl font-bold leading-none tabular-nums", late && "text-rose-300")}>
+          {late && "−"}
+          {days}
+        </span>
+        <span className="mt-0.5 text-[8px] font-medium uppercase tracking-wider text-white/60">
+          {days > 1 ? "jours" : "jour"}
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -244,9 +255,8 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
   const capitalize = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
   const caption = state.period ? (late ? `prévu le ${state.lastLabel}` : capitalize(state.nextLabel)) : "";
 
-  // A question (or a first step) takes Accueil's whole row of tiles.
   const shell =
-    "relative col-span-2 w-full overflow-hidden rounded-[24px] bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white shadow-lg ring-1 ring-white/5 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/80 dark:ring-white/10";
+    "relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white shadow-lg ring-1 ring-white/5 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/80 dark:ring-white/10";
   const glow = (
     <span
       aria-hidden
@@ -274,8 +284,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
           </div>
           <Button
             type="button"
-            variant="plain"
-            className="relative w-full bg-white text-slate-900 shadow-sm"
+            className="relative w-full gx-cta"
             onClick={() => setEditing(true)}
           >
             <Money weight="bold" className="h-4 w-4" />
@@ -314,8 +323,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
             </Button>
             <Button
               type="button"
-              variant="plain"
-              className="bg-white text-slate-900 shadow-sm"
+              className="gx-cta"
               onClick={confirmReceived}
               disabled={saving}
             >
@@ -329,37 +337,24 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
           type="button"
           onClick={() => setEditing(true)}
           aria-label={late ? "Confirmer le salaire" : "Modifier le salaire"}
-          className="gx-glass flex w-full flex-col rounded-[24px] border p-4 text-left transition-transform active:scale-[0.98]"
+          className={cn(shell, "block px-3.5 py-3 text-left transition-transform active:scale-[0.98]")}
         >
-          <p
-            className={cn(
-              "truncate text-[13px] font-semibold",
-              late ? "text-rose-600 dark:text-rose-300" : "text-slate-500 dark:text-white/60",
-            )}
-          >
-            {late ? "Salaire en retard" : "Prochain salaire"}
-          </p>
-          <div className="mt-2 flex items-center justify-between gap-2">
-            <p
-              className={cn(
-                "min-w-0 truncate text-[22px] font-bold leading-tight tracking-[-0.02em] tabular-nums text-slate-900 dark:text-white",
-                late && "text-rose-600 dark:text-rose-300",
-              )}
-            >
-              {state.days > 0 || late ? (
-                <>
-                  {late && "−"}
-                  {state.days} {state.days > 1 ? "jours" : "jour"}
-                </>
-              ) : (
-                <>
-                  {state.hours} h {String(state.minutes).padStart(2, "0")}
-                </>
-              )}
-            </p>
-            <Ring progress={state.progress} late={late} />
+          {glow}
+          <div className="relative flex items-center gap-3">
+            <Ring progress={state.progress} days={state.days} late={late} />
+            <div className="min-w-0 flex-1">
+              <p
+                className={cn(
+                  "text-[10px] font-semibold uppercase tracking-[0.16em]",
+                  late ? "text-rose-300" : "text-indigo-200/80",
+                )}
+              >
+                {late ? "Salaire en retard" : "Prochain salaire"}
+              </p>
+              <p className="mt-0.5 h-5 truncate text-sm font-semibold">{caption}</p>
+            </div>
+            <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-white/40" />
           </div>
-          <p className="mt-0.5 h-[18px] truncate text-[12px] text-slate-500 dark:text-white/55">{caption}</p>
         </button>
       )}
 

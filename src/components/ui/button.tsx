@@ -10,8 +10,8 @@ const buttonVariants = cva(
       variant: {
         /** The main action: the brand colour (globals.css). */
         default: "gx-cta hover:brightness-110",
-        /** The other actions: white pills, dark text. */
-        outline: "gx-pill text-slate-800 hover:brightness-[1.02] dark:text-slate-100",
+        /** The other actions: clear glass, violet text. */
+        outline: "gx-pill text-violet-800 hover:brightness-[1.03] dark:text-violet-100",
         ghost: "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10",
         /** Deleting: the same tinted glass, in coral. */
         destructive: "gx-danger hover:brightness-110",
