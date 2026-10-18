@@ -1,7 +1,8 @@
-import { getAllCategories, getAllExpenses, getAllLoans, getAllPayments, getAllSalaryAdvances, getSettings } from "@/lib/page-data";
+import { getAllCategories, getAllDarets, getAllExpenses, getAllLoans, getAllPayments, getAllSalaryAdvances, getSettings } from "@/lib/page-data";
 import { monthLabelFr, todayMonth } from "@/lib/date";
 
 import { loanState } from "@/lib/loans";
+import { getDaretState } from "@/lib/daret";
 import { getWallet } from "@/lib/wallet-data";
 import { HomeHeader } from "@/components/home-header";
 import { currentAccount } from "@/lib/accounts";
@@ -10,7 +11,7 @@ import { HomeDashboard } from "@/components/home-dashboard";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [settings, expenses, payments, categories, advances, wallet, loans, account] = await Promise.all([
+  const [settings, expenses, payments, categories, advances, wallet, loans, darets, account] = await Promise.all([
     getSettings(),
     getAllExpenses(),
     getAllPayments(),
@@ -18,6 +19,7 @@ export default async function HomePage() {
     getAllSalaryAdvances(),
     getWallet(),
     getAllLoans(),
+    getAllDarets(),
     currentAccount(),
   ]);
   const categoryEmoji = Object.fromEntries(categories.map((c) => [c.id, c.emoji]));
@@ -32,6 +34,24 @@ export default async function HomePage() {
       monthLabel: monthLabelFr(s.month),
     })),
   );
+
+  // Darets whose turn has come (this month or before) and whose pot isn't
+  // confirmed yet.
+  const dueDaretPayouts = darets.flatMap((d) => {
+    if (d.payoutMethod || !d.expense.active) return [];
+    const state = getDaretState(d, payments, currentMonth);
+    if (state.turnStatus === "upcoming") return [];
+    const label = monthLabelFr(state.turn);
+    return [
+      {
+        daretId: d.id,
+        name: d.expense.name,
+        icon: d.expense.icon ?? "🤝🏻",
+        payout: state.payout,
+        monthLabel: label.charAt(0).toUpperCase() + label.slice(1),
+      },
+    ];
+  });
 
   return (
     <div className="relative">
@@ -50,6 +70,7 @@ export default async function HomePage() {
           settings={settings}
           advances={advances}
           dueRepayments={dueRepayments}
+          dueDaretPayouts={dueDaretPayouts}
         />
       </main>
     </div>

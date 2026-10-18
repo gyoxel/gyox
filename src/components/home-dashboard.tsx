@@ -13,6 +13,7 @@ import { useRevealedBalance } from "@/lib/reveal-balance";
 import { CountdownNextSalary } from "@/components/countdown-next-salary";
 import { DueNowList } from "@/components/due-now-list";
 import { DueRepayments, type DueRepayment } from "@/components/due-repayments";
+import { DueDaretPayouts, type DueDaretPayout } from "@/components/due-daret-payouts";
 import { ShortcutWheel } from "@/components/shortcut-wheel";
 import { TransferDialog } from "@/components/transfer-dialog";
 import { MethodIcon } from "@/components/method-icon";
@@ -63,6 +64,7 @@ export function HomeDashboard({
   settings,
   advances,
   dueRepayments,
+  dueDaretPayouts,
 }: {
   /** Solde of each account (cash, card) as of the server's payments. */
   solde: Record<PaymentMethod, number>;
@@ -78,6 +80,8 @@ export function HomeDashboard({
   advances: SalaryAdvance[];
   /** Loans' installments whose month has come, not received yet. */
   dueRepayments: DueRepayment[];
+  /** Darets whose turn has come, the pot not confirmed yet. */
+  dueDaretPayouts: DueDaretPayout[];
 }) {
   const [localPayments, setLocalPayments] = useState<Payment[]>(payments);
   const [seenPayments, setSeenPayments] = useState(payments);
@@ -183,6 +187,8 @@ export function HomeDashboard({
           );
         })}
       </div>
+
+      <DueDaretPayouts items={dueDaretPayouts} currency={currency} />
 
       <DueRepayments items={dueRepayments} currency={currency} />
 
