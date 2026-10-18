@@ -58,7 +58,7 @@ export function ReceiveRepayment({ variant = "full", ...info }: MonthInfo & { va
       {open && (
         <AmountSheet
           title={`${info.name} t'a rendu combien ?`}
-          subtitle={`🤝 ${info.monthLabel} · attendu ${formatMoney(info.expected)}`}
+          subtitle={`💸 ${info.monthLabel} · attendu ${formatMoney(info.expected)}`}
           expected={info.expected}
           already={info.received}
           initialAmount={left}
@@ -103,7 +103,7 @@ export function RepaymentRow({ repayment, ...info }: MonthInfo & { repayment: Lo
       {open && (
         <AmountSheet
           title="Modifier le remboursement"
-          subtitle={`🤝 ${info.name} · ${info.monthLabel} · attendu ${formatMoney(info.expected)}`}
+          subtitle={`💸 ${info.name} · ${info.monthLabel} · attendu ${formatMoney(info.expected)}`}
           expected={info.expected}
           already={others}
           initialAmount={repayment.amount}

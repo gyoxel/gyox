@@ -11,8 +11,8 @@ import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 const ITEMS: { href: string; label: string; hint: string; icon: PhosphorIcon }[] = [
   { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau…", icon: TrendUp },
   { href: "/budgets", label: "Budgets", hint: "Transport, courses…", icon: Cardholder },
-  { href: "/daret", label: "Daret", hint: "Tes darets et ton tour", icon: HandCoins },
-  { href: "/prets", label: "Argent prêté", hint: "Ce qu'on doit te rendre", icon: Handshake },
+  { href: "/daret", label: "Daret", hint: "Tes darets et ton tour", icon: Handshake },
+  { href: "/prets", label: "Argent prêté", hint: "Ce qu'on doit te rendre", icon: HandCoins },
   { href: "/goals", label: "Objectifs", hint: "Voiture, maison, voyage…", icon: Target },
   { href: "/calendar", label: "Calendrier", hint: "Jour par jour", icon: CalendarDots },
   { href: "/stats", label: "Statistiques", hint: "Répartition, prévisions", icon: ChartLineUp },

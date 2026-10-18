@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 export interface AmountSheetProps {
   /** "Karim t'a rendu combien ?", "Tu as payé combien ?" */
   title: string;
-  /** "🤝 Karim · Octobre 2026" */
+  /** "💸 Karim · Octobre 2026" */
   subtitle: string;
   /** What's expected (the bar's full width). */
   expected: number;

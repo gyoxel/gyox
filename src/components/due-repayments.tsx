@@ -23,18 +23,18 @@ export function DueRepayments({ items, currency }: { items: DueRepayment[]; curr
       {items.map((d) => (
         <div
           key={`${d.loanId}-${d.slot}`}
-          className="gx-glass flex items-center gap-3 rounded-3xl border px-3.5 py-3"
+          className="gx-glass flex items-center gap-2.5 rounded-[22px] border py-2 pl-2.5 pr-2"
         >
-          <Link href={`/prets/${d.loanId}`} className="flex min-w-0 flex-1 items-center gap-3">
-            <span className="gx-tile flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xl">
-              🤝
+          <Link href={`/prets/${d.loanId}`} className="flex min-w-0 flex-1 items-center gap-2.5">
+            <span className="gx-tile flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg">
+              💸
             </span>
             <span className="min-w-0">
               <span className="block truncate text-sm font-semibold text-slate-900 dark:text-white">
                 {d.name} · {formatMoney(d.expected - d.received, currency)}
               </span>
               {/* The title already says what's left: here, what came in. */}
-              <span className="line-clamp-2 text-[11.5px] leading-snug text-amber-700 dark:text-amber-200">
+              <span className="block truncate text-[11.5px] leading-snug text-amber-700 dark:text-amber-200">
                 {d.received > 0
                   ? `${d.monthLabel} · ${formatMoney(d.received, currency)} déjà reçus`
                   : `Remboursement · ${d.monthLabel}`}

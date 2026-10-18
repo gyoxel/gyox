@@ -20,7 +20,7 @@ const DEFAULT_INCOME_CATEGORIES = [
 const SYSTEM_CATEGORIES = [
   { key: "credit", label: "Argent emprunté", emoji: "🏦" },
   { key: "epargne", label: "Épargne", emoji: "🐷" },
-  { key: "pret", label: "Argent rendu", emoji: "🤝" },
+  { key: "pret", label: "Argent rendu", emoji: "💸" },
   { key: "budget", label: "Reste de budget", emoji: "👛" },
 ];
 

@@ -127,7 +127,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
       <LinkedSourcePage
         title={expense.name}
         gradient="from-amber-400 via-orange-500 to-amber-700"
-        eyebrow="Argent prêté 🤝"
+        eyebrow="Argent prêté 💸"
         amount={formatMoney(expense.amount, settings.currency)}
         subtitle={<>Prêté à {linkedLoan.name}{paidWith && <> · <MethodLabel method={paidWith} /></>}</>}
         text={`Cet argent a été prêté à ${linkedLoan.name}. Pour le modifier ou le supprimer, c'est depuis « Argent prêté » — où tu confirmes aussi chaque remboursement reçu.`}

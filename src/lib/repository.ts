@@ -17,6 +17,11 @@ function currentName(name: string): string {
   return name;
 }
 
+/** Money lent had 🤝 (the darets' hands): it's 💸 now. */
+function currentIcon(name: string, icon: string | null): string | null {
+  return icon === "🤝" && (name.startsWith("Prêt · ") || name.startsWith("Argent prêté · ")) ? "💸" : icon;
+}
+
 export function mapExpense(row: {
   id: string;
   name: string;
@@ -51,7 +56,7 @@ export function mapExpense(row: {
     creditInitialAmount: row.creditInitialAmount,
     creditPriorPaid: row.creditPriorPaid,
     linkedExpenseId: row.linkedExpenseId,
-    icon: row.icon,
+    icon: currentIcon(row.name, row.icon),
     categoryId: row.categoryId,
     monthAmounts: asMonthAmounts(row.monthAmounts),
     createdAt: row.createdAt,

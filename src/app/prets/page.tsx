@@ -1,6 +1,6 @@
 import { getAllLoans, getSettings } from "@/lib/page-data";
 import Link from "next/link";
-import { CaretRight, Handshake } from "@phosphor-icons/react/ssr";
+import { CaretRight, HandCoins } from "@phosphor-icons/react/ssr";
 
 import { loanState } from "@/lib/loans";
 import { monthLabelFr, todayMonth } from "@/lib/date";
@@ -47,7 +47,7 @@ export default async function LoansPage() {
 
         {rows.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-slate-200 px-4 py-10 text-center dark:border-slate-700">
-            <Handshake weight="duotone" className="h-9 w-9 text-amber-500" />
+            <HandCoins weight="duotone" className="h-9 w-9 text-amber-500" />
             <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Rien de prêté pour le moment</p>
             <p className="text-xs text-slate-400">
               L&apos;argent que tu prêtes sort de ton solde ; chaque remboursement reçu y revient.
@@ -65,7 +65,7 @@ export default async function LoansPage() {
                 <Link href={`/prets/${loan.id}`} className="flex flex-col gap-2.5 px-4 pb-3 pt-4 active:bg-slate-50 dark:active:bg-slate-800/60">
                   <div className="flex items-center gap-3">
                     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl gx-tile text-xl">
-                      🤝
+                      💸
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-base font-semibold text-slate-900 dark:text-white">{loan.name}</span>

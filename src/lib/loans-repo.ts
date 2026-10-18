@@ -74,7 +74,7 @@ function expenseData(id: string, input: LoanInput, now: string) {
     creditInitialAmount: null,
     creditPriorPaid: null,
     linkedExpenseId: null,
-    icon: "🤝",
+    icon: "💸",
     categoryId: null,
     createdAt: now,
     updatedAt: now,
