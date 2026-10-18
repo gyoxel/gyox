@@ -6,12 +6,12 @@ import { Check, Clock, PencilSimple } from "@phosphor-icons/react/ssr";
 import { loanState, type LoanSlot } from "@/lib/loans";
 import { loanDelete } from "@/lib/delete-specs";
 import { compareMonths, monthLabelFr, todayMonth } from "@/lib/date";
-import { METHOD_META } from "@/lib/payment-method";
 import { cn, formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { DeleteButton } from "@/components/delete-button";
 import { ReceiveRepayment, RepaymentRow } from "@/components/loan-repayments";
 import { Button } from "@/components/ui/button";
+import { MethodLabel } from "@/components/method-icon";
 
 export const dynamic = "force-dynamic";
 
@@ -53,7 +53,7 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
             </div>
             <div className="rounded-2xl bg-white/15 px-2 py-2">
               <p className="text-[10px] uppercase tracking-wide text-white/75">Sorti de</p>
-              <p className="text-sm font-bold">{loan.method ? `${METHOD_META[loan.method].emoji} ${METHOD_META[loan.method].label}` : "—"}</p>
+              <p className="text-sm font-bold">{loan.method ? <MethodLabel method={loan.method} /> : "—"}</p>
             </div>
           </div>
         </div>

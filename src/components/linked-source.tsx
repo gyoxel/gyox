@@ -27,7 +27,7 @@ export function LinkedSourcePage({
   gradient: string;
   eyebrow: string;
   amount: string;
-  subtitle: string;
+  subtitle: React.ReactNode;
   text: string;
   href: string;
   editLabel: string;

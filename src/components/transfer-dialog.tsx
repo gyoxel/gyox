@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MethodIcon } from "@/components/method-icon";
 
 export type Account = PaymentMethod | "savings";
 
@@ -201,7 +202,7 @@ function AccountRow({
                 : "border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300",
             )}
           >
-            <span className="text-xl leading-none">{ACCOUNT_META[a].emoji}</span>
+            <MethodIcon method={a} className={a === "savings" ? "text-xl" : "h-5"} />
             {ACCOUNT_META[a].label}
           </button>
         ))}

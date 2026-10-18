@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MethodIcon, MethodLabel } from "@/components/method-icon";
 
 const TIME_ZONE = "Africa/Casablanca";
 const DAY_KEY = new Intl.DateTimeFormat("en-CA", {
@@ -181,7 +182,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
             >
               <div className="flex items-center gap-3">
                 <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-2xl", a.tile)}>
-                  {METHOD_META[a.key].emoji}
+                  <MethodIcon method={a.key} className="h-[19px]" />
                 </span>
                 <span className="flex-1 text-base font-semibold text-slate-900 dark:text-white">{a.name}</span>
                 <span
@@ -258,7 +259,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
                   filter === f && "bg-white text-slate-900 shadow-sm dark:bg-slate-950 dark:text-white",
                 )}
               >
-                {f === "all" ? "Tout" : `${METHOD_META[f].emoji} ${METHOD_META[f].label}`}
+                {f === "all" ? "Tout" : <MethodLabel method={f} />}
               </button>
             ))}
           </div>
@@ -331,9 +332,13 @@ function EntryRow({
   // A transfer shows as moving money; filtered on one account, its change there.
   const line = filter === "all" ? entry.lines[entry.lines.length - 1] : entry.lines.find((l) => l.account === filter)!;
   const amount = transfer && filter === "all" ? Math.abs(line.amount) : line.amount;
-  const accounts = transfer
-    ? `${METHOD_META[entry.lines[0].account].emoji} → ${METHOD_META[entry.lines[1].account].emoji}`
-    : `${METHOD_META[line.account].emoji} ${METHOD_META[line.account].label}`;
+  const accounts = transfer ? (
+    <>
+      <MethodIcon method={entry.lines[0].account} /> → <MethodIcon method={entry.lines[1].account} />
+    </>
+  ) : (
+    <MethodLabel method={line.account} />
+  );
 
   const body = (
     <>

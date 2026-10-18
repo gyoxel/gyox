@@ -22,7 +22,14 @@ const ITEM_PX = 48; // finger travel for one item
 const TAU = 325; // ms: how long a fling keeps going (exponential decay)
 const MAX_FLING = 3 * N; // items, at most
 const FLICK_PX_MS = 0.35; // slower than this on release: no momentum
-const HEIGHT = 128;
+// The wheel is as tall as the countdown tile beside it on Accueil: the
+// centre card, one neighbour tucked under it on each side, and a second,
+// fainter one under that, its far edge on the wheel's top / bottom.
+const HEIGHT = 136;
+const CARD_PX = 60; // a card's height
+const SCALE = [1, 0.93, 0.86];
+const OFFSET = [0, 24, (HEIGHT - CARD_PX * SCALE[2]) / 2]; // centre to centre, px
+const OPACITY = [1, 0.85, 0.5];
 
 /** Where the wheel was left, kept while the app stays open. */
 let savedPos = 0;
@@ -35,31 +42,34 @@ function offsetOf(i: number, pos: number): number {
   return d;
 }
 
-/** Look of a card `d` items away from the centre: closer cards bigger and
- *  sharper, the far ones small, faded and blurred — their content fading
- *  out first, so the neighbours show as the edges of a stack, not as
- *  half-hidden text. */
+/** `steps[0]` at 0, `steps[1]` at 1, `steps[2]` at 2, in between linearly. */
+function along(steps: number[], a: number): number {
+  const i = Math.min(1, Math.floor(a));
+  return steps[i] + (steps[i + 1] - steps[i]) * Math.min(1, a - i);
+}
+
+/** Look of a card `d` items away from the centre: the closer, the bigger
+ *  and clearer; two each side show as the edges of a stack (their content
+ *  fades out first), the next ones fade away. */
 function styleFor(d: number): React.CSSProperties & { "--wheel-content": string } {
   const a = Math.abs(d);
-  // Neighbours tucked under the centre card, only their edge showing.
-  const y = Math.sign(d) * (a <= 1 ? a * 24 : 24 + (a - 1) * 10);
-  const scale = Math.max(0.8, 1 - 0.07 * a);
-  const opacity = a <= 1 ? 1 - 0.22 * a : Math.max(0, 0.78 - 0.7 * (a - 1));
-  const blur = Math.max(0, a - 0.5) * 1.4;
+  const beyond = Math.max(0, a - 2); // past the second neighbour: going away
+  const y = Math.sign(d) * (along(OFFSET, Math.min(a, 2)) + beyond * 6);
+  const scale = along(SCALE, Math.min(a, 2)) - beyond * 0.04;
+  const opacity = a <= 2 ? along(OPACITY, a) : Math.max(0, OPACITY[2] * (1 - beyond / 0.6));
   const content = Math.min(1, Math.max(0, 1 - (a - 0.3) / 0.45));
   return {
     "--wheel-content": content.toFixed(3),
     transform: `translate3d(0, calc(-50% + ${y.toFixed(2)}px), 0) scale(${scale.toFixed(4)})`,
-    opacity: a > 2.2 ? 0 : Number(opacity.toFixed(3)),
-    filter: blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none",
+    opacity: Number(opacity.toFixed(3)),
     zIndex: 100 - Math.round(a * 10),
-    pointerEvents: a > 1.6 ? "none" : "auto",
+    pointerEvents: a > 2.4 ? "none" : "auto",
   };
 }
 
 /**
- * Accueil shortcuts as a wheel of cards: the centre one big, its neighbours
- * smaller above and below, the next ones faded and blurred. Drag it like a
+ * Accueil shortcuts as a wheel of cards: the centre one big, two
+ * neighbours each side stacked under it, smaller and fainter. Drag it like a
  * game wheel: slowly and it follows, flick it and it spins on, slowing down
  * until it settles on a card. Tap the centre card to open it, a side one
  * to bring it to the centre. It loops around.
@@ -86,7 +96,6 @@ export function ShortcutWheel() {
         const s = styleFor(offsetOf(i, pos));
         card.style.transform = s.transform as string;
         card.style.opacity = String(s.opacity);
-        card.style.filter = s.filter as string;
         card.style.zIndex = String(s.zIndex);
         card.style.pointerEvents = s.pointerEvents as string;
         card.style.setProperty("--wheel-content", s["--wheel-content"]);
@@ -212,11 +221,7 @@ export function ShortcutWheel() {
       aria-label="Raccourcis"
       tabIndex={0}
       className="@container relative touch-none select-none outline-none"
-      style={{
-        height: HEIGHT,
-        maskImage: "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
-        WebkitMaskImage: "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
-      }}
+      style={{ height: HEIGHT }}
     >
       {ITEMS.map(({ href, label, hint, icon: Icon }, i) => (
         <button
@@ -231,8 +236,8 @@ export function ShortcutWheel() {
           aria-label={label}
           tabIndex={-1}
           // Same look as the first frame drawn by the effect (centre: Revenus).
-          style={styleFor(offsetOf(i, 0))}
-          className="gx-wheel-card absolute inset-x-0 top-1/2 flex items-center gap-2.5 rounded-[22px] px-3 py-3 text-left will-change-transform @min-[16rem]:gap-3 @min-[16rem]:px-3.5"
+          style={{ ...styleFor(offsetOf(i, 0)), height: CARD_PX }}
+          className="gx-wheel-card absolute inset-x-0 top-1/2 flex items-center gap-2.5 rounded-[22px] px-3 text-left will-change-transform @min-[16rem]:gap-3 @min-[16rem]:px-3.5"
         >
           <span className="gx-tile flex h-9 w-9 shrink-0 items-center justify-center rounded-xl opacity-[var(--wheel-content)] @min-[16rem]:h-10 @min-[16rem]:w-10 @min-[16rem]:rounded-2xl">
             <Icon weight="duotone" className="h-5 w-5 @min-[16rem]:h-[22px] @min-[16rem]:w-[22px]" />

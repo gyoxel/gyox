@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { errorMessage } from "@/components/expense-editor";
 import type { DepositSource, Goal } from "@/lib/types";
 import { DepositSourcePicker } from "@/components/payment-method-picker";
-import { DEPOSIT_SOURCE_META } from "@/lib/payment-method";
 import type { GoalProgress } from "@/lib/goals";
 import { monthLabelFr, monthLabelShortFr } from "@/lib/date";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput } from "@/lib/utils";
@@ -16,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MethodIcon } from "@/components/method-icon";
 
 /** Progress ring around the goal's emoji: solid = in hand, light = with darets. */
 function GoalRing({
@@ -231,15 +231,22 @@ export function GoalCard({
                     href={`/goals/${goal.id}/deposits/${row.deposit.id}`}
                     className="flex items-center gap-3 px-4 py-3 text-sm active:bg-slate-50 dark:active:bg-slate-800/60"
                   >
-                    <StepIcon>{row.deposit.method === "savings" ? "🐷" : "💵"}</StepIcon>
+                    <StepIcon>
+                      {row.deposit.method === "savings" ? "🐷" : <MethodIcon method={row.deposit.method ?? "cash"} className="h-4" />}
+                    </StepIcon>
                     <span className="min-w-0 flex-1">
                       <span className={cn("block truncate font-medium text-slate-800 dark:text-slate-100", !row.paid && "text-slate-400")}>
                         {row.deposit.name}
                       </span>
                       <span className="block text-[11px] text-slate-400">
                         {DEPOSIT_DATE.format(new Date(`${row.deposit.date}T12:00:00`))}
-                        {row.deposit.method &&
-                          ` · ${DEPOSIT_SOURCE_META[row.deposit.method].emoji}${row.deposit.method === "savings" ? " Épargne" : ""}`}
+                        {row.deposit.method && (
+                          <>
+                            {" "}
+                            · <MethodIcon method={row.deposit.method} />
+                            {row.deposit.method === "savings" ? " Épargne" : ""}
+                          </>
+                        )}
                         {!row.paid && <span className="ml-1 font-semibold text-rose-500">· Non payé</span>}
                       </span>
                     </span>

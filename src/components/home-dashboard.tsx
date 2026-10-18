@@ -7,13 +7,14 @@ import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import type { MonthId } from "@/lib/date";
 import type { Expense, Payment, PaymentMethod, SalaryAdvance, Settings } from "@/lib/types";
 import { walletPaidOut } from "@/lib/wallet";
-import { cn, formatMoney } from "@/lib/utils";
+import { formatMoney } from "@/lib/utils";
 import { mutationsSettled } from "@/lib/use-refresh-data";
 import { useRevealedBalance } from "@/lib/reveal-balance";
 import { CountdownNextSalary } from "@/components/countdown-next-salary";
 import { DueNowList } from "@/components/due-now-list";
 import { DueRepayments, type DueRepayment } from "@/components/due-repayments";
 import { ShortcutWheel } from "@/components/shortcut-wheel";
+import { MethodIcon } from "@/components/method-icon";
 
 const QUICK_ACTIONS: { href: string; label: string; icon: PhosphorIcon }[] = [
   { href: "/expenses/new", label: "Dépense", icon: HandArrowUp },
@@ -87,27 +88,30 @@ export function HomeDashboard({
 
   return (
     <>
-      {/* What's available now, big and centred on the page's soft light;
-          "Détails" opens the Solde. */}
-      <section className="flex flex-col items-center pt-1 text-center">
+      {/* What's available now, big and centred on the page's soft light.
+          Once shown, the amount opens the Solde; hidden (the dots), it
+          doesn't. */}
+      <section className="flex flex-col items-center text-center">
         <p className="text-[15px] font-semibold text-slate-700 dark:text-slate-200">Disponible maintenant</p>
-        <Link
-          href="/solde"
-          prefetch
-          className="mt-2 rounded-full bg-white/80 px-4 py-1 text-xs font-semibold text-slate-600 shadow-[0_4px_14px_-6px_rgba(20,18,31,0.25)] ring-1 ring-slate-900/[0.05] active:scale-95 dark:bg-white/10 dark:text-slate-200 dark:ring-white/10"
-        >
-          Détails
-        </Link>
-        <div className="mt-4 flex items-center gap-2">
-          <p
-            data-private
-            className={cn(
-              "text-[2.6rem] font-extrabold leading-none tracking-tight tabular-nums text-slate-900 dark:text-white",
-              !revealed && "tracking-widest",
-            )}
-          >
-            <BigAmount text={show(balance.cash + balance.card)} />
-          </p>
+        <div className="mt-2.5 flex items-center gap-2">
+          {revealed ? (
+            <Link
+              href="/solde"
+              prefetch
+              aria-label="Voir le solde"
+              data-private
+              className="text-[2.6rem] font-extrabold leading-none tracking-tight tabular-nums text-slate-900 transition-transform active:scale-[0.97] dark:text-white"
+            >
+              <BigAmount text={show(balance.cash + balance.card)} />
+            </Link>
+          ) : (
+            <p
+              data-private
+              className="text-[2.6rem] font-extrabold leading-none tracking-widest tabular-nums text-slate-900 dark:text-white"
+            >
+              <BigAmount text={show(balance.cash + balance.card)} />
+            </p>
+          )}
           <button
             type="button"
             onClick={() => setRevealed(!revealed)}
@@ -117,18 +121,24 @@ export function HomeDashboard({
             {revealed ? <EyeSlash weight="bold" className="h-5 w-5" /> : <Eye weight="bold" className="h-5 w-5" />}
           </button>
         </div>
-        <div className="mt-4 flex flex-wrap justify-center gap-2">
+        {/* Cash | card: each on its chip, its picture beside its name and
+            amount. */}
+        <div className="mt-4 grid w-full grid-cols-2 gap-2.5">
           {(["cash", "card"] as const).map((m) => (
             <Link
               key={m}
               href="/solde"
               prefetch
-              className="flex items-center gap-2 rounded-full bg-white px-3.5 py-2 text-[13px] shadow-[0_6px_18px_-10px_rgba(20,18,31,0.3)] ring-1 ring-slate-900/[0.04] active:scale-95 dark:bg-white/10 dark:ring-white/10"
+              className="flex min-w-0 items-center gap-2.5 rounded-2xl bg-white px-3 py-2.5 text-left shadow-[0_6px_18px_-10px_rgba(20,18,31,0.3)] ring-1 ring-slate-900/[0.04] active:scale-[0.98] dark:bg-white/10 dark:ring-white/10"
             >
-              <span className="text-base leading-none">{m === "cash" ? "💵" : "💳"}</span>
-              <span className="text-slate-500 dark:text-slate-400">{m === "cash" ? "Espèces" : "Carte"}</span>
-              <span data-private className="font-bold tabular-nums text-slate-900 dark:text-white">
-                {show(balance[m])}
+              <MethodIcon method={m} className="h-[22px]" />
+              <span className="min-w-0">
+                <span className="block text-[11px] font-medium leading-tight text-slate-500 dark:text-slate-400">
+                  {m === "cash" ? "Espèces" : "Carte"}
+                </span>
+                <span data-private className="block truncate text-[14px] font-bold leading-tight tabular-nums text-slate-900 dark:text-white">
+                  {show(balance[m])}
+                </span>
               </span>
             </Link>
           ))}

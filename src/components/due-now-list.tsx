@@ -18,6 +18,7 @@ import { AmountSheet } from "@/components/amount-sheet";
 import { explainPayment, PaymentPartRow, PaymentPartSheet } from "@/components/payment-parts";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { displayIcon } from "@/lib/category";
+import { MethodIcon, MethodLabel } from "@/components/method-icon";
 
 const SWIPE_THRESHOLD_PX = 40;
 
@@ -422,7 +423,7 @@ export function DueNowList({
                         aria-label={`Payé en ${METHOD_META[m].label}`}
                         className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-lg shadow-sm transition-transform active:scale-90 dark:border-slate-700 dark:bg-slate-800"
                       >
-                        {METHOD_META[m].emoji}
+                        <MethodIcon method={m} className="h-[15px]" />
                       </button>
                     ))}
                     <button
@@ -536,13 +537,21 @@ function settlePending(id: string, setPendingIds: React.Dispatch<React.SetStateA
   });
 }
 
-/** "✓ Payé 💵 Espèces"; paid in several times: "✓ Payé 💵 💳"; and "sur
- *  600 DH" when that's not all of the month. */
-function paidLine(methods: PaymentMethod[], month: { due: number; paid: number } | null, currency: string): string {
-  const how =
-    methods.length === 1 ? ` ${METHOD_META[methods[0]].emoji} ${METHOD_META[methods[0]].label}` : methods.map((m) => ` ${METHOD_META[m].emoji}`).join("");
+/** "✓ Payé [cash] Cash"; paid in several times: "✓ Payé [cash] [card]"; and
+ *  "sur 600 DH" when that's not all of the month. */
+function paidLine(methods: PaymentMethod[], month: { due: number; paid: number } | null, currency: string): React.ReactNode {
   const part = month && month.paid < month.due - 0.005 ? ` · sur ${formatMoney(month.due, currency)}` : "";
-  return `✓ Payé${how}${part}`;
+  return (
+    <>
+      ✓ Payé{" "}
+      {methods.length === 1 ? (
+        <MethodLabel method={methods[0]} />
+      ) : (
+        methods.map((m) => <MethodIcon key={m} method={m} className="mr-1" />)
+      )}
+      {part}
+    </>
+  );
 }
 
 /** Without this month's payment of `expense`: all of its parts (a credit:

@@ -9,7 +9,6 @@ import { LinkedSourcePage } from "@/components/linked-source";
 import { DeleteButton } from "@/components/delete-button";
 import { expenseDelete } from "@/lib/delete-specs";
 import { Button } from "@/components/ui/button";
-import { METHOD_META } from "@/lib/payment-method";
 import { findPayment, getCreditRealState, getEffectiveEndMonth, getOccurrenceForMonth } from "@/lib/engine";
 import { compareMonths, monthKey, monthLabelFr, monthOfDateStr, monthsBetween, parseMonthKey, todayMonth, type MonthId } from "@/lib/date";
 import { PageHeader } from "@/components/page-header";
@@ -19,6 +18,7 @@ import { CreditEditor } from "@/components/credit-editor";
 import { MonthPayments } from "@/components/payment-parts";
 import { formatMoney } from "@/lib/utils";
 import type { Expense, Payment } from "@/lib/types";
+import { MethodIcon, MethodLabel } from "@/components/method-icon";
 
 export const dynamic = "force-dynamic";
 
@@ -57,7 +57,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
             <p className="relative mt-1 text-4xl font-bold tabular-nums">{formatMoney(expense.amount, settings.currency)}</p>
             <p className="relative mt-1 text-sm text-white/90">
               {goal.emoji} {goal.name} ·{" "}
-              {payment?.method ? `Payé ${METHOD_META[payment.method].emoji}` : payment ? "Payé" : "Pas encore payé"}
+              {payment?.method ? <>Payé <MethodIcon method={payment.method} /></> : payment ? "Payé" : "Pas encore payé"}
             </p>
           </div>
           <p className="px-1 text-sm text-slate-500 dark:text-slate-400">
@@ -87,7 +87,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
         gradient="from-lime-400 via-green-500 to-emerald-700"
         eyebrow="Épargne 🐷"
         amount={formatMoney(expense.amount, settings.currency)}
-        subtitle={`${linkedMove.note ?? "Mis de côté"} · ${paidWith ? `Payé ${METHOD_META[paidWith].emoji}` : "Pas encore payé"}`}
+        subtitle={<>{linkedMove.note ?? "Mis de côté"} · {paidWith ? <>Payé <MethodIcon method={paidWith} /></> : "Pas encore payé"}</>}
         text="Cet argent a été mis dans ton épargne. Tu peux le cocher ou le décocher dans tes dépenses ; pour le modifier ou le supprimer, c'est depuis l'épargne."
         href={`/epargne/${linkedMove.id}`}
         editLabel="Modifier l'épargne"
@@ -107,7 +107,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
         amount={formatMoney(expense.amount, settings.currency)}
         subtitle={
           overflowOf
-            ? `${name} · ${monthLabelFr(parseMonthKey(overflowOf))}${paidWith ? ` · ${METHOD_META[paidWith].emoji}` : ""}`
+            ? <>{name} · {monthLabelFr(parseMonthKey(overflowOf))}{paidWith && <> · <MethodIcon method={paidWith} /></>}</>
             : `${expense.type === "permanent" ? "Chaque mois" : expense.frequency === "one-time" ? "Une fois" : "Pendant quelques mois"}`
         }
         text={
@@ -129,7 +129,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
         gradient="from-amber-400 via-orange-500 to-amber-700"
         eyebrow="Prêt 🤝"
         amount={formatMoney(expense.amount, settings.currency)}
-        subtitle={`Prêté à ${linkedLoan.name}${paidWith ? ` · ${METHOD_META[paidWith].emoji} ${METHOD_META[paidWith].label}` : ""}`}
+        subtitle={<>Prêté à {linkedLoan.name}{paidWith && <> · <MethodLabel method={paidWith} /></>}</>}
         text={`Cet argent a été prêté à ${linkedLoan.name}. Pour le modifier ou le supprimer, c'est depuis le prêt — où tu confirmes aussi chaque remboursement reçu.`}
         href={`/prets/${linkedLoan.id}`}
         editLabel="Voir le prêt"

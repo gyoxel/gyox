@@ -4,12 +4,12 @@ import { useState } from "react";
 import { PencilSimple } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { Expense, Payment, PaymentMethod } from "@/lib/types";
-import { METHOD_META } from "@/lib/payment-method";
 import { insufficientMessage } from "@/lib/balance-message";
 import { mutate } from "@/lib/use-refresh-data";
 import { formatMoney } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
 import { AmountSheet } from "@/components/amount-sheet";
+import { MethodLabel } from "@/components/method-icon";
 
 const round = (n: number) => Math.round(n * 100) / 100;
 const WHEN = new Intl.DateTimeFormat("fr-FR", { timeZone: "Africa/Casablanca", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -40,7 +40,7 @@ export function PaymentPartRow({ payment, currency, onClick }: { payment: Paymen
       <span className="text-slate-500 dark:text-slate-400">{WHEN.format(new Date(payment.paidAt))}</span>
       {payment.method && (
         <span className="text-slate-500 dark:text-slate-400">
-          {METHOD_META[payment.method].emoji} {METHOD_META[payment.method].label}
+          <MethodLabel method={payment.method} />
         </span>
       )}
       <span className="ml-auto font-semibold tabular-nums text-slate-900 dark:text-white">{formatMoney(payment.amountPaid, currency)}</span>

@@ -9,6 +9,7 @@ import { mutate } from "@/lib/use-refresh-data";
 import { cn, formatMoney } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
 import { AmountSheet } from "@/components/amount-sheet";
+import { MethodLabel } from "@/components/method-icon";
 
 const round = (n: number) => Math.round(n * 100) / 100;
 const DAY = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
@@ -94,7 +95,7 @@ export function RepaymentRow({ repayment, ...info }: MonthInfo & { repayment: Lo
       >
         <span className="text-slate-500 dark:text-slate-400">{DAY.format(new Date(`${repayment.date}T12:00:00`))}</span>
         <span className="text-slate-500 dark:text-slate-400">
-          {METHOD_META[repayment.method].emoji} {METHOD_META[repayment.method].label}
+          <MethodLabel method={repayment.method} />
         </span>
         <span className="ml-auto font-semibold tabular-nums text-emerald-600">+{formatMoney(repayment.amount)}</span>
         <PencilSimple weight="bold" className="h-3 w-3 text-slate-300" />

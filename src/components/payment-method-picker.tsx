@@ -3,6 +3,7 @@
 import type { DepositSource, PaymentMethod } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { DEPOSIT_SOURCE_META, METHOD_META } from "@/lib/payment-method";
+import { MethodIcon } from "@/components/method-icon";
 
 /** One of a few accounts, as a switch: icon and label each. */
 function AccountPicker<T extends string>({
@@ -37,7 +38,7 @@ function AccountPicker<T extends string>({
                 : "bg-[var(--gx-chip)] text-slate-600 active:bg-slate-200 dark:bg-white/[0.07] dark:text-slate-300",
             )}
           >
-            <span className="text-base leading-none">{options[m].emoji}</span>
+            <MethodIcon method={m as PaymentMethod | DepositSource} className={m === "savings" ? "text-base" : "h-[17px]"} />
             {options[m].label}
           </button>
         ))}

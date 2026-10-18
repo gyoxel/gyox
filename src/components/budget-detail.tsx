@@ -8,7 +8,6 @@ import type { BudgetEntry, BudgetWithExpense, PaymentMethod } from "@/lib/types"
 import type { BudgetMonthState } from "@/lib/budgets";
 import { lastDayOfMonth } from "@/lib/daret";
 import { addMonths, monthLabelFr, parseMonthKey } from "@/lib/date";
-import { METHOD_META } from "@/lib/payment-method";
 import { mutate } from "@/lib/use-refresh-data";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { errorMessage, keepAboveKeyboard } from "@/components/expense-editor";
@@ -17,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MethodIcon, MethodLabel } from "@/components/method-icon";
 
 const DAY_FMT = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short" });
 const dayLabel = (date: string) => DAY_FMT.format(new Date(`${date}T12:00:00`));
@@ -85,7 +85,7 @@ export function BudgetDetail({
         </div>
         <p className="relative mt-2 text-[11px] text-white/85">
           {state.taken
-            ? `✓ Pris${state.takenMethod ? ` · ${METHOD_META[state.takenMethod].emoji} ${METHOD_META[state.takenMethod].label}` : ""}`
+            ? <>✓ Pris{state.takenMethod && <> · <MethodLabel method={state.takenMethod} /></>}</>
             : runs
               ? "Pas encore pris"
               : "Ce budget ne court pas ce mois-là."}
@@ -148,7 +148,7 @@ export function BudgetDetail({
                         <span className="min-w-0 flex-1 truncate text-sm text-slate-800 dark:text-slate-100">{e.note || "Dépense"}</span>
                         {over > 0 && (
                           <span className="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-950 dark:text-rose-300">
-                            +{money(over)} {METHOD_META[e.method].emoji}
+                            +{money(over)} <MethodIcon method={e.method} />
                           </span>
                         )}
                         <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-900 dark:text-white">{money(e.amount)}</span>

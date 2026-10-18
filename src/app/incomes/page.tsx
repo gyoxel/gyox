@@ -11,7 +11,7 @@ import type { Income } from "@/lib/types";
 import { PageHeader } from "@/components/page-header";
 import { HeaderAdd } from "@/components/header-add";
 import { AddLink } from "@/components/add-link";
-import { METHOD_META } from "@/lib/payment-method";
+import { MethodLabel } from "@/components/method-icon";
 
 export const dynamic = "force-dynamic";
 
@@ -116,7 +116,7 @@ export default async function IncomesPage() {
                             )}
                           </span>
                           <span className="block text-[11px] text-slate-400">
-                            {r.sub} · {r.date.slice(8, 10)}/{r.date.slice(5, 7)} · {METHOD_META[r.method].emoji} {METHOD_META[r.method].label}
+                            {r.sub} · {r.date.slice(8, 10)}/{r.date.slice(5, 7)} · <MethodLabel method={r.method} />
                           </span>
                         </span>
                         <span className="text-sm font-semibold tabular-nums text-emerald-600">+{money(r.amount)}</span>

@@ -12,6 +12,7 @@ import type { DaretWithExpense, PaymentMethod } from "@/lib/types";
 import { METHOD_META } from "@/lib/payment-method";
 import { cn, formatMoney } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { MethodIcon } from "@/components/method-icon";
 
 const short = (label: string) => label.replace(/ 20(\d\d)$/, " $1");
 
@@ -188,7 +189,7 @@ export function DaretCard({
           </p>
           <p className="text-xs font-semibold text-emerald-700 dark:text-teal-300">
             {payoutReceived
-              ? `Reçue ✓ ${METHOD_META[daret.payoutMethod!].emoji}`
+              ? <>Reçue ✓ <MethodIcon method={daret.payoutMethod!} /></>
               : state.turnStatus === "now"
                 ? "C'est ce mois-ci 🎉"
                 : state.turnStatus === "received"
@@ -235,7 +236,7 @@ export function DaretCard({
   );
 }
 
-/** 💵 / 💳: how it was paid / received. */
+/** Cash / card: how it was paid / received. */
 function MethodChoice({ label, onPick }: { label: string; onPick: (method: PaymentMethod) => void }) {
   return (
     <span className="flex shrink-0 items-center gap-1" aria-label={`${label} comment ?`}>
@@ -247,7 +248,7 @@ function MethodChoice({ label, onPick }: { label: string; onPick: (method: Payme
           aria-label={`${label} en ${METHOD_META[m].label}`}
           className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-lg shadow-sm transition-transform active:scale-90 dark:border-slate-700 dark:bg-slate-800"
         >
-          {METHOD_META[m].emoji}
+          <MethodIcon method={m} className="h-[15px]" />
         </button>
       ))}
     </span>

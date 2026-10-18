@@ -4,7 +4,6 @@ import { CaretRight, Check, Clock } from "@phosphor-icons/react/ssr";
 
 import { monthFromSearchParams, monthKey, monthLabelFr, monthLabelShortFr, todayMonth } from "@/lib/date";
 import { findPayment, getEffectiveEndMonth, getMonthPaymentStatus, getMonthSummary, lastPaidAt } from "@/lib/engine";
-import { METHOD_META } from "@/lib/payment-method";
 import { MonthSwitcher } from "@/components/month-switcher";
 import { PageHeader } from "@/components/page-header";
 import { HeaderAdd } from "@/components/header-add";
@@ -12,6 +11,7 @@ import { AddLink } from "@/components/add-link";
 import { displayIcon } from "@/lib/category";
 import { cn, formatMoney } from "@/lib/utils";
 import type { Expense, PaymentMethod, PaymentStatus } from "@/lib/types";
+import { MethodIcon } from "@/components/method-icon";
 
 export const dynamic = "force-dynamic";
 
@@ -185,7 +185,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
                           {isPaid ? (
                             <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
                               <Check weight="bold" className="h-3 w-3" />
-                              Payé{r.method && ` ${METHOD_META[r.method].emoji}`}
+                              Payé{r.method && <MethodIcon method={r.method} className="ml-0.5" />}
                             </span>
                           ) : partly ? (
                             <span className="flex items-center gap-1 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">

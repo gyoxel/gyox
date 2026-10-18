@@ -5,12 +5,12 @@ import Link from "next/link";
 import { ArrowDownLeft, ArrowUpRight, Bank, CaretRight } from "@phosphor-icons/react/ssr";
 import type { PaymentMethod, SavingsMove } from "@/lib/types";
 import { monthKey, monthLabelFr, parseMonthKey, todayMonth } from "@/lib/date";
-import { METHOD_META } from "@/lib/payment-method";
 import { cn, formatMoney } from "@/lib/utils";
 import { TransferDialog, type Account } from "@/components/transfer-dialog";
 import { ExistingSavingsDialog } from "@/components/existing-savings-dialog";
 import { HEADER_ADD_EVENT } from "@/components/header-add";
 import { Button } from "@/components/ui/button";
+import { MethodIcon } from "@/components/method-icon";
 
 type Move = SavingsMove & { counted: boolean; href: string };
 
@@ -125,10 +125,10 @@ export function EpargneView({
                           {x.kind === "existing"
                             ? "Déjà épargné · hors solde"
                             : x.kind === "in"
-                              ? `${METHOD_META[x.method].emoji} → 🐷`
+                              ? <><MethodIcon method={x.method} /> → 🐷</>
                               : x.kind === "goal"
                                 ? "🐷 → 🎯 Versement à l'objectif"
-                                : `🐷 → ${METHOD_META[x.method].emoji}`}
+                                : <>🐷 → <MethodIcon method={x.method} /></>}
                         </span>
                       </span>
                       <span

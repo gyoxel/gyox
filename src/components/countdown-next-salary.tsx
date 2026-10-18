@@ -5,7 +5,6 @@ import { CaretRight, Check, HandCoins, Money, Trash, X } from "@phosphor-icons/r
 import { toast } from "sonner";
 import { errorMessage } from "@/components/expense-editor";
 import type { PaymentMethod, SalaryAdvance, Settings } from "@/lib/types";
-import { METHOD_META } from "@/lib/payment-method";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import { mutate } from "@/lib/use-refresh-data";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput } from "@/lib/utils";
@@ -14,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SalaryForm } from "@/components/salary-form";
+import { MethodIcon } from "@/components/method-icon";
 
 /**
  * Countdown to the next salary, with a check that it actually arrived:
@@ -541,7 +541,7 @@ export function SalaryPanel({
                   <span className="flex-1 text-slate-700 dark:text-slate-200">
                     {money(a.amount)}
                     <span className="ml-1.5 text-[11px] text-slate-400">
-                      le {a.date.slice(8, 10)}/{a.date.slice(5, 7)} · {METHOD_META[a.method].emoji}
+                      le {a.date.slice(8, 10)}/{a.date.slice(5, 7)} · <MethodIcon method={a.method} />
                     </span>
                   </span>
                   <button
