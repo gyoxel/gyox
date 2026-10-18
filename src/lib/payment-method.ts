@@ -2,7 +2,7 @@ import type { DepositSource, PaymentMethod } from "./types";
 
 /** Cash or card: icon and label. */
 export const METHOD_META: Record<PaymentMethod, { emoji: string; label: string }> = {
-  cash: { emoji: "💵", label: "Cash" },
+  cash: { emoji: "💵", label: "Espèces" },
   card: { emoji: "💳", label: "Carte" },
 };
 

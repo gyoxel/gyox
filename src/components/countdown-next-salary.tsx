@@ -295,7 +295,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
           <div className="relative">
             <p className="text-base font-semibold">Commence par ton salaire</p>
             <p className="mt-1 text-sm text-white/70">
-              Son montant, le jour où tu le reçois et où il arrive (cash ou carte) : le compte à rebours et tes calculs
+              Son montant, le jour où tu le reçois et où il arrive (espèces ou carte) : le compte à rebours et tes calculs
               partent de là.
             </p>
           </div>

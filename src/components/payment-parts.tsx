@@ -155,7 +155,7 @@ export function MonthPayments({
           </li>
         ))}
       </ul>
-      <p className="text-[11px] text-slate-400">Touche un paiement pour corriger son montant, cash ou carte, ou le supprimer.</p>
+      <p className="text-[11px] text-slate-400">Touche un paiement pour corriger son montant, espèces ou carte, ou le supprimer.</p>
       {picked && (
         <PaymentPartSheet
           expense={expense}

@@ -14,13 +14,15 @@ import { CountdownNextSalary } from "@/components/countdown-next-salary";
 import { DueNowList } from "@/components/due-now-list";
 import { DueRepayments, type DueRepayment } from "@/components/due-repayments";
 import { ShortcutWheel } from "@/components/shortcut-wheel";
+import { TransferDialog } from "@/components/transfer-dialog";
 import { MethodIcon } from "@/components/method-icon";
 
-const QUICK_ACTIONS: { href: string; label: string; icon: PhosphorIcon }[] = [
+// Transfert has no page of its own: it opens the transfer right here.
+const QUICK_ACTIONS: { href?: string; label: string; icon: PhosphorIcon }[] = [
   { href: "/expenses/new", label: "Dépense", icon: HandArrowUp },
   { href: "/incomes/new", label: "Revenu", icon: HandArrowDown },
   { href: "/epargne", label: "Épargne", icon: PiggyBank },
-  { href: "/solde", label: "Transfert", icon: Swap },
+  { label: "Transfert", icon: Swap },
 ];
 
 /** Disponible's card: the living violet one (a link once the amounts
@@ -52,6 +54,7 @@ function BigAmount({ text }: { text: string }) {
  */
 export function HomeDashboard({
   solde,
+  savings,
   currency,
   expenses,
   payments,
@@ -63,6 +66,8 @@ export function HomeDashboard({
 }: {
   /** Solde of each account (cash, card) as of the server's payments. */
   solde: Record<PaymentMethod, number>;
+  /** Épargne (for the transfer's savings side). */
+  savings: number;
   currency: string;
   expenses: Expense[];
   payments: Payment[];
@@ -88,6 +93,7 @@ export function HomeDashboard({
     return { cash: solde.cash + saved.cash - local.cash, card: solde.card + saved.card - local.card };
   }, [solde, payments, localPayments, expenses]);
   const [revealed, setRevealed] = useRevealedBalance();
+  const [transferOpen, setTransferOpen] = useState(false);
   const show = (n: number) => (revealed ? formatMoney(n, currency) : "•••• DH");
 
   const balanceCard = (
@@ -156,14 +162,26 @@ export function HomeDashboard({
 
       {/* Quick actions: round clear-glass buttons, their name under them. */}
       <div className="grid grid-cols-4 gap-2">
-        {QUICK_ACTIONS.map(({ href, label, icon: Icon }) => (
-          <Link key={href} href={href} prefetch className="flex flex-col items-center gap-1.5 transition-transform active:scale-95">
-            <span className="gx-pill flex h-[58px] w-[58px] items-center justify-center rounded-full text-violet-700 dark:text-violet-200">
-              <Icon weight="duotone" className="h-6 w-6" />
-            </span>
-            <span className="text-[12px] font-semibold text-slate-700 dark:text-slate-300">{label}</span>
-          </Link>
-        ))}
+        {QUICK_ACTIONS.map(({ href, label, icon: Icon }) => {
+          const look = (
+            <>
+              <span className="gx-pill flex h-[58px] w-[58px] items-center justify-center rounded-full text-violet-700 dark:text-violet-200">
+                <Icon weight="duotone" className="h-6 w-6" />
+              </span>
+              <span className="text-[12px] font-semibold text-slate-700 dark:text-slate-300">{label}</span>
+            </>
+          );
+          const className = "flex flex-col items-center gap-1.5 transition-transform active:scale-95";
+          return href ? (
+            <Link key={label} href={href} prefetch className={className}>
+              {look}
+            </Link>
+          ) : (
+            <button key={label} type="button" onClick={() => setTransferOpen(true)} className={className}>
+              {look}
+            </button>
+          );
+        })}
       </div>
 
       <DueRepayments items={dueRepayments} currency={currency} />
@@ -187,6 +205,14 @@ export function HomeDashboard({
           balance={balance}
         />
       </section>
+
+      <TransferDialog
+        open={transferOpen}
+        onOpenChange={setTransferOpen}
+        balance={balance}
+        savings={savings}
+        money={(n) => formatMoney(n, currency)}
+      />
     </>
   );
 }

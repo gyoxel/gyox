@@ -41,6 +41,7 @@ export default async function HomePage() {
       <main className="relative flex flex-col gap-5 px-4 pb-5 pt-3">
         <HomeDashboard
           solde={wallet.balance}
+          savings={wallet.savings}
           currency={settings.currency}
           expenses={expenses}
           payments={payments}

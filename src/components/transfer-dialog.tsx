@@ -17,7 +17,7 @@ import { MethodIcon } from "@/components/method-icon";
 export type Account = PaymentMethod | "savings";
 
 export const ACCOUNT_META: Record<Account, { emoji: string; label: string }> = {
-  cash: { emoji: "💵", label: "Cash" },
+  cash: { emoji: "💵", label: "Espèces" },
   card: { emoji: "💳", label: "Carte" },
   savings: { emoji: "🐷", label: "Épargne" },
 };

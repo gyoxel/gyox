@@ -133,7 +133,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
             </RowIcon>
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Salaire</span>
-              <span className="block text-xs text-slate-400">Montant, jour de paie, cash ou carte</span>
+              <span className="block text-xs text-slate-400">Montant, jour de paie, espèces ou carte</span>
             </span>
             <CaretRight weight="bold" className="h-4 w-4 text-slate-300" />
           </Link>

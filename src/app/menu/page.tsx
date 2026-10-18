@@ -11,7 +11,7 @@ const GROUPS: { title: string; items: { href: string; label: string; hint: strin
   { title: "Mon argent", items: [
     { href: "/salary", label: "Salaire", hint: "Montant, jour de paie, avances", icon: Money },
     { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau, vente…", icon: TrendUp },
-    { href: "/solde", label: "Solde", hint: "Cash et carte, transferts, historique", icon: Wallet },
+    { href: "/solde", label: "Solde", hint: "Espèces et carte, transferts, historique", icon: Wallet },
     { href: "/epargne", label: "Épargne", hint: "Argent mis de côté, avec tes notes", icon: PiggyBank },
   ] },
   { title: "Organiser", items: [

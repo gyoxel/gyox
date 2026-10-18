@@ -16,7 +16,7 @@ const ERRORS: Record<string, string> = {
 };
 
 const FEATURES = [
-  { icon: Wallet, text: "Ton salaire, ton cash et ta carte, au dirham près" },
+  { icon: Wallet, text: "Ton salaire, tes espèces et ta carte, au dirham près" },
   { icon: CalendarCheck, text: "Tes dépenses et dettes du mois, cochées en un geste" },
   { icon: HandCoins, text: "Darets, argent prêté, épargne et objectifs" },
   { icon: ShieldCheck, text: "Tes informations sont protégées" },

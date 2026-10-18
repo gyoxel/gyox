@@ -270,7 +270,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
             {wallet.entries.length === 0 ? (
               <>
                 Rien encore. Commence par <b className="text-slate-600 dark:text-slate-300">Ajuster</b> : indique ce que
-                tu as en cash et sur ta carte. Ensuite chaque salaire, revenu, daret et dépense payée s&apos;ajoute ici.
+                tu as en espèces et sur ta carte. Ensuite chaque salaire, revenu, daret et dépense payée s&apos;ajoute ici.
               </>
             ) : (
               "Aucun mouvement sur ce compte."

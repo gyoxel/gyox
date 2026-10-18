@@ -654,7 +654,7 @@ function EditPayment({
             </li>
           ))}
         </ul>
-        <p className="text-center text-[11px] text-slate-400">Touche un paiement pour changer son montant, cash ou carte, ou le supprimer.</p>
+        <p className="text-center text-[11px] text-slate-400">Touche un paiement pour changer son montant, espèces ou carte, ou le supprimer.</p>
       </DialogContent>
     </Dialog>
   );

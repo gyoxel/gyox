@@ -197,7 +197,7 @@ export function buildWallet(input: {
       emoji: transfer ? "🔁" : "✏️",
       label:
         o.note ||
-        (transfer ? (o.toAccount === "card" ? "Versement sur la carte" : "Retrait en cash") : "Ajustement du solde"),
+        (transfer ? (o.toAccount === "card" ? "Versement sur la carte" : "Retrait en espèces") : "Ajustement du solde"),
       lines: transfer
         ? [
             { account: o.fromAccount!, amount: -o.amount },
