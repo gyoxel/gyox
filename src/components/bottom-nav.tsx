@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { DATA_CHANGED_EVENT } from "@/lib/use-refresh-data";
-import { Bank, HandArrowDown, HandArrowUp, House, Plus, Receipt, SquaresFour } from "@phosphor-icons/react/ssr";
+import { Bank, HandArrowDown, HandArrowUp, HandCoins, Handshake, House, PiggyBank, Plus, Receipt, SquaresFour, Target, Wallet } from "@phosphor-icons/react/ssr";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
@@ -17,14 +17,19 @@ const ITEMS = [
 // Pages opened from the Menu tab keep it highlighted.
 const MENU_PATHS = ["/menu", "/budgets", "/daret", "/goals", "/calendar", "/stats", "/categories", "/salary", "/incomes", "/solde", "/epargne", "/prets", "/settings", "/profil", "/admin"];
 
-// The + button's menu: a short list rising above it, each one with its own
-// colour of meaning (money in, out, a credit).
+// The + button's menu: everything that can be added, in one panel of
+// glass just above it — each in its colour of meaning (money out, in, a
+// credit or budget, savings and goals…).
 const ACTIONS = [
-  { href: "/expenses/new?type=credit", label: "Crédit", icon: Bank, tint: "text-violet-600 dark:text-violet-300" },
-  { href: "/incomes/new", label: "Revenu", icon: HandArrowDown, tint: "text-emerald-600 dark:text-emerald-300" },
   { href: "/expenses/new", label: "Dépense", icon: HandArrowUp, tint: "text-rose-600 dark:text-rose-300" },
+  { href: "/incomes/new", label: "Revenu", icon: HandArrowDown, tint: "text-emerald-600 dark:text-emerald-300" },
+  { href: "/expenses/new?type=credit", label: "Crédit", icon: Bank, tint: "text-violet-600 dark:text-violet-300" },
+  { href: "/budgets/new", label: "Budget", icon: Wallet, tint: "text-violet-600 dark:text-violet-300" },
+  { href: "/epargne?ajouter=1", label: "Épargne", icon: PiggyBank, tint: "text-emerald-600 dark:text-emerald-300" },
+  { href: "/goals/new", label: "Objectif", icon: Target, tint: "text-amber-600 dark:text-amber-300" },
+  { href: "/daret/new", label: "Daret", icon: HandCoins, tint: "text-amber-600 dark:text-amber-300" },
+  { href: "/prets/new", label: "Prêt", icon: Handshake, tint: "text-rose-600 dark:text-rose-300" },
 ];
-
 
 /** A tab: its icon and name — the current one filled, in violet, over the
  *  bar's glass lens. */
@@ -86,6 +91,10 @@ const PREFETCH_HREFS = [
   "/expenses/new",
   "/expenses/new?type=credit",
   "/daret/new",
+  "/budgets/new",
+  "/goals/new",
+  "/prets/new",
+  "/epargne",
 ];
 
 /** Pages open before signing in: no app bar there. */
@@ -189,7 +198,7 @@ function AppBar({ pathname }: { pathname: string }) {
 
       {/* The tabs on a capsule of glass, a lens sliding under the current
           one; floating above them on the right, the + — an orb of glass, its
-          menu rising above it. Both stay put while the page scrolls. */}
+          menu opening above it. Both stay put while the page scrolls. */}
       <nav
         className={cn(
           "pointer-events-none fixed inset-x-0 bottom-0 z-50 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)]",
@@ -198,34 +207,37 @@ function AppBar({ pathname }: { pathname: string }) {
       >
         <div className="mx-auto flex max-w-md flex-col items-end gap-3">
           <div className="pointer-events-auto relative">
-            {/* The + button's menu, rising above it — closed, it lets taps
-                through to the page under it. */}
-            <div className="pointer-events-none absolute bottom-full right-0 mb-3 flex flex-col items-end gap-2.5">
-              {ACTIONS.map(({ href, label, icon: Icon, tint }, i) => (
-                <Link
-                  key={label}
-                  href={href}
-                  prefetch
-                  onClick={() => setOpen(false)}
-                  tabIndex={open ? 0 : -1}
-                  aria-hidden={!open}
-                  style={{ transitionDelay: `${(open ? ACTIONS.length - 1 - i : i) * 35}ms` }}
-                  className={cn(
-                    "flex items-center gap-3 transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.34,1.3,0.64,1)]",
-                    open ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0",
-                  )}
-                >
-                  <span className="gx-float rounded-full px-4 py-2 text-sm font-bold text-slate-900 dark:text-white">{label}</span>
-                  <span
-                    className={cn(
-                      "gx-float flex h-[52px] w-[52px] items-center justify-center rounded-full transition-transform active:scale-95",
-                      tint,
-                    )}
+            {/* The + button's menu: a panel of glass just above it, all the
+                things to add in a grid — big targets, near the thumb.
+                Closed, it lets taps through to the page under it. */}
+            <div
+              role="menu"
+              aria-label="Ajouter"
+              aria-hidden={!open}
+              className={cn(
+                "gx-float absolute bottom-full right-0 mb-3 w-[min(calc(100vw-2rem),28rem)] origin-bottom-right rounded-[28px] px-2.5 pb-2 pt-3.5 transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.34,1.25,0.64,1)]",
+                open ? "pointer-events-auto scale-100 opacity-100" : "pointer-events-none translate-y-3 scale-95 opacity-0",
+              )}
+            >
+              <p className="px-2 pb-1.5 text-[13px] font-bold text-slate-500 dark:text-slate-400">Ajouter</p>
+              <div className="grid grid-cols-4">
+                {ACTIONS.map(({ href, label, icon: Icon, tint }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    prefetch
+                    role="menuitem"
+                    tabIndex={open ? 0 : -1}
+                    onClick={() => setOpen(false)}
+                    className="flex flex-col items-center gap-1.5 rounded-2xl px-1 py-2.5 transition-[transform,background-color] active:scale-95 active:bg-violet-500/10"
                   >
-                    <Icon weight="duotone" className="h-6 w-6" />
-                  </span>
-                </Link>
-              ))}
+                    <span className={cn("gx-pill flex h-[50px] w-[50px] items-center justify-center rounded-full", tint)}>
+                      <Icon weight="duotone" className="h-6 w-6" />
+                    </span>
+                    <span className="text-[12px] font-semibold text-slate-800 dark:text-slate-100">{label}</span>
+                  </Link>
+                ))}
+              </div>
             </div>
 
             <button

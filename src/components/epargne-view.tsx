@@ -33,10 +33,15 @@ export function EpargneView({
   const money = (n: number) => formatMoney(n, currency);
   const [dialog, setDialog] = useState<{ from: Account; to: Account } | null>(null);
   const [existingOpen, setExistingOpen] = useState(false);
-  // The header's "+": put money aside.
+  // The header's "+": put money aside. So does arriving from the bar's +
+  // menu (/epargne?ajouter=1), once — the address loses it right away.
   useEffect(() => {
     const open = () => setDialog({ from: "card", to: "savings" });
     window.addEventListener(HEADER_ADD_EVENT, open);
+    if (new URLSearchParams(window.location.search).has("ajouter")) {
+      window.history.replaceState(null, "", window.location.pathname);
+      queueMicrotask(open);
+    }
     return () => window.removeEventListener(HEADER_ADD_EVENT, open);
   }, []);
   const month = monthKey(todayMonth());
