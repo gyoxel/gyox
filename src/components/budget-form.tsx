@@ -15,16 +15,17 @@ import { DeleteButton } from "@/components/delete-button";
 import { budgetDelete } from "@/lib/delete-specs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ChoiceNote, Segmented } from "@/components/ui/segmented";
 import { Label } from "@/components/ui/label";
 
 const EMOJIS = ["🚌", "🚕", "⛽", "🍔", "🛒", "☕", "🚬", "📱", "🎉", "👕", "💊", "🧾"];
 
 type Kind = "once" | "monthly" | "months";
 
-const KINDS: { key: Kind; icon: PhosphorIcon; label: string; hint: string }[] = [
-  { key: "once", icon: NumberCircleOne, label: "Une fois", hint: "Ce mois-ci" },
-  { key: "monthly", icon: Repeat, label: "Chaque mois", hint: "Sans fin" },
-  { key: "months", icon: CalendarDots, label: "X mois", hint: "Pendant…" },
+const KINDS: { key: Kind; icon: PhosphorIcon; label: string }[] = [
+  { key: "once", icon: NumberCircleOne, label: "Une fois" },
+  { key: "monthly", icon: Repeat, label: "Chaque mois" },
+  { key: "months", icon: CalendarDots, label: "X mois" },
 ];
 
 /** The recurrence the form opens on for an existing budget. */
@@ -154,27 +155,7 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
 
       <div className="flex flex-col gap-2">
         <Label>Durée</Label>
-        <div role="radiogroup" aria-label="Durée" className="grid grid-cols-3 gap-2">
-          {KINDS.map(({ key, icon: Icon, label, hint }) => (
-            <button
-              key={key}
-              type="button"
-              role="radio"
-              aria-checked={kind === key}
-              onClick={() => setKind(key)}
-              className={cn(
-                "flex flex-col items-center gap-1 rounded-2xl border px-1 py-2.5 transition-all active:scale-[0.97]",
-                kind === key
-                  ? "gx-cta border-transparent"
-                  : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
-              )}
-            >
-              <Icon weight="duotone" className={cn("h-6 w-6", kind === key ? "text-white" : "text-violet-600 dark:text-violet-300")} />
-              <span className="text-xs font-semibold">{label}</span>
-              <span className={cn("text-[10px]", kind === key ? "text-white/75" : "text-slate-400")}>{hint}</span>
-            </button>
-          ))}
-        </div>
+        <Segmented label="Durée" value={kind} onChange={setKind} options={KINDS} />
         {kind === "months" && (
           <div className="flex items-center gap-2">
             <Input
@@ -188,12 +169,10 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
             <span className="shrink-0 text-sm text-slate-500">mois</span>
           </div>
         )}
-        {summary && (
-          <p className="rounded-xl bg-purple-50 px-3 py-2 text-xs text-purple-700 dark:bg-purple-950/40 dark:text-purple-300">
-            {summary}
-            {amountValue > 0 && kind !== "once" && <> · {money(amountValue)} par mois</>}
-          </p>
-        )}
+        <ChoiceNote>
+          {summary ?? "Pendant combien de mois ?"}
+          {summary && amountValue > 0 && kind !== "once" && <> · {money(amountValue)} par mois</>}
+        </ChoiceNote>
       </div>
 
       {!isEdit && (

@@ -15,6 +15,7 @@ import type { ApiCall } from "@/app/api-actions";
 import { CategoryPicker } from "@/components/category-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ChoiceNote, Segmented } from "@/components/ui/segmented";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -123,7 +124,7 @@ export function ExpenseEditor({
   const summary = useMemo(() => {
     if (!recurring || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
     const start = monthOfDateStr(date);
-    if (mode === "permanent") return "Permanent : chaque mois, sans fin.";
+    if (mode === "permanent") return "Chaque mois, sans date de fin.";
     if (amountValue <= 0) return null;
     if (mode === "months") {
       if (monthsValue <= 0) return null;
@@ -243,11 +244,11 @@ export function ExpenseEditor({
     });
   }
 
-  const kinds: { key: "once" | RecurrenceKind; icon: PhosphorIcon; label: string; hint: string }[] = [
-    { key: "once", icon: NumberCircleOne, label: "Une fois", hint: "Ce mois-ci" },
-    { key: "permanent", icon: Repeat, label: "Chaque mois", hint: "Sans fin" },
-    { key: "months", icon: CalendarDots, label: "X mois", hint: "Pendant…" },
-    { key: "until", icon: Target, label: "Jusqu'à", hint: "Un total" },
+  const kinds: { key: "once" | RecurrenceKind; icon: PhosphorIcon; label: string; note: string }[] = [
+    { key: "once", icon: NumberCircleOne, label: "Une fois", note: "Une seule fois, ce mois-ci." },
+    { key: "permanent", icon: Repeat, label: "Chaque mois", note: "Chaque mois, sans date de fin." },
+    { key: "months", icon: CalendarDots, label: "X mois", note: "Pendant combien de mois ?" },
+    { key: "until", icon: Target, label: "Jusqu'à", note: "Jusqu'à atteindre un total." },
   ];
   function pickKind(key: "once" | RecurrenceKind) {
     if (key === "once") return setRecurring(false);
@@ -301,31 +302,7 @@ export function ExpenseEditor({
       {/* How often */}
       <div className="flex flex-col gap-2">
         <Label>Fréquence</Label>
-        <div role="radiogroup" aria-label="Fréquence" className="grid grid-cols-4 gap-2">
-          {kinds.map((k) => {
-            const selected = mode === k.key;
-            const Icon = k.icon;
-            return (
-              <button
-                key={k.key}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                onClick={() => pickKind(k.key)}
-                className={cn(
-                  "flex flex-col items-center gap-1 rounded-2xl border px-1 py-2.5 text-center transition-all active:scale-[0.97]",
-                  selected
-                    ? "gx-cta border-transparent"
-                    : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
-                )}
-              >
-                <Icon weight="duotone" className={cn("h-6 w-6", selected ? "text-white" : "text-violet-600 dark:text-violet-300")} />
-                <span className="text-xs font-semibold">{k.label}</span>
-                <span className={cn("text-[10px]", selected ? "text-white/75" : "text-slate-400")}>{k.hint}</span>
-              </button>
-            );
-          })}
-        </div>
+        <Segmented label="Fréquence" value={mode} onChange={pickKind} options={kinds} />
         {mode === "months" && (
           <div className="flex items-center gap-2">
             <Input
@@ -360,9 +337,7 @@ export function ExpenseEditor({
             <span className="shrink-0 text-sm text-slate-500">DH</span>
           </div>
         )}
-        {summary && (
-          <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">{summary}</p>
-        )}
+        <ChoiceNote>{summary ?? kinds.find((k) => k.key === mode)?.note}</ChoiceNote>
       </div>
 
       {(!isEdit || paymentStatus) && (
