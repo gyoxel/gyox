@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { CreditCard, Eye, EyeSlash, HandArrowDown, HandArrowUp, Money, PiggyBank, Swap } from "@phosphor-icons/react/ssr";
+import { Eye, EyeSlash, HandArrowDown, HandArrowUp, PiggyBank, Swap, Wallet } from "@phosphor-icons/react/ssr";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import type { MonthId } from "@/lib/date";
 import type { Expense, Payment, PaymentMethod, SalaryAdvance, Settings } from "@/lib/types";
@@ -35,7 +35,9 @@ function BigAmount({ text }: { text: string }) {
   if (!match) return <>{text}</>;
   return (
     <>
-      {match[1]}
+      {/* The narrow space between thousands nearly vanishes this big and
+          bold: a full one ("20 449"). */}
+      {match[1].replace(/\u202f/g, "\u00a0")}
       <span className="text-[0.6em] font-bold text-white/70">{match[2].replace(/^(,\d+)?\s*/, (m) => m.trim() + " ")}</span>
     </>
   );
@@ -93,66 +95,69 @@ export function HomeDashboard({
   return (
     <>
       {/* The wallet card: what's available now (the Solde), and how it splits
-          between cash and the card, each on a glass chip — the edges of two
-          more cards behind it, like a wallet. Tapping it opens the Solde. */}
-      <div className="relative pt-5">
-        <span aria-hidden className="gx-stack absolute inset-x-8 top-0 h-12 rounded-t-[24px]" />
-        <span aria-hidden className="gx-stack absolute inset-x-4 top-2.5 h-12 rounded-t-[28px]" />
-        <Link href="/solde" prefetch aria-label="Disponible maintenant · voir le solde" className="gx-wallet block rounded-[30px] px-5 pb-4 pt-4 transition-transform active:scale-[0.99]">
-          <div className="relative flex items-center justify-between">
-            <p className="text-[13px] font-semibold text-white/85">Disponible maintenant</p>
-            <button
-              type="button"
-              onClick={(e) => {
-                // The card is a link: the eye only shows / hides the amounts.
-                e.preventDefault();
-                e.stopPropagation();
-                setRevealed(!revealed);
-              }}
-              aria-label={revealed ? "Masquer le montant" : "Afficher le montant"}
-              className="gx-wallet-chip -mr-1 flex h-9 w-9 items-center justify-center rounded-full transition-transform active:scale-90"
-            >
-              {revealed ? <EyeSlash weight="bold" className="h-[18px] w-[18px]" /> : <Eye weight="bold" className="h-[18px] w-[18px]" />}
-            </button>
-          </div>
-          <p
-            data-private
-            className={cn("relative mt-1 text-[2.6rem] font-extrabold leading-tight tracking-tight tabular-nums", !revealed && "tracking-widest")}
-          >
-            <BigAmount text={show(balance.cash + balance.card)} />
+          between cash and the card. Compact, like a bank card: rings of
+          light in its corner. Tapping it opens the Solde. */}
+      <Link
+        href="/solde"
+        prefetch
+        aria-label="Disponible maintenant · voir le solde"
+        className="gx-wallet block rounded-[26px] px-4 pb-3.5 pt-3 transition-transform active:scale-[0.99]"
+      >
+        <svg aria-hidden viewBox="0 0 160 160" fill="none" className="pointer-events-none absolute -bottom-14 -right-10 h-44 w-44 text-white/[0.13]">
+          <circle cx="80" cy="80" r="38" stroke="currentColor" strokeWidth="1.5" />
+          <circle cx="80" cy="80" r="58" stroke="currentColor" strokeWidth="1.5" />
+          <circle cx="80" cy="80" r="78" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+        <div className="relative flex items-center justify-between">
+          <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-white/85">
+            <Wallet weight="fill" className="h-4 w-4" />
+            Disponible maintenant
           </p>
-          {/* Cash | card: a bar of their shares, then each one on its chip. */}
-          <div className="relative mt-3 flex h-1.5 overflow-hidden rounded-full bg-white/20">
-            <span className="h-full rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.7)]" style={{ width: `${cashShare(balance) * 100}%` }} />
-          </div>
-          <div className="relative mt-3.5 grid grid-cols-2 gap-2.5">
-            {(["cash", "card"] as const).map((m) => {
-              const Icon = m === "cash" ? Money : CreditCard;
-              return (
-                <div key={m} className="gx-wallet-chip min-w-0 rounded-2xl px-3 py-2.5">
-                  <p className="flex items-center gap-1.5 text-[12px] font-semibold text-white/80">
-                    <Icon weight="duotone" className="h-4 w-4" />
-                    {m === "cash" ? "Espèces" : "Carte"}
-                    <span className={cn("ml-auto h-2 w-2 rounded-full", m === "cash" ? "bg-white" : "bg-white/35")} />
-                  </p>
-                  <p data-private className="mt-0.5 truncate text-[17px] font-bold tabular-nums">
-                    {show(balance[m])}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </Link>
-      </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              // The card is a link: the eye only shows / hides the amounts.
+              e.preventDefault();
+              e.stopPropagation();
+              setRevealed(!revealed);
+            }}
+            aria-label={revealed ? "Masquer le montant" : "Afficher le montant"}
+            className="gx-wallet-chip -mr-1 flex h-8 w-8 items-center justify-center rounded-full transition-transform active:scale-90"
+          >
+            {revealed ? <EyeSlash weight="bold" className="h-4 w-4" /> : <Eye weight="bold" className="h-4 w-4" />}
+          </button>
+        </div>
+        <p
+          data-private
+          className={cn("relative mt-0.5 text-[2rem] font-extrabold leading-tight tracking-tight tabular-nums", !revealed && "tracking-widest")}
+        >
+          <BigAmount text={show(balance.cash + balance.card)} />
+        </p>
+        {/* Cash | card: a bar of their shares, then each one. */}
+        <div className="relative mt-2 flex h-1.5 overflow-hidden rounded-full bg-white/20">
+          <span className="h-full rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.7)]" style={{ width: `${cashShare(balance) * 100}%` }} />
+        </div>
+        <div className="relative mt-2 grid grid-cols-2 gap-3 text-[12.5px]">
+          {(["cash", "card"] as const).map((m) => (
+            <p key={m} className={cn("flex min-w-0 items-center gap-1.5", m === "card" && "justify-end")}>
+              <span className={cn("h-2 w-2 shrink-0 rounded-full", m === "cash" ? "bg-white" : "bg-white/40")} />
+              <span className="text-white/75">{m === "cash" ? "Espèces" : "Carte"}</span>
+              <b data-private className="truncate font-bold tabular-nums">
+                {show(balance[m])}
+              </b>
+            </p>
+          ))}
+        </div>
+      </Link>
 
       {/* Quick actions: pastel circles, each its colour, their name under them. */}
       <div className="grid grid-cols-4 gap-2">
         {QUICK_ACTIONS.map(({ href, label, icon: Icon, tone }) => (
-          <Link key={href} href={href} prefetch className="flex flex-col items-center gap-2 transition-transform active:scale-95">
-            <span className={`gx-tile gx-tone-${tone} flex h-[54px] w-[54px] items-center justify-center rounded-full`}>
-              <Icon weight="duotone" className="h-6 w-6" />
+          <Link key={href} href={href} prefetch className="flex flex-col items-center gap-1.5 transition-transform active:scale-95">
+            <span className={`gx-tile gx-tone-${tone} flex h-[46px] w-[46px] items-center justify-center rounded-full`}>
+              <Icon weight="duotone" className="h-[22px] w-[22px]" />
             </span>
-            <span className="text-[12px] font-semibold text-slate-700 dark:text-slate-300">{label}</span>
+            <span className="text-[11.5px] font-semibold text-slate-700 dark:text-slate-300">{label}</span>
           </Link>
         ))}
       </div>

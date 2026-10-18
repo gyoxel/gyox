@@ -37,7 +37,7 @@ export default async function HomePage() {
     <div className="relative">
       <HomeHeader name={account?.name || account?.email.split("@")[0] || ""} />
 
-      <main className="relative flex flex-col gap-5 px-4 pb-5 pt-3">
+      <main className="relative flex flex-col gap-4 px-4 pb-5 pt-2">
         <HomeDashboard
           solde={wallet.balance}
           currency={settings.currency}

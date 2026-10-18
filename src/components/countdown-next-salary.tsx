@@ -174,8 +174,8 @@ function ofMonth(period: string): string {
   return /^[aeiouéèh]/i.test(name) ? `d'${name}` : `de ${name}`;
 }
 
-const RING = 60;
-const RING_STROKE = 6;
+const RING = 46;
+const RING_STROKE = 5;
 
 /** The pay period as a ring filling up, with the days left inside. */
 function Ring({ progress, days, late }: { progress: number; days: number; late: boolean }) {
@@ -190,7 +190,7 @@ function Ring({ progress, days, late }: { progress: number; days: number; late: 
             <stop offset="100%" stopColor={late ? "#e11d48" : "#22d3ee"} />
           </linearGradient>
         </defs>
-        <circle cx={RING / 2} cy={RING / 2} r={r} fill="none" strokeWidth={RING_STROKE} className="stroke-white/10" />
+        <circle cx={RING / 2} cy={RING / 2} r={r} fill="none" strokeWidth={RING_STROKE} className="stroke-slate-200 dark:stroke-white/10" />
         <circle
           cx={RING / 2}
           cy={RING / 2}
@@ -205,11 +205,11 @@ function Ring({ progress, days, late }: { progress: number; days: number; late: 
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={cn("text-xl font-bold leading-none tabular-nums", late && "text-rose-300")}>
+        <span className={cn("text-[15px] font-extrabold leading-none tabular-nums text-slate-900 dark:text-white", late && "text-rose-600 dark:text-rose-300")}>
           {late && "−"}
           {days}
         </span>
-        <span className="mt-0.5 text-[8px] font-medium uppercase tracking-wider text-white/60">
+        <span className="mt-px text-[7px] font-semibold uppercase tracking-wider text-slate-400 dark:text-white/60">
           {days > 1 ? "jours" : "jour"}
         </span>
       </div>
@@ -337,23 +337,22 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
           type="button"
           onClick={() => setEditing(true)}
           aria-label={late ? "Confirmer le salaire" : "Modifier le salaire"}
-          className={cn(shell, "block px-3.5 py-3 text-left transition-transform active:scale-[0.98]")}
+          className="gx-glass block w-full rounded-3xl border px-3 py-2.5 text-left transition-transform active:scale-[0.98]"
         >
-          {glow}
           <div className="relative flex items-center gap-3">
             <Ring progress={state.progress} days={state.days} late={late} />
             <div className="min-w-0 flex-1">
               <p
                 className={cn(
-                  "text-[10px] font-semibold uppercase tracking-[0.16em]",
-                  late ? "text-rose-300" : "text-indigo-200/80",
+                  "text-[10px] font-bold uppercase tracking-[0.14em]",
+                  late ? "text-rose-600 dark:text-rose-300" : "text-emerald-600 dark:text-emerald-300",
                 )}
               >
                 {late ? "Salaire en retard" : "Prochain salaire"}
               </p>
-              <p className="mt-0.5 h-5 truncate text-sm font-semibold">{caption}</p>
+              <p className="mt-0.5 h-5 truncate text-sm font-semibold text-slate-900 dark:text-white">{caption}</p>
             </div>
-            <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-white/40" />
+            <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300 dark:text-white/40" />
           </div>
         </button>
       )}
