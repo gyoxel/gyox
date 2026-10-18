@@ -20,7 +20,7 @@ const FORECAST_MONTHS = 6;
 // Ring order (checked for colorblind separation between neighbours).
 const SEGMENTS: { color: DisplayColor; label: string }[] = [
   { color: "orange", label: "Dépenses permanentes" },
-  { color: "blue", label: "Crédits" },
+  { color: "blue", label: "Dettes" },
   { color: "red", label: "Dépenses" },
 ];
 
@@ -131,7 +131,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
             <div className="text-sm text-emerald-900 dark:text-emerald-200">
               <p className="font-semibold">Dès {transition.monthLabel}</p>
               <p className="mt-0.5 text-emerald-800/90 dark:text-emerald-300/90">
-                Crédits et obligations temporaires terminés. Dépenses permanentes :{" "}
+                Dettes et obligations temporaires terminées. Dépenses permanentes :{" "}
                 {formatMoney(transition.totalPermanent, currency)} — reste estimé :{" "}
                 <b>{formatMoney(transition.remaining, currency)}</b>
               </p>

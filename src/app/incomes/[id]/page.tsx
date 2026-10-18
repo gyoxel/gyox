@@ -63,14 +63,14 @@ export default async function EditIncomePage({ params }: { params: Promise<{ id:
       <LinkedSourcePage
         title={income.name}
         gradient="from-amber-400 via-orange-500 to-amber-700"
-        eyebrow="Remboursement de prêt"
+        eyebrow="Argent rendu"
         amount={`+${formatMoney(income.amount)}`}
-        subtitle={`${loan.name} t'a rendu · ${received}`}
-        text={`Un remboursement du prêt à ${loan.name}. Pour l'annuler, c'est depuis le prêt.`}
+        subtitle={<>{loan.name} t&apos;a rendu · {received}</>}
+        text={`De l'argent prêté à ${loan.name}, qui t'a été rendu. Pour l'annuler, c'est depuis « Argent prêté ».`}
         href={`/prets/${loan.id}`}
-        editLabel="Voir le prêt"
+        editLabel="Voir l'argent prêté"
         buttonClass="gx-cta"
-        sourceLabel="le prêt"
+        sourceLabel="Argent prêté"
       />
     );
   }
@@ -82,7 +82,7 @@ export default async function EditIncomePage({ params }: { params: Promise<{ id:
         back
         action={
           credit ? (
-            <LockedDeleteIcon hint={`Ce revenu vient du crédit « ${credit.name} » : supprime-le depuis le crédit.`} />
+            <LockedDeleteIcon hint={`Ce revenu vient de la dette « ${credit.name} » : supprime-le depuis la dette.`} />
           ) : (
             <DeleteButton variant="icon" {...incomeDelete(income)} />
           )
@@ -92,7 +92,7 @@ export default async function EditIncomePage({ params }: { params: Promise<{ id:
         <IncomeEditor
           income={income}
           categories={categories}
-          source={credit ? { label: `crédit « ${credit.name} »`, href: `/expenses/${credit.id}` } : undefined}
+          source={credit ? { label: `la dette « ${credit.name} »`, href: `/expenses/${credit.id}` } : undefined}
         />
       </main>
     </>

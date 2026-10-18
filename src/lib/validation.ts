@@ -70,7 +70,7 @@ export const expenseInputSchema = baseExpenseSchema.superRefine((data, ctx) => {
         ctx.addIssue({
           code: "custom",
           path: ["creditInitialAmount"],
-          message: "La dette restante est requise pour un crédit.",
+          message: "Le reste à rembourser est requis pour une dette.",
         });
       }
     }
@@ -79,7 +79,7 @@ export const expenseInputSchema = baseExpenseSchema.superRefine((data, ctx) => {
       ctx.addIssue({
         code: "custom",
         path: ["linkedExpenseId"],
-        message: "Un crédit ne peut pas être lié à une autre dépense.",
+        message: "Une dette ne peut pas être liée à une autre dépense.",
       });
     }
 
@@ -87,7 +87,7 @@ export const expenseInputSchema = baseExpenseSchema.superRefine((data, ctx) => {
       ctx.addIssue({
         code: "custom",
         path: ["frequency"],
-        message: "Un crédit est toujours mensuel.",
+        message: "Une dette est toujours mensuelle.",
       });
     }
 
@@ -103,7 +103,7 @@ export const expenseInputSchema = baseExpenseSchema.superRefine((data, ctx) => {
       ctx.addIssue({
         code: "custom",
         path: ["endDate"],
-        message: "Une dépense liée à un crédit ne peut pas avoir sa propre date de fin.",
+        message: "Une dépense liée à une dette ne peut pas avoir sa propre date de fin.",
       });
     }
   });

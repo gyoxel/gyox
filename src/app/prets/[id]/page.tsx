@@ -32,7 +32,7 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-amber-700 px-5 pb-4 pt-5 text-white shadow-lg shadow-orange-600/20 dark:shadow-none">
           <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
           <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">
-            {state.done ? "Prêt rendu ✓" : "Reste à te rendre"}
+            {state.done ? "Tout est rendu ✓" : "Reste à te rendre"}
           </p>
           <p className="relative mt-1 text-4xl font-bold tabular-nums">{money(state.remaining)}</p>
           <p className="relative text-sm text-white/85">
@@ -149,7 +149,7 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
         <Button asChild className="gx-cta">
           <Link href={`/prets/${loan.id}/edit`}>
             <PencilSimple weight="bold" className="h-4 w-4" />
-            Modifier le prêt
+            Modifier
           </Link>
         </Button>
 

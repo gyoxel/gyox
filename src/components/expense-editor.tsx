@@ -239,7 +239,7 @@ export function ExpenseEditor({
       const created: { problems?: string[] } = await res.json();
       if (created.problems?.includes("paid")) toast.error("Ajoutée, mais le paiement n'a pas pu être enregistré.");
 
-      toast.success(isCredit ? "Crédit ajouté." : "Dépense ajoutée.");
+      toast.success(isCredit ? "Dette ajoutée." : "Dépense ajoutée.");
       nav.back();
     });
   }

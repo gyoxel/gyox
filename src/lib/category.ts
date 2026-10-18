@@ -5,7 +5,7 @@ export const CATEGORY_META: Record<
   { label: string; dot: string; badgeVariant: "blue" | "red" | "yellow"; barColor: string; cardBorder: string }
 > = {
   blue: {
-    label: "Temporaire (crédit)",
+    label: "Temporaire (dette)",
     dot: "bg-sky-400",
     badgeVariant: "blue",
     barColor: "bg-sky-400",

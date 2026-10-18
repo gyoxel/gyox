@@ -57,7 +57,7 @@ export interface LoanInput {
   note: string | null;
 }
 
-const expenseName = (name: string) => `Prêt · ${name}`;
+const expenseName = (name: string) => `Argent prêté · ${name}`;
 
 function expenseData(id: string, input: LoanInput, now: string) {
   return {

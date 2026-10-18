@@ -132,7 +132,7 @@ export function CreditEditor({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!(fullTotal > 0)) return setError("Indique le montant total du crédit.");
+    if (!(fullTotal > 0)) return setError("Indique le montant total de la dette.");
     if (!(totalValue > 0)) return setError("Le montant déjà remboursé doit être inférieur au total.");
     if (!name.trim()) return setError("Indique un nom.");
     if (mode === "months" && (monthsValue < 1 || monthsValue > MAX_MONTHS)) return setError("Indique le nombre de mois.");
@@ -166,7 +166,7 @@ export function CreditEditor({
         // the expense as it was too.
         if (!res.ok) return setError(await errorMessage(res));
         if (payCall && pay && !pay.ok) return setError(await errorMessage(pay));
-        toast.success("Crédit enregistré.");
+        toast.success("Dette enregistrée.");
         nav.back();
         return;
       }
@@ -184,7 +184,7 @@ export function CreditEditor({
           linkedExpenseId: null,
           income: received
             ? {
-                name: `Crédit · ${name.trim()}`,
+                name: `Dette · ${name.trim()}`,
                 amount: totalValue,
                 category: "credit",
                 date: todayDateStr(),
@@ -197,9 +197,9 @@ export function CreditEditor({
       });
       if (!res.ok) return setError(await errorMessage(res));
       const created: { problems?: string[] } = await res.json();
-      if (created.problems?.includes("income")) toast.error("Crédit ajouté, mais l'argent reçu n'a pas pu être enregistré.");
+      if (created.problems?.includes("income")) toast.error("Dette ajoutée, mais l'argent reçu n'a pas pu être enregistré.");
       if (created.problems?.includes("paid")) toast.error("Ajouté, mais le paiement n'a pas pu être enregistré.");
-      toast.success("Crédit ajouté.");
+      toast.success("Dette ajoutée.");
       nav.back();
     });
   }
@@ -209,7 +209,7 @@ export function CreditEditor({
       {/* Total */}
       <div className="relative flex flex-col items-center gap-1 overflow-hidden rounded-3xl bg-gradient-to-br from-sky-500 to-blue-700 px-4 py-5 text-white shadow-lg dark:shadow-none">
         <Label htmlFor="total" className="text-xs text-white/80">
-          Montant total du crédit
+          Montant total de la dette
         </Label>
         <div className="flex items-baseline gap-2">
           <input
@@ -267,7 +267,7 @@ export function CreditEditor({
             </p>
           )}
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Déjà remboursé avant d&apos;ajouter ce crédit ici : retiré du total, pas de ton solde.
+            Déjà remboursé avant d&apos;ajouter cette dette ici : retiré du total, pas de ton solde.
           </p>
         </div>
       ) : (
@@ -302,7 +302,7 @@ export function CreditEditor({
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-3.5 dark:border-slate-800">
         {totalValue > 0 && monthlyValue > totalValue && (
           <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
-            Le montant par mois ({money(monthlyValue)}) dépasse {priorValue > 0 ? "le reste à rembourser" : "le total du crédit"} (
+            Le montant par mois ({money(monthlyValue)}) dépasse {priorValue > 0 ? "le reste à rembourser" : "le total de la dette"} (
             {money(totalValue)}).
           </p>
         )}

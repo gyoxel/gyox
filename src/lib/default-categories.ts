@@ -12,7 +12,7 @@ export const DEFAULT_CATEGORIES: { id: string; name: string; emoji: string }[] =
   { id: "92e7d900-9dda-4f2e-8289-6cd816f83919", name: "Loisirs", emoji: "🎉" },
   { id: "1ce11fb6-5e00-4967-8a46-d113672dd7e6", name: "Vêtements", emoji: "👕" },
   { id: "c2a70a0d-1e2f-48c7-95cf-956541ab4649", name: "Bien-être", emoji: "✨" },
-  { id: "07847f36-3c11-4e75-a196-2ad96b54e86b", name: "Prêts", emoji: "💸" },
+  { id: "07847f36-3c11-4e75-a196-2ad96b54e86b", name: "Argent prêté", emoji: "💸" },
   { id: "3b27abb0-7d9b-4a95-88c1-d71fae012519", name: "Achats", emoji: "🛍️" },
   { id: "911f9e4b-d65e-4146-b47a-f315166e352a", name: "Santé", emoji: "🏥" },
   { id: "611bb012-6d71-41b7-b27f-427d295c3866", name: "Autres", emoji: "📦" },

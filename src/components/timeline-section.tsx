@@ -198,7 +198,7 @@ export function TimelineSection({
       {freeAt && (
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-500 to-violet-700 px-5 pb-4 pt-5 text-white">
           <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
-          <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Libre de tous tes crédits</p>
+          <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Libre de toutes tes dettes</p>
           <p className="relative mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[27px] font-extrabold leading-tight">
             🏁 {monthLabelFr(freeAt)}
             <span className="rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-semibold">
@@ -278,7 +278,7 @@ export function TimelineSection({
                     </ul>
                     {after != null && Math.abs(after - totalAt(month)) > 0.5 && (
                       <p className="mt-2 text-[12px] text-slate-500 dark:text-slate-400">
-                        Ensuite <b className="text-slate-800 dark:text-slate-100">{money(after)}</b> de crédits par mois
+                        Ensuite <b className="text-slate-800 dark:text-slate-100">{money(after)}</b> de dettes par mois
                       </p>
                     )}
                   </div>
@@ -291,8 +291,8 @@ export function TimelineSection({
                   🏁
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[15px] font-extrabold text-violet-700 dark:text-violet-200">Libre de tous tes crédits !</p>
-                  <p className="text-[12px] text-slate-500 dark:text-slate-400">Après {monthLabelFr(freeAt)}, plus aucune mensualité de crédit.</p>
+                  <p className="text-[15px] font-extrabold text-violet-700 dark:text-violet-200">Libre de toutes tes dettes !</p>
+                  <p className="text-[12px] text-slate-500 dark:text-slate-400">Après {monthLabelFr(freeAt)}, plus aucune mensualité à rembourser.</p>
                 </div>
               </li>
             )}

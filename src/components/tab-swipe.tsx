@@ -12,7 +12,7 @@ const SLIDE_MS = 200;
 
 /** Each tab's page title (its <h1>): a snapshot is only kept when it shows
  *  that title, so one tab can never be stored under another's name. */
-const TITLES: Record<string, string> = { "/": "GX Salaire", "/budget": "Dépenses", "/credits": "Crédits", "/menu": "Menu" };
+const TITLES: Record<string, string> = { "/": "GX Salaire", "/budget": "Dépenses", "/credits": "Dettes", "/menu": "Menu" };
 
 /** Last seen look of each tab (its page's HTML), shown next to the current
  *  page while swiping so the neighbour is already there — no blank. Kept in

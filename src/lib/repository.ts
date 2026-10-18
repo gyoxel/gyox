@@ -8,6 +8,15 @@ import { getAllLoanRepayments, getAllLoans } from "./loans-repo";
 import { getIncomeCategories } from "./income-categories-repo";
 import type { Budget, BudgetEntry, BudgetMonth, Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote, DepositSource, SalaryAdvance, Income, PaymentMethod, SalaryReceipt, WalletOp, SavingsMove, Loan, LoanRepayment } from "./types";
 
+/** Names the app gave before Crédits / Prêts became Dettes / Argent prêté
+ *  ("Prêt · Ahmed", "Crédit · Banque") read with the new words; what's
+ *  stored isn't touched. */
+function currentName(name: string): string {
+  if (name.startsWith("Prêt · ")) return `Argent prêté · ${name.slice(7)}`;
+  if (name.startsWith("Crédit · ")) return `Dette · ${name.slice(9)}`;
+  return name;
+}
+
 export function mapExpense(row: {
   id: string;
   name: string;
@@ -30,7 +39,7 @@ export function mapExpense(row: {
 }): Expense {
   return {
     id: row.id,
-    name: row.name,
+    name: currentName(row.name),
     amount: row.amount,
     type: row.type as Expense["type"],
     frequency: row.frequency as Expense["frequency"],
@@ -1197,6 +1206,7 @@ export type IncomeInput = Omit<Income, "id" | "createdAt">;
 
 export const mapIncome = (row: Omit<Income, "method"> & { method: string }): Income => ({
   ...row,
+  name: currentName(row.name),
   method: row.method === "card" ? "card" : "cash",
 });
 

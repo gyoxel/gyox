@@ -32,19 +32,19 @@ export default async function CreditsPage() {
 
   return (
     <>
-      <PageHeader title="Crédits" action={<HeaderAdd href="/expenses/new?type=credit" label="Ajouter un crédit" />} />
+      <PageHeader title="Dettes" action={<HeaderAdd href="/expenses/new?type=credit" label="Ajouter une dette" />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         <TimelineSection expenses={expenses} darets={darets} payments={payments} currency={settings.currency} categoryEmoji={categoryEmoji} />
 
-        <AddLink href="/expenses/new?type=credit" label="Ajouter un crédit" className="mt-1" />
+        <AddLink href="/expenses/new?type=credit" label="Ajouter une dette" className="mt-1" />
 
         <h2 className="-mb-2 flex items-baseline justify-between px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">
-          <span>Crédits</span>
+          <span>Dettes</span>
           <span className="text-xs font-normal">{credits.length} en tout</span>
         </h2>
         {credits.length === 0 ? (
           <p className="rounded-3xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-400 dark:border-slate-700">
-            Aucun crédit en cours.
+            Aucune dette en cours.
           </p>
         ) : (
           credits.map((c) => (

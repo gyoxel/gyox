@@ -43,7 +43,7 @@ export function CreditStairs({ months, currency }: { months: StairMonth[]; curre
       <div className="-mx-4 overflow-x-auto overscroll-x-contain px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div
           role="listbox"
-          aria-label="Mensualités de crédit par mois"
+          aria-label="Mensualités de dettes par mois"
           className="grid w-max min-w-full items-end gap-x-1.5 pt-7"
           style={{ gridTemplateColumns: `repeat(${months.length}, minmax(26px, 1fr)) 40px` }}
         >

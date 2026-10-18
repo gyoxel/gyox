@@ -225,11 +225,11 @@ export function DueNowList({
   }
 
   const byId = useMemo(() => new Map(expenses.map((e) => [e.id, e])), [expenses]);
-  /** "Chaque mois", "Une fois", "Jusqu'à juin 27", "Crédit · reste 2 500 DH". */
+  /** "Chaque mois", "Une fois", "Jusqu'à juin 27", "Dette · reste 2 500 DH". */
   function kindOf(expense: Expense): string {
     if (expense.type === "credit") {
       const left = getCreditRealState(expense, localPayments, viewMonth).remaining;
-      return `Crédit · reste ${formatMoney(left, currency)}`;
+      return `Dette · reste ${formatMoney(left, currency)}`;
     }
     if (expense.type === "permanent") return "Chaque mois";
     if (expense.frequency === "one-time") return "Une fois";

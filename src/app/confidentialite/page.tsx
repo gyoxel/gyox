@@ -6,7 +6,7 @@ export default function ConfidentialitePage() {
   return (
     <LegalPage title="Confidentialité" updated="6 octobre 2026">
       <p>
-        GX Salaire est une application de suivi de budget personnel : salaire, dépenses, crédits, darets, prêts, épargne et
+        GX Salaire est une application de suivi de budget personnel : salaire, dépenses, dettes, darets, argent prêté, épargne et
         objectifs. Cette page explique quelles données elle utilise et comment.
       </p>
 
@@ -18,7 +18,7 @@ export default function ConfidentialitePage() {
           fichiers.
         </li>
         <li>
-          <strong>Ce que tu saisis</strong> : montants, dépenses, crédits, revenus, darets, prêts, épargne, objectifs et
+          <strong>Ce que tu saisis</strong> : montants, dépenses, dettes, revenus, darets, argent prêté, épargne, objectifs et
           notes.
         </li>
       </ul>

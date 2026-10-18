@@ -68,13 +68,13 @@ export async function payExpense(
       const rest = Math.round((paidThisMonth.amountDue - paidThisMonth.amountPaid) * 100) / 100;
       if (rest <= 0.005) return { error: "Cette mensualité est déjà payée.", status: 400 };
       const add = value ?? rest;
-      if (add > state.remaining + 0.005) return { error: `Il ne reste que ${formatMoney(state.remaining)} sur ce crédit.`, status: 400 };
+      if (add > state.remaining + 0.005) return { error: `Il ne reste que ${formatMoney(state.remaining)} sur cette dette.`, status: 400 };
       const payment = await addPaymentPart(expense.id, key, paidThisMonth.slotIndex, paidThisMonth.amountDue, add, method);
       return { payment };
     }
-    if (state.pendingAmount <= 0) return { error: "Aucune mensualité en attente pour ce crédit.", status: 400 };
+    if (state.pendingAmount <= 0) return { error: "Aucune mensualité en attente pour cette dette.", status: 400 };
     const paid = value ?? state.pendingAmount;
-    if (paid > state.remaining + 0.005) return { error: `Il ne reste que ${formatMoney(state.remaining)} sur ce crédit.`, status: 400 };
+    if (paid > state.remaining + 0.005) return { error: `Il ne reste que ${formatMoney(state.remaining)} sur cette dette.`, status: 400 };
     const payment = await markCreditSlotPaid(expense.id, state.pendingAmount, paid, key, method);
     return { payment };
   }

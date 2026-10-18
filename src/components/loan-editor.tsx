@@ -85,7 +85,7 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
         body,
       });
       if (!res.ok) return setError(await errorMessage(res));
-      toast.success(isEdit ? "Prêt enregistré." : "Prêt ajouté.");
+      toast.success(isEdit ? "Enregistré." : "Argent prêté ajouté.");
       nav.back("/prets");
     });
   }
@@ -151,7 +151,7 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
             </p>
           )}
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Déjà rendu avant d&apos;ajouter ce prêt ici : retiré du montant, pas ajouté à ton solde.
+            Déjà rendu avant de le noter ici : retiré du montant, pas ajouté à ton solde.
           </p>
         </div>
       ) : (
@@ -170,7 +170,7 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
           <span>
             <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Cet argent sort de mon solde</span>
             <span className="block text-[11px] text-slate-500 dark:text-slate-400">
-              {toRepay > 0 ? `−${money(toRepay)} ` : ""}dans tes dépenses comme prêt
+              {toRepay > 0 ? `−${money(toRepay)} ` : ""}dans tes dépenses comme argent prêté
               {priorValue > 0 ? " (montant − déjà rendu)" : ""}
             </span>
           </span>
@@ -301,7 +301,7 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
           Annuler
         </Button>
         <Button type="submit" className="flex-1 gx-cta" disabled={pending}>
-          {pending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter le prêt"}
+          {pending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter"}
         </Button>
       </div>
 

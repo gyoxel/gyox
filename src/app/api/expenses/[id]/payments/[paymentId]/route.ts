@@ -31,7 +31,7 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
   if (expense.type === "credit" && more > 0.005) {
     const { remaining } = getCreditRealState(expense, payments, todayMonth());
     if (more > remaining + 0.005) {
-      return NextResponse.json({ error: `Il ne reste que ${formatMoney(remaining)} sur ce crédit.` }, { status: 400 });
+      return NextResponse.json({ error: `Il ne reste que ${formatMoney(remaining)} sur cette dette.` }, { status: 400 });
     }
   }
 

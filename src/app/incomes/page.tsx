@@ -53,7 +53,7 @@ export default async function IncomesPage() {
       at: i.createdAt,
       method: i.method,
       amount: i.amount,
-      badge: i.expenseId ? "Crédit" : i.category === "epargne" ? "Épargne" : i.category === "pret" ? "Prêt" : i.category === "budget" ? "Budget" : undefined,
+      badge: i.expenseId ? "Dette" : i.category === "epargne" ? "Épargne" : i.category === "pret" ? "Argent prêté" : i.category === "budget" ? "Budget" : undefined,
     })),
     ...darets
       .filter((d) => d.payoutMethod && d.payoutReceivedAt)

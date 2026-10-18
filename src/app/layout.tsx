@@ -26,7 +26,7 @@ const manrope = Manrope({
   subsets: ["latin"],
 });
 
-const DESCRIPTION = "Ton budget du mois, simple et clair : salaire, dépenses, crédits, darets et épargne.";
+const DESCRIPTION = "Ton budget du mois, simple et clair : salaire, dépenses, dettes, darets et épargne.";
 
 export const metadata: Metadata = {
   // Absolute links for the shared-link preview (opengraph-image.jpg).

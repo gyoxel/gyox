@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 const ITEMS = [
   { href: "/", label: "Accueil", icon: House },
   { href: "/budget", label: "Dépenses", icon: Receipt },
-  { href: "/credits", label: "Crédits", icon: Bank },
+  { href: "/credits", label: "Dettes", icon: Bank },
   { href: "/menu", label: "Menu", icon: SquaresFour },
 ];
 
@@ -22,11 +22,11 @@ const MENU_PATHS = ["/menu", "/budgets", "/daret", "/goals", "/calendar", "/stat
 // on the bottom row, Dépense in the corner next to the + itself.
 const ACTIONS = [
   { href: "/daret/new", label: "Daret", icon: HandCoins, tint: "text-amber-600 dark:text-amber-300" },
-  { href: "/prets/new", label: "Prêt", icon: Handshake, tint: "text-rose-600 dark:text-rose-300" },
+  { href: "/prets/new", label: "Argent prêté", icon: Handshake, tint: "text-rose-600 dark:text-rose-300" },
   { href: "/goals/new", label: "Objectif", icon: Target, tint: "text-amber-600 dark:text-amber-300" },
   { href: "/epargne?ajouter=1", label: "Épargne", icon: PiggyBank, tint: "text-emerald-600 dark:text-emerald-300" },
   { href: "/budgets/new", label: "Budget", icon: Wallet, tint: "text-violet-600 dark:text-violet-300" },
-  { href: "/expenses/new?type=credit", label: "Crédit", icon: Bank, tint: "text-violet-600 dark:text-violet-300" },
+  { href: "/expenses/new?type=credit", label: "Dette", icon: Bank, tint: "text-violet-600 dark:text-violet-300" },
   { href: "/incomes/new", label: "Revenu", icon: HandArrowDown, tint: "text-emerald-600 dark:text-emerald-300" },
   { href: "/expenses/new", label: "Dépense", icon: HandArrowUp, tint: "text-rose-600 dark:text-rose-300" },
 ];
@@ -234,7 +234,7 @@ function AppBar({ pathname }: { pathname: string }) {
                     <span className={cn("gx-pill flex h-[50px] w-[50px] items-center justify-center rounded-full", tint)}>
                       <Icon weight="duotone" className="h-6 w-6" />
                     </span>
-                    <span className="text-[12px] font-semibold text-slate-800 dark:text-slate-100">{label}</span>
+                    <span className="whitespace-nowrap text-[12px] font-semibold text-slate-800 dark:text-slate-100">{label}</span>
                   </Link>
                 ))}
               </div>

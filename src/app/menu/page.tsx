@@ -17,7 +17,7 @@ const GROUPS: { title: string; items: { href: string; label: string; hint: strin
   { title: "Organiser", items: [
     { href: "/budgets", label: "Budgets", hint: "Transport, courses… : note ce que tu dépenses chaque jour", icon: Cardholder },
     { href: "/daret", label: "Daret", hint: "Tes darets et ton tour", icon: HandCoins },
-    { href: "/prets", label: "Prêts", hint: "L'argent que tu as prêté, et ce qu'on te rend", icon: Handshake },
+    { href: "/prets", label: "Argent prêté", hint: "L'argent que tu as prêté, et ce qu'on te rend", icon: Handshake },
     { href: "/goals", label: "Objectifs", hint: "Voiture, maison, voyage…", icon: Target },
     { href: "/calendar", label: "Calendrier", hint: "Jour par jour : entrées, sorties, rappels et notes", icon: CalendarDots },
     {

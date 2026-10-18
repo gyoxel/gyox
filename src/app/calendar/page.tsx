@@ -139,13 +139,13 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     const icon = displayIcon(e, emojiById);
     infos.push(
       state.status === "completed"
-        ? { id: `credit-${e.id}`, date, icon, label: `Crédit ${e.name} terminé ✅` }
+        ? { id: `credit-${e.id}`, date, icon, label: `Dette ${e.name} remboursée ✅` }
         : {
             id: `credit-${e.id}`,
             date,
             icon,
             label: `Dernière mensualité · ${e.name}`,
-            detail: `${money(projectCreditInstallment(e, payments, month, current) ?? Math.min(e.amount, state.remaining))} — fin du crédit 🎉`,
+            detail: `${money(projectCreditInstallment(e, payments, month, current) ?? Math.min(e.amount, state.remaining))} — fin de la dette 🎉`,
           },
     );
   }

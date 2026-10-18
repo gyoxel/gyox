@@ -189,7 +189,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
           title="Remplacer toutes les données ?"
           description={
             <>
-              Toutes les données actuelles (dépenses, crédits, darets, objectifs…) seront remplacées par celles de «{" "}
+              Toutes les données actuelles (dépenses, dettes, darets, objectifs…) seront remplacées par celles de «{" "}
               {pendingImport?.name} ». Cette action est irréversible.
             </>
           }

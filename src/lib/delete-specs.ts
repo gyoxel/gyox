@@ -7,13 +7,13 @@ import { formatMoney } from "./utils";
 export function expenseDelete(expense: Expense) {
   const credit = expense.type === "credit";
   return {
-    label: credit ? "Supprimer ce crédit" : "Supprimer cette dépense",
+    label: credit ? "Supprimer cette dette" : "Supprimer cette dépense",
     endpoint: `/api/expenses/${expense.id}`,
-    title: credit ? "Supprimer ce crédit ?" : "Supprimer cette dépense ?",
+    title: credit ? "Supprimer cette dette ?" : "Supprimer cette dépense ?",
     description: credit
       ? `« ${expense.name} », ses paiements et l'argent reçu enregistré dans tes revenus seront définitivement supprimés.`
       : `« ${expense.name} » sera définitivement supprimée. Le budget et les prévisions seront recalculés automatiquement.`,
-    success: credit ? "Crédit supprimé." : "Dépense supprimée.",
+    success: credit ? "Dette supprimée." : "Dépense supprimée.",
     fallback: credit ? "/credits" : "/budget",
   };
 }
@@ -108,11 +108,11 @@ export function savingsDelete(move: SavingsMove) {
 /** Deleting a loan (its expense and the repayments received go with it). */
 export function loanDelete(loan: Pick<Loan, "id" | "name">) {
   return {
-    label: "Supprimer ce prêt",
+    label: "Supprimer",
     endpoint: `/api/loans/${loan.id}`,
-    title: "Supprimer ce prêt ?",
-    description: `Le prêt à « ${loan.name} », sa sortie dans tes dépenses et les remboursements reçus seront définitivement supprimés.`,
-    success: "Prêt supprimé.",
+    title: `Supprimer l'argent prêté à « ${loan.name} » ?`,
+    description: "Sa sortie dans tes dépenses et ce qu'on t'a déjà rendu seront définitivement supprimés.",
+    success: "Supprimé.",
     fallback: "/prets",
   };
 }

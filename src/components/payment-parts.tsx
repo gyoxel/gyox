@@ -20,7 +20,7 @@ export function explainPayment(expense: Expense, left: number, value: number, mo
   const after = round(left - value);
   if (after > 0.005) {
     return `Il restera ${money(after)} à payer ce mois-ci (« ${expense.name} · reste »). Pas payés d'ici la fin du mois, ${
-      credit ? "ils s'ajoutent à la dernière mensualité du crédit." : "ils ne passent pas au mois suivant."
+      credit ? "ils s'ajoutent à la dernière mensualité de la dette." : "ils ne passent pas au mois suivant."
     }`;
   }
   if (after < -0.005) {
