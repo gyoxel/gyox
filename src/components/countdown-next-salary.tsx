@@ -180,21 +180,20 @@ function ofMonth(period: string): string {
 const RING = 58;
 const RING_STROKE = 5.5;
 
-/** The pay period as a glowing ring filling up, the days left inside. */
+/** The pay period as a ring filling up, the days left inside. */
 function SalaryRing({ progress, days, late }: { progress: number; days: number; late: boolean }) {
   const r = (RING - RING_STROKE) / 2;
   const c = 2 * Math.PI * r;
   return (
     <span className="relative shrink-0" style={{ width: RING, height: RING }}>
-      <svg width={RING} height={RING} className="gx-salary-ring -rotate-90" aria-hidden>
+      <svg width={RING} height={RING} className="-rotate-90" aria-hidden>
         <defs>
           <linearGradient id="salary-ring" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor={late ? "#fecdd3" : "#f5d0fe"} />
-            <stop offset="55%" stopColor={late ? "#fda4af" : "#c4b5fd"} />
-            <stop offset="100%" stopColor={late ? "#fff1f2" : "#a5f3fc"} />
+            <stop offset="0%" stopColor={late ? "#fb7185" : "#34d399"} />
+            <stop offset="100%" stopColor={late ? "#e11d48" : "#22d3ee"} />
           </linearGradient>
         </defs>
-        <circle cx={RING / 2} cy={RING / 2} r={r} fill="none" strokeWidth={RING_STROKE} stroke="rgb(255 255 255 / 0.16)" />
+        <circle cx={RING / 2} cy={RING / 2} r={r} fill="none" strokeWidth={RING_STROKE} className="stroke-white/10" />
         <circle
           cx={RING / 2}
           cy={RING / 2}
@@ -214,11 +213,11 @@ function SalaryRing({ progress, days, late }: { progress: number; days: number; 
           <span className="text-[12px] font-extrabold leading-none">Demain</span>
         ) : (
           <>
-            <span className="text-[21px] font-extrabold leading-none tabular-nums">
+            <span className={cn("text-[21px] font-extrabold leading-none tabular-nums", late && "text-rose-300")}>
               {late && "−"}
               {days}
             </span>
-            <span className="mt-0.5 text-[7.5px] font-bold uppercase tracking-wider text-white/75">{days > 1 ? "jours" : "jour"}</span>
+            <span className="mt-0.5 text-[7.5px] font-semibold uppercase tracking-wider text-white/60">{days > 1 ? "jours" : "jour"}</span>
           </>
         )}
       </span>
@@ -355,21 +354,20 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
           type="button"
           onClick={() => setEditing(true)}
           aria-label={late ? "Confirmer le salaire" : "Modifier le salaire"}
-          className={cn(
-            "gx-vivid relative flex h-full w-full flex-col overflow-hidden rounded-[22px] p-3 text-left transition-transform active:scale-[0.98]",
-            late && "gx-vivid-late",
-          )}
+          className={cn(shell, "flex h-full flex-col rounded-[22px] p-3 text-left transition-transform active:scale-[0.98]")}
         >
-          {/* A few sparkles twinkling in its corner. */}
-          <span aria-hidden className="gx-twinkle absolute right-3.5 top-[33px] text-[8px] text-white/80">✦</span>
-          <span aria-hidden className="gx-twinkle absolute bottom-3 right-4 text-[10px] text-white/75 [animation-delay:1.2s]">✦</span>
-          <span aria-hidden className="gx-twinkle absolute bottom-6 right-10 text-[6px] text-white/60 [animation-delay:2.1s]">✦</span>
+          {glow}
 
           <span className="relative flex items-center justify-between gap-1">
-            <span className="truncate text-[9.5px] font-bold uppercase tracking-[0.16em] text-white/75">
+            <span
+              className={cn(
+                "truncate text-[9.5px] font-semibold uppercase tracking-[0.16em]",
+                late ? "text-rose-300" : "text-indigo-200/80",
+              )}
+            >
               {late ? "Salaire en retard" : "Prochain salaire"}
             </span>
-            <CaretRight weight="bold" className="h-3.5 w-3.5 shrink-0 text-white/60" />
+            <CaretRight weight="bold" className="h-3.5 w-3.5 shrink-0 text-white/40" />
           </span>
 
           <span className="relative mt-2 flex items-center gap-2.5">
@@ -377,21 +375,21 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
             {/* What arrives, and where: the salary less the advances already
                 taken on it (hidden like Disponible's amounts). */}
             <span className="flex min-w-0 flex-1 flex-col">
-              <span className="text-[9.5px] font-medium text-white/70">{late ? "attendu" : "tu reçois"}</span>
+              <span className="text-[9.5px] font-medium text-white/60">{late ? "attendu" : "tu reçois"}</span>
               <span
                 data-private
                 className={cn("truncate text-[15px] font-extrabold leading-tight tabular-nums", !revealed && "tracking-wider")}
               >
                 {revealed ? formatMoney(toReceive, settings.currency) : "•••• DH"}
               </span>
-              <span className="gx-vivid-chip mt-1.5 inline-flex w-fit items-center gap-1 rounded-full px-2 py-[3px] text-[10px] font-semibold">
+              <span className="mt-1.5 inline-flex w-fit items-center gap-1 rounded-full bg-white/15 px-2 py-[3px] text-[10px] font-semibold">
                 <MethodIcon method={settings.salaryMethod} className="h-[9px]" />
                 {METHOD_META[settings.salaryMethod].label}
               </span>
             </span>
           </span>
 
-          <span className="relative mt-auto block truncate pt-2 text-[11.5px] font-semibold text-white/90">{caption}</span>
+          <span className="relative mt-auto block truncate pt-2 text-[11.5px] font-semibold">{caption}</span>
         </button>
       )}
 
