@@ -188,7 +188,7 @@ function AppBar({ pathname }: { pathname: string }) {
       />
 
       {/* The tabs on a capsule of glass, a lens sliding under the current
-          one; floating above them on the left, the + — an orb of glass, its
+          one; floating above them on the right, the + — an orb of glass, its
           menu rising above it. Both stay put while the page scrolls. */}
       <nav
         className={cn(
@@ -196,10 +196,10 @@ function AppBar({ pathname }: { pathname: string }) {
           typing && "hidden",
         )}
       >
-        <div className="mx-auto flex max-w-md flex-col items-start gap-3">
+        <div className="mx-auto flex max-w-md flex-col items-end gap-3">
           <div className="pointer-events-auto relative">
             {/* The + button's menu, rising above it. */}
-            <div className="absolute bottom-full left-0 mb-3 flex flex-col items-start gap-2.5">
+            <div className="absolute bottom-full right-0 mb-3 flex flex-col items-end gap-2.5">
               {ACTIONS.map(({ href, label, icon: Icon, tint }, i) => (
                 <Link
                   key={label}
@@ -214,6 +214,7 @@ function AppBar({ pathname }: { pathname: string }) {
                     open ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0",
                   )}
                 >
+                  <span className="gx-float rounded-full px-4 py-2 text-sm font-bold text-slate-900 dark:text-white">{label}</span>
                   <span
                     className={cn(
                       "gx-float flex h-[52px] w-[52px] items-center justify-center rounded-full transition-transform active:scale-95",
@@ -222,7 +223,6 @@ function AppBar({ pathname }: { pathname: string }) {
                   >
                     <Icon weight="duotone" className="h-6 w-6" />
                   </span>
-                  <span className="gx-float rounded-full px-4 py-2 text-sm font-bold text-slate-900 dark:text-white">{label}</span>
                 </Link>
               ))}
             </div>
