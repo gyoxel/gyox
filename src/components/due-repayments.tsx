@@ -37,7 +37,7 @@ export function DueRepayments({ items, currency }: { items: DueRepayment[]; curr
               <span className="line-clamp-2 text-[11.5px] leading-snug text-amber-700 dark:text-amber-200">
                 {d.received > 0
                   ? `${d.monthLabel} · ${formatMoney(d.received, currency)} déjà reçus`
-                  : `Remboursement · ${d.monthLabel} : reçu ?`}
+                  : `Remboursement · ${d.monthLabel}`}
               </span>
             </span>
           </Link>
