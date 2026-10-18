@@ -23,9 +23,9 @@ const QUICK_ACTIONS: { href: string; label: string; icon: PhosphorIcon }[] = [
   { href: "/solde", label: "Transfert", icon: Swap },
 ];
 
-/** Disponible's card (a link once the amounts show, a plain card hidden). */
-const BALANCE_CARD =
-  "gx-balance relative flex flex-col items-center overflow-hidden rounded-[28px] px-3.5 pb-3.5 pt-4 text-center";
+/** Disponible's card: the living violet one (a link once the amounts
+ *  show, a plain card hidden). */
+const BALANCE_CARD = "gx-vivid relative flex flex-col items-center overflow-hidden rounded-[28px] px-3.5 pb-3.5 pt-4 text-center";
 
 /** "20 449,50 DH": the whole number, the decimals and currency softer. */
 function BigAmount({ text }: { text: string }) {
@@ -36,7 +36,7 @@ function BigAmount({ text }: { text: string }) {
       {/* The narrow space between thousands nearly vanishes this big and
           bold: a full one ("20 449"). */}
       {match[1].replace(/\u202f/g, "\u00a0")}
-      <span className="text-slate-400 dark:text-slate-500">{match[2].replace(/^(,\d+)?\s*/, (m) => m.trim() + " ")}</span>
+      <span className="text-white/60">{match[2].replace(/^(,\d+)?\s*/, (m) => m.trim() + " ")}</span>
     </>
   );
 }
@@ -92,12 +92,16 @@ export function HomeDashboard({
 
   const balanceCard = (
     <>
-      <p className="text-[15px] font-semibold text-slate-700 dark:text-slate-200">Disponible maintenant</p>
-      <div className="mt-2.5 flex items-center gap-2">
+      {/* A few sparkles twinkling in its corners. */}
+      <span aria-hidden className="gx-twinkle absolute left-5 top-5 text-[9px] text-white/75">✦</span>
+      <span aria-hidden className="gx-twinkle absolute right-6 top-4 text-[11px] text-white/80 [animation-delay:1.4s]">✦</span>
+      <span aria-hidden className="gx-twinkle absolute right-12 top-10 text-[6px] text-white/60 [animation-delay:2.3s]">✦</span>
+      <p className="relative text-[15px] font-semibold text-white/85">Disponible maintenant</p>
+      <div className="relative mt-2.5 flex items-center gap-2">
         <p
           data-private
           className={cn(
-            "text-[2.6rem] font-extrabold leading-none tabular-nums text-slate-900 dark:text-white",
+            "text-[2.6rem] font-extrabold leading-none tabular-nums text-white",
             revealed ? "tracking-tight" : "tracking-widest",
           )}
         >
@@ -112,22 +116,22 @@ export function HomeDashboard({
             setRevealed(!revealed);
           }}
           aria-label={revealed ? "Masquer le montant" : "Afficher le montant"}
-          className="flex h-9 w-9 items-center justify-center rounded-full text-slate-700 transition-colors active:bg-slate-900/5 dark:text-slate-200 dark:active:bg-white/10"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-white/90 transition-colors active:bg-white/15"
         >
           {revealed ? <EyeSlash weight="bold" className="h-5 w-5" /> : <Eye weight="bold" className="h-5 w-5" />}
         </button>
       </div>
       {/* Cash | card: each on its chip, its picture beside its name and
           amount. */}
-      <div className="mt-4 grid w-full grid-cols-2 gap-2">
+      <div className="relative mt-4 grid w-full grid-cols-2 gap-2">
         {(["cash", "card"] as const).map((m) => (
-          <span key={m} className="gx-balance-chip flex min-w-0 items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left">
+          <span key={m} className="gx-vivid-chip flex min-w-0 items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left">
             <MethodIcon method={m} className="h-[14px]" />
             <span className="min-w-0">
-              <span className="block text-[11px] font-medium leading-tight text-slate-500 dark:text-slate-400">
+              <span className="block text-[11px] font-medium leading-tight text-white/70">
                 {m === "cash" ? "Espèces" : "Carte"}
               </span>
-              <span data-private className="block truncate text-[14px] font-bold leading-tight tabular-nums text-slate-900 dark:text-white">
+              <span data-private className="block truncate text-[14px] font-bold leading-tight tabular-nums text-white">
                 {show(balance[m])}
               </span>
             </span>
@@ -139,7 +143,7 @@ export function HomeDashboard({
 
   return (
     <>
-      {/* What's available now, big and centred on a card of frosted glass —
+      {/* What's available now, big and centred on the living violet card —
           the first thing on Accueil. Once shown, the whole card opens the
           Solde; hidden (the dots), it doesn't. */}
       {revealed ? (

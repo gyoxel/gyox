@@ -5,6 +5,7 @@ import { CaretRight, Check, HandCoins, Money, Trash, X } from "@phosphor-icons/r
 import { toast } from "sonner";
 import { errorMessage } from "@/components/expense-editor";
 import type { PaymentMethod, SalaryAdvance, Settings } from "@/lib/types";
+import { METHOD_META } from "@/lib/payment-method";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import { mutate } from "@/lib/use-refresh-data";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput } from "@/lib/utils";
@@ -14,6 +15,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SalaryForm } from "@/components/salary-form";
 import { MethodIcon } from "@/components/method-icon";
+import { useRevealedBalance } from "@/lib/reveal-balance";
 
 /**
  * Countdown to the next salary, with a check that it actually arrived:
@@ -175,8 +177,8 @@ function ofMonth(period: string): string {
   return /^[aeiouéèh]/i.test(name) ? `d'${name}` : `de ${name}`;
 }
 
-const RING = 62;
-const RING_STROKE = 6;
+const RING = 58;
+const RING_STROKE = 5.5;
 
 /** The pay period as a glowing ring filling up, the days left inside. */
 function SalaryRing({ progress, days, late }: { progress: number; days: number; late: boolean }) {
@@ -207,11 +209,18 @@ function SalaryRing({ progress, days, late }: { progress: number; days: number; 
         />
       </svg>
       <span className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[22px] font-extrabold leading-none tabular-nums">
-          {late && "−"}
-          {days}
-        </span>
-        <span className="mt-0.5 text-[7.5px] font-bold uppercase tracking-wider text-white/75">{days > 1 ? "jours" : "jour"}</span>
+        {days === 0 && !late ? (
+          // Under a day before the pay day (it starts at midnight).
+          <span className="text-[12px] font-extrabold leading-none">Demain</span>
+        ) : (
+          <>
+            <span className="text-[21px] font-extrabold leading-none tabular-nums">
+              {late && "−"}
+              {days}
+            </span>
+            <span className="mt-0.5 text-[7.5px] font-bold uppercase tracking-wider text-white/75">{days > 1 ? "jours" : "jour"}</span>
+          </>
+        )}
       </span>
     </span>
   );
@@ -252,6 +261,13 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
     });
   }
 
+  const [revealed] = useRevealedBalance();
+  // The salary counted down to, less the advances already taken on it.
+  const toReceivePeriod = state.phase === "counting" ? state.nextPeriod : state.period;
+  const toReceive = Math.max(
+    0,
+    settings.salary - advances.filter((a) => a.period === toReceivePeriod).reduce((sum, a) => sum + a.amount, 0),
+  );
   const capitalize = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
   const caption = state.period ? (late ? `prévu le ${state.lastLabel}` : capitalize(state.nextLabel)) : "";
 
@@ -340,8 +356,8 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
           onClick={() => setEditing(true)}
           aria-label={late ? "Confirmer le salaire" : "Modifier le salaire"}
           className={cn(
-            "gx-salary relative flex h-full w-full flex-col overflow-hidden rounded-[22px] p-3 text-left transition-transform active:scale-[0.98]",
-            late && "gx-salary-late",
+            "gx-vivid relative flex h-full w-full flex-col overflow-hidden rounded-[22px] p-3 text-left transition-transform active:scale-[0.98]",
+            late && "gx-vivid-late",
           )}
         >
           {/* A few sparkles twinkling in its corner. */}
@@ -358,20 +374,19 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
 
           <span className="relative mt-2 flex items-center gap-2.5">
             <SalaryRing progress={state.progress} days={state.days} late={late} />
-            {/* The time left ticking, to the second. */}
-            <span className="flex min-w-0 flex-1 flex-col gap-1">
-              <span className="text-[9.5px] font-medium text-white/70">{late ? "depuis" : "encore"}</span>
-              <span className="grid grid-cols-3 gap-1">
-                {[
-                  [state.hours, "h"],
-                  [state.minutes, "min"],
-                  [state.seconds, "s"],
-                ].map(([n, unit]) => (
-                  <span key={unit} className="gx-salary-chip flex flex-col items-center rounded-lg py-1">
-                    <span className="text-[13px] font-extrabold leading-none tabular-nums">{String(n).padStart(2, "0")}</span>
-                    <span className="mt-0.5 text-[7px] font-semibold uppercase tracking-wide text-white/70">{unit}</span>
-                  </span>
-                ))}
+            {/* What arrives, and where: the salary less the advances already
+                taken on it (hidden like Disponible's amounts). */}
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="text-[9.5px] font-medium text-white/70">{late ? "attendu" : "tu reçois"}</span>
+              <span
+                data-private
+                className={cn("truncate text-[15px] font-extrabold leading-tight tabular-nums", !revealed && "tracking-wider")}
+              >
+                {revealed ? formatMoney(toReceive, settings.currency) : "•••• DH"}
+              </span>
+              <span className="gx-vivid-chip mt-1.5 inline-flex w-fit items-center gap-1 rounded-full px-2 py-[3px] text-[10px] font-semibold">
+                <MethodIcon method={settings.salaryMethod} className="h-[9px]" />
+                {METHOD_META[settings.salaryMethod].label}
               </span>
             </span>
           </span>
