@@ -2,19 +2,21 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDots, CaretRight, ChartLineUp, GearSix, HandCoins, Handshake, PiggyBank, Target, TrendUp, Wallet } from "@phosphor-icons/react/ssr";
+import { CalendarDots, Cardholder, CaretRight, ChartLineUp, HandCoins, Handshake, Tag, Target, TrendUp } from "@phosphor-icons/react/ssr";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
+// Every page worth a shortcut — not the ones the bar, the + menu or
+// Accueil itself already open (Dépenses, Crédits, Solde, Épargne, Salaire),
+// nor Profil / Paramètres.
 const ITEMS: { href: string; label: string; hint: string; icon: PhosphorIcon }[] = [
   { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau…", icon: TrendUp },
-  { href: "/solde", label: "Solde", hint: "Cash, carte, historique", icon: Wallet },
-  { href: "/epargne", label: "Épargne", hint: "Argent mis de côté", icon: PiggyBank },
-  { href: "/prets", label: "Prêts", hint: "Ce qu'on doit te rendre", icon: Handshake },
+  { href: "/budgets", label: "Budgets", hint: "Transport, courses…", icon: Cardholder },
   { href: "/daret", label: "Daret", hint: "Tes darets et ton tour", icon: HandCoins },
+  { href: "/prets", label: "Prêts", hint: "Ce qu'on doit te rendre", icon: Handshake },
   { href: "/goals", label: "Objectifs", hint: "Voiture, maison, voyage…", icon: Target },
-  { href: "/stats", label: "Statistiques", hint: "Répartition, prévisions", icon: ChartLineUp },
   { href: "/calendar", label: "Calendrier", hint: "Jour par jour", icon: CalendarDots },
-  { href: "/settings", label: "Paramètres", hint: "Thème, sauvegarde", icon: GearSix },
+  { href: "/stats", label: "Statistiques", hint: "Répartition, prévisions", icon: ChartLineUp },
+  { href: "/categories", label: "Catégories", hint: "Ajouter, renommer, ordonner", icon: Tag },
 ];
 const N = ITEMS.length;
 

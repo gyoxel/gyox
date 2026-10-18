@@ -7,7 +7,7 @@ import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import type { MonthId } from "@/lib/date";
 import type { Expense, Payment, PaymentMethod, SalaryAdvance, Settings } from "@/lib/types";
 import { walletPaidOut } from "@/lib/wallet";
-import { formatMoney } from "@/lib/utils";
+import { cn, formatMoney } from "@/lib/utils";
 import { mutationsSettled } from "@/lib/use-refresh-data";
 import { useRevealedBalance } from "@/lib/reveal-balance";
 import { CountdownNextSalary } from "@/components/countdown-next-salary";
@@ -22,6 +22,10 @@ const QUICK_ACTIONS: { href: string; label: string; icon: PhosphorIcon }[] = [
   { href: "/epargne", label: "Épargne", icon: PiggyBank },
   { href: "/solde", label: "Transfert", icon: Swap },
 ];
+
+/** Disponible's card (a link once the amounts show, a plain card hidden). */
+const BALANCE_CARD =
+  "gx-balance relative flex flex-col items-center overflow-hidden rounded-[28px] px-3.5 pb-3.5 pt-4 text-center";
 
 /** "20 449,50 DH": the whole number, the decimals and currency softer. */
 function BigAmount({ text }: { text: string }) {
@@ -86,64 +90,65 @@ export function HomeDashboard({
   const [revealed, setRevealed] = useRevealedBalance();
   const show = (n: number) => (revealed ? formatMoney(n, currency) : "•••• DH");
 
+  const balanceCard = (
+    <>
+      <p className="text-[15px] font-semibold text-slate-700 dark:text-slate-200">Disponible maintenant</p>
+      <div className="mt-2.5 flex items-center gap-2">
+        <p
+          data-private
+          className={cn(
+            "text-[2.6rem] font-extrabold leading-none tabular-nums text-slate-900 dark:text-white",
+            revealed ? "tracking-tight" : "tracking-widest",
+          )}
+        >
+          <BigAmount text={show(balance.cash + balance.card)} />
+        </p>
+        <button
+          type="button"
+          onClick={(e) => {
+            // On the card (a link once shown): the eye only shows / hides.
+            e.preventDefault();
+            e.stopPropagation();
+            setRevealed(!revealed);
+          }}
+          aria-label={revealed ? "Masquer le montant" : "Afficher le montant"}
+          className="flex h-9 w-9 items-center justify-center rounded-full text-slate-700 transition-colors active:bg-slate-900/5 dark:text-slate-200 dark:active:bg-white/10"
+        >
+          {revealed ? <EyeSlash weight="bold" className="h-5 w-5" /> : <Eye weight="bold" className="h-5 w-5" />}
+        </button>
+      </div>
+      {/* Cash | card: each on its chip, its picture beside its name and
+          amount. */}
+      <div className="mt-4 grid w-full grid-cols-2 gap-2">
+        {(["cash", "card"] as const).map((m) => (
+          <span key={m} className="gx-balance-chip flex min-w-0 items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left">
+            <MethodIcon method={m} className="h-[14px]" />
+            <span className="min-w-0">
+              <span className="block text-[11px] font-medium leading-tight text-slate-500 dark:text-slate-400">
+                {m === "cash" ? "Espèces" : "Carte"}
+              </span>
+              <span data-private className="block truncate text-[14px] font-bold leading-tight tabular-nums text-slate-900 dark:text-white">
+                {show(balance[m])}
+              </span>
+            </span>
+          </span>
+        ))}
+      </div>
+    </>
+  );
+
   return (
     <>
       {/* What's available now, big and centred on a card of frosted glass —
-          the first thing on Accueil. Once shown, the amount opens the
+          the first thing on Accueil. Once shown, the whole card opens the
           Solde; hidden (the dots), it doesn't. */}
-      <section className="gx-balance relative flex flex-col items-center overflow-hidden rounded-[28px] px-3.5 pb-3.5 pt-4 text-center">
-        <p className="text-[15px] font-semibold text-slate-700 dark:text-slate-200">Disponible maintenant</p>
-        <div className="mt-2.5 flex items-center gap-2">
-          {revealed ? (
-            <Link
-              href="/solde"
-              prefetch
-              aria-label="Voir le solde"
-              data-private
-              className="text-[2.6rem] font-extrabold leading-none tracking-tight tabular-nums text-slate-900 transition-transform active:scale-[0.97] dark:text-white"
-            >
-              <BigAmount text={show(balance.cash + balance.card)} />
-            </Link>
-          ) : (
-            <p
-              data-private
-              className="text-[2.6rem] font-extrabold leading-none tracking-widest tabular-nums text-slate-900 dark:text-white"
-            >
-              <BigAmount text={show(balance.cash + balance.card)} />
-            </p>
-          )}
-          <button
-            type="button"
-            onClick={() => setRevealed(!revealed)}
-            aria-label={revealed ? "Masquer le montant" : "Afficher le montant"}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-700 transition-colors active:bg-slate-900/5 dark:text-slate-200 dark:active:bg-white/10"
-          >
-            {revealed ? <EyeSlash weight="bold" className="h-5 w-5" /> : <Eye weight="bold" className="h-5 w-5" />}
-          </button>
-        </div>
-        {/* Cash | card: each on its chip, its picture beside its name and
-            amount. */}
-        <div className="mt-4 grid w-full grid-cols-2 gap-2">
-          {(["cash", "card"] as const).map((m) => (
-            <Link
-              key={m}
-              href="/solde"
-              prefetch
-              className="gx-balance-chip flex min-w-0 items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left active:scale-[0.98]"
-            >
-              <MethodIcon method={m} className="h-[14px]" />
-              <span className="min-w-0">
-                <span className="block text-[11px] font-medium leading-tight text-slate-500 dark:text-slate-400">
-                  {m === "cash" ? "Espèces" : "Carte"}
-                </span>
-                <span data-private className="block truncate text-[14px] font-bold leading-tight tabular-nums text-slate-900 dark:text-white">
-                  {show(balance[m])}
-                </span>
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {revealed ? (
+        <Link href="/solde" prefetch className={cn(BALANCE_CARD, "transition-transform active:scale-[0.99]")}>
+          {balanceCard}
+        </Link>
+      ) : (
+        <section className={BALANCE_CARD}>{balanceCard}</section>
+      )}
 
       {/* Quick actions: round clear-glass buttons, their name under them. */}
       <div className="grid grid-cols-4 gap-2">
