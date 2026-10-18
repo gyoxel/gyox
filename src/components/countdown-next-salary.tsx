@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore, useTransition } from "react";
-import { CaretRight, Check, HandCoins, Money, Trash, X } from "@phosphor-icons/react/ssr";
+import { CalendarCheck, Check, HandCoins, Money, Trash, X } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import { errorMessage } from "@/components/expense-editor";
 import type { PaymentMethod, SalaryAdvance, Settings } from "@/lib/types";
@@ -175,49 +175,6 @@ function ofMonth(period: string): string {
   return /^[aeiouéèh]/i.test(name) ? `d'${name}` : `de ${name}`;
 }
 
-const RING = 54;
-const RING_STROKE = 5.5;
-
-/** The pay period as a ring filling up, with the days left inside. */
-function Ring({ progress, days, late }: { progress: number; days: number; late: boolean }) {
-  const r = (RING - RING_STROKE) / 2;
-  const c = 2 * Math.PI * r;
-  return (
-    <div className="relative shrink-0" style={{ width: RING, height: RING }}>
-      <svg width={RING} height={RING} className="-rotate-90" aria-hidden>
-        <defs>
-          <linearGradient id="salary-ring" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor={late ? "#fb7185" : "#34d399"} />
-            <stop offset="100%" stopColor={late ? "#e11d48" : "#22d3ee"} />
-          </linearGradient>
-        </defs>
-        <circle cx={RING / 2} cy={RING / 2} r={r} fill="none" strokeWidth={RING_STROKE} className="stroke-white/10" />
-        <circle
-          cx={RING / 2}
-          cy={RING / 2}
-          r={r}
-          fill="none"
-          strokeWidth={RING_STROKE}
-          strokeLinecap="round"
-          stroke="url(#salary-ring)"
-          strokeDasharray={c}
-          strokeDashoffset={c * (1 - progress)}
-          className="transition-[stroke-dashoffset] duration-700"
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={cn("text-lg font-bold leading-none tabular-nums", late && "text-rose-300")}>
-          {late && "−"}
-          {days}
-        </span>
-        <span className="mt-0.5 text-[8px] font-medium uppercase tracking-wider text-white/60">
-          {days > 1 ? "jours" : "jour"}
-        </span>
-      </div>
-    </div>
-  );
-}
-
 /** Today as "YYYY-MM-DD" (local time). */
 function todayStr(): string {
   const d = new Date();
@@ -340,24 +297,60 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
           type="button"
           onClick={() => setEditing(true)}
           aria-label={late ? "Confirmer le salaire" : "Modifier le salaire"}
-          className={cn(shell, "flex h-full flex-col justify-between gap-3 rounded-[22px] p-3.5 text-left transition-transform active:scale-[0.98]")}
+          className="gx-balance flex h-full w-full flex-col rounded-[22px] p-3.5 text-left transition-transform active:scale-[0.98]"
         >
-          {glow}
-          <div className="relative flex items-start justify-between">
-            <Ring progress={state.progress} days={state.days} late={late} />
-            <CaretRight weight="bold" className="mt-1 h-4 w-4 shrink-0 text-white/40" />
-          </div>
-          <div className="relative min-w-0">
-            <p
+          <span className="flex items-center justify-between gap-2">
+            <span
               className={cn(
-                "truncate text-[9.5px] font-semibold uppercase tracking-[0.14em]",
-                late ? "text-rose-300" : "text-indigo-200/80",
+                "truncate text-[12.5px] font-semibold",
+                late ? "text-rose-600 dark:text-rose-300" : "text-slate-500 dark:text-slate-400",
               )}
             >
               {late ? "Salaire en retard" : "Prochain salaire"}
-            </p>
-            <p className="mt-0.5 h-5 truncate text-[13.5px] font-semibold">{caption}</p>
-          </div>
+            </span>
+            <span
+              className={cn(
+                "gx-tile flex h-7 w-7 shrink-0 items-center justify-center rounded-full",
+                late && "!text-rose-600 dark:!text-rose-300",
+              )}
+            >
+              <CalendarCheck weight="duotone" className="h-4 w-4" />
+            </span>
+          </span>
+          {/* The days left, big; under a day, the hours. */}
+          <span
+            className={cn(
+              "mt-1.5 flex items-baseline gap-1.5 text-slate-900 dark:text-white",
+              late && "text-rose-600 dark:text-rose-300",
+            )}
+          >
+            {state.days > 0 || late ? (
+              <>
+                <span className="text-[34px] font-extrabold leading-none tracking-tight tabular-nums">
+                  {late && "−"}
+                  {state.days}
+                </span>
+                <span className="text-[14px] font-semibold opacity-60">{state.days > 1 ? "jours" : "jour"}</span>
+              </>
+            ) : (
+              <span className="text-[34px] font-extrabold leading-none tracking-tight tabular-nums">
+                {state.hours}
+                <span className="text-[14px] font-semibold opacity-60"> h </span>
+                {String(state.minutes).padStart(2, "0")}
+              </span>
+            )}
+          </span>
+          {/* The pay period going by. */}
+          <span className="mt-auto block h-1.5 overflow-hidden rounded-full bg-violet-500/12 dark:bg-white/10">
+            <span
+              className={cn(
+                "block h-full rounded-full transition-[width] duration-700",
+                late ? "bg-gradient-to-r from-rose-400 to-rose-600" : "bg-gradient-to-r from-violet-500 to-cyan-400",
+              )}
+              style={{ width: `${Math.max(4, state.progress * 100)}%` }}
+            />
+          </span>
+          <span className="mt-1.5 block h-4 truncate text-[11.5px] font-medium text-slate-500 dark:text-slate-400">{caption}</span>
         </button>
       )}
 

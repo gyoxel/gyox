@@ -2,12 +2,12 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDots, Cardholder, CaretRight, ChartLineUp, HandCoins, Handshake, Tag, Target, TrendUp } from "@phosphor-icons/react/ssr";
+import { CalendarDots, Cardholder, CaretRight, ChartLineUp, HandCoins, Handshake, Target, TrendUp } from "@phosphor-icons/react/ssr";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
 // Every page worth a shortcut — not the ones the bar, the + menu or
 // Accueil itself already open (Dépenses, Crédits, Solde, Épargne, Salaire),
-// nor Profil / Paramètres.
+// nor Profil / Paramètres / Catégories.
 const ITEMS: { href: string; label: string; hint: string; icon: PhosphorIcon }[] = [
   { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau…", icon: TrendUp },
   { href: "/budgets", label: "Budgets", hint: "Transport, courses…", icon: Cardholder },
@@ -16,7 +16,6 @@ const ITEMS: { href: string; label: string; hint: string; icon: PhosphorIcon }[]
   { href: "/goals", label: "Objectifs", hint: "Voiture, maison, voyage…", icon: Target },
   { href: "/calendar", label: "Calendrier", hint: "Jour par jour", icon: CalendarDots },
   { href: "/stats", label: "Statistiques", hint: "Répartition, prévisions", icon: ChartLineUp },
-  { href: "/categories", label: "Catégories", hint: "Ajouter, renommer, ordonner", icon: Tag },
 ];
 const N = ITEMS.length;
 
