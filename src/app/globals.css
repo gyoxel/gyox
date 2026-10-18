@@ -5,8 +5,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f4f6fa;
-  --foreground: #14121f;
+  --background: #f3f4f0;
+  --foreground: #15180f;
 }
 
 @theme inline {
@@ -17,27 +17,27 @@
 }
 
 :root.dark {
-  --background: #07120e;
-  --foreground: #f1f5f9;
+  --background: #0b0d0a;
+  --foreground: #f3f5ef;
   color-scheme: dark;
 }
 
-/* GX palette: one brand colour (emerald green) and three meanings — mint: money
+/* GX palette: one brand colour (lime) and three meanings — mint: money
    in / paid, coral: money out / due, gold: loans / warnings. Tailwind's
    other hues all take the brand: every sky-*, indigo-*, fuchsia-*… class
    in the app follows. */
 :root {
-  --gx-brand-50: oklch(0.975 0.020 165);
-  --gx-brand-100: oklch(0.945 0.045 165);
-  --gx-brand-200: oklch(0.895 0.080 165);
-  --gx-brand-300: oklch(0.830 0.115 165);
-  --gx-brand-400: oklch(0.755 0.140 165);
-  --gx-brand-500: oklch(0.670 0.145 165);
-  --gx-brand-600: oklch(0.580 0.130 166);
-  --gx-brand-700: oklch(0.500 0.112 167);
-  --gx-brand-800: oklch(0.420 0.093 168);
-  --gx-brand-900: oklch(0.360 0.076 168);
-  --gx-brand-950: oklch(0.270 0.058 169);
+  --gx-brand-50: oklch(0.985 0.030 120);
+  --gx-brand-100: oklch(0.965 0.062 121);
+  --gx-brand-200: oklch(0.935 0.120 122);
+  --gx-brand-300: oklch(0.895 0.165 123);
+  --gx-brand-400: oklch(0.840 0.185 125);
+  --gx-brand-500: oklch(0.730 0.180 128);
+  --gx-brand-600: oklch(0.560 0.145 132);
+  --gx-brand-700: oklch(0.470 0.122 134);
+  --gx-brand-800: oklch(0.395 0.100 136);
+  --gx-brand-900: oklch(0.335 0.080 138);
+  --gx-brand-950: oklch(0.250 0.060 140);
   --gx-mint-50: oklch(0.975 0.016 160);
   --gx-mint-100: oklch(0.945 0.036 160);
   --gx-mint-200: oklch(0.895 0.066 160);
@@ -313,60 +313,74 @@
 
 body {
   font-family: var(--font-app), var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  /* Inter, set a touch tighter: calmer, more like a native app. */
+  letter-spacing: -0.011em;
 }
 
 /* ------------------------------------------------------------------------
-   GX Emerald — light first, like an iOS bank app: every page opens on an
-   emerald green that fades into a soft white, its title in white on it;
-   white cards of light glass; hero cards of emerald in a white frame; the
-   main action a green pill, the others white pills; icons in pastel
-   circles, each with its own soft colour. Dark is deep green glass.
-   "simple" keeps its own plain rules above.
+   GX Lime — light first, a calm 2026 bank app: a soft off-white page lit
+   by a faint lime glow at its top, titles in deep ink; white cards; the
+   key figures on lime with ink text (never a black card); the main action
+   a lime pill; the bar and the + in light frosted glass, the current tab
+   on a lime lens. Dark is graphite, lime glowing through it. "simple"
+   keeps its own plain rules above.
    ------------------------------------------------------------------------ */
 :root {
-  --gx-ink: #101828;
+  --gx-ink: #15180f;
+  /* Text on lime. */
+  --gx-on-lime: #16200a;
   /* Fields and chips: a light grey. */
-  --gx-chip: rgb(16 24 40 / 0.045);
+  --gx-chip: rgb(21 24 15 / 0.045);
   --gx-line: rgb(255 255 255 / 0.08);
   --gx-line-strong: rgb(255 255 255 / 0.13);
   --gx-glass-strong: rgb(255 255 255 / 0.08);
-  /* The green at the top of every page. */
-  --gx-sky: linear-gradient(180deg, #13866a 0%, #1f9a78 20%, #5bbf9c 42%, #b2e3d0 62%, rgb(224 244 236 / 0.6) 80%, rgb(244 246 250 / 0) 100%);
-  /* A card: white light glass. */
-  --gx-glass-fill: linear-gradient(180deg, rgb(255 255 255 / 0.94), rgb(255 255 255 / 0.86));
-  --gx-glass-edge: rgb(255 255 255 / 0.95);
-  --gx-glass-shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 10px 26px -14px rgb(16 24 40 / 0.16);
-  /* Floating glass (bar, sheets, dialogs). */
-  --gx-float-fill: linear-gradient(180deg, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.8));
-  --gx-float-shadow: inset 0 1px 0 #fff, inset 0 0 0 1px rgb(16 24 40 / 0.04), 0 18px 40px -18px rgb(16 24 40 / 0.3), 0 3px 8px -3px rgb(16 24 40 / 0.08);
+  /* The glow at the top of every page. */
+  --gx-sky:
+    radial-gradient(60% 70% at 8% 0%, rgb(214 246 112 / 0.5), transparent 72%),
+    radial-gradient(55% 60% at 100% 6%, rgb(190 240 214 / 0.42), transparent 70%);
+  /* A card: white. */
+  --gx-glass-fill: linear-gradient(180deg, #ffffff, rgb(255 255 255 / 0.94));
+  --gx-glass-edge: rgb(21 24 15 / 0.05);
+  --gx-glass-shadow: 0 1px 2px rgb(21 24 15 / 0.03), 0 10px 28px -16px rgb(30 40 10 / 0.16);
+  /* Floating glass (bar, sheets, dialogs): frosted white. */
+  --gx-float-fill: linear-gradient(180deg, rgb(255 255 255 / 0.78), rgb(255 255 255 / 0.66));
+  --gx-float-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), inset 0 0 0 1px rgb(21 24 15 / 0.06), 0 18px 40px -16px rgb(30 40 10 / 0.26), 0 3px 10px -4px rgb(30 40 10 / 0.08);
   /* White pills. */
-  --gx-pill-fill: linear-gradient(180deg, #ffffff, #fbfcfe);
-  --gx-pill-shadow: inset 0 0 0 1px rgb(16 24 40 / 0.06), 0 1px 2px rgb(16 24 40 / 0.05), 0 8px 18px -12px rgb(16 24 40 / 0.22);
-  /* Hero cards: emerald, lit from the top. */
+  --gx-pill-fill: linear-gradient(180deg, #ffffff, #fbfcf8);
+  --gx-pill-shadow: inset 0 0 0 1px rgb(21 24 15 / 0.07), 0 1px 2px rgb(21 24 15 / 0.04), 0 8px 18px -12px rgb(30 40 10 / 0.2);
+  /* Lime: the hero cards, the main action, the current tab. */
+  --gx-lime: linear-gradient(180deg, #dcf884 0%, #c9ef5c 55%, #b9e449 100%);
+  --gx-lime-shadow: inset 0 1px 0 rgb(255 255 255 / 0.65), inset 0 0 0 1px rgb(90 130 10 / 0.12), 0 8px 20px -10px rgb(120 170 20 / 0.6);
   --gx-hero:
-    radial-gradient(90% 70% at 0% 0%, rgb(255 255 255 / 0.2), transparent 60%),
-    linear-gradient(160deg, #3cc69c 0%, #17a07b 48%, #0c7b5c 100%);
-  --gx-hero-shadow: 0 0 0 4px rgb(255 255 255 / 0.92), 0 18px 34px -18px rgb(10 120 90 / 0.5), 0 4px 10px -4px rgb(16 24 40 / 0.12);
+    radial-gradient(90% 80% at 100% 0%, rgb(255 255 255 / 0.55), transparent 58%),
+    radial-gradient(70% 70% at 0% 100%, rgb(160 220 40 / 0.35), transparent 70%),
+    linear-gradient(150deg, #dbf782 0%, #cbef60 52%, #bae44b 100%);
+  --gx-hero-ink: var(--gx-on-lime);
+  --gx-hero-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7), inset 0 0 0 1px rgb(90 130 10 / 0.1), 0 20px 40px -22px rgb(110 160 15 / 0.65), 0 2px 8px -3px rgb(40 60 5 / 0.12);
 }
 :root.dark {
   --gx-chip: rgb(255 255 255 / 0.06);
-  --gx-sky: linear-gradient(180deg, #0f3d2f 0%, rgb(15 61 47 / 0.55) 38%, rgb(7 18 14 / 0) 100%);
-  --gx-glass-fill: linear-gradient(180deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.035));
-  --gx-glass-edge: rgb(255 255 255 / 0.08);
-  --gx-glass-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 14px 34px -18px rgb(0 0 0 / 0.8);
-  --gx-float-fill: linear-gradient(180deg, rgb(20 44 36 / 0.86), rgb(11 28 22 / 0.82));
+  --gx-sky:
+    radial-gradient(60% 70% at 8% 0%, rgb(190 238 80 / 0.13), transparent 72%),
+    radial-gradient(55% 60% at 100% 6%, rgb(120 220 170 / 0.08), transparent 70%);
+  --gx-glass-fill: linear-gradient(180deg, rgb(255 255 255 / 0.065), rgb(255 255 255 / 0.035));
+  --gx-glass-edge: rgb(255 255 255 / 0.07);
+  --gx-glass-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 14px 34px -18px rgb(0 0 0 / 0.8);
+  --gx-float-fill: linear-gradient(180deg, rgb(38 42 34 / 0.72), rgb(24 27 21 / 0.66));
   --gx-float-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), inset 0 0 0 1px rgb(255 255 255 / 0.07), 0 22px 48px -18px rgb(0 0 0 / 0.85);
-  --gx-pill-fill: linear-gradient(180deg, rgb(255 255 255 / 0.12), rgb(255 255 255 / 0.06));
-  --gx-pill-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), inset 0 0 0 1px rgb(255 255 255 / 0.08), 0 12px 26px -16px rgb(0 0 0 / 0.85);
-  /* Deep green glass, an emerald light glowing through it. */
+  --gx-pill-fill: linear-gradient(180deg, rgb(255 255 255 / 0.11), rgb(255 255 255 / 0.06));
+  --gx-pill-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), inset 0 0 0 1px rgb(255 255 255 / 0.07), 0 12px 26px -16px rgb(0 0 0 / 0.85);
+  --gx-lime-shadow: inset 0 1px 0 rgb(255 255 255 / 0.55), 0 8px 24px -10px rgb(190 238 80 / 0.45);
+  /* Graphite glass, lime glowing through it; white text. */
   --gx-hero:
-    radial-gradient(70% 90% at 88% 70%, rgb(52 211 153 / 0.42), transparent 62%),
-    radial-gradient(60% 60% at 0% 0%, rgb(255 255 255 / 0.08), transparent 60%),
-    linear-gradient(160deg, #163d31 0%, #0f2b22 55%, #0a1f18 100%);
-  --gx-hero-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 24px 48px -22px rgb(0 0 0 / 0.85), inset 0 1px 0 rgb(255 255 255 / 0.1);
+    radial-gradient(80% 90% at 100% 0%, rgb(196 240 80 / 0.26), transparent 62%),
+    radial-gradient(60% 60% at 0% 100%, rgb(120 200 60 / 0.1), transparent 70%),
+    linear-gradient(160deg, #1e2319 0%, #151912 60%, #10130d 100%);
+  --gx-hero-ink: #fff;
+  --gx-hero-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08), inset 0 0 0 1px rgb(255 255 255 / 0.07), 0 24px 48px -22px rgb(0 0 0 / 0.85);
 }
 
-/* The page: a soft white; in the dark, a deep green night lit emerald. */
+/* The page: a soft off-white; in the dark, graphite lit by lime. */
 :root:not(.simple) body {
   background-color: var(--background);
 }
@@ -377,69 +391,47 @@ body {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(75% 45% at -8% -6%, rgb(16 185 129 / 0.24), transparent 70%),
-    radial-gradient(65% 42% at 108% 10%, rgb(20 184 166 / 0.12), transparent 70%),
-    radial-gradient(75% 45% at -6% 104%, rgb(5 150 105 / 0.14), transparent 70%);
+    radial-gradient(70% 40% at -8% -6%, rgb(190 238 80 / 0.1), transparent 70%),
+    radial-gradient(70% 45% at 106% 104%, rgb(120 220 170 / 0.06), transparent 70%);
 }
-/* …and the green at its top, scrolling with it (full width on wide screens). */
+/* …and the glow at its top, scrolling with it (full width on wide screens). */
 :root:not(.simple) #page-root::before {
   content: "";
   position: absolute;
   top: 0;
   left: 50%;
   width: 100vw;
-  height: 400px;
+  height: 420px;
   transform: translateX(-50%);
   z-index: -1;
   pointer-events: none;
   background: var(--gx-sky);
 }
 
-/* On the green: white titles and glass buttons. */
-:root:not(.simple) .gx-onblue {
-  color: #fff;
-}
-:root:not(.simple) .gx-onblue .gx-soft {
-  color: rgb(255 255 255 / 0.82);
-}
-:root:not(.simple) .gx-onblue .gx-hbtn {
-  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.3), rgb(255 255 255 / 0.18));
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), inset 0 0 0 1px rgb(255 255 255 / 0.28), 0 8px 18px -10px rgb(6 60 44 / 0.45);
-  color: #fff;
-  -webkit-backdrop-filter: blur(14px) saturate(160%);
-  backdrop-filter: blur(14px) saturate(160%);
-}
-:root:not(.simple) .gx-onblue .gx-hbtn :is([class*="text-violet"], [class*="text-blue"]) {
-  color: rgb(255 255 255 / 0.85);
-}
-/* The first heading of a page sits on the green too. */
-:root:not(.simple) :is(main > h2:first-child, main > section:first-child > h2:first-child) {
-  color: rgb(255 255 255 / 0.95);
-}
-/* Header buttons off the green (and in "simple"): white pills. */
+/* Header buttons: white pills. */
 .gx-hbtn {
   background-image: var(--gx-pill-fill);
   box-shadow: var(--gx-pill-shadow);
 }
 
-/* The header of every page: on the green while at the top; green glass
+/* The header of every page: on the page while at the top; frosted glass
    once the page scrolls under it. */
 .gx-header {
   background-color: transparent;
   transition: background-color 0.25s, box-shadow 0.25s;
 }
 .gx-header[data-scrolled] {
-  background-color: rgb(20 134 103 / 0.88);
-  -webkit-backdrop-filter: blur(22px) saturate(170%);
-  backdrop-filter: blur(22px) saturate(170%);
-  box-shadow: 0 1px 0 rgb(6 60 44 / 0.12), 0 10px 24px -18px rgb(6 60 44 / 0.5);
+  background-color: rgb(243 244 240 / 0.8);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  box-shadow: 0 1px 0 rgb(21 24 15 / 0.06);
 }
 .dark .gx-header[data-scrolled] {
-  background-color: rgb(10 30 24 / 0.82);
+  background-color: rgb(11 13 10 / 0.78);
   box-shadow: 0 1px 0 rgb(255 255 255 / 0.06);
 }
 
-/* Cards, rows and chips: white light glass. */
+/* Cards, rows and chips: white. */
 :root:not(.simple) :is(.gx-glass, [class~="bg-white"][class*="border-slate-200"]) {
   background-color: transparent;
   background-image: var(--gx-glass-fill);
@@ -469,198 +461,215 @@ body {
 /* Lines between rows: the faintest grey. */
 :root:not(.dark):not(.simple) :is(.divide-slate-100, .divide-slate-200) > :not(:last-child),
 :root:not(.dark):not(.simple) .border-slate-100 {
-  border-color: rgb(16 24 40 / 0.06);
+  border-color: rgb(21 24 15 / 0.06);
 }
 
-/* Icons: in pastel circles, each with its own soft colour (gx-tone-*),
-   a halo of the same colour around; emerald by default. Every little
-   white-icon-on-a-gradient tile takes the same look. */
+/* Icons: in soft pastel circles, each with its own colour (gx-tone-*);
+   lime by default. Every little white-icon-on-a-gradient tile takes the
+   same look. */
 .gx-tile {
-  --t1: #e3f7ef;
-  --t2: #c4ecdb;
-  --tf: #138a66;
-  --tr: rgb(19 138 102 / 0.12);
+  --t1: #f4fbdc;
+  --t2: #e4f5ad;
+  --tf: #4b7c0f;
 }
 .gx-tone-blue {
-  --t1: #eaf2ff;
-  --t2: #d3e3ff;
-  --tf: #2f6fe8;
-  --tr: rgb(59 130 246 / 0.12);
+  --t1: #edf3ff;
+  --t2: #d9e6ff;
+  --tf: #2f66d8;
 }
 .gx-tone-violet {
-  --t1: #f2edff;
-  --t2: #e1d5ff;
-  --tf: #7448f0;
-  --tr: rgb(124 77 255 / 0.12);
+  --t1: #f3efff;
+  --t2: #e4dbff;
+  --tf: #6f45e0;
 }
 .gx-tone-green {
-  --t1: #e6f9ef;
-  --t2: #c9f0dc;
-  --tf: #0f9a58;
-  --tr: rgb(18 161 94 / 0.12);
+  --t1: #e9f9f0;
+  --t2: #cdf0dd;
+  --tf: #13894f;
 }
 .gx-tone-amber {
-  --t1: #fff5dc;
-  --t2: #ffe5ad;
-  --tf: #c98204;
-  --tr: rgb(245 158 11 / 0.14);
+  --t1: #fff6df;
+  --t2: #ffe7b3;
+  --tf: #b67503;
 }
 .gx-tone-rose {
-  --t1: #ffedf1;
-  --t2: #ffd5de;
-  --tf: #e0456a;
-  --tr: rgb(229 72 107 / 0.12);
+  --t1: #ffeff2;
+  --t2: #ffd9e1;
+  --tf: #d63d61;
 }
 .gx-tone-cyan {
-  --t1: #e4f7fb;
-  --t2: #c5ecf6;
-  --tf: #0a92b2;
-  --tr: rgb(11 152 184 / 0.12);
+  --t1: #e7f8fb;
+  --t2: #caeef6;
+  --tf: #0a87a4;
 }
 .gx-tone-orange {
-  --t1: #ffefe4;
-  --t2: #ffd8bd;
-  --tf: #e2650f;
-  --tr: rgb(234 106 18 / 0.12);
+  --t1: #fff1e7;
+  --t2: #ffdcc4;
+  --tf: #d05d0c;
 }
 .gx-tone-slate,
 .gx-tile:not(:has(svg)) {
-  --t1: #f4f6f9;
-  --t2: #e5e9ef;
-  --tf: #475467;
-  --tr: rgb(71 84 103 / 0.08);
+  --t1: #f5f6f3;
+  --t2: #e8eae4;
+  --tf: #464b3e;
 }
 .dark .gx-tile {
-  --t1: rgb(16 185 129 / 0.28);
-  --t2: rgb(16 185 129 / 0.1);
-  --tf: #7fe0b8;
-  --tr: rgb(16 185 129 / 0.1);
+  --t1: rgb(190 238 80 / 0.22);
+  --t2: rgb(190 238 80 / 0.08);
+  --tf: #d4f57a;
 }
 .dark .gx-tone-blue {
-  --t1: rgb(59 130 246 / 0.3);
-  --t2: rgb(59 130 246 / 0.12);
-  --tf: #93bbff;
-  --tr: rgb(59 130 246 / 0.1);
+  --t1: rgb(59 130 246 / 0.28);
+  --t2: rgb(59 130 246 / 0.1);
+  --tf: #a3c4ff;
 }
 .dark .gx-tone-violet {
-  --t1: rgb(139 92 246 / 0.32);
-  --t2: rgb(139 92 246 / 0.12);
-  --tf: #c4b0ff;
-  --tr: rgb(139 92 246 / 0.1);
+  --t1: rgb(139 92 246 / 0.3);
+  --t2: rgb(139 92 246 / 0.1);
+  --tf: #cbb8ff;
 }
 .dark .gx-tone-green {
-  --t1: rgb(16 185 129 / 0.28);
-  --t2: rgb(16 185 129 / 0.1);
-  --tf: #7fe0b3;
-  --tr: rgb(16 185 129 / 0.1);
+  --t1: rgb(16 185 129 / 0.26);
+  --t2: rgb(16 185 129 / 0.09);
+  --tf: #86e3b8;
 }
 .dark .gx-tone-amber {
-  --t1: rgb(245 158 11 / 0.3);
-  --t2: rgb(245 158 11 / 0.1);
-  --tf: #ffd27a;
-  --tr: rgb(245 158 11 / 0.1);
+  --t1: rgb(245 158 11 / 0.28);
+  --t2: rgb(245 158 11 / 0.09);
+  --tf: #ffd47f;
 }
 .dark .gx-tone-rose {
-  --t1: rgb(244 63 94 / 0.28);
-  --t2: rgb(244 63 94 / 0.1);
-  --tf: #ffa3b7;
-  --tr: rgb(244 63 94 / 0.1);
+  --t1: rgb(244 63 94 / 0.26);
+  --t2: rgb(244 63 94 / 0.09);
+  --tf: #ffa9bb;
 }
 .dark .gx-tone-cyan {
-  --t1: rgb(6 182 212 / 0.28);
-  --t2: rgb(6 182 212 / 0.1);
-  --tf: #7ddcf0;
-  --tr: rgb(6 182 212 / 0.1);
+  --t1: rgb(6 182 212 / 0.26);
+  --t2: rgb(6 182 212 / 0.09);
+  --tf: #85def1;
 }
 .dark .gx-tone-orange {
-  --t1: rgb(249 115 22 / 0.28);
-  --t2: rgb(249 115 22 / 0.1);
-  --tf: #ffb27f;
-  --tr: rgb(249 115 22 / 0.1);
+  --t1: rgb(249 115 22 / 0.26);
+  --t2: rgb(249 115 22 / 0.09);
+  --tf: #ffb784;
 }
 .dark .gx-tone-slate,
 .dark .gx-tile:not(:has(svg)) {
-  --t1: rgb(255 255 255 / 0.14);
+  --t1: rgb(255 255 255 / 0.13);
   --t2: rgb(255 255 255 / 0.05);
-  --tf: #d0d5dd;
-  --tr: rgb(255 255 255 / 0.05);
+  --tf: #d6d9d0;
 }
 :root:not(.simple) :is(.gx-tile, .text-white[class*="bg-gradient-to"]:is([class^="h-"], [class*=" h-"]):is([class^="w-"], [class*=" w-"]):not([class*="w-full"])) {
   background-color: transparent !important;
-  background-image: radial-gradient(circle at 32% 26%, rgb(255 255 255 / 0.9) 0%, var(--t1) 46%, var(--t2) 100%) !important;
+  background-image: radial-gradient(circle at 30% 24%, rgb(255 255 255 / 0.95) 0%, var(--t1) 42%, var(--t2) 100%) !important;
   color: var(--tf) !important;
   border-radius: 9999px !important;
-  box-shadow: 0 0 0 4px var(--tr), inset 0 1px 0 rgb(255 255 255 / 0.9), 0 6px 14px -9px var(--tf) !important;
+  box-shadow: inset 0 0 0 1px rgb(21 24 15 / 0.04), inset 0 1px 0 rgb(255 255 255 / 0.9) !important;
 }
 :root.dark:not(.simple) :is(.gx-tile, .text-white[class*="bg-gradient-to"]:is([class^="h-"], [class*=" h-"]):is([class^="w-"], [class*=" w-"]):not([class*="w-full"])) {
-  background-image: radial-gradient(circle at 32% 26%, rgb(255 255 255 / 0.12) 0%, var(--t1) 46%, var(--t2) 100%) !important;
-  box-shadow: 0 0 0 4px var(--tr), inset 0 1px 0 rgb(255 255 255 / 0.14) !important;
+  background-image: radial-gradient(circle at 30% 24%, rgb(255 255 255 / 0.1) 0%, var(--t1) 42%, var(--t2) 100%) !important;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06), inset 0 1px 0 rgb(255 255 255 / 0.12) !important;
 }
 
-/* Hero cards (white text on a gradient, whatever the page): emerald in a
-   white frame, lit from the top-left; deep green glass glowing in the dark. */
-:root:not(.simple) .text-white[class*="bg-gradient-to"]:not(main):not(:is([class^="h-"], [class*=" h-"]):is([class^="w-"], [class*=" w-"]):not([class*="w-full"])) {
+/* Hero cards (white text on a gradient, whatever the page): lime with ink
+   text in the light — their white text, tints and bars take the ink
+   (Tailwind's white is var(--color-white)); graphite glowing lime, white
+   text, in the dark. */
+:root:not(.simple) :is(.gx-wallet, .text-white[class*="bg-gradient-to"]:not(main):not(:is([class^="h-"], [class*=" h-"]):is([class^="w-"], [class*=" w-"]):not([class*="w-full"]))) {
+  --color-white: var(--gx-hero-ink);
+  color: var(--gx-hero-ink);
   background-image: var(--gx-hero) !important;
-  background-color: #17a07b;
+  background-color: #c9ef5c;
 }
-:root:not(.simple) .text-white[class*="bg-gradient-to"][class*="rounded-"]:not(main):not(:is([class^="h-"], [class*=" h-"]):is([class^="w-"], [class*=" w-"]):not([class*="w-full"])) {
+:root.dark:not(.simple) :is(.gx-wallet, .text-white[class*="bg-gradient-to"]:not(main)) {
+  background-color: #151912;
+}
+:root:not(.simple) :is(.gx-wallet, .text-white[class*="bg-gradient-to"][class*="rounded-"]:not(main):not(:is([class^="h-"], [class*=" h-"]):is([class^="w-"], [class*=" w-"]):not([class*="w-full"]))) {
   border: 0;
   box-shadow: var(--gx-hero-shadow) !important;
 }
-/* Their round decorations go: the sky is enough. */
+/* Their round decorations go: the glow is enough. */
 :root:not(.simple) .text-white[class*="bg-gradient-to"] > [aria-hidden].absolute[class*="rounded-full"] {
   display: none;
 }
 /* Their figures sit on glass chips… */
-:root:not(.simple) .text-white[class*="bg-gradient-to"] [class*="bg-white/"]:is([class*="rounded-2xl"], [class*="rounded-xl"], [class*="rounded-full"]):not([class^="h-"]):not([class*=" h-"]) {
-  background-color: rgb(255 255 255 / 0.16);
-  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0.06));
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35), inset 0 0 0 1px rgb(255 255 255 / 0.18);
+:root:not(.simple) :is(.gx-wallet, .text-white[class*="bg-gradient-to"]) [class*="bg-white/"]:not(:has(> .h-full)):not([class~="h-1"], [class~="h-1.5"], [class~="h-2"], [class~="h-2.5"], [class~="h-3"]) {
+  background-color: rgb(255 255 255 / 0.42);
+  background-image: none;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.55), inset 0 0 0 1px rgb(255 255 255 / 0.35);
 }
-/* …and their bars glow. */
-:root:not(.simple) .text-white[class*="bg-gradient-to"] .bg-white:is(.h-full, [class*="rounded-full"]) {
-  box-shadow: 0 0 10px rgb(255 255 255 / 0.6);
+.dark:not(.simple) :is(.gx-wallet, .text-white[class*="bg-gradient-to"]) [class*="bg-white/"]:not(:has(> .h-full)):not([class~="h-1"], [class~="h-1.5"], [class~="h-2"], [class~="h-2.5"], [class~="h-3"]) {
+  background-color: rgb(255 255 255 / 0.08);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), inset 0 0 0 1px rgb(255 255 255 / 0.07);
+}
+/* …white buttons stay white… */
+:root:not(.simple) :is(.gx-wallet, .text-white[class*="bg-gradient-to"]) .bg-white:not(.h-full) {
+  background-color: #fff;
+}
+/* …their bars: ink on a faint track in the light, lime in the dark. */
+:root:not(.simple) :is(.gx-wallet, .text-white[class*="bg-gradient-to"]) [class*="bg-white/"]:has(> .h-full) {
+  background-color: rgb(22 32 10 / 0.12);
+}
+.dark:not(.simple) :is(.gx-wallet, .text-white[class*="bg-gradient-to"]) [class*="bg-white/"]:has(> .h-full) {
+  background-color: rgb(255 255 255 / 0.12);
+}
+.dark:not(.simple) :is(.gx-wallet, .text-white[class*="bg-gradient-to"]) .bg-white.h-full {
+  background-color: #c9ef5c;
+  box-shadow: 0 0 10px rgb(201 239 92 / 0.5);
+}
+/* Light tints meant for a dark gradient (text-violet-100…): the ink, softer;
+   coral stays coral, deeper. */
+:root:not(.dark):not(.simple) :is(.gx-wallet, .text-white[class*="bg-gradient-to"]) :is([class*="text-"][class*="-100"], [class*="text-"][class*="-200"], [class*="text-"][class*="-300"]):not([class*="text-rose"], [class*="text-red"]) {
+  color: color-mix(in oklab, var(--gx-hero-ink) 66%, transparent);
+}
+:root:not(.dark):not(.simple) :is(.gx-wallet, .text-white[class*="bg-gradient-to"]) :is([class*="text-rose-"], [class*="text-red-"]) {
+  color: var(--gx-coral-700);
+}
+:root:not(.dark):not(.simple) :is(.gx-wallet, .text-white[class*="bg-gradient-to"]) :is([class*="text-emerald-"], [class*="text-green-"]) {
+  color: var(--gx-mint-800);
 }
 
 /* Floating glass: the bar, the + menu, sheets and dialogs. */
 .gx-float {
   background-image: var(--gx-float-fill);
   box-shadow: var(--gx-float-shadow);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(26px) saturate(190%);
+  backdrop-filter: blur(26px) saturate(190%);
 }
 /* Dialogs and sheets: the same glass, denser — they carry forms. */
 .gx-dialog {
-  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.96), rgb(255 255 255 / 0.9));
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.97), rgb(255 255 255 / 0.93));
 }
 .dark .gx-dialog {
-  background-image: linear-gradient(180deg, rgb(26 38 68 / 0.95), rgb(14 22 42 / 0.93));
+  background-image: linear-gradient(180deg, rgb(30 34 26 / 0.96), rgb(20 23 17 / 0.95));
 }
 
-/* The + floating above the bar: a white glass orb, its + in green. */
+/* The + floating above the bar: a lime orb, its + in ink. */
 .gx-fab {
-  background-image: var(--gx-float-fill);
-  box-shadow: var(--gx-float-shadow), inset 0 0 0 1.5px rgb(19 138 102 / 0.14);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  backdrop-filter: blur(28px) saturate(180%);
+  color: var(--gx-on-lime);
+  background-color: #c9ef5c;
+  background-image: var(--gx-lime);
+  box-shadow: var(--gx-lime-shadow), 0 14px 30px -12px rgb(110 160 15 / 0.55);
 }
 .simple .gx-fab {
+  color: var(--simple-ink);
   background-image: none;
   background-color: var(--simple-surface);
   box-shadow: none;
   border: 1px solid var(--simple-line);
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
 }
 
-/* The bar's current tab: a white pill raised under it. */
+/* The bar's current tab: a lime lens under it, its icon and name in ink. */
 .gx-lens {
-  background-image: linear-gradient(180deg, #ffffff, #f2f5fa);
-  box-shadow: 0 2px 8px -2px rgb(16 24 40 / 0.16), inset 0 0 0 1px rgb(16 24 40 / 0.04);
+  background-color: #c9ef5c;
+  background-image: var(--gx-lime);
+  box-shadow: var(--gx-lime-shadow);
 }
-.dark .gx-lens {
-  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0.07));
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), inset 0 0 0 1px rgb(255 255 255 / 0.06);
+.gx-on-lens {
+  color: var(--gx-on-lime);
+}
+.simple .gx-on-lens {
+  color: var(--simple-ink);
 }
 
 /* White pills: secondary actions, quick actions. */
@@ -669,15 +678,14 @@ body {
   box-shadow: var(--gx-pill-shadow);
 }
 
-/* The main action: a green pill, lighter at the top, a soft green glow. */
+/* The main action: a lime pill, ink text (its white text too), lighter at
+   the top, a soft lime glow. */
 .gx-cta {
-  color: #fff;
-  background-color: #18a07b;
-  background-image: linear-gradient(180deg, #3ec99f 0%, #1aa57f 52%, #0f8a67 100%);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35), 0 8px 18px -8px rgb(10 120 90 / 0.55), 0 2px 4px -2px rgb(10 120 90 / 0.3);
-}
-.dark .gx-cta {
-  background-image: linear-gradient(180deg, #33bf94 0%, #179c77 52%, #0d8262 100%);
+  --color-white: var(--gx-on-lime);
+  color: var(--gx-on-lime);
+  background-color: #c9ef5c;
+  background-image: var(--gx-lime);
+  box-shadow: var(--gx-lime-shadow);
 }
 
 /* Deleting: the same pill, in coral. */
@@ -694,12 +702,12 @@ body {
 
 /* Accueil's wheel of shortcuts: stacked cards, so solid. */
 .gx-wheel-card {
-  background-image: linear-gradient(180deg, #ffffff, #fbfcfe);
-  box-shadow: inset 0 0 0 1px rgb(16 24 40 / 0.05), 0 10px 26px -12px rgb(16 24 40 / 0.22);
+  background-image: linear-gradient(180deg, #ffffff, #fbfcf8);
+  box-shadow: inset 0 0 0 1px rgb(21 24 15 / 0.05), 0 10px 26px -12px rgb(30 40 10 / 0.2);
 }
 .dark .gx-wheel-card {
-  background-image: linear-gradient(180deg, #17352b, #0f261f);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), inset 0 0 0 1px rgb(255 255 255 / 0.06), 0 14px 32px -14px rgb(0 0 0 / 0.85);
+  background-image: linear-gradient(180deg, #232820, #191d16);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08), inset 0 0 0 1px rgb(255 255 255 / 0.06), 0 14px 32px -14px rgb(0 0 0 / 0.85);
 }
 .simple .gx-wheel-card {
   background-image: none;
@@ -708,11 +716,11 @@ body {
   border: 1px solid var(--simple-line);
 }
 
-/* Initials when there's no photo: a white pearl, green letter. */
+/* Initials when there's no photo: a lime pearl, ink letter. */
 .gx-avatar {
-  color: var(--gx-brand-700);
-  background-image: linear-gradient(150deg, #ffffff 0%, var(--gx-brand-100) 100%);
-  box-shadow: inset 0 1px 0 #fff, inset 0 -2px 6px rgb(10 120 90 / 0.12), 0 8px 20px -10px rgb(6 60 44 / 0.5);
+  color: var(--gx-on-lime);
+  background-image: radial-gradient(circle at 30% 24%, #f3fdd0 0%, #d4f46f 55%, #bfe64e 100%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7), 0 8px 20px -10px rgb(110 160 15 / 0.6);
 }
 .simple .gx-avatar {
   background-image: none;
@@ -720,12 +728,18 @@ body {
   box-shadow: none;
 }
 
-/* Connexion: the green, deepening down the page. */
+/* Connexion: the off-white, lime glowing in its corners. */
 .gx-login {
-  background: linear-gradient(180deg, #4cc79f 0%, #1a9e7a 45%, #0b6f53 100%);
+  background:
+    radial-gradient(70% 45% at 0% 0%, rgb(214 246 112 / 0.6), transparent 70%),
+    radial-gradient(70% 45% at 100% 100%, rgb(190 240 214 / 0.55), transparent 70%),
+    #f3f4f0;
 }
 .dark .gx-login {
-  background: radial-gradient(80% 60% at 80% 70%, rgb(16 185 129 / 0.36), transparent 70%), linear-gradient(180deg, #123a2e 0%, #08190f 100%);
+  background:
+    radial-gradient(70% 45% at 0% 0%, rgb(190 238 80 / 0.16), transparent 70%),
+    radial-gradient(70% 45% at 100% 100%, rgb(120 220 170 / 0.08), transparent 70%),
+    #0b0d0a;
 }
 
 /* "simple": the glass and the glow turn into plain surfaces. */
@@ -742,7 +756,9 @@ body {
   border: 0;
 }
 .simple .gx-lens {
+  background-image: none;
   background-color: var(--simple-chip);
+  box-shadow: none;
 }
 .simple .gx-cta {
   background-image: none;
@@ -761,19 +777,19 @@ body {
   box-shadow: none !important;
 }
 
-/* Accueil's wallet card: the emerald in its white frame. */
+/* Accueil's wallet card: lime (graphite in the dark), like the heroes. */
 .gx-wallet {
   position: relative;
   overflow: hidden;
-  color: #fff;
-  background: var(--gx-hero);
-  box-shadow: var(--gx-hero-shadow);
 }
-/* The wallet's own chips (cash, card): glass on the green. */
+/* The wallet's own chips (the eye): glass on the lime. */
 .gx-wallet-chip {
-  background-color: rgb(255 255 255 / 0.16);
-  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.06));
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.38), inset 0 0 0 1px rgb(255 255 255 / 0.18);
+  background-color: rgb(255 255 255 / 0.45);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.6), inset 0 0 0 1px rgb(255 255 255 / 0.35);
+}
+.dark .gx-wallet-chip {
+  background-color: rgb(255 255 255 / 0.08);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), inset 0 0 0 1px rgb(255 255 255 / 0.07);
 }
 .simple .gx-wallet-chip {
   background: var(--simple-chip);

@@ -52,12 +52,12 @@ export function LoginBackdrop() {
       <svg className="absolute inset-0 h-full w-full" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice" fill="none">
         {TRACES.map(([d, duration, delay]) => (
           <g key={d}>
-            <path d={d} stroke="white" strokeOpacity="0.09" strokeWidth="1.5" />
+            <path d={d} stroke="#4b7c0f" strokeOpacity="0.1" strokeWidth="1.5" />
             <path
               d={d}
               pathLength={100}
               className="gx-pulse"
-              stroke="#ddd6fe"
+              stroke="#a6db3c"
               strokeWidth="2.5"
               strokeLinecap="round"
               style={{ animationDuration: `${duration}s`, animationDelay: `${delay}s` }}
@@ -65,14 +65,14 @@ export function LoginBackdrop() {
           </g>
         ))}
         {NODES.map(([x, y]) => (
-          <circle key={`${x}-${y}`} cx={x} cy={y} r="3.5" fill="#2e1a7a" stroke="white" strokeOpacity="0.25" strokeWidth="1.5" />
+          <circle key={`${x}-${y}`} cx={x} cy={y} r="3.5" fill="#c9ef5c" stroke="#4b7c0f" strokeOpacity="0.3" strokeWidth="1.5" />
         ))}
         {/* A rising chart, drawn again and again. */}
         <polyline
           points="20,560 70,540 110,555 160,505 200,520 250,470 290,485 340,430 385,410"
           pathLength={100}
           className="gx-chart"
-          stroke="#a5f3fc"
+          stroke="#8cc63f"
           strokeWidth="3"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -82,7 +82,7 @@ export function LoginBackdrop() {
       {COINS.map(([symbol, left, size, duration, delay, spin, opacity], i) => (
         <span
           key={i}
-          className="gx-coin absolute flex items-center justify-center rounded-full border-2 border-violet-200/60 bg-gradient-to-br from-violet-200/30 to-violet-950/20 font-extrabold text-violet-50"
+          className="gx-coin absolute flex items-center justify-center rounded-full border-2 border-violet-400/50 bg-gradient-to-br from-violet-200/40 to-violet-400/10 font-extrabold text-violet-800 dark:text-violet-100"
           style={
             {
               left: `${left}%`,

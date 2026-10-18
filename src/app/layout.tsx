@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Manrope } from "next/font/google";
+import { Geist, Geist_Mono, Inter } from "next/font/google";
 import { BottomNav } from "@/components/bottom-nav";
 import { AppToaster } from "@/components/app-toaster";
 import { NavHistoryTracker } from "@/lib/nav-history";
@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 });
 
 // The app's type, like the banking apps'.
-const manrope = Manrope({
+const inter = Inter({
   variable: "--font-app",
   subsets: ["latin"],
 });
@@ -64,7 +64,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="fr" className={`${geistSans.variable} ${geistMono.variable} ${manrope.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="fr" className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT + THEME_COLOR_BOOT_SCRIPT }} />
       </head>

@@ -1,3 +1,3 @@
-/** Round header button (back, settings…): white glass on the page's green. */
+/** Round header button (back, settings…): a white pill. */
 export const HEADER_BUTTON =
   "gx-hbtn flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-800 transition-transform active:scale-95 dark:text-white";

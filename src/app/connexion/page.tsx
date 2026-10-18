@@ -30,23 +30,23 @@ export default async function ConnexionPage({ searchParams }: PageProps<"/connex
   const href = next === "/" ? "/api/auth/google" : `/api/auth/google?suite=${encodeURIComponent(next)}`;
 
   return (
-    <main className="gx-login relative -mb-[calc(env(safe-area-inset-bottom)+10.5rem)] flex min-h-dvh flex-col overflow-hidden px-6 pb-8 pt-14 text-white">
+    <main className="gx-login relative -mb-[calc(env(safe-area-inset-bottom)+10.5rem)] flex min-h-dvh flex-col overflow-hidden px-6 pb-8 pt-14 text-slate-900 dark:text-white">
       <ForgetOnMount />
       <LoginBackdrop />
       <div className="relative flex flex-col items-center text-center">
-        <span className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-white text-3xl font-black tracking-tight text-violet-700 shadow-[0_20px_40px_-16px_rgba(20,8,60,0.6),inset_0_-3px_8px_rgba(91,33,182,0.12)]">
+        <span className="gx-cta flex h-20 w-20 items-center justify-center rounded-[26px] text-3xl font-black tracking-tight">
           GX
         </span>
         <h1 className="mt-5 text-3xl font-extrabold tracking-tight">
-          GX <span className="font-semibold text-white/85">Salaire</span>
+          GX <span className="font-semibold text-slate-900/70 dark:text-white/85">Salaire</span>
         </h1>
-        <p className="mt-2 max-w-xs text-sm text-white/80">Ton budget du mois, simple et clair : ce qui rentre, ce qui sort, ce qui reste.</p>
+        <p className="mt-2 max-w-xs text-sm text-slate-600 dark:text-white/80">Ton budget du mois, simple et clair : ce qui rentre, ce qui sort, ce qui reste.</p>
       </div>
 
       <ul className="relative mx-auto mt-10 flex w-full max-w-sm flex-col gap-3">
         {FEATURES.map(({ icon: Icon, text }) => (
-          <li key={text} className="gx-wallet-chip flex items-center gap-3 rounded-2xl px-4 py-3 text-sm">
-            <Icon weight="duotone" className="h-5 w-5 shrink-0 text-violet-100" />
+          <li key={text} className="gx-glass flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm">
+            <Icon weight="duotone" className="h-5 w-5 shrink-0 text-violet-600 dark:text-violet-200" />
             <span>{text}</span>
           </li>
         ))}
@@ -54,19 +54,19 @@ export default async function ConnexionPage({ searchParams }: PageProps<"/connex
 
       <div className="relative mx-auto mt-auto w-full max-w-sm pt-10">
         {error && (
-          <p role="alert" className="mb-3 rounded-xl bg-rose-500/90 px-4 py-2.5 text-center text-sm font-medium">
+          <p role="alert" className="mb-3 rounded-xl bg-rose-500/90 px-4 py-2.5 text-center text-sm font-medium text-white">
             {error}
           </p>
         )}
         {/* A plain link: the sign-in leaves for Google and comes back. */}
         <a
           href={href}
-          className="flex h-14 w-full items-center justify-center gap-3 rounded-full bg-white text-base font-semibold text-slate-800 shadow-[0_18px_36px_-16px_rgba(20,8,60,0.65),inset_0_-2px_6px_rgba(91,33,182,0.1)] transition-transform active:scale-[0.98]"
+          className="flex h-14 w-full items-center justify-center gap-3 rounded-full bg-white text-base font-semibold text-slate-800 shadow-[0_18px_36px_-16px_rgba(30,40,10,0.45),inset_0_0_0_1px_rgba(21,24,15,0.06)] transition-transform active:scale-[0.98]"
         >
           <GoogleIcon className="h-5 w-5" />
           Continuer avec Google
         </a>
-        <p className="mt-4 text-center text-xs text-white/70">
+        <p className="mt-4 text-center text-xs text-slate-500 dark:text-white/70">
           En continuant, tu acceptes les{" "}
           <Link href="/conditions" className="underline underline-offset-2">
             conditions

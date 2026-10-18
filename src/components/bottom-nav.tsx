@@ -26,8 +26,8 @@ const ACTIONS = [
 ];
 
 
-/** A tab: its icon and name — the current one filled, in green, over the
- *  bar's glass lens. */
+/** A tab: its icon and name — the current one filled, in ink, over the
+ *  bar's lime lens. */
 function NavLink({
   href,
   label,
@@ -54,14 +54,14 @@ function NavLink({
         weight={active ? "fill" : "regular"}
         className={cn(
           "h-6 w-6 transition-colors duration-200",
-          active ? "text-blue-600 dark:text-blue-200" : "text-slate-500 dark:text-slate-400",
+          active ? "gx-on-lens" : "text-slate-500 dark:text-slate-400",
         )}
       />
       <span
         data-tint
         className={cn(
           "text-[11px] leading-none transition-colors duration-200",
-          active ? "font-bold text-blue-700 dark:text-white" : "font-semibold text-slate-500 dark:text-slate-400",
+          active ? "gx-on-lens font-bold" : "font-semibold text-slate-500 dark:text-slate-400",
         )}
       >
         {label}
@@ -182,14 +182,15 @@ function AppBar({ pathname }: { pathname: string }) {
         aria-hidden
         onClick={() => setOpen(false)}
         className={cn(
-          "fixed inset-0 z-40 bg-[#efeafc]/55 transition-opacity duration-300 dark:bg-[#05040f]/60",
+          "fixed inset-0 z-40 bg-[#f3f4f0]/60 transition-opacity duration-300 dark:bg-[#050604]/60",
           open ? "opacity-100 backdrop-blur-md" : "pointer-events-none opacity-0",
         )}
       />
 
-      {/* The tabs on a capsule of glass, a lens sliding under the current
-          one; floating above them on the right, the + — an orb of glass, its
-          menu rising above it. Both stay put while the page scrolls. */}
+      {/* The tabs on a capsule of frosted glass, a lime lens sliding under
+          the current one; floating above them on the right, the + — a lime
+          orb, its menu rising above it. Both stay put while the page
+          scrolls. */}
       <nav
         className={cn(
           "pointer-events-none fixed inset-x-0 bottom-0 z-50 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)]",
@@ -230,7 +231,7 @@ function AppBar({ pathname }: { pathname: string }) {
               onClick={toggle}
               aria-expanded={open}
               aria-label={open ? "Fermer le menu d'ajout" : "Ajouter"}
-              className="gx-fab relative flex h-[60px] w-[60px] items-center justify-center rounded-full text-blue-600 transition-transform duration-200 active:scale-95 dark:text-blue-200"
+              className="gx-fab relative flex h-[60px] w-[60px] items-center justify-center rounded-full transition-transform duration-200 active:scale-95"
             >
               <Plus weight="bold" className={cn("h-7 w-7 transition-transform duration-300", open && "rotate-[135deg]")} />
             </button>
