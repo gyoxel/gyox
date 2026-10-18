@@ -232,7 +232,7 @@ export function GoalCard({
                     className="flex items-center gap-3 px-4 py-3 text-sm active:bg-slate-50 dark:active:bg-slate-800/60"
                   >
                     <StepIcon>
-                      {row.deposit.method === "savings" ? "🐷" : <MethodIcon method={row.deposit.method ?? "cash"} className="h-4" />}
+                      {row.deposit.method === "savings" ? "🐷" : <MethodIcon method={row.deposit.method ?? "cash"} className="h-3" />}
                     </StepIcon>
                     <span className="min-w-0 flex-1">
                       <span className={cn("block truncate font-medium text-slate-800 dark:text-slate-100", !row.paid && "text-slate-400")}>

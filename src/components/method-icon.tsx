@@ -8,9 +8,9 @@ const PICTURES: Record<PaymentMethod, { src: string; width: number; height: numb
 };
 
 /**
- * Cash (a bundle of 200 DH notes) or the bank card, as a small picture the
- * height of the text around it — in place of the 💵 / 💳 emoji. The
- * savings keep their 🐷.
+ * Cash (a bundle of 200 DH notes) or the bank card, as a small picture a
+ * little lower than the text around it (it's wide) — in place of the 💵 /
+ * 💳 emoji. The savings keep their 🐷.
  */
 export function MethodIcon({ method, className }: { method: PaymentMethod | DepositSource; className?: string }) {
   if (method === "savings") {
@@ -30,7 +30,7 @@ export function MethodIcon({ method, className }: { method: PaymentMethod | Depo
       width={width}
       height={height}
       draggable={false}
-      className={cn("inline-block h-[1.05em] w-auto shrink-0 select-none align-[-0.16em]", className)}
+      className={cn("inline-block h-[0.8em] w-auto shrink-0 select-none align-[-0.06em]", className)}
     />
   );
 }

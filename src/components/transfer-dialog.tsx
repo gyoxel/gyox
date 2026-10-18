@@ -202,7 +202,7 @@ function AccountRow({
                 : "border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300",
             )}
           >
-            <MethodIcon method={a} className={a === "savings" ? "text-xl" : "h-5"} />
+            <MethodIcon method={a} className={a === "savings" ? "text-xl" : "h-[15px]"} />
             {ACCOUNT_META[a].label}
           </button>
         ))}

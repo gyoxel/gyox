@@ -38,7 +38,7 @@ function AccountPicker<T extends string>({
                 : "bg-[var(--gx-chip)] text-slate-600 active:bg-slate-200 dark:bg-white/[0.07] dark:text-slate-300",
             )}
           >
-            <MethodIcon method={m as PaymentMethod | DepositSource} className={m === "savings" ? "text-base" : "h-[17px]"} />
+            <MethodIcon method={m as PaymentMethod | DepositSource} className={m === "savings" ? "text-base" : "h-[12px]"} />
             {options[m].label}
           </button>
         ))}

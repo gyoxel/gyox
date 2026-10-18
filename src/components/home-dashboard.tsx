@@ -131,7 +131,7 @@ export function HomeDashboard({
               prefetch
               className="flex min-w-0 items-center gap-2.5 rounded-2xl bg-white px-3 py-2.5 text-left shadow-[0_6px_18px_-10px_rgba(20,18,31,0.3)] ring-1 ring-slate-900/[0.04] active:scale-[0.98] dark:bg-white/10 dark:ring-white/10"
             >
-              <MethodIcon method={m} className="h-[22px]" />
+              <MethodIcon method={m} className="h-[14px]" />
               <span className="min-w-0">
                 <span className="block text-[11px] font-medium leading-tight text-slate-500 dark:text-slate-400">
                   {m === "cash" ? "Espèces" : "Carte"}

@@ -182,7 +182,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
             >
               <div className="flex items-center gap-3">
                 <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-2xl", a.tile)}>
-                  <MethodIcon method={a.key} className="h-[19px]" />
+                  <MethodIcon method={a.key} className="h-[15px]" />
                 </span>
                 <span className="flex-1 text-base font-semibold text-slate-900 dark:text-white">{a.name}</span>
                 <span
