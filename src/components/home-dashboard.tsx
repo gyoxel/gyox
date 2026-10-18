@@ -88,10 +88,10 @@ export function HomeDashboard({
 
   return (
     <>
-      {/* What's available now, big and centred on the page's soft light.
-          Once shown, the amount opens the Solde; hidden (the dots), it
-          doesn't. */}
-      <section className="flex flex-col items-center text-center">
+      {/* What's available now, big and centred on a card of frosted glass —
+          the first thing on Accueil. Once shown, the amount opens the
+          Solde; hidden (the dots), it doesn't. */}
+      <section className="gx-balance relative flex flex-col items-center overflow-hidden rounded-[28px] px-3.5 pb-3.5 pt-4 text-center">
         <p className="text-[15px] font-semibold text-slate-700 dark:text-slate-200">Disponible maintenant</p>
         <div className="mt-2.5 flex items-center gap-2">
           {revealed ? (
@@ -123,13 +123,13 @@ export function HomeDashboard({
         </div>
         {/* Cash | card: each on its chip, its picture beside its name and
             amount. */}
-        <div className="mt-4 grid w-full grid-cols-2 gap-2.5">
+        <div className="mt-4 grid w-full grid-cols-2 gap-2">
           {(["cash", "card"] as const).map((m) => (
             <Link
               key={m}
               href="/solde"
               prefetch
-              className="flex min-w-0 items-center gap-2.5 rounded-2xl bg-white px-3 py-2.5 text-left shadow-[0_6px_18px_-10px_rgba(20,18,31,0.3)] ring-1 ring-slate-900/[0.04] active:scale-[0.98] dark:bg-white/10 dark:ring-white/10"
+              className="gx-balance-chip flex min-w-0 items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left active:scale-[0.98]"
             >
               <MethodIcon method={m} className="h-[14px]" />
               <span className="min-w-0">
