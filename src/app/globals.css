@@ -887,6 +887,35 @@ body {
   opacity: 0;
   visibility: hidden;
 }
+/* Behind: notes and cards swaying slowly, faint. */
+.gx-splash-drift {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  animation: gx-splash-fade 0.7s ease-out both;
+}
+.gx-splash-drift img {
+  position: absolute;
+  height: auto;
+  opacity: 0.16;
+  transform: rotate(var(--tilt));
+  animation: gx-splash-sway var(--sway) ease-in-out var(--from) infinite alternate;
+}
+.dark .gx-splash-drift img {
+  opacity: 0.11;
+}
+.simple .gx-splash-drift {
+  display: none;
+}
+@keyframes gx-splash-sway {
+  from {
+    transform: translate(0, 14px) rotate(var(--tilt));
+  }
+  to {
+    transform: translate(var(--dx), -18px) rotate(calc(var(--tilt) + 9deg));
+  }
+}
 .gx-splash-art {
   position: relative;
   width: 210px;
