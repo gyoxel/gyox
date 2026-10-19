@@ -6,8 +6,18 @@
 // only, in sessionStorage so a reload keeps it) to know whether a previous
 // in-app page exists: if so, back is a real history.back(); if this is the
 // first page of the session, back goes to the home page instead.
-import { useEffect } from "react";
+//
+// The history also keeps how pages were opened, so the phone's back goes
+// back to the page one came in from, up to Accueil: Paramètres → Profil →
+// Admin, back → Profil → Paramètres → Accueil. A section opened from the
+// bar's tabs, the Menu or the header's Paramètres stands right after Accueil
+// instead of stacking on the page it was opened from: back from it is
+// Accueil. On Accueil, back asks for a second press before leaving the app.
+import { useCallback, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { watchBack } from "./close-on-back";
+import { SIGNED_OUT_PAGES } from "@/components/bottom-nav";
 
 const KEY = "gx-nav";
 const MAX = 50;
@@ -85,25 +95,147 @@ function jump(s: NavState, to: number, onArrive?: () => void) {
   history.go(by);
 }
 
+type Router = ReturnType<typeof useRouter>;
+
+type Plan = { kind: "push" } | { kind: "replace" } | { kind: "hop"; to: number; replace: boolean };
+
+/** Links opening a section rather than something inside the page they're
+ *  on: the bar's tabs, the Menu's pages, the header's Paramètres. */
+const SECTION_LINK = "[data-nav='section']";
+
+/**
+ * How to go to `path` so back returns the way one came: a page opened from
+ * within another stacks on it; a section takes the place right after
+ * Accueil (replacing the one open, or going back to it from deeper);
+ * Accueil is gone back to.
+ */
+function plan(path: string, section: boolean): Plan {
+  const s = read();
+  if (!s || s.stack[s.pos] !== location.pathname) return { kind: "push" };
+  if (path !== "/" && !section) return { kind: "push" };
+  // Its place in the history: Accueil first, the section after it.
+  const slot = path === "/" || s.stack[0] !== "/" ? 0 : 1;
+  if (slot > s.pos) return { kind: "push" };
+  if (slot === s.pos) return { kind: "replace" };
+  return { kind: "hop", to: slot, replace: s.stack[slot] !== path };
+}
+
+/** While hopping back through pages on the way to another, they aren't
+ *  shown (see .gx-nav-hop in globals.css). */
+const HOP_CLASS = "gx-nav-hop";
+let hopTarget: string | null = null;
+
+function endHop() {
+  hopTarget = null;
+  document.documentElement.classList.remove(HOP_CLASS);
+}
+
+function replaceWith(router: Router, href: string) {
+  nextIsReplace = true;
+  router.replace(href);
+}
+
+/** Goes to `href` the way `plan` says (`section`: opening a section). */
+function navigate(router: Router, href: string, section: boolean) {
+  const url = new URL(href, location.href);
+  const target = url.pathname + url.search + url.hash;
+  const p = url.pathname === location.pathname ? ({ kind: "push" } as const) : plan(url.pathname, section);
+  if (p.kind === "push") return router.push(target);
+  if (p.kind === "replace") return replaceWith(router, target);
+  const s = read();
+  if (!s) return router.push(target);
+  if (!p.replace) return jump(s, p.to);
+  hopTarget = url.pathname;
+  document.documentElement.classList.add(HOP_CLASS);
+  setTimeout(() => hopTarget === url.pathname && endHop(), 1500);
+  jump(s, p.to, () => replaceWith(router, target));
+}
+
+/** For code that opens a section by itself (the tabs' swipe). */
+export function useOpenSection() {
+  const router = useRouter();
+  return useCallback((href: string) => navigate(router, href, true), [router]);
+}
+
+/** The links' taps go through `navigate` too. The link's own onClick still
+ *  runs (closing a menu, highlighting a tab…); the default prevented here
+ *  only stops next/link's own push. */
+function onLinkClick(router: Router, e: MouseEvent) {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const target = e.target instanceof Element ? e.target : null;
+  const link = target?.closest<HTMLAnchorElement>("a[href]");
+  if (!link || (link.target && link.target !== "_self") || link.hasAttribute("download")) return;
+  // A button inside the link (Disponible's eye…) does its own thing.
+  const control = target?.closest("button, input, select, textarea, label, [role='button']");
+  if (control && control !== link && link.contains(control)) return;
+  const url = new URL(link.href);
+  if (url.origin !== location.origin || url.pathname.startsWith("/api/") || url.pathname === location.pathname) return;
+  const section = link.closest(SECTION_LINK) !== null;
+  if (plan(url.pathname, section).kind === "push") return;
+  e.preventDefault();
+  navigate(router, url.href, section);
+}
+
+/** The installed app (home screen, Play Store): there, back on the
+ *  history's first page would close it. */
+const installed = () =>
+  window.matchMedia("(display-mode: standalone)").matches || window.matchMedia("(display-mode: fullscreen)").matches;
+
+/** Time to press back a second time on Accueil to leave the app. */
+const LEAVE_MS = 2000;
+
+/**
+ * On the history's first page of the installed app, the phone's back would
+ * close it: from a section it goes to Accueil instead, and on Accueil the
+ * first press only says to press again — a second one within 2 s leaves.
+ */
+function guardFirstPage(router: Router): () => void {
+  let watcher: ReturnType<typeof watchBack> = null;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const arm = () => {
+    watcher = watchBack(() => {
+      watcher = null;
+      if (location.pathname !== "/") return replaceWith(router, "/");
+      toast("Appuie encore sur retour pour quitter", { id: "leave", duration: LEAVE_MS });
+      timer = setTimeout(arm, LEAVE_MS);
+    });
+  };
+  arm();
+  return () => {
+    clearTimeout(timer);
+    watcher?.destroy();
+  };
+}
+
 /** Mounted once in the root layout. */
 export function NavHistoryTracker() {
   const pathname = usePathname();
+  const router = useRouter();
   useEffect(() => {
     if (window.self !== window.top) return;
+    const onClick = (e: MouseEvent) => onLinkClick(router, e);
     window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-  }, []);
+    // Capturing on window: before next/link's own handler.
+    window.addEventListener("click", onClick, true);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      window.removeEventListener("click", onClick, true);
+    };
+  }, [router]);
   useEffect(() => {
     // The tab swipe's hidden preload frames share this sessionStorage: they
     // must not write their page into the tab's history.
     if (window.self !== window.top) return;
     record(pathname);
+    if (hopTarget === pathname) endHop();
     if (arrival?.path === pathname) {
       const { run } = arrival;
       arrival = null;
       run();
     }
-  }, [pathname]);
+    const s = read();
+    if (installed() && (!s || s.pos === 0) && !SIGNED_OUT_PAGES.includes(pathname)) return guardFirstPage(router);
+  }, [pathname, router]);
   return null;
 }
 

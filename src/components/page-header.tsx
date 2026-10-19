@@ -43,7 +43,7 @@ export function PageHeader({
         </h1>
         {action}
         {!hideSettings && (
-          <Link href="/settings" prefetch aria-label="Paramètres" className={HEADER_BUTTON}>
+          <Link href="/settings" prefetch data-nav="section" aria-label="Paramètres" className={HEADER_BUTTON}>
             <GearSix weight="bold" className="h-[19px] w-[19px]" />
           </Link>
         )}
