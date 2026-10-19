@@ -48,7 +48,7 @@ export default async function ConfidentialitePage() {
 
       <h2>{t("Conservation et suppression")}</h2>
       <p>
-        {t("Tes données sont gardées tant que ton compte existe. Pour supprimer ton compte et toutes ses données, écris à")}{" "}
+        {t("Tes données sont gardées tant que ton compte existe. Tu peux supprimer ton compte et toutes ses données à tout moment depuis Profil → Supprimer mon compte, ou en écrivant à")}{" "}
         <a href={`mailto:${CONTACT_EMAIL}`} className={MAIL}>
           {CONTACT_EMAIL}
         </a>

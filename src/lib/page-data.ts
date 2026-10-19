@@ -7,6 +7,8 @@
 // Same names and results as the repository's readers. Only for pages:
 // changes (API routes) keep reading through the repository, fresh.
 import { cache } from "react";
+import { redirect } from "next/navigation";
+import { currentAccount } from "./accounts";
 import { prisma } from "./prisma";
 import { requireUserId } from "./user-scope";
 import {
@@ -165,8 +167,12 @@ function mapAll(t: Record<string, Row[]>) {
 }
 
 export async function getSettings(): Promise<Settings> {
-  // No row yet (shouldn't happen: made at sign-up): the repository makes it.
-  return (await snapshot()).settings ?? readOrCreateSettings();
+  const settings = (await snapshot()).settings;
+  if (settings) return settings;
+  // No row: made at sign-up, so the account itself may be gone (deleted on
+  // another device): this one is signed out. Else the repository makes it.
+  if (!(await currentAccount())) redirect("/api/auth/gone");
+  return readOrCreateSettings();
 }
 
 export const getAllExpenses = async (): Promise<Expense[]> => (await snapshot()).expenses;

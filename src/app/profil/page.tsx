@@ -2,6 +2,7 @@ import { CalendarDots, CaretRight, Envelope, ShieldCheck, Users } from "@phospho
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { SignOutButton } from "@/components/sign-out-button";
+import { DeleteAccountButton } from "@/components/delete-account-button";
 import { currentAccount } from "@/lib/accounts";
 import { isAdmin } from "@/lib/admin";
 import type { Lang } from "@/lib/i18n";
@@ -70,6 +71,7 @@ export default async function ProfilPage() {
             )}
 
             <SignOutButton />
+            <DeleteAccountButton />
           </>
         ) : (
           <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">

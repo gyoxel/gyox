@@ -30,6 +30,7 @@ export default async function ConnexionPage({ searchParams }: PageProps<"/connex
   const [params, { t }] = await Promise.all([searchParams, getI18n()]);
   const errorKey = ERRORS[String(params.erreur ?? "")];
   const error = errorKey && t(errorKey);
+  const deleted = params.compte === "supprime";
   const next = safeNext(typeof params.suite === "string" ? params.suite : null);
   const href = next === "/" ? "/api/auth/google" : `/api/auth/google?suite=${encodeURIComponent(next)}`;
 
@@ -58,6 +59,11 @@ export default async function ConnexionPage({ searchParams }: PageProps<"/connex
 
       <div className="relative mx-auto mt-auto w-full max-w-sm pt-10">
         <InstallAppCard className="mb-3 text-left" />
+        {deleted && (
+          <p role="status" className="mb-3 rounded-xl bg-emerald-500/90 px-4 py-2.5 text-center text-sm font-medium">
+            {t("Ton compte et toutes tes données ont été supprimés.")}
+          </p>
+        )}
         {error && (
           <p role="alert" className="mb-3 rounded-xl bg-rose-500/90 px-4 py-2.5 text-center text-sm font-medium">
             {error}

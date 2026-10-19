@@ -64,6 +64,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Voir ton nom, ton e-mail et depuis quand tu es inscrit."),
       msg("Lire la politique de confidentialité et les conditions."),
       msg("Te déconnecter de l'application."),
+      msg("Supprimer ton compte et toutes tes données, pour toujours (« Supprimer mon compte »)."),
     ],
   },
   admin: {
