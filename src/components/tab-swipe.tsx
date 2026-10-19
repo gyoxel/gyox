@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { useNavigate } from "@/lib/nav-history";
+import { useOpenSection } from "@/lib/nav-history";
 
 /** The bottom bar's tabs, in order: swipe left → next, right → previous. */
 const TABS = ["/", "/budget", "/credits", "/menu"];
@@ -122,7 +122,7 @@ function preloadSnapshots() {
  */
 export function TabSwipe() {
   const pathname = usePathname();
-  const navigate = useNavigate();
+  const openSection = useOpenSection();
   const preview = useRef<HTMLDivElement | null>(null);
   const navigating = useRef(false);
 
@@ -294,7 +294,7 @@ export function TabSwipe() {
         // The neighbour slides fully in; it stands in until the real tab renders.
         navigating.current = true;
         snapshotCurrent(pathname);
-        animateTo(-dir * window.innerWidth, () => navigate(target));
+        animateTo(-dir * window.innerWidth, () => openSection(target));
         // Safety: if the navigation never lands, bring everything back.
         setTimeout(() => {
           if (!navigating.current || window.location.pathname !== pathname) return;
@@ -325,7 +325,7 @@ export function TabSwipe() {
       document.removeEventListener("touchend", onEnd);
       document.removeEventListener("touchcancel", onEnd);
     };
-  }, [pathname, navigate]);
+  }, [pathname, openSection]);
 
   return null;
 }

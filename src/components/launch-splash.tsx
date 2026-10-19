@@ -1,7 +1,6 @@
 // The launch screen: on the first page of a visit — the installed app, or a
-// phone's browser — the GX mark between a bundle of notes and the card,
-// more of them drifting faintly behind, a bar filling, until the page is
-// there; then it fades away. It's plain HTML and CSS shown by two inline
+// phone's browser — the GX mark, notes and cards drifting faintly behind
+// it, a bar filling, until the page is there; then it fades away. It's plain HTML and CSS shown by two inline
 // scripts, so it never waits for the app's JavaScript and never holds the
 // page back: it goes as soon as the page's content has arrived (after 0.7 s
 // at the least, so it doesn't just flash).
@@ -61,13 +60,7 @@ export function LaunchSplash() {
           />
         ))}
       </div>
-      <div className="gx-splash-art">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/icons/cash.png" alt="" width={132} height={68} className="gx-splash-cash" />
-        <div className="gx-splash-logo">GX</div>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/icons/card.png" alt="" width={132} height={75} className="gx-splash-card" />
-      </div>
+      <div className="gx-splash-logo">GX</div>
       <p className="gx-splash-name">GX Salaire</p>
       <div className="gx-splash-bar">
         <span />

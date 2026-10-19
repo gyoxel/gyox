@@ -36,7 +36,7 @@ export function HomeHeader({ name }: { name: string }) {
           </span>
           <span className="text-[15px] font-bold">{part({ day: "numeric" })}</span>
         </Link>
-        <Link href="/settings" prefetch aria-label="Paramètres" className={HEADER_BUTTON}>
+        <Link href="/settings" prefetch data-nav="section" aria-label="Paramètres" className={HEADER_BUTTON}>
           <GearSix weight="bold" className="h-[19px] w-[19px]" />
         </Link>
       </div>

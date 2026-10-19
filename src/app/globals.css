@@ -845,9 +845,9 @@ body {
   visibility: hidden;
 }
 
-/* The launch screen (launch-splash.tsx): the GX mark between the notes and
-   the card, a bar filling below, on Accueil's light — out of the phone's
-   bar like the pages. Shown on the first load of a visit, faded away as
+/* The launch screen (launch-splash.tsx): the GX mark, notes and cards
+   drifting faintly behind, a bar filling below, on Accueil's light — out
+   of the phone's bar like the pages. Shown on the first load of a visit, faded away as
    soon as the page is there. */
 #gx-splash {
   display: none;
@@ -891,6 +891,7 @@ body {
 .gx-splash-drift {
   position: absolute;
   inset: 0;
+  z-index: -1;
   overflow: hidden;
   pointer-events: none;
   animation: gx-splash-fade 0.7s ease-out both;
@@ -915,14 +916,6 @@ body {
   to {
     transform: translate(var(--dx), -18px) rotate(calc(var(--tilt) + 9deg));
   }
-}
-.gx-splash-art {
-  position: relative;
-  width: 210px;
-  height: 120px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 .gx-splash-logo {
   position: relative;
@@ -958,32 +951,6 @@ body {
   background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.32) 46%, transparent 62%);
   transform: translateX(-130%);
   animation: gx-splash-sheen 1.6s ease-in-out 0.35s infinite;
-}
-.gx-splash-cash,
-.gx-splash-card {
-  position: absolute;
-  height: auto;
-  filter: drop-shadow(0 8px 10px rgb(48 28 130 / 0.22));
-}
-.gx-splash-cash {
-  left: 6px;
-  bottom: 10px;
-  width: 64px;
-  --tilt: -14deg;
-  transform: rotate(var(--tilt));
-  animation:
-    gx-splash-slide-left 0.5s ease-out 0.08s both,
-    gx-splash-float 2.4s ease-in-out 0.6s infinite alternate;
-}
-.gx-splash-card {
-  right: 6px;
-  top: 8px;
-  width: 60px;
-  --tilt: 12deg;
-  transform: rotate(var(--tilt));
-  animation:
-    gx-splash-slide-right 0.5s ease-out 0.16s both,
-    gx-splash-float 2.4s ease-in-out 1.1s infinite alternate;
 }
 .gx-splash-name {
   font-size: 19px;
@@ -1028,26 +995,6 @@ body {
   60%,
   100% {
     transform: translateX(130%);
-  }
-}
-@keyframes gx-splash-slide-left {
-  from {
-    opacity: 0;
-    transform: translateX(24px) rotate(0deg);
-  }
-}
-@keyframes gx-splash-slide-right {
-  from {
-    opacity: 0;
-    transform: translateX(-24px) rotate(0deg);
-  }
-}
-@keyframes gx-splash-float {
-  from {
-    transform: translateY(2px) rotate(var(--tilt));
-  }
-  to {
-    transform: translateY(-5px) rotate(var(--tilt));
   }
 }
 @keyframes gx-splash-fade {

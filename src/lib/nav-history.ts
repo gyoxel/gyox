@@ -7,10 +7,12 @@
 // in-app page exists: if so, back is a real history.back(); if this is the
 // first page of the session, back goes to the home page instead.
 //
-// The history also follows the app's levels — Accueil, a section (Dépenses,
-// Daret, Menu…), then a page inside it — so the phone's back goes up one
-// level each time: a daret's page → Daret → Accueil, however one got there.
-// On Accueil, back asks for a second press before leaving the app.
+// The history also keeps how pages were opened, so the phone's back goes
+// back to the page one came in from, up to Accueil: Paramètres → Profil →
+// Admin, back → Profil → Paramètres → Accueil. A section opened from the
+// bar's tabs, the Menu or the header's Paramètres stands right after Accueil
+// instead of stacking on the page it was opened from: back from it is
+// Accueil. On Accueil, back asks for a second press before leaving the app.
 import { useCallback, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -95,25 +97,24 @@ function jump(s: NavState, to: number, onArrive?: () => void) {
 
 type Router = ReturnType<typeof useRouter>;
 
-/** Accueil 0, a section 1 (/budget, /daret, /menu…), a page inside one 2
- *  and more (/daret/new, /goals/…/edit…). */
-const level = (path: string) => path.split("/").filter(Boolean).length;
-
 type Plan = { kind: "push" } | { kind: "replace" } | { kind: "hop"; to: number; replace: boolean };
 
+/** Links opening a section rather than something inside the page they're
+ *  on: the bar's tabs, the Menu's pages, the header's Paramètres. */
+const SECTION_LINK = "[data-nav='section']";
+
 /**
- * How to go to `path` so the history keeps the levels: a page inside a
- * section stacks on it; a section takes the place of the one open (the
- * tabs, the Menu's pages…) instead of stacking on it; Accueil is gone back
- * to. Coming from deeper, the history first goes back to the level's place.
+ * How to go to `path` so back returns the way one came: a page opened from
+ * within another stacks on it; a section takes the place right after
+ * Accueil (replacing the one open, or going back to it from deeper);
+ * Accueil is gone back to.
  */
-function plan(path: string): Plan {
+function plan(path: string, section: boolean): Plan {
   const s = read();
   if (!s || s.stack[s.pos] !== location.pathname) return { kind: "push" };
-  const depth = level(path);
-  if (depth >= 2) return { kind: "push" };
-  // The level's place in the history: Accueil first, the section after it.
-  const slot = depth === 0 || s.stack[0] !== "/" ? 0 : 1;
+  if (path !== "/" && !section) return { kind: "push" };
+  // Its place in the history: Accueil first, the section after it.
+  const slot = path === "/" || s.stack[0] !== "/" ? 0 : 1;
   if (slot > s.pos) return { kind: "push" };
   if (slot === s.pos) return { kind: "replace" };
   return { kind: "hop", to: slot, replace: s.stack[slot] !== path };
@@ -134,11 +135,11 @@ function replaceWith(router: Router, href: string) {
   router.replace(href);
 }
 
-/** Goes to `href` keeping the history's levels (see `plan`). */
-function navigate(router: Router, href: string) {
+/** Goes to `href` the way `plan` says (`section`: opening a section). */
+function navigate(router: Router, href: string, section: boolean) {
   const url = new URL(href, location.href);
   const target = url.pathname + url.search + url.hash;
-  const p = url.pathname === location.pathname ? ({ kind: "push" } as const) : plan(url.pathname);
+  const p = url.pathname === location.pathname ? ({ kind: "push" } as const) : plan(url.pathname, section);
   if (p.kind === "push") return router.push(target);
   if (p.kind === "replace") return replaceWith(router, target);
   const s = read();
@@ -150,10 +151,10 @@ function navigate(router: Router, href: string) {
   jump(s, p.to, () => replaceWith(router, target));
 }
 
-/** For code that navigates by itself (a swipe…): like a tap on a link. */
-export function useNavigate() {
+/** For code that opens a section by itself (the tabs' swipe). */
+export function useOpenSection() {
   const router = useRouter();
-  return useCallback((href: string) => navigate(router, href), [router]);
+  return useCallback((href: string) => navigate(router, href, true), [router]);
 }
 
 /** The links' taps go through `navigate` too. The link's own onClick still
@@ -169,9 +170,10 @@ function onLinkClick(router: Router, e: MouseEvent) {
   if (control && control !== link && link.contains(control)) return;
   const url = new URL(link.href);
   if (url.origin !== location.origin || url.pathname.startsWith("/api/") || url.pathname === location.pathname) return;
-  if (plan(url.pathname).kind === "push") return;
+  const section = link.closest(SECTION_LINK) !== null;
+  if (plan(url.pathname, section).kind === "push") return;
   e.preventDefault();
-  navigate(router, url.href);
+  navigate(router, url.href, section);
 }
 
 /** The installed app (home screen, Play Store): there, back on the

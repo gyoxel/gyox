@@ -51,6 +51,7 @@ function NavLink({
     <Link
       href={href}
       prefetch
+      data-nav="section"
       onClick={() => !active && onNavigate(href)}
       aria-current={active ? "page" : undefined}
       className="relative z-10 flex flex-1 touch-manipulation select-none flex-col items-center justify-center gap-1 transition-transform active:scale-95"
