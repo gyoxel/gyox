@@ -1,12 +1,13 @@
 // Where the money goes: a month's expenses grouped by category, against
 // the month before. Expenses the app makes itself are grouped by what made
-// them (Épargne, Darets, Dettes, Budgets, Argent prêté) rather than lost in
-// "Sans catégorie". Pure (no DB access).
-import { addMonths, type MonthId } from "./date";
+// them (Épargne, Darets, Dettes, Argent prêté) rather than lost in
+// "Sans catégorie". Amounts as Dépenses shows them. Pure (no DB access).
+import { addMonths, todayMonth, type MonthId } from "./date";
 import { getMonthSummary } from "./engine";
 import { displayIcon } from "./category";
+import { monthCost } from "./category-budgets";
 import { msg } from "./i18n";
-import type { BudgetMonth, BudgetWithExpense, Category, DaretWithExpense, Expense, Goal, Loan, SavingsMove } from "./types";
+import type { Category, DaretWithExpense, Expense, Goal, Loan, Payment, SavingsMove } from "./types";
 
 export interface CategorySlice {
   /** A category's id, or the group's key ("savings", "debts"…). */
@@ -27,19 +28,17 @@ const GROUPS = {
   savings: { label: msg("Épargne"), emoji: "🐷" },
   darets: { label: msg("Darets"), emoji: "🤝🏻" },
   debts: { label: msg("Dettes"), emoji: "🏦" },
-  budgets: { label: msg("Budgets"), emoji: "👛" },
   loans: { label: msg("Argent prêté"), emoji: "💸" },
   none: { label: msg("Sans catégorie"), emoji: "🏷️" },
 } as const;
 
 export interface CategoryStatsInput {
   expenses: Expense[];
+  payments: Payment[];
   categories: Category[];
   darets: DaretWithExpense[];
   savingsMoves: SavingsMove[];
   goals: Goal[];
-  budgets: BudgetWithExpense[];
-  budgetMonths: BudgetMonth[];
   loans: Loan[];
 }
 
@@ -51,8 +50,6 @@ export function categoryBreakdown(input: CategoryStatsInput, month: MonthId): Ca
   for (const m of input.savingsMoves) if (m.expenseId) made.set(m.expenseId, "savings");
   for (const g of input.goals) for (const d of g.deposits) if (d.expenseId) made.set(d.expenseId, "savings");
   for (const d of input.darets) made.set(d.expenseId, "darets");
-  for (const b of input.budgets) made.set(b.expenseId, "budgets");
-  for (const m of input.budgetMonths) if (m.overflowExpenseId) made.set(m.overflowExpenseId, "budgets");
   for (const l of input.loans) if (l.expenseId) made.set(l.expenseId, "loans");
 
   const categories = new Map(input.categories.map((c) => [c.id, c]));
@@ -65,14 +62,16 @@ export function categoryBreakdown(input: CategoryStatsInput, month: MonthId): Ca
     return "none";
   };
 
+  const current = todayMonth();
   const totals = (m: MonthId) => {
     const out = new Map<string, { amount: number; items: CategorySlice["items"] }>();
     for (const o of getMonthSummary(input.expenses, m, 0).occurrences) {
-      if (!(o.amount > 0)) continue;
+      const amount = monthCost(o.expense, o.amount, m, input.payments, current);
+      if (!(amount > 0)) continue;
       const key = keyOf(o.expense);
       const slot = out.get(key) ?? { amount: 0, items: [] };
-      slot.amount += o.amount;
-      slot.items.push({ id: o.expense.id, name: o.expense.name, icon: displayIcon(o.expense, emojiById), amount: o.amount });
+      slot.amount += amount;
+      slot.items.push({ id: o.expense.id, name: o.expense.name, icon: displayIcon(o.expense, emojiById), amount });
       out.set(key, slot);
     }
     return out;

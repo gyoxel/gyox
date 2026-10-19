@@ -1,6 +1,4 @@
-import { getAllExpenses, getBudgetOfIncome, getIncomeById, getIncomeCategories, getLoanOfIncome, getSavingsMoveOfIncome } from "@/lib/page-data";
-import { parseMonthKey } from "@/lib/date";
-import { monthLabel } from "@/lib/i18n/dates";
+import { getAllExpenses, getIncomeById, getIncomeCategories, getLoanOfIncome, getSavingsMoveOfIncome } from "@/lib/page-data";
 import { localName } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
 import { notFound } from "next/navigation";
@@ -19,13 +17,12 @@ export const dynamic = "force-dynamic";
 
 export default async function EditIncomePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [income, expenses, move, loan, categories, budget, { lang, t }] = await Promise.all([
+  const [income, expenses, move, loan, categories, { t }] = await Promise.all([
     getIncomeById(id),
     getAllExpenses(),
     getSavingsMoveOfIncome(id),
     getLoanOfIncome(id),
     getIncomeCategories(),
-    getBudgetOfIncome(id),
     getI18n(),
   ]);
   if (!income) notFound();
@@ -43,22 +40,6 @@ export default async function EditIncomePage({ params }: { params: Promise<{ id:
         editLabel={t("Modifier le retrait")}
         buttonClass="gx-cta"
         sourceLabel={t("l'épargne")}
-      />
-    );
-  }
-  if (budget) {
-    return (
-      <LinkedSourcePage
-        title={localName(income.name, t)}
-        gradient="from-fuchsia-400 via-purple-500 to-violet-700"
-        eyebrow={`${t("Reste de budget")} 👛`}
-        amount={`+${formatMoney(income.amount)}`}
-        subtitle={<>{budget.budget.expense.name} · {monthLabel(parseMonthKey(budget.monthKey), lang)} · {received}</>}
-        text={t("Ce qui restait du budget « {name} » à la fin du mois. Il suit les dépenses notées dans le budget.", { name: budget.budget.expense.name })}
-        href={`/budgets/${budget.budget.id}?month=${budget.monthKey}`}
-        editLabel={t("Voir le budget")}
-        buttonClass="gx-cta"
-        sourceLabel={t("le budget")}
       />
     );
   }

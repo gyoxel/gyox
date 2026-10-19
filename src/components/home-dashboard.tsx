@@ -19,6 +19,7 @@ import { TransferDialog } from "@/components/transfer-dialog";
 import { MethodIcon } from "@/components/method-icon";
 import { InstallAppCard } from "@/components/install-app";
 import { MonthBilan } from "@/components/month-bilan";
+import { BudgetAlerts, type BudgetAlert } from "@/components/budget-alerts";
 import type { MonthBilanData } from "@/lib/month-bilan";
 import { msg } from "@/lib/i18n";
 import { useT } from "@/lib/i18n/client";
@@ -71,6 +72,7 @@ export function HomeDashboard({
   dueRepayments,
   dueDaretPayouts,
   bilan,
+  budgetAlerts,
 }: {
   /** Solde of each account (cash, card) as of the server's payments. */
   solde: Record<PaymentMethod, number>;
@@ -90,6 +92,8 @@ export function HomeDashboard({
   dueDaretPayouts: DueDaretPayout[];
   /** The first days of a month: the month just over. */
   bilan: MonthBilanData | null;
+  /** This month's budgets at 80% or past. */
+  budgetAlerts: BudgetAlert[];
 }) {
   const t = useT();
   const [localPayments, setLocalPayments] = useState<Payment[]>(payments);
@@ -201,6 +205,8 @@ export function HomeDashboard({
       </div>
 
       {bilan && <MonthBilan data={bilan} currency={currency} revealed={revealed} />}
+
+      <BudgetAlerts items={budgetAlerts} />
 
       <DueDaretPayouts items={dueDaretPayouts} currency={currency} />
 

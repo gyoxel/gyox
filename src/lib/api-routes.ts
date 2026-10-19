@@ -1,12 +1,9 @@
 // The app's mutating API routes, callable in-process by the callApi Server
 // Function (src/app/api-actions.ts) — see there for why.
 import type { NextRequest } from "next/server";
-import * as budgets from "@/app/api/budgets/route";
-import * as budgetsById from "@/app/api/budgets/[id]/route";
-import * as budgetsByIdEntries from "@/app/api/budgets/[id]/entries/route";
-import * as budgetsByIdEntriesByEntryId from "@/app/api/budgets/[id]/entries/[entryId]/route";
 import * as categories from "@/app/api/categories/route";
 import * as categoriesById from "@/app/api/categories/[id]/route";
+import * as categoriesByIdBudget from "@/app/api/categories/[id]/budget/route";
 import * as categoriesOrder from "@/app/api/categories/order/route";
 import * as categoriesReset from "@/app/api/categories/reset/route";
 import * as darets from "@/app/api/darets/route";
@@ -44,12 +41,9 @@ type Handler = (req: NextRequest, ctx: { params: Promise<Record<string, string>>
 type RouteModule = Partial<Record<"POST" | "PATCH" | "PUT" | "DELETE", unknown>>;
 
 const ROUTES: [string, RouteModule][] = [
-  ["budgets", budgets],
-  ["budgets/[id]", budgetsById],
-  ["budgets/[id]/entries", budgetsByIdEntries],
-  ["budgets/[id]/entries/[entryId]", budgetsByIdEntriesByEntryId],
   ["categories", categories],
   ["categories/[id]", categoriesById],
+  ["categories/[id]/budget", categoriesByIdBudget],
   ["categories/order", categoriesOrder],
   ["categories/reset", categoriesReset],
   ["darets", darets],

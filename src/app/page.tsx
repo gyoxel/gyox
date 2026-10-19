@@ -1,7 +1,9 @@
 import { cookies } from "next/headers";
-import { getAllBudgetMonths, getAllBudgets, getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllLoans, getAllPayments, getAllSalaryAdvances, getAllSavingsMoves, getSettings } from "@/lib/page-data";
+import { getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllLoans, getAllPayments, getAllSalaryAdvances, getAllSavingsMoves, getSettings } from "@/lib/page-data";
 import { addMonths, monthKey, todayDateStr, todayMonth } from "@/lib/date";
 import { categoryBreakdown } from "@/lib/category-stats";
+import { budgetPercent, categoryBudgets } from "@/lib/category-budgets";
+import type { BudgetAlert } from "@/components/budget-alerts";
 import { BILAN_COOKIE, BILAN_DAYS, buildMonthBilan, type MonthBilanData } from "@/lib/month-bilan";
 import { monthLabel } from "@/lib/i18n/dates";
 import { getLang } from "@/lib/i18n/server";
@@ -30,7 +32,12 @@ export default async function HomePage() {
   ]);
   const categoryEmoji = Object.fromEntries(categories.map((c) => [c.id, c.emoji]));
   const currentMonth = todayMonth();
-  const bilan = await monthBilan(categories, expenses, darets, loans, lang);
+  const bilan = await monthBilan(categories, expenses, payments, darets, loans, lang);
+  const budgetAlerts = categoryBudgets(categories, expenses, payments, currentMonth, currentMonth).flatMap((b): BudgetAlert[] =>
+    b.level === "ok"
+      ? []
+      : [{ id: b.category.id, name: b.category.name, emoji: b.category.emoji, percent: budgetPercent(b.spent, b.budget), level: b.level }],
+  );
   const dueRepayments = loans.flatMap((loan) =>
     loanState(loan, currentMonth).due.map((s) => ({
       loanId: loan.id,
@@ -78,6 +85,7 @@ export default async function HomePage() {
           dueRepayments={dueRepayments}
           dueDaretPayouts={dueDaretPayouts}
           bilan={bilan}
+          budgetAlerts={budgetAlerts}
         />
       </main>
     </div>
@@ -89,6 +97,7 @@ export default async function HomePage() {
 async function monthBilan(
   categories: Awaited<ReturnType<typeof getAllCategories>>,
   expenses: Awaited<ReturnType<typeof getAllExpenses>>,
+  payments: Awaited<ReturnType<typeof getAllPayments>>,
   darets: Awaited<ReturnType<typeof getAllDarets>>,
   loans: Awaited<ReturnType<typeof getAllLoans>>,
   lang: Awaited<ReturnType<typeof getLang>>,
@@ -97,13 +106,7 @@ async function monthBilan(
   const month = addMonths(todayMonth(), -1);
   const key = monthKey(month);
   if ((await cookies()).get(BILAN_COOKIE)?.value === key) return null;
-  const [wallet, savingsMoves, goals, budgets, budgetMonths] = await Promise.all([
-    getWallet(month),
-    getAllSavingsMoves(),
-    getAllGoals(),
-    getAllBudgets(),
-    getAllBudgetMonths(),
-  ]);
-  const slices = categoryBreakdown({ expenses, categories, darets, savingsMoves, goals, budgets, budgetMonths, loans }, month);
+  const [wallet, savingsMoves, goals] = await Promise.all([getWallet(month), getAllSavingsMoves(), getAllGoals()]);
+  const slices = categoryBreakdown({ expenses, payments, categories, darets, savingsMoves, goals, loans }, month);
   return buildMonthBilan(wallet, slices, key, monthLabel(month, lang));
 }

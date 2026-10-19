@@ -1,4 +1,5 @@
-import { getAllBudgetMonths, getAllBudgets, getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllIncomes, getAllLoans, getAllPayments, getAllSalaryAdvances, getAllSavingsMoves, getSettings } from "@/lib/page-data";
+import { getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllIncomes, getAllLoans, getAllPayments, getAllSalaryAdvances, getAllSavingsMoves, getSettings } from "@/lib/page-data";
+import { budgetsById } from "@/lib/category-budgets";
 import { categoryBreakdown } from "@/lib/category-stats";
 import { CategoryBars } from "@/components/category-bars";
 import Link from "next/link";
@@ -35,7 +36,7 @@ const SEGMENTS: { color: DisplayColor; label: string }[] = [
  * forecast for the coming months.
  */
 export default async function StatsPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
-  const [sp, settings, expenses, payments, categories, advances, incomes, wallet, { lang, t }, darets, savingsMoves, goals, budgets, budgetMonths, loans] = await Promise.all([
+  const [sp, settings, expenses, payments, categories, advances, incomes, wallet, { lang, t }, darets, savingsMoves, goals, loans] = await Promise.all([
     searchParams,
     getSettings(),
     getAllExpenses(),
@@ -48,8 +49,6 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
     getAllDarets(),
     getAllSavingsMoves(),
     getAllGoals(),
-    getAllBudgets(),
-    getAllBudgetMonths(),
     getAllLoans(),
   ]);
   const currency = settings.currency;
@@ -79,7 +78,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
       .sort((a, b) => b.amount - a.amount);
     return { color, label: t(label), amount: Math.round(items.reduce((s, i) => s + i.amount, 0) * 100) / 100, items };
   });
-  const slices = categoryBreakdown({ expenses, categories, darets, savingsMoves, goals, budgets, budgetMonths, loans }, viewMonth);
+  const slices = categoryBreakdown({ expenses, payments, categories, darets, savingsMoves, goals, loans }, viewMonth);
   const forecast = getForecast(expenses, settings.salary, currentMonth, FORECAST_MONTHS);
 
   // The moment credits and temporary obligations are all over.
@@ -141,7 +140,13 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">
             {t("Par catégorie")} · {monthLabel(viewMonth, lang)}
           </h2>
-          <CategoryBars key={monthKey(viewMonth)} slices={slices} currency={currency} previousLabel={monthLabel(addMonths(viewMonth, -1), lang)} />
+          <CategoryBars
+            key={monthKey(viewMonth)}
+            slices={slices}
+            currency={currency}
+            previousLabel={monthLabel(addMonths(viewMonth, -1), lang)}
+            budgets={budgetsById(categories)}
+          />
         </section>
 
         {transition && (

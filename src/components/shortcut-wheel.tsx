@@ -12,7 +12,7 @@ import { useT } from "@/lib/i18n/client";
 // nor Profil / Paramètres / Catégories.
 const ITEMS: { href: string; label: string; hint: string; icon: PhosphorIcon }[] = [
   { href: "/incomes", label: msg("Revenus"), hint: msg("Prime, freelance, cadeau…"), icon: TrendUp },
-  { href: "/budgets", label: msg("Budgets"), hint: msg("Transport, courses…"), icon: Cardholder },
+  { href: "/budgets", label: msg("Budgets"), hint: msg("Un plafond par catégorie"), icon: Cardholder },
   { href: "/daret", label: msg("Daret"), hint: msg("Tes darets et ton tour"), icon: Handshake },
   { href: "/prets", label: msg("Argent prêté"), hint: msg("Ce qu'on doit te rendre"), icon: HandCoins },
   { href: "/goals", label: msg("Objectifs"), hint: msg("Voiture, maison, voyage…"), icon: Target },

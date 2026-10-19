@@ -15,6 +15,8 @@ import { displayIcon } from "@/lib/category";
 import { cn, formatMoney } from "@/lib/utils";
 import type { Expense, PaymentMethod, PaymentStatus } from "@/lib/types";
 import { MethodIcon } from "@/components/method-icon";
+import { BudgetBar, LEVEL_TEXT } from "@/components/budget-bar";
+import { budgetLevel } from "@/lib/category-budgets";
 
 export const dynamic = "force-dynamic";
 
@@ -32,8 +34,9 @@ interface Row {
 
 /**
  * Dépenses (credits live on the Crédits page): the month's total, what's
- * paid and what's left, then every expense grouped by category, each with
- * its status (paid — cash or card — or to pay). Tapping one opens it.
+ * paid and what's left, then every expense grouped by category (against
+ * its budget, if it has one), each with its status (paid — cash or card —
+ * or to pay). Tapping one opens it.
  */
 export default async function BudgetPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const [sp, settings, expenses, payments, categories, { lang, t }] = await Promise.all([
@@ -89,8 +92,8 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
 
   // Grouped by category, in the categories' own order; uncategorized last.
   const groups = [
-    ...categories.map((c) => ({ id: c.id, label: categoryName(c.name, t), emoji: c.emoji })),
-    { id: null as string | null, label: t("Sans catégorie"), emoji: "🏷️" },
+    ...categories.map((c) => ({ id: c.id, label: categoryName(c.name, t), emoji: c.emoji, budget: c.budget ?? null })),
+    { id: null as string | null, label: t("Sans catégorie"), emoji: "🏷️", budget: null },
   ]
     .map((g) => {
       const list = rows
@@ -145,8 +148,16 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
                   <span className="text-base leading-none">{g.emoji}</span>
                   {g.label}
                 </span>
-                <span className="tabular-nums text-slate-400">{money(g.subtotal)}</span>
+                {g.budget ? (
+                  <Link href={`/budgets/${g.id}?month=${key}`} className="tabular-nums active:opacity-70">
+                    <span className={LEVEL_TEXT[budgetLevel(g.subtotal, g.budget)]}>{money(g.subtotal)}</span>
+                    <span className="font-medium text-slate-400"> / {money(g.budget)}</span>
+                  </Link>
+                ) : (
+                  <span className="tabular-nums text-slate-400">{money(g.subtotal)}</span>
+                )}
               </h2>
+              {g.budget && <BudgetBar spent={g.subtotal} budget={g.budget} className="-mt-0.5 mx-1 h-1.5" />}
               <ul className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 {g.list.map((r) => {
                   const isPaid = r.status === "paid";

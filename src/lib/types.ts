@@ -46,6 +46,9 @@ export interface Category {
   emoji: string;
   /** Display order, ascending. */
   position: number;
+  /** Budget: the most to spend in it a month (expense categories only;
+   *  see lib/category-budgets.ts). Null or missing: none. */
+  budget?: number | null;
 }
 
 export type ExpenseInput = Omit<Expense, "id" | "createdAt" | "updatedAt" | "monthAmounts">;
@@ -315,38 +318,4 @@ export interface Loan {
   expenseId: string | null;
   createdAt: string;
   repayments: LoanRepayment[];
-}
-
-/** Budgets: an amount for something (transport…), spending noted inside it.
- *  Its expense carries the name, emoji, amount and recurrence. */
-export interface Budget {
-  id: string;
-  expenseId: string;
-  createdAt: string;
-}
-
-export type BudgetWithExpense = Budget & { expense: Expense };
-
-/** Spent from a budget (e.g. 20 DH of taxi). */
-export interface BudgetEntry {
-  id: string;
-  budgetId: string;
-  /** "YYYY-MM-DD" */
-  date: string;
-  amount: number;
-  note: string | null;
-  /** How it's paid when it goes past the budget. */
-  method: PaymentMethod;
-  createdAt: string;
-}
-
-/** A budget's month: the expense of what went past it ("<name> +"), the
- *  income of what was left ("<name> - Reste"). */
-export interface BudgetMonth {
-  id: string;
-  budgetId: string;
-  /** "YYYY-MM" */
-  monthKey: string;
-  overflowExpenseId: string | null;
-  resteIncomeId: string | null;
 }

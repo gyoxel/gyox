@@ -33,7 +33,7 @@ export async function LinkedSourcePage({
   href: string;
   editLabel: string;
   buttonClass: string;
-  /** "l'épargne", "le budget"… (translated). */
+  /** "l'épargne", "la daret"… (translated). */
   sourceLabel: string;
 }) {
   const { t } = await getI18n();

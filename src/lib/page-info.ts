@@ -18,6 +18,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     ),
     points: [
       msg("Voir le total du mois, ce qui est payé et ce qui reste, avec le pourcentage."),
+      msg("Une catégorie qui a un budget montre ce qui en est dépensé, en vert, orange ou rouge."),
       msg("Changer de mois avec ‹ › pour voir les mois passés ou à venir."),
       msg("Ajouter une dépense avec le bouton + (une fois, chaque mois ou pendant X mois)."),
       msg("Toucher une dépense pour l'ouvrir : la payer, la modifier, corriger un paiement ou la supprimer."),
@@ -92,7 +93,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Changer de mois avec ‹ ›."),
       msg("Ajouter un revenu avec le bouton + : il s'ajoute à ton solde (espèces ou carte)."),
       msg("Toucher un revenu pour le modifier ou le supprimer."),
-      msg("Les revenus créés par l'app (argent emprunté, retrait d'épargne, remboursement d'un prêt, reste de budget) se gèrent depuis leur page d'origine."),
+      msg("Les revenus créés par l'app (argent emprunté, retrait d'épargne, remboursement d'un prêt) se gèrent depuis leur page d'origine."),
     ],
   },
   solde: {
@@ -120,24 +121,14 @@ export const PAGE_INFO: Record<string, PageInfo> = {
   budgets: {
     title: msg("Budgets"),
     summary: msg(
-      "Un montant pour quelque chose (transport, courses…) : tu le prends en une fois, puis tu notes chaque jour ce que tu en dépenses.",
+      "Le maximum à dépenser dans une catégorie chaque mois (Alimentation 2 000 DH…). Rien ne sort de ton solde : tes dépenses de la catégorie s'additionnent.",
     ),
     points: [
       msg("Voir ce qui reste de chaque budget ce mois-ci, ou de combien il est dépassé."),
-      msg("Créer un budget : une fois, chaque mois ou pendant X mois."),
-      msg("Toucher un budget pour le prendre, noter une dépense ou le modifier."),
-      msg("Ce qui dépasse s'ajoute à tes dépenses ; ce qui reste à la fin du mois revient dans tes revenus."),
-    ],
-  },
-  "budget-detail": {
-    title: msg("Budget"),
-    summary: msg("Le mois d'un budget : combien il reste, s'il est pris, et chaque dépense notée, jour par jour."),
-    points: [
-      msg("Prendre le budget : son montant sort de ton solde en une fois (espèces ou carte)."),
-      msg("Noter une dépense : le montant, pour quoi et le jour."),
-      msg("Si ça dépasse le budget, choisir comment le reste est payé : il s'ajoute à tes dépenses."),
-      msg("Toucher une dépense notée pour la corriger ou la supprimer."),
-      msg("Changer de mois avec ‹ ›, et modifier le budget avec le crayon."),
+      msg("La barre est verte, passe à l'orange à 80 % et au rouge si tu dépasses."),
+      msg("Changer de mois avec ‹ › ; chaque mois repart de zéro."),
+      msg("Toucher un budget pour changer son montant, voir ses dépenses ou le retirer."),
+      msg("En bas, les catégories sans budget où tu as dépensé : touche-en une pour lui en donner un."),
     ],
   },
   daret: {
@@ -247,11 +238,11 @@ export const PAGE_INFO: Record<string, PageInfo> = {
   },
   "budget-new": {
     title: msg("Ajouter un budget"),
-    summary: msg("Un nouveau budget : un montant à dépenser petit à petit (transport, courses…)."),
+    summary: msg("Le maximum à dépenser dans une catégorie chaque mois."),
     points: [
-      msg("Indiquer le montant, le nom et choisir un emoji."),
-      msg("Choisir la durée : une fois, chaque mois ou pendant X mois."),
-      msg("Dire s'il est déjà pris ce mois-ci (espèces ou carte) : il sort alors de ton solde."),
+      msg("Indiquer le montant et choisir la catégorie."),
+      msg("Voir ce que tu y dépenses ce mois-ci et le mois d'avant, pour choisir le montant."),
+      msg("Une catégorie qui a déjà un budget : son montant est remplacé."),
     ],
   },
   "pret-new": {
@@ -307,12 +298,12 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     ],
   },
   "budget-edit": {
-    title: msg("Modifier le budget"),
-    summary: msg("Changer un budget existant."),
+    title: msg("Budget"),
+    summary: msg("Le budget d'une catégorie : son montant, ce qui en est dépensé et les dépenses qui le font."),
     points: [
-      msg("Changer le montant, le nom ou l'emoji."),
-      msg("Changer la durée : une fois, chaque mois ou pendant X mois."),
-      msg("Supprimer le budget."),
+      msg("Changer le montant : il compte pour tous les mois."),
+      msg("Toucher une dépense pour l'ouvrir."),
+      msg("Retirer le budget : la catégorie et ses dépenses restent."),
     ],
   },
   "goal-edit": {
@@ -363,7 +354,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Voir la part de ton salaire déjà dépensée ce mois-ci, et ce qui est disponible."),
       msg("Voir la répartition du budget d'un mois : permanentes, dettes et dépenses. Touche une part pour le détail."),
       msg("Voir le mois où tes dettes et obligations temporaires seront terminées."),
-      msg("Voir où va ton argent, catégorie par catégorie, comparé au mois précédent. Touche une catégorie pour son détail."),
+      msg("Voir où va ton argent, catégorie par catégorie, comparé au mois précédent (et à son budget, si elle en a un). Touche une catégorie pour son détail."),
       msg("Voir les prévisions des prochains mois : dépenses face au salaire. Touche un mois pour l'ouvrir."),
     ],
   },
@@ -401,7 +392,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
   },
   linked: {
     title: msg("Créé par l'app"),
-    summary: msg("Cette ligne a été créée par une autre partie de l'app (épargne, daret, objectif, prêt, budget…)."),
+    summary: msg("Cette ligne a été créée par une autre partie de l'app (épargne, daret, objectif, prêt…)."),
     points: [
       msg("Voir son montant, sa date et d'où elle vient."),
       msg("Ouvrir sa page d'origine avec le bouton : c'est là qu'on la modifie ou la supprime."),

@@ -2,7 +2,7 @@
 // of an edit page and the bin in its header (DeleteButton). In the device's
 // language (`t`).
 import type { DaretWithExpense, Expense, GoalDeposit, Income, Loan, SavingsMove } from "./types";
-import type { T } from "./i18n";
+import { categoryName, type T } from "./i18n";
 import { formatMoney } from "./utils";
 
 /** Deleting an expense or a credit. */
@@ -44,16 +44,14 @@ export function daretDelete(daret: DaretWithExpense, t: T) {
   };
 }
 
-/** Deleting a budget (its lines, its "+" expenses and "- Reste" incomes go with it). */
-export function budgetDelete(budget: { id: string; expense: { name: string } }, t: T) {
+/** Removing a category's budget (the category and its expenses stay). */
+export function budgetDelete(category: { id: string; name: string }, t: T) {
   return {
-    label: t("Supprimer ce budget"),
-    endpoint: `/api/budgets/${budget.id}`,
-    title: t("Supprimer ce budget ?"),
-    description: t("« {name} », ses dépenses notées, ses dépassements et ses restes seront définitivement supprimés.", {
-      name: budget.expense.name,
-    }),
-    success: t("Budget supprimé."),
+    label: t("Retirer ce budget"),
+    endpoint: `/api/categories/${category.id}/budget`,
+    title: t("Retirer ce budget ?"),
+    description: t("« {name} » n'aura plus de budget. La catégorie et ses dépenses restent comme elles sont.", { name: categoryName(category.name, t) }),
+    success: t("Budget retiré."),
     fallback: "/budgets",
   };
 }

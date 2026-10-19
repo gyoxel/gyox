@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ArrowDown, ArrowUp, CaretRight } from "@phosphor-icons/react/ssr";
-import { getAllBudgetMonths, getAllBudgets, getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllLoans, getAllSavingsMoves, getSettings } from "@/lib/page-data";
+import { getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllLoans, getAllPayments, getAllSavingsMoves, getSettings } from "@/lib/page-data";
 import { addMonths, compareMonths, monthFromSearchParams, monthKey, todayMonth } from "@/lib/date";
+import { budgetsById } from "@/lib/category-budgets";
 import { categoryBreakdown } from "@/lib/category-stats";
 import { buildMonthBilan } from "@/lib/month-bilan";
 import { getWallet } from "@/lib/wallet-data";
@@ -21,16 +22,15 @@ export const dynamic = "force-dynamic";
  * up the first days of a month.
  */
 export default async function BilanPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
-  const [sp, settings, expenses, categories, darets, savingsMoves, goals, budgets, budgetMonths, loans, { lang, t }] = await Promise.all([
+  const [sp, settings, expenses, payments, categories, darets, savingsMoves, goals, loans, { lang, t }] = await Promise.all([
     searchParams,
     getSettings(),
     getAllExpenses(),
+    getAllPayments(),
     getAllCategories(),
     getAllDarets(),
     getAllSavingsMoves(),
     getAllGoals(),
-    getAllBudgets(),
-    getAllBudgetMonths(),
     getAllLoans(),
     getI18n(),
   ]);
@@ -39,7 +39,7 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
   const previous = addMonths(month, -1);
   const key = monthKey(month);
   const [wallet, previousWallet] = await Promise.all([getWallet(month), getWallet(previous)]);
-  const slices = categoryBreakdown({ expenses, categories, darets, savingsMoves, goals, budgets, budgetMonths, loans }, month);
+  const slices = categoryBreakdown({ expenses, payments, categories, darets, savingsMoves, goals, loans }, month);
   const bilan = buildMonthBilan(wallet, slices, key, monthLabel(month, lang));
   const before = buildMonthBilan(previousWallet, [], monthKey(previous), "");
   const money = (n: number) => formatMoney(n, settings.currency);
@@ -84,7 +84,7 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
             {/* Where it went */}
             <section className="flex flex-col gap-2.5">
               <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Où est allé ton argent")}</h2>
-              <CategoryBars key={key} slices={slices} currency={settings.currency} previousLabel={previousLabel} />
+              <CategoryBars key={key} slices={slices} currency={settings.currency} previousLabel={previousLabel} budgets={budgetsById(categories)} />
             </section>
 
             <Link

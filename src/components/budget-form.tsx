@@ -1,116 +1,92 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CalendarDots, Check, Clock, NumberCircleOne, Repeat } from "@phosphor-icons/react/ssr";
-import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import type { Category } from "@/lib/types";
+import { budgetDelete } from "@/lib/delete-specs";
+import { budgetLevel, budgetPercent } from "@/lib/category-budgets";
 import { useNavBack } from "@/lib/nav-history";
 import { mutate } from "@/lib/use-refresh-data";
-import { addMonths, monthOfDateStr, monthsBetween, todayMonth } from "@/lib/date";
-import { msg } from "@/lib/i18n";
-import { monthLabel } from "@/lib/i18n/dates";
-import { useI18n } from "@/lib/i18n/client";
-import type { BudgetWithExpense, PaymentMethod } from "@/lib/types";
+import { categoryName } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
-import { PaymentMethodPicker } from "@/components/payment-method-picker";
+import { CategoryPicker } from "@/components/category-picker";
 import { DeleteButton } from "@/components/delete-button";
-import { budgetDelete } from "@/lib/delete-specs";
+import { BudgetBar, LEVEL_TEXT } from "@/components/budget-bar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ChoiceNote, Segmented } from "@/components/ui/segmented";
 import { Label } from "@/components/ui/label";
 
-const EMOJIS = ["🚌", "🚕", "⛽", "🍔", "🛒", "☕", "🚬", "📱", "🎉", "👕", "💊", "🧾"];
-
-type Kind = "once" | "monthly" | "months";
-
-const KINDS: { key: Kind; icon: PhosphorIcon; label: string }[] = [
-  { key: "once", icon: NumberCircleOne, label: msg("Une fois") },
-  { key: "monthly", icon: Repeat, label: msg("Chaque mois") },
-  { key: "months", icon: CalendarDots, label: msg("X mois") },
-];
-
-/** The recurrence the form opens on for an existing budget. */
-function initialKind(budget?: BudgetWithExpense): { kind: Kind; months: string } {
-  const e = budget?.expense;
-  if (!e || e.type === "permanent") return { kind: "monthly", months: "" };
-  if (e.frequency === "one-time" || !e.endDate) return { kind: "once", months: "" };
-  return { kind: "months", months: String(monthsBetween(monthOfDateStr(e.startDate), monthOfDateStr(e.endDate)) + 1) };
-}
-
 /**
- * Ajouter / modifier un budget: the amount on top, the name and emoji, how
- * long it runs (like an expense), and — when adding — whether it's taken
- * now (the amount leaves the Solde).
+ * A category's budget: the most to spend in it a month. New (`category`
+ * left out): pick the category, preselected from ?category=; else that
+ * category's, which can be changed or removed. Beside it, what's spent in
+ * it the month shown and the month before, to choose the amount.
  */
-export function BudgetForm({ currency, budget }: { currency: string; budget?: BudgetWithExpense }) {
-  const isEdit = budget != null;
+export function BudgetForm({
+  categories: initial,
+  category: fixed,
+  preselected,
+  spent,
+  previous,
+  spentLabel,
+  previousLabel,
+  currency,
+}: {
+  categories: Category[];
+  /** Editing this category's budget. */
+  category?: Category;
+  preselected?: string | null;
+  /** Category id → spent in the month shown / the month before. */
+  spent: Record<string, number>;
+  previous: Record<string, number>;
+  /** "Ce mois-ci", or the month's name. */
+  spentLabel: string;
+  previousLabel: string;
+  currency: string;
+}) {
+  const t = useT();
   const nav = useNavBack();
-  const { lang, t } = useI18n();
-  const monthLabelFr = (m: Parameters<typeof monthLabel>[0]) => monthLabel(m, lang);
-  const init = initialKind(budget);
-  const [amount, setAmount] = useState(toDecimalInput(budget?.expense.amount ?? null));
-  const [name, setName] = useState(budget?.expense.name ?? "");
-  const [emoji, setEmoji] = useState(budget?.expense.icon ?? "🚌");
-  const [kind, setKind] = useState<Kind>(init.kind);
-  const [months, setMonths] = useState(init.months);
-  const [taken, setTaken] = useState(true);
-  const [method, setMethod] = useState<PaymentMethod>("cash");
+  const [categories, setCategories] = useState(initial);
+  const [categoryId, setCategoryId] = useState<string | null>(fixed?.id ?? preselected ?? null);
+  const picked = categories.find((c) => c.id === categoryId) ?? null;
+  const [amount, setAmount] = useState(fixed?.budget ? toDecimalInput(fixed.budget) : "");
   const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [pending, startTransition] = useTransition();
+  const value = parseDecimalInput(amount);
   const money = (n: number) => formatMoney(n, currency);
-  const amountValue = parseDecimalInput(amount);
-  const monthsValue = Math.floor(Number(months) || 0);
-  const start = budget ? monthOfDateStr(budget.expense.startDate) : todayMonth();
-  const emojis = EMOJIS.includes(emoji) || !emoji ? EMOJIS : [emoji, ...EMOJIS.slice(0, -1)];
+  const now = categoryId ? (spent[categoryId] ?? 0) : 0;
+  const before = categoryId ? (previous[categoryId] ?? 0) : 0;
+  const replaces = !fixed && picked?.budget ? picked.budget : null;
 
-  const summary =
-    kind === "monthly"
-      ? t("Chaque mois, sans fin : il revient le mois suivant.")
-      : kind === "months" && monthsValue > 0
-        ? t("{n} mois · jusqu'à {month}", { n: monthsValue, month: monthLabelFr(addMonths(start, monthsValue - 1)).toLowerCase() })
-        : kind === "once"
-          ? t("Juste {month}.", { month: monthLabelFr(start).toLowerCase() })
-          : null;
+  function pick(id: string) {
+    setCategoryId(id);
+    // One that already has a budget: start from it.
+    const budget = categories.find((c) => c.id === id)?.budget;
+    if (budget) setAmount(toDecimalInput(budget));
+  }
 
-  function handleSubmit(e: React.FormEvent) {
+  function save(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!(amountValue > 0)) return setError(t("Indique le montant du budget."));
-    if (!name.trim()) return setError(t("Indique un nom."));
-    if (kind === "months" && (monthsValue < 1 || monthsValue > 600)) return setError(t("Indique le nombre de mois."));
-    const recurrence = kind === "months" ? { kind, months: monthsValue } : { kind };
+    if (!categoryId) return setError(t("Choisis une catégorie."));
+    if (!(value > 0)) return setError(t("Indique un montant."));
     startTransition(async () => {
-      const res = await mutate({
-        method: isEdit ? "PATCH" : "POST",
-        path: isEdit ? `/api/budgets/${budget.id}` : "/api/budgets",
-        body: {
-          name: name.trim(),
-          emoji,
-          amount: amountValue,
-          recurrence,
-          ...(!isEdit && taken ? { paid: { method } } : {}),
-        },
-      });
+      const res = await mutate({ method: "PUT", path: `/api/categories/${categoryId}/budget`, body: { amount: value } });
       if (!res.ok) return setError(await errorMessage(res));
-      if (!isEdit) {
-        const created: { problems?: string[] } = await res.json();
-        if (created.problems?.includes("paid")) toast.error(t("Budget ajouté, mais pas pris : solde insuffisant."));
-      }
-      toast.success(isEdit ? t("Budget modifié.") : t("Budget ajouté."));
+      toast.success(t("Budget enregistré."));
       nav.back("/budgets");
     });
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-fuchsia-400 via-purple-500 to-violet-700 px-4 pb-4 pt-5 text-white shadow-lg shadow-purple-500/20 dark:shadow-none">
+    <form onSubmit={save} className="flex flex-col gap-5">
+      <div className="relative flex flex-col items-center gap-1 overflow-hidden rounded-3xl bg-gradient-to-br from-violet-500 via-indigo-600 to-indigo-800 px-4 py-5 text-white shadow-lg shadow-indigo-600/20 dark:shadow-none">
         <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
-        <Label htmlFor="amount" className="relative block text-center text-xs text-white/80">
-          {emoji} {kind === "once" ? t("Budget") : t("Budget par mois")}
+        <Label htmlFor="amount" className="relative text-xs text-white/80">
+          {picked ? `${picked.emoji} ${categoryName(picked.name, t)} · ${t("par mois")}` : t("Maximum par mois")}
         </Label>
-        <div className="relative mt-1 flex items-baseline justify-center gap-2">
+        <div className="relative flex items-baseline gap-2">
           <input
             id="amount"
             type="text"
@@ -119,109 +95,43 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
             value={amount}
             onChange={(e) => setAmount(cleanDecimalInput(e.target.value))}
             placeholder="0"
+            autoFocus={!!fixed || !!preselected}
             style={{ width: `${Math.max(1, amount.length) + 0.3}ch` }}
             className="max-w-[60vw] bg-transparent text-center text-4xl font-bold text-white outline-none placeholder:text-white/40"
           />
           <span className="text-lg font-semibold text-white/70">{currency === "MAD" ? "DH" : currency}</span>
         </div>
-        <p className="relative mt-2 text-center text-[11px] text-white/85">
-          {t("Pris en une fois, puis tu notes chaque jour ce que tu en dépenses.")}
-        </p>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="name">{t("Nom")}</Label>
-        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("Ex : Transport")} maxLength={60} />
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label>{t("Emoji")}</Label>
-        <div role="radiogroup" aria-label={t("Emoji")} className="grid grid-cols-6 gap-2">
-          {emojis.map((e) => (
-            <button
-              key={e}
-              type="button"
-              role="radio"
-              aria-checked={emoji === e}
-              aria-label={e}
-              onClick={() => setEmoji(e)}
-              className={cn(
-                "flex h-11 items-center justify-center rounded-xl border text-xl transition-colors",
-                emoji === e
-                  ? "border-purple-500 bg-purple-50 ring-1 ring-purple-500 dark:bg-purple-950/50"
-                  : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
-              )}
-            >
-              {e}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label>{t("Durée")}</Label>
-        <Segmented label={t("Durée")} value={kind} onChange={setKind} options={KINDS.map((k) => ({ ...k, label: t(k.label) }))} />
-        {kind === "months" && (
-          <div className="flex items-center gap-2">
-            <Input
-              aria-label={t("Nombre de mois")}
-              type="text"
-              inputMode="numeric"
-              value={months}
-              onChange={(e) => setMonths(e.target.value.replace(/\D/g, "").slice(0, 3))}
-              placeholder={t("Nombre de mois, ex : 6")}
-            />
-            <span className="shrink-0 text-sm text-slate-500">{t("mois")}</span>
-          </div>
-        )}
-        <ChoiceNote>
-          {summary ?? t("Pendant combien de mois ?")}
-          {summary && amountValue > 0 && kind !== "once" && <> · {t("{amount} par mois", { amount: money(amountValue) })}</>}
-        </ChoiceNote>
-      </div>
-
-      {!isEdit && (
+      {!fixed && (
         <div className="flex flex-col gap-2">
-          <Label>{t("Ce mois-ci")}</Label>
-          <div role="radiogroup" aria-label={t("Ce mois-ci")} className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              role="radio"
-              aria-checked={taken}
-              onClick={() => setTaken(true)}
-              className={cn(
-                "flex items-center justify-center gap-1.5 rounded-xl border py-3 text-sm font-semibold transition-colors",
-                taken
-                  ? "border-transparent bg-emerald-500 text-white shadow-sm"
-                  : "border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400",
-              )}
-            >
-              <Check weight="bold" className="h-4 w-4" />
-              {t("Pris")}
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={!taken}
-              onClick={() => setTaken(false)}
-              className={cn(
-                "flex items-center justify-center gap-1.5 rounded-xl border py-3 text-sm font-semibold transition-colors",
-                !taken
-                  ? "border-transparent bg-rose-500 text-white shadow-sm"
-                  : "border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400",
-              )}
-            >
-              <Clock weight="bold" className="h-4 w-4" />
-              {t("Pas encore")}
-            </button>
-          </div>
-          {taken ? (
-            <PaymentMethodPicker value={method} onChange={setMethod} label={t("Pris en")} />
-          ) : (
-            <p className="px-1 text-[11px] text-slate-400">{t("Il t'attend dans tes dépenses du mois : coche-le quand tu le prends.")}</p>
-          )}
+          <Label>{t("Catégorie")}</Label>
+          <CategoryPicker categories={categories} value={categoryId} onChange={pick} onCreated={(c) => setCategories((prev) => [...prev, c])} />
         </div>
       )}
+
+      {categoryId && (
+        <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <p className="flex items-center justify-between gap-2">
+            <span className="text-slate-500 dark:text-slate-400">{spentLabel}</span>
+            <span className={cn("font-semibold tabular-nums", value > 0 ? LEVEL_TEXT[budgetLevel(now, value)] : "text-slate-900 dark:text-white")}>
+              {money(now)}
+              {value > 0 && <> / {money(value)} · {budgetPercent(now, value)}%</>}
+            </span>
+          </p>
+          {value > 0 && <BudgetBar spent={now} budget={value} />}
+          <p className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <span>{previousLabel}</span>
+            <span className="tabular-nums">{money(before)}</span>
+          </p>
+        </div>
+      )}
+
+      <p className="px-1 text-[11px] text-slate-400">
+        {replaces
+          ? t("Cette catégorie a déjà un budget de {amount} : il sera remplacé.", { amount: money(replaces) })
+          : t("Rien ne sort de ton solde : tes dépenses de cette catégorie s'additionnent chaque mois et la barre passe à l'orange à 80 %, au rouge si tu dépasses.")}
+      </p>
 
       {error && <p className="text-sm text-rose-600">{error}</p>}
 
@@ -229,12 +139,12 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back("/budgets")}>
           {t("Annuler")}
         </Button>
-        <Button type="submit" className="flex-1 gx-cta" disabled={isPending}>
-          {isPending ? t("Enregistrement…") : isEdit ? t("Enregistrer") : t("Ajouter le budget")}
+        <Button type="submit" className="flex-1 gx-cta" disabled={pending}>
+          {pending ? t("Enregistrement…") : t("Enregistrer")}
         </Button>
       </div>
 
-      {isEdit && <DeleteButton variant="full" {...budgetDelete(budget, t)} />}
+      {fixed && <DeleteButton variant="full" {...budgetDelete(fixed, t)} />}
     </form>
   );
 }

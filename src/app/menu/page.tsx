@@ -19,7 +19,7 @@ const GROUPS: { title: string; items: { href: string; label: string; hint: strin
     { href: "/epargne", label: msg("Épargne"), hint: msg("Argent mis de côté, avec tes notes"), icon: PiggyBank },
   ] },
   { title: msg("Organiser"), items: [
-    { href: "/budgets", label: msg("Budgets"), hint: msg("Transport, courses… : note ce que tu dépenses chaque jour"), icon: Cardholder },
+    { href: "/budgets", label: msg("Budgets"), hint: msg("Le maximum à dépenser par catégorie, chaque mois"), icon: Cardholder },
     { href: "/daret", label: msg("Daret"), hint: msg("Tes darets et ton tour"), icon: Handshake },
     { href: "/prets", label: msg("Argent prêté"), hint: msg("L'argent que tu as prêté, et ce qu'on te rend"), icon: HandCoins },
     { href: "/goals", label: msg("Objectifs"), hint: msg("Voiture, maison, voyage…"), icon: Target },

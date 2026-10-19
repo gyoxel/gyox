@@ -1,4 +1,4 @@
-import { getAllCategories, getAllExpenses, getAllPayments, getBudgetOfExpense, getDaretOfExpense, getDepositOfExpense, getLoanOfExpense, getSavingsMoveOfExpense, getSettings } from "@/lib/page-data";
+import { getAllCategories, getAllExpenses, getAllPayments, getDaretOfExpense, getDepositOfExpense, getLoanOfExpense, getSavingsMoveOfExpense, getSettings } from "@/lib/page-data";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { PencilSimple } from "@phosphor-icons/react/ssr";
@@ -10,7 +10,7 @@ import { DeleteButton } from "@/components/delete-button";
 import { expenseDelete } from "@/lib/delete-specs";
 import { Button } from "@/components/ui/button";
 import { findPayment, getCreditRealState, getEffectiveEndMonth, getOccurrenceForMonth } from "@/lib/engine";
-import { compareMonths, monthKey, monthOfDateStr, monthsBetween, parseMonthKey, todayMonth, type MonthId } from "@/lib/date";
+import { compareMonths, monthKey, monthOfDateStr, monthsBetween, todayMonth, type MonthId } from "@/lib/date";
 import { monthLabel } from "@/lib/i18n/dates";
 import { localName, type Lang, type T } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
@@ -27,7 +27,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ExpenseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [settings, allExpenses, payments, categories, linkedDeposit, linkedDaret, linkedMove, linkedLoan, linkedBudget, { lang, t }] = await Promise.all([
+  const [settings, allExpenses, payments, categories, linkedDeposit, linkedDaret, linkedMove, linkedLoan, { lang, t }] = await Promise.all([
     getSettings(),
     getAllExpenses(),
     getAllPayments(),
@@ -36,7 +36,6 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
     getDaretOfExpense(id),
     getSavingsMoveOfExpense(id),
     getLoanOfExpense(id),
-    getBudgetOfExpense(id),
     getI18n(),
   ]);
   const expense = allExpenses.find((e) => e.id === id);
@@ -97,32 +96,6 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
         editLabel={t("Modifier l'épargne")}
         buttonClass="gx-cta"
         sourceLabel={t("l'épargne")}
-      />
-    );
-  }
-  if (linkedBudget) {
-    const { budget, overflowOf } = linkedBudget;
-    const name = budget.expense.name;
-    return (
-      <LinkedSourcePage
-        title={localName(expense.name, t)}
-        gradient="from-fuchsia-400 via-purple-500 to-violet-700"
-        eyebrow={overflowOf ? t("Dépassement de budget") : `${t("Budget")} 👛`}
-        amount={formatMoney(expense.amount, settings.currency)}
-        subtitle={
-          overflowOf
-            ? <>{name} · {monthLabel(parseMonthKey(overflowOf), lang)}{paidWith && <> · <MethodIcon method={paidWith} /></>}</>
-            : expense.type === "permanent" ? t("Chaque mois") : expense.frequency === "one-time" ? t("Une fois") : t("Pendant quelques mois")
-        }
-        text={
-          overflowOf
-            ? t("Ce qui a été dépensé au-delà du budget « {name} » ce mois-là. Il suit les dépenses notées dans le budget.", { name })
-            : t("Le montant du budget « {name} » : coche-le dans tes dépenses quand tu le prends. Pour le modifier ou noter ce que tu en dépenses, c'est depuis le budget.", { name })
-        }
-        href={overflowOf ? `/budgets/${budget.id}?month=${overflowOf}` : `/budgets/${budget.id}`}
-        editLabel={t("Voir le budget")}
-        buttonClass="gx-cta"
-        sourceLabel={t("le budget")}
       />
     );
   }

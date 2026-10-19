@@ -6,7 +6,7 @@ import { defaultSettings } from "./user-defaults";
 import { getAllSavingsMoves } from "./savings-repo";
 import { getAllLoanRepayments, getAllLoans } from "./loans-repo";
 import { getIncomeCategories } from "./income-categories-repo";
-import type { Budget, BudgetEntry, BudgetMonth, Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote, DepositSource, SalaryAdvance, Income, PaymentMethod, SalaryReceipt, WalletOp, SavingsMove, Loan, LoanRepayment } from "./types";
+import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote, DepositSource, SalaryAdvance, Income, PaymentMethod, SalaryReceipt, WalletOp, SavingsMove, Loan, LoanRepayment } from "./types";
 
 /** Names the app gave before Crédits / Prêts became Dettes / Argent prêté
  *  ("Prêt · Ahmed", "Crédit · Banque") read with the new words; what's
@@ -247,9 +247,6 @@ export interface BackupData {
   incomeCategories?: Category[];
   loans?: (Omit<Loan, "repayments"> & { repayments?: undefined })[];
   loanRepayments?: LoanRepayment[];
-  budgets?: Budget[];
-  budgetEntries?: BudgetEntry[];
-  budgetMonths?: BudgetMonth[];
 }
 
 export async function exportData(): Promise<BackupData> {
@@ -282,12 +279,6 @@ export async function exportData(): Promise<BackupData> {
     incomeCategories: await getIncomeCategories(),
     loans: (await getAllLoans()).map((loan) => ({ ...loan, repayments: undefined })),
     loanRepayments: await getAllLoanRepayments(),
-    budgets: await prisma.budget.findMany({ orderBy: { createdAt: "asc" } }),
-    budgetEntries: (await prisma.budgetEntry.findMany({ orderBy: [{ date: "asc" }, { createdAt: "asc" }] })).map((e) => ({
-      ...e,
-      method: e.method === "card" ? "card" : "cash",
-    })),
-    budgetMonths: await prisma.budgetMonth.findMany(),
   };
 }
 
@@ -301,8 +292,7 @@ function withFreshIds(data: BackupData): BackupData {
   const ids = new Map<string, string>();
   const own = (rows: { id: string }[] | undefined) => rows?.forEach((r) => ids.set(r.id, randomUUID()));
   [data.expenses, data.payments, data.darets, data.categories, data.goals, data.goalDeposits, data.goalIdeas, data.salaryAdvances,
-    data.incomes, data.salaryReceipts, data.walletOps, data.savingsMoves, data.loans, data.loanRepayments, data.budgets,
-    data.budgetEntries, data.budgetMonths].forEach(own);
+    data.incomes, data.salaryReceipts, data.walletOps, data.savingsMoves, data.loans, data.loanRepayments].forEach(own);
   const id = (value: string) => ids.get(value) ?? value;
   const ref = <T extends string | null | undefined>(value: T): T => (value ? (id(value) as T) : value);
   return {
@@ -327,15 +317,6 @@ function withFreshIds(data: BackupData): BackupData {
     })),
     loans: data.loans?.map((l) => ({ ...l, id: id(l.id), expenseId: ref(l.expenseId) })),
     loanRepayments: data.loanRepayments?.map((r) => ({ ...r, id: id(r.id), loanId: id(r.loanId), incomeId: ref(r.incomeId) })),
-    budgets: data.budgets?.map((b) => ({ ...b, id: id(b.id), expenseId: id(b.expenseId) })),
-    budgetEntries: data.budgetEntries?.map((e) => ({ ...e, id: id(e.id), budgetId: id(e.budgetId) })),
-    budgetMonths: data.budgetMonths?.map((m) => ({
-      ...m,
-      id: id(m.id),
-      budgetId: id(m.budgetId),
-      overflowExpenseId: ref(m.overflowExpenseId),
-      resteIncomeId: ref(m.resteIncomeId),
-    })),
   };
 }
 
@@ -364,7 +345,7 @@ export async function importData(backup: BackupData): Promise<void> {
       ? [
           prisma.category.deleteMany({}),
           prisma.category.createMany({
-            data: data.categories.map((c) => ({ id: c.id, name: c.name, emoji: c.emoji, position: c.position, createdAt: now })),
+            data: data.categories.map((c) => ({ id: c.id, name: c.name, emoji: c.emoji, position: c.position, budget: c.budget ?? null, createdAt: now })),
           }),
         ]
       : []),
@@ -468,20 +449,6 @@ export async function importData(backup: BackupData): Promise<void> {
           }),
         ]
       : []),
-    // (Deleting the expenses removed the budgets, their lines and months.)
-    ...(() => {
-      const budgets = (data.budgets ?? []).filter((b) => expenseIds.has(b.expenseId));
-      const budgetIds = new Set(budgets.map((b) => b.id));
-      return [
-        prisma.budget.createMany({ data: budgets }),
-        prisma.budgetEntry.createMany({ data: (data.budgetEntries ?? []).filter((e) => budgetIds.has(e.budgetId)) }),
-        prisma.budgetMonth.createMany({
-          data: (data.budgetMonths ?? [])
-            .filter((m) => budgetIds.has(m.budgetId))
-            .map((m) => ({ ...m, overflowExpenseId: known(m.overflowExpenseId, expenseIds), resteIncomeId: known(m.resteIncomeId, incomeIds) })),
-        }),
-      ];
-    })(),
     prisma.settings.updateMany({ data: data.settings }),
   ]);
 }
@@ -781,8 +748,8 @@ export async function deleteDaret(id: string): Promise<boolean> {
 // Categories
 // ---------------------------------------------------------------------------
 
-export function mapCategory(row: { id: string; name: string; emoji: string; position: number }): Category {
-  return { id: row.id, name: row.name, emoji: row.emoji, position: row.position };
+export function mapCategory(row: { id: string; name: string; emoji: string; position: number; budget?: number | null }): Category {
+  return { id: row.id, name: row.name, emoji: row.emoji, position: row.position, budget: row.budget ?? null };
 }
 
 export async function getAllCategories(): Promise<Category[]> {
@@ -818,6 +785,12 @@ export async function updateCategory(id: string, input: { name?: string; emoji?:
   } catch {
     return null;
   }
+}
+
+/** A category's budget (null: none). False when there's no such category. */
+export async function setCategoryBudget(id: string, budget: number | null): Promise<boolean> {
+  const { count } = await prisma.category.updateMany({ where: { id }, data: { budget } });
+  return count > 0;
 }
 
 /** Expenses in this category are kept, just uncategorized (FK SET NULL). */

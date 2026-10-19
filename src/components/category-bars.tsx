@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { ArrowDown, ArrowUp, CaretDown } from "@phosphor-icons/react/ssr";
 import type { CategorySlice } from "@/lib/category-stats";
+import { budgetLevel, budgetPercent } from "@/lib/category-budgets";
+import { LEVEL_TEXT } from "@/components/budget-bar";
 import { categoryName, localName, type T } from "@/lib/i18n";
 import { useT } from "@/lib/i18n/client";
 import { cn, formatMoney } from "@/lib/utils";
@@ -41,9 +43,21 @@ export function SliceChange({ amount, previous, className }: { amount: number; p
 /**
  * Statistiques → Par catégorie: one bar per category (the largest is the
  * full width), its amount, its share of the month and how it moved since
- * the month before. Tapping one shows what it's made of.
+ * the month before, and how much of its budget that is when it has one.
+ * Tapping one shows what it's made of.
  */
-export function CategoryBars({ slices, currency, previousLabel }: { slices: CategorySlice[]; currency: string; previousLabel: string }) {
+export function CategoryBars({
+  slices,
+  currency,
+  previousLabel,
+  budgets = {},
+}: {
+  slices: CategorySlice[];
+  currency: string;
+  previousLabel: string;
+  /** Category id → its budget. */
+  budgets?: Record<string, number>;
+}) {
   const t = useT();
   const [open, setOpen] = useState<string | null>(null);
   const money = (n: number) => formatMoney(n, currency);
@@ -64,6 +78,7 @@ export function CategoryBars({ slices, currency, previousLabel }: { slices: Cate
       {slices.map((s) => {
         const expanded = open === s.key;
         const share = total > 0 ? Math.round((s.amount / total) * 100) : 0;
+        const budget = budgets[s.key];
         return (
           <div key={s.key} className={cn("rounded-2xl transition-colors", expanded && "bg-slate-50 dark:bg-slate-800/50")}>
             <button
@@ -88,6 +103,11 @@ export function CategoryBars({ slices, currency, previousLabel }: { slices: Cate
                 </span>
                 <span className="w-9 text-right text-[11px] tabular-nums text-slate-400">{share}%</span>
               </span>
+              {budget > 0 && (
+                <span className={cn("text-[11px] font-medium tabular-nums", LEVEL_TEXT[budgetLevel(s.amount, budget)])}>
+                  {t("{pct}% du budget ({amount})", { pct: budgetPercent(s.amount, budget), amount: money(budget) })}
+                </span>
+              )}
             </button>
             {expanded && (
               <ul className="flex flex-col gap-1.5 px-3 pb-3 pt-0.5">
