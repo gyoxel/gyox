@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { DATA_CHANGED_EVENT } from "@/lib/use-refresh-data";
 import { Bank, HandArrowDown, HandArrowUp, HandCoins, Handshake, House, PiggyBank, Plus, Receipt, SquaresFour, Target, Wallet } from "@phosphor-icons/react/ssr";
 import { cn } from "@/lib/utils";
+import { useCloseOnBack } from "@/lib/close-on-back";
 
 const ITEMS = [
   { href: "/", label: "Accueil", icon: House },
@@ -158,6 +159,8 @@ function AppBar({ pathname }: { pathname: string }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
+  // The phone's back closes the menu, the page stays.
+  useCloseOnBack(open, () => setOpen(false));
 
   // Highlight the tapped tab immediately instead of waiting for the new
   // route to finish rendering on the server.

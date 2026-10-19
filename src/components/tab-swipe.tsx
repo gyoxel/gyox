@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useNavigate } from "@/lib/nav-history";
 
 /** The bottom bar's tabs, in order: swipe left → next, right → previous. */
 const TABS = ["/", "/budget", "/credits", "/menu"];
@@ -121,7 +122,7 @@ function preloadSnapshots() {
  */
 export function TabSwipe() {
   const pathname = usePathname();
-  const router = useRouter();
+  const navigate = useNavigate();
   const preview = useRef<HTMLDivElement | null>(null);
   const navigating = useRef(false);
 
@@ -293,7 +294,7 @@ export function TabSwipe() {
         // The neighbour slides fully in; it stands in until the real tab renders.
         navigating.current = true;
         snapshotCurrent(pathname);
-        animateTo(-dir * window.innerWidth, () => router.push(target));
+        animateTo(-dir * window.innerWidth, () => navigate(target));
         // Safety: if the navigation never lands, bring everything back.
         setTimeout(() => {
           if (!navigating.current || window.location.pathname !== pathname) return;
@@ -324,7 +325,7 @@ export function TabSwipe() {
       document.removeEventListener("touchend", onEnd);
       document.removeEventListener("touchcancel", onEnd);
     };
-  }, [pathname, router]);
+  }, [pathname, navigate]);
 
   return null;
 }
