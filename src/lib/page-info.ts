@@ -377,6 +377,17 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Écrire une note pour un jour, la modifier ou la supprimer."),
     ],
   },
+  bilan: {
+    title: msg("Bilan du mois"),
+    summary: msg("Le résumé d'un mois : ce qui est entré, ce qui est sorti, ce qui reste, et où est allé ton argent."),
+    points: [
+      msg("Voir les entrées, les sorties et ce qui reste en espèces et sur la carte, comparés au mois précédent."),
+      msg("Voir ce qui a été mis de côté dans l'épargne."),
+      msg("Voir les dépenses par catégorie. Touche une catégorie pour son détail."),
+      msg("Changer de mois avec ‹ ›. Il s'ouvre sur le mois qui vient de finir."),
+      msg("Les premiers jours du mois, ce bilan apparaît aussi sur l'Accueil."),
+    ],
+  },
   categories: {
     title: msg("Catégories"),
     summary: msg("Les catégories qui rangent tes dépenses et tes revenus."),

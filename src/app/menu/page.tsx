@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bank, CalendarDots, Cardholder, CaretRight, ChartLineUp, GearSix, HandCoins, Handshake, Money, PiggyBank, Receipt, Tag, Target, TrendUp, UserCircle, Wallet } from "@phosphor-icons/react/ssr";
+import { Bank, CalendarDots, Cardholder, CaretRight, ChartBar, ChartLineUp, GearSix, HandCoins, Handshake, Money, PiggyBank, Receipt, Tag, Target, TrendUp, UserCircle, Wallet } from "@phosphor-icons/react/ssr";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/page-header";
 import { msg } from "@/lib/i18n";
@@ -30,6 +30,7 @@ const GROUPS: { title: string; items: { href: string; label: string; hint: strin
       hint: msg("Répartition, prévisions"),
       icon: ChartLineUp,
     },
+    { href: "/bilan", label: msg("Bilan du mois"), hint: msg("Chaque mois : entrées, sorties, ce qui reste"), icon: ChartBar },
     { href: "/categories", label: msg("Catégories"), hint: msg("Ajouter, renommer, ordonner"), icon: Tag },
   ] },
 ];

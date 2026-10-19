@@ -75,7 +75,7 @@ export function MonthBilan({ data, currency, revealed }: { data: MonthBilanData;
       )}
 
       <Link
-        href={`/stats?month=${data.monthKey}`}
+        href={`/bilan?month=${data.monthKey}`}
         className="flex items-center justify-center gap-1 text-xs font-semibold text-violet-700 active:opacity-70 dark:text-violet-300"
       >
         {t("Voir le détail")}
