@@ -12,6 +12,8 @@ import { getLang } from "@/lib/i18n/server";
 import { LangProvider } from "@/lib/i18n/client";
 import { InstallAppListener } from "@/components/install-app";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
+import { LOCK_BOOT_SCRIPT } from "@/lib/app-lock";
+import { AppLock } from "@/components/app-lock";
 import { THEME_COLOR_BOOT_SCRIPT } from "@/lib/page-theme";
 import "./globals.css";
 
@@ -72,7 +74,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang={HTML_LANG[lang]} className={`${geistSans.variable} ${geistMono.variable} ${manrope.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT + THEME_COLOR_BOOT_SCRIPT + LAUNCH_BOOT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT + THEME_COLOR_BOOT_SCRIPT + LAUNCH_BOOT_SCRIPT + LOCK_BOOT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         <LaunchSplash />
@@ -87,6 +89,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           <AppToaster />
           <ServiceWorkerRegister />
           <InstallAppListener />
+          <AppLock />
         </LangProvider>
         <LaunchSplashEnd />
       </body>

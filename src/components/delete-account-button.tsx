@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { forgetDeviceData } from "@/lib/forget-device-data";
+import { disableLock } from "@/lib/app-lock";
 import { localizeMessage } from "@/lib/i18n";
 import { useT } from "@/lib/i18n/client";
 
@@ -38,6 +39,7 @@ export function DeleteAccountButton() {
       setPending(false);
       return;
     }
+    disableLock(); // nothing left to lock
     await forgetDeviceData();
     window.location.replace("/connexion?compte=supprime");
   }

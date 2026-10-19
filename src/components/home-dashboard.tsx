@@ -18,6 +18,8 @@ import { ShortcutWheel } from "@/components/shortcut-wheel";
 import { TransferDialog } from "@/components/transfer-dialog";
 import { MethodIcon } from "@/components/method-icon";
 import { InstallAppCard } from "@/components/install-app";
+import { MonthBilan } from "@/components/month-bilan";
+import type { MonthBilanData } from "@/lib/month-bilan";
 import { msg } from "@/lib/i18n";
 import { useT } from "@/lib/i18n/client";
 
@@ -68,6 +70,7 @@ export function HomeDashboard({
   advances,
   dueRepayments,
   dueDaretPayouts,
+  bilan,
 }: {
   /** Solde of each account (cash, card) as of the server's payments. */
   solde: Record<PaymentMethod, number>;
@@ -85,6 +88,8 @@ export function HomeDashboard({
   dueRepayments: DueRepayment[];
   /** Darets whose turn has come, the pot not confirmed yet. */
   dueDaretPayouts: DueDaretPayout[];
+  /** The first days of a month: the month just over. */
+  bilan: MonthBilanData | null;
 }) {
   const t = useT();
   const [localPayments, setLocalPayments] = useState<Payment[]>(payments);
@@ -194,6 +199,8 @@ export function HomeDashboard({
           );
         })}
       </div>
+
+      {bilan && <MonthBilan data={bilan} currency={currency} revealed={revealed} />}
 
       <DueDaretPayouts items={dueDaretPayouts} currency={currency} />
 

@@ -18,7 +18,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { watchBack } from "./close-on-back";
 import { currentT } from "./i18n/client";
-import { SIGNED_OUT_PAGES } from "@/components/bottom-nav";
+import { SIGNED_OUT_PAGES } from "@/lib/signed-out-pages";
 
 const KEY = "gx-nav";
 const MAX = 50;

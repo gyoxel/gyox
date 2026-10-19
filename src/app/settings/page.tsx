@@ -39,7 +39,7 @@ export default async function SettingsPage() {
             <CaretRight weight="bold" className="h-5 w-5 shrink-0 text-white/60" />
           </div>
         </Link>
-        <SettingsForm settings={settings} />
+        <SettingsForm settings={settings} account={account && { id: account.id, email: account.email, name: account.name }} />
       </main>
     </>
   );

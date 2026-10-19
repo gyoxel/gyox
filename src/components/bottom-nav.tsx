@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useCloseOnBack } from "@/lib/close-on-back";
 import { msg } from "@/lib/i18n";
 import { useT } from "@/lib/i18n/client";
+import { SIGNED_OUT_PAGES } from "@/lib/signed-out-pages";
 
 const ITEMS = [
   { href: "/", label: msg("Accueil"), icon: House },
@@ -102,8 +103,6 @@ const PREFETCH_HREFS = [
   "/epargne",
 ];
 
-/** Pages open before signing in: no app bar there. */
-export const SIGNED_OUT_PAGES = ["/connexion", "/confidentialite", "/conditions"];
 
 export function BottomNav() {
   const pathname = usePathname();

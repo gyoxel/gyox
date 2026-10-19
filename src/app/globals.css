@@ -1050,3 +1050,15 @@ body {
   }
 }
 
+
+/* Verrouillage: the lock screen over everything, the page hidden under it
+   (not just covered) until the phone confirms its owner. */
+#gx-lock {
+  display: none;
+}
+.gx-locked #gx-lock {
+  display: flex;
+}
+.gx-locked body > :not(#gx-lock) {
+  visibility: hidden;
+}

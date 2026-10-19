@@ -5,7 +5,8 @@ import { getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllInco
 import { monthKey, todayMonth } from "./date";
 import { buildWallet, type WalletSummary } from "./wallet";
 
-export async function getWallet(): Promise<WalletSummary> {
+/** The Solde, with the money in and out of `month` (this one by default). */
+export async function getWallet(month = todayMonth()): Promise<WalletSummary> {
   const [receipts, advances, incomes, darets, payments, expenses, ops, categories, goals, savingsMoves, loans, incomeCategories] = await Promise.all([
     getAllSalaryReceipts(),
     getAllSalaryAdvances(),
@@ -33,6 +34,6 @@ export async function getWallet(): Promise<WalletSummary> {
     loans,
     incomeCategories,
     categoryEmoji: new Map(categories.map((c) => [c.id, c.emoji])),
-    month: monthKey(todayMonth()),
+    month: monthKey(month),
   });
 }

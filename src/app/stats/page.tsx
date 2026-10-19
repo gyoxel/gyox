@@ -1,4 +1,6 @@
-import { getAllCategories, getAllExpenses, getAllIncomes, getAllPayments, getAllSalaryAdvances, getSettings } from "@/lib/page-data";
+import { getAllBudgetMonths, getAllBudgets, getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllIncomes, getAllLoans, getAllPayments, getAllSalaryAdvances, getAllSavingsMoves, getSettings } from "@/lib/page-data";
+import { categoryBreakdown } from "@/lib/category-stats";
+import { CategoryBars } from "@/components/category-bars";
 import Link from "next/link";
 import { Sparkle } from "@phosphor-icons/react/ssr";
 
@@ -33,7 +35,7 @@ const SEGMENTS: { color: DisplayColor; label: string }[] = [
  * forecast for the coming months.
  */
 export default async function StatsPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
-  const [sp, settings, expenses, payments, categories, advances, incomes, wallet, { lang, t }] = await Promise.all([
+  const [sp, settings, expenses, payments, categories, advances, incomes, wallet, { lang, t }, darets, savingsMoves, goals, budgets, budgetMonths, loans] = await Promise.all([
     searchParams,
     getSettings(),
     getAllExpenses(),
@@ -43,6 +45,12 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
     getAllIncomes(),
     getWallet(),
     getI18n(),
+    getAllDarets(),
+    getAllSavingsMoves(),
+    getAllGoals(),
+    getAllBudgets(),
+    getAllBudgetMonths(),
+    getAllLoans(),
   ]);
   const currency = settings.currency;
   const categoryEmoji = new Map(categories.map((c) => [c.id, c.emoji]));
@@ -71,6 +79,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
       .sort((a, b) => b.amount - a.amount);
     return { color, label: t(label), amount: Math.round(items.reduce((s, i) => s + i.amount, 0) * 100) / 100, items };
   });
+  const slices = categoryBreakdown({ expenses, categories, darets, savingsMoves, goals, budgets, budgetMonths, loans }, viewMonth);
   const forecast = getForecast(expenses, settings.salary, currentMonth, FORECAST_MONTHS);
 
   // The moment credits and temporary obligations are all over.
@@ -125,6 +134,14 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           <div className="rounded-3xl border border-slate-200 bg-white p-4 pt-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <BudgetDonut segments={segments} salary={summary.salary} currency={currency} />
           </div>
+        </section>
+
+        {/* Where it goes: each category of the viewed month, against the one before */}
+        <section className="flex flex-col gap-2.5">
+          <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">
+            {t("Par catégorie")} · {monthLabel(viewMonth, lang)}
+          </h2>
+          <CategoryBars key={monthKey(viewMonth)} slices={slices} currency={currency} previousLabel={monthLabel(addMonths(viewMonth, -1), lang)} />
         </section>
 
         {transition && (

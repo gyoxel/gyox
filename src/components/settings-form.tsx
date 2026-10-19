@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { mutate, useRefreshData } from "@/lib/use-refresh-data";
 import Link from "next/link";
-import { CaretRight, DownloadSimple, Leaf, Money, Monitor, Moon, Sun, Tag, UploadSimple } from "@phosphor-icons/react/ssr";
+import { CaretRight, DownloadSimple, Fingerprint, Leaf, Money, Monitor, Moon, Sun, Tag, UploadSimple } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { Settings } from "@/lib/types";
 import { THEME_STORAGE_KEY, applyTheme, composeTheme, parseTheme, type ThemeBase, type ThemeChoice } from "@/lib/theme";
@@ -11,7 +11,8 @@ import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Switch } from "@/components/ui/switch";
 import { LANG_NAMES, SHOWN_LANGS, msg, type Lang } from "@/lib/i18n";
-import { setLang, useI18n } from "@/lib/i18n/client";
+import { setLang, useI18n, useT } from "@/lib/i18n/client";
+import { disableLock, enableLock, lockEnabled, lockSupported, subscribeLock } from "@/lib/app-lock";
 
 const THEMES: { value: ThemeBase; label: string; icon: typeof Sun }[] = [
   { value: "system", label: msg("Système"), icon: Monitor },
@@ -21,8 +22,10 @@ const THEMES: { value: ThemeBase; label: string; icon: typeof Sun }[] = [
 
 const LANG_FLAGS: Record<Lang, string> = { fr: "🇫🇷", en: "🇬🇧", dar: "🇲🇦" };
 
-/** Paramètres: theme (applied instantly), language and data backup. */
-export function SettingsForm({ settings }: { settings: Settings }) {
+type LockAccount = { id: string; email: string; name: string | null };
+
+/** Paramètres: theme (applied instantly), language, the lock and data backup. */
+export function SettingsForm({ settings, account }: { settings: Settings; account: LockAccount | null }) {
   const { lang, t } = useI18n();
   const refreshData = useRefreshData();
   const [theme, setTheme] = useState<ThemeChoice>(settings.theme);
@@ -157,6 +160,8 @@ export function SettingsForm({ settings }: { settings: Settings }) {
         </div>
       </section>
 
+      {account && <LockSetting account={account} />}
+
       <section className="flex flex-col gap-2">
         <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Raccourcis")}</h2>
         <div className={section}>
@@ -278,5 +283,58 @@ function ThemePreview({ kind, simple }: { kind: ThemeBase; simple: boolean }) {
         </>
       )}
     </span>
+  );
+}
+
+/** Sécurité: lock the app on this device with its fingerprint / Face ID. */
+function LockSetting({ account }: { account: LockAccount }) {
+  const t = useT();
+  const on = useSyncExternalStore(subscribeLock, lockEnabled, () => false);
+  const [supported, setSupported] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void lockSupported().then((ok) => !cancelled && setSupported(ok));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function toggle(next: boolean) {
+    if (!next) {
+      disableLock();
+      toast.success(t("Verrouillage désactivé."));
+      return;
+    }
+    setBusy(true);
+    const ok = await enableLock(account);
+    setBusy(false);
+    if (ok) toast.success(t("Verrouillage activé sur ce téléphone."));
+    else toast.error(t("Pas activé : l'empreinte ou Face ID n'a pas été confirmé."));
+  }
+
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Sécurité")}</h2>
+      <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl gx-tile text-slate-500 dark:text-slate-300">
+          <Fingerprint weight="bold" className="h-4 w-4" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">{t("Verrouiller avec l'empreinte / Face ID")}</span>
+          <span className="block text-xs text-slate-400">
+            {supported === false && !on
+              ? t("Pas disponible ici : active l'empreinte ou Face ID dans les réglages du téléphone.")
+              : t("Demandé à l'ouverture de l'app et après une minute ailleurs, sur ce téléphone.")}
+          </span>
+        </span>
+        <Switch
+          checked={on}
+          disabled={busy || (supported !== true && !on)}
+          onCheckedChange={(next) => void toggle(next)}
+          label={t("Verrouiller avec l'empreinte / Face ID")}
+        />
+      </label>
+    </section>
   );
 }

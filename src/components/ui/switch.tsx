@@ -7,6 +7,7 @@ export function Switch({
   onCheckedChange,
   id,
   label,
+  disabled,
   className,
 }: {
   checked: boolean;
@@ -14,6 +15,7 @@ export function Switch({
   id?: string;
   /** Accessible name when there's no visible <label htmlFor>. */
   label?: string;
+  disabled?: boolean;
   className?: string;
 }) {
   return (
@@ -23,9 +25,10 @@ export function Switch({
       id={id}
       aria-checked={checked}
       aria-label={label}
+      disabled={disabled}
       onClick={() => onCheckedChange(!checked)}
       className={cn(
-        "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200",
+        "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 disabled:opacity-50",
         checked ? "bg-violet-600" : "bg-slate-200 dark:bg-white/15",
         className,
       )}
