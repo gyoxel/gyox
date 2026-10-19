@@ -10,7 +10,7 @@ import { THEME_STORAGE_KEY, applyTheme, composeTheme, parseTheme, type ThemeBase
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Switch } from "@/components/ui/switch";
-import { LANGS, LANG_NAMES, msg, type Lang } from "@/lib/i18n";
+import { LANG_NAMES, SHOWN_LANGS, msg, type Lang } from "@/lib/i18n";
 import { setLang, useI18n } from "@/lib/i18n/client";
 
 const THEMES: { value: ThemeBase; label: string; icon: typeof Sun }[] = [
@@ -132,8 +132,8 @@ export function SettingsForm({ settings }: { settings: Settings }) {
       {/* The app's language on this device (each name in its own language). */}
       <section className="flex flex-col gap-2">
         <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Langue")}</h2>
-        <div role="radiogroup" aria-label={t("Langue")} className="grid grid-cols-3 gap-2.5">
-          {LANGS.map((value) => {
+        <div role="radiogroup" aria-label={t("Langue")} className={cn("grid gap-2.5", SHOWN_LANGS.length === 3 ? "grid-cols-3" : "grid-cols-2")}>
+          {SHOWN_LANGS.map((value) => {
             const selected = lang === value;
             return (
               <button

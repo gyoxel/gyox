@@ -17,7 +17,13 @@ export const LANG_NAMES: Record<Lang, string> = { fr: "Français", en: "English"
 /** The <html lang>: Moroccan Arabic written in Latin letters for Darija. */
 export const HTML_LANG: Record<Lang, string> = { fr: "fr", en: "en", dar: "ary-Latn" };
 
-export const isLang = (value: unknown): value is Lang => LANGS.includes(value as Lang);
+/** The languages offered in Paramètres. Darija is ready (dar.ts) but kept
+ *  hidden until its words are reviewed: add it back here to offer it. */
+export const SHOWN_LANGS: readonly Lang[] = ["fr", "en"];
+
+/** A language the app can be shown in now (a device left on a hidden one
+ *  falls back to French). */
+export const isLang = (value: unknown): value is Lang => SHOWN_LANGS.includes(value as Lang);
 
 const DICTIONARIES: Record<Exclude<Lang, "fr">, Record<string, string>> = { en: EN, dar: DAR };
 

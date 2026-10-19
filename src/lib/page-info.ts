@@ -49,7 +49,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     title: msg("Paramètres"),
     summary: msg("Les réglages de l'application sur ce téléphone et la sauvegarde de tes données."),
     points: [
-      msg("Choisir la langue : français, anglais ou darija."),
+      msg("Choisir la langue de l'application."),
       msg("Choisir le thème (système, clair ou sombre) et le mode simple, plus doux pour les yeux."),
       msg("Régler ton salaire : montant, jour de paie, espèces ou carte."),
       msg("Choisir les raccourcis de l'accueil."),

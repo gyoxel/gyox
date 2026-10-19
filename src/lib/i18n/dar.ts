@@ -1,5 +1,6 @@
 // Darija: every French text of the app, in Moroccan Arabic written in Latin
-// letters, the way it's typed (3, 7, 9…).
+// letters, the way it's typed (3, 7, 9…). Hidden for now (SHOWN_LANGS in
+// index.ts) until its words are reviewed.
 // Generated from the texts in the code (a text missing here stays in French).
 export const DAR: Record<string, string> = {
   "Admin": "Admin",
@@ -940,7 +941,7 @@ export const DAR: Record<string, string> = {
   "Organiser avec les budgets, les darets, l'argent prêté, les objectifs et le calendrier.": "Nddem b budgets, darets, flous msllfin, ahdaf w calendrier.",
   "Voir les statistiques et gérer tes catégories.": "Chouf statistiques w nddem l'anwa3 dyalk.",
   "Les réglages de l'application sur ce téléphone et la sauvegarde de tes données.": "Réglages dyal l'app f had telephone w sauvegarde dyal data dyalk.",
-  "Choisir la langue : français, anglais ou darija.": "Khtar lougha: Français, English wla Darija.",
+  "Choisir la langue de l'application.": "Khtar lougha dyal l'app.",
   "Choisir le thème (système, clair ou sombre) et le mode simple, plus doux pour les yeux.": "Khtar thème (système, fate7 wla ghame9) w mode simple, khfif 3la l3inin.",
   "Régler ton salaire : montant, jour de paie, espèces ou carte.": "Sse77 salaire dyalk: montant, nhar lkhlas, cash wla carte.",
   "Choisir les raccourcis de l'accueil.": "Khtar raccourcis dyal l'accueil.",

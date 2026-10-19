@@ -939,7 +939,7 @@ export const EN: Record<string, string> = {
   "Organiser avec les budgets, les darets, l'argent prêté, les objectifs et le calendrier.": "Organise with budgets, darets, money lent, goals and the calendar.",
   "Voir les statistiques et gérer tes catégories.": "See the statistics and manage your categories.",
   "Les réglages de l'application sur ce téléphone et la sauvegarde de tes données.": "The app's settings on this phone and your data backup.",
-  "Choisir la langue : français, anglais ou darija.": "Choose the language: French, English or Darija.",
+  "Choisir la langue de l'application.": "Choose the app's language.",
   "Choisir le thème (système, clair ou sombre) et le mode simple, plus doux pour les yeux.": "Choose the theme (system, light or dark) and simple mode, easier on the eyes.",
   "Régler ton salaire : montant, jour de paie, espèces ou carte.": "Set your salary: amount, payday, cash or card.",
   "Choisir les raccourcis de l'accueil.": "Choose the shortcuts on Home.",
