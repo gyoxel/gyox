@@ -17,6 +17,7 @@ import { useCallback, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { watchBack } from "./close-on-back";
+import { currentT } from "./i18n/client";
 import { SIGNED_OUT_PAGES } from "@/components/bottom-nav";
 
 const KEY = "gx-nav";
@@ -196,7 +197,7 @@ function guardFirstPage(router: Router): () => void {
     watcher = watchBack(() => {
       watcher = null;
       if (location.pathname !== "/") return replaceWith(router, "/");
-      toast("Appuie encore sur retour pour quitter", { id: "leave", duration: LEAVE_MS });
+      toast(currentT()("Appuie encore sur retour pour quitter"), { id: "leave", duration: LEAVE_MS });
       timer = setTimeout(arm, LEAVE_MS);
     });
   };

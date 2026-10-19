@@ -7,7 +7,10 @@ import { useNavBack } from "@/lib/nav-history";
 import { toast } from "sonner";
 import type { Category, Expense, ExpenseType, Frequency, PaymentMethod } from "@/lib/types";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
-import { addMonths, monthKey, monthLabelFr, monthOfDateStr, todayDateStr } from "@/lib/date";
+import { addMonths, monthKey, monthOfDateStr, todayDateStr } from "@/lib/date";
+import { monthLabel } from "@/lib/i18n/dates";
+import { localizeMessage } from "@/lib/i18n";
+import { currentT, useI18n } from "@/lib/i18n/client";
 import { lastDayOfMonth } from "@/lib/daret";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { mutate, mutateAll } from "@/lib/use-refresh-data";
@@ -88,6 +91,7 @@ export function ExpenseEditor({
 }) {
   const isEdit = expense != null;
   const nav = useNavBack();
+  const { lang, t } = useI18n();
   const [categories, setCategories] = useState(initialCategories);
 
   const [amount, setAmount] = useState(expense ? toDecimalInput(expense.amount) : "");
@@ -124,30 +128,36 @@ export function ExpenseEditor({
   const summary = useMemo(() => {
     if (!recurring || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
     const start = monthOfDateStr(date);
-    if (mode === "permanent") return "Chaque mois, sans date de fin.";
+    if (mode === "permanent") return t("Chaque mois, sans date de fin.");
     if (amountValue <= 0) return null;
     if (mode === "months") {
       if (monthsValue <= 0) return null;
       const end = addMonths(start, monthsValue - 1);
-      return `${formatMoney(amountValue)} × ${monthsValue} mois = ${formatMoney(amountValue * monthsValue)} · fin ${monthLabelFr(end)}`;
+      return t("{amount} × {n} mois = {total} · fin {month}", {
+        amount: formatMoney(amountValue),
+        n: monthsValue,
+        total: formatMoney(amountValue * monthsValue),
+        month: monthLabel(end, lang),
+      });
     }
     if (untilValue <= 0) return null;
     const count = Math.ceil(untilValue / amountValue);
     const last = Math.round((untilValue - (count - 1) * amountValue) * 100) / 100;
     const end = addMonths(start, count - 1);
-    return `${count} mois · fin ${monthLabelFr(end)}${last !== amountValue ? ` · dernier versement ${formatMoney(last)}` : ""}`;
-  }, [recurring, date, mode, amountValue, monthsValue, untilValue]);
+    const base = t("{n} mois · fin {month}", { n: count, month: monthLabel(end, lang) });
+    return last !== amountValue ? `${base} · ${t("dernier versement {amount}", { amount: formatMoney(last) })}` : base;
+  }, [recurring, date, mode, amountValue, monthsValue, untilValue, lang, t]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
-    if (amountValue <= 0) return setError("Indique un montant.");
-    if (!name.trim()) return setError("Indique un nom.");
-    if (!isEdit && !isCredit && categories.length > 0 && !categoryId) return setError("Choisis une catégorie.");
-    if (mode === "months" && monthsValue < 1) return setError("Indique le nombre de mois.");
-    if (mode === "months" && monthsValue > MAX_MONTHS) return setError(`${MAX_MONTHS} mois maximum.`);
-    if (mode === "until" && untilValue <= 0) return setError("Indique le montant à atteindre.");
+    if (amountValue <= 0) return setError(t("Indique un montant."));
+    if (!name.trim()) return setError(t("Indique un nom."));
+    if (!isEdit && !isCredit && categories.length > 0 && !categoryId) return setError(t("Choisis une catégorie."));
+    if (mode === "months" && monthsValue < 1) return setError(t("Indique le nombre de mois."));
+    if (mode === "months" && monthsValue > MAX_MONTHS) return setError(t("{n} mois maximum.", { n: MAX_MONTHS }));
+    if (mode === "until" && untilValue <= 0) return setError(t("Indique le montant à atteindre."));
 
     const start = monthOfDateStr(date);
     let type: ExpenseType = "temporary";
@@ -213,7 +223,7 @@ export function ExpenseEditor({
         if (!res.ok) return setError(await errorMessage(res));
         if (payCall && pay && !pay.ok) return setError(await errorMessage(pay));
 
-        toast.success("Modifications enregistrées.");
+        toast.success(t("Modifications enregistrées."));
         nav.back();
         return;
       }
@@ -237,18 +247,18 @@ export function ExpenseEditor({
       });
       if (!res.ok) return setError(await errorMessage(res));
       const created: { problems?: string[] } = await res.json();
-      if (created.problems?.includes("paid")) toast.error("Ajoutée, mais le paiement n'a pas pu être enregistré.");
+      if (created.problems?.includes("paid")) toast.error(t("Ajoutée, mais le paiement n'a pas pu être enregistré."));
 
-      toast.success(isCredit ? "Dette ajoutée." : "Dépense ajoutée.");
+      toast.success(isCredit ? t("Dette ajoutée.") : t("Dépense ajoutée."));
       nav.back();
     });
   }
 
   const kinds: { key: "once" | RecurrenceKind; icon: PhosphorIcon; label: string; note: string }[] = [
-    { key: "once", icon: NumberCircleOne, label: "Une fois", note: "Une seule fois, ce mois-ci." },
-    { key: "permanent", icon: Repeat, label: "Chaque mois", note: "Chaque mois, sans date de fin." },
-    { key: "months", icon: CalendarDots, label: "X mois", note: "Pendant combien de mois ?" },
-    { key: "until", icon: Target, label: "Jusqu'à", note: "Jusqu'à atteindre un total." },
+    { key: "once", icon: NumberCircleOne, label: t("Une fois"), note: t("Une seule fois, ce mois-ci.") },
+    { key: "permanent", icon: Repeat, label: t("Chaque mois"), note: t("Chaque mois, sans date de fin.") },
+    { key: "months", icon: CalendarDots, label: t("X mois"), note: t("Pendant combien de mois ?") },
+    { key: "until", icon: Target, label: t("Jusqu'à"), note: t("Jusqu'à atteindre un total.") },
   ];
   function pickKind(key: "once" | RecurrenceKind) {
     if (key === "once") return setRecurring(false);
@@ -262,7 +272,7 @@ export function ExpenseEditor({
       <div className="relative flex flex-col items-center gap-1 overflow-hidden rounded-3xl bg-gradient-to-br from-rose-400 via-rose-500 to-pink-700 px-4 py-5 text-white shadow-lg shadow-rose-500/20 dark:shadow-none">
         <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
         <Label htmlFor="amount" className="relative text-xs text-white/80">
-          {recurring ? "Montant par mois" : "Montant"}
+          {recurring ? t("Montant par mois") : t("Montant")}
         </Label>
         <div className="relative flex items-baseline gap-2">
           <span className="text-2xl font-bold text-white/80">−</span>
@@ -283,13 +293,13 @@ export function ExpenseEditor({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="name">Nom</Label>
-        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex : Pizza, Loyer…" />
+        <Label htmlFor="name">{t("Nom")}</Label>
+        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("Ex : Pizza, Loyer…")} />
       </div>
 
       {(isEdit || !isCredit) && (
         <div className="flex flex-col gap-2">
-          <Label>Catégorie</Label>
+          <Label>{t("Catégorie")}</Label>
           <CategoryPicker
             categories={categories}
             value={categoryId}
@@ -301,13 +311,13 @@ export function ExpenseEditor({
 
       {/* How often */}
       <div className="flex flex-col gap-2">
-        <Label>Fréquence</Label>
-        <Segmented label="Fréquence" value={mode} onChange={pickKind} options={kinds} />
+        <Label>{t("Fréquence")}</Label>
+        <Segmented label={t("Fréquence")} value={mode} onChange={pickKind} options={kinds} />
         {mode === "months" && (
           <div className="flex items-center gap-2">
             <Input
               id="months"
-              aria-label="Nombre de mois"
+              aria-label={t("Nombre de mois")}
               type="number"
               inputMode="numeric"
               min="1"
@@ -315,23 +325,23 @@ export function ExpenseEditor({
               step="1"
               value={months}
               onChange={(e) => setMonths(e.target.value)}
-              placeholder="Nombre de mois, ex : 6"
+              placeholder={t("Nombre de mois, ex : 6")}
               onFocus={(e) => keepAboveKeyboard(e.currentTarget)}
             />
-            <span className="shrink-0 text-sm text-slate-500">mois</span>
+            <span className="shrink-0 text-sm text-slate-500">{t("mois")}</span>
           </div>
         )}
         {mode === "until" && (
           <div className="flex items-center gap-2">
             <Input
               id="untilTotal"
-              aria-label="Montant à atteindre (DH)"
+              aria-label={t("Montant à atteindre (DH)")}
               type="text"
               inputMode="decimal"
               autoComplete="off"
               value={untilTotal}
               onChange={(e) => setUntilTotal(cleanDecimalInput(e.target.value))}
-              placeholder="Total à atteindre, ex : 3000"
+              placeholder={t("Total à atteindre, ex : 3000")}
               onFocus={(e) => keepAboveKeyboard(e.currentTarget)}
             />
             <span className="shrink-0 text-sm text-slate-500">DH</span>
@@ -343,10 +353,10 @@ export function ExpenseEditor({
       {(!isEdit || paymentStatus) && (
         <div className="flex flex-col gap-2">
           <Label>
-            Statut de paiement
-            {isEdit ? ` ${paymentStatus?.hint ?? ""}` : recurring ? " (1er mois)" : ""}
+            {t("Statut de paiement")}
+            {isEdit ? ` ${paymentStatus?.hint ?? ""}` : recurring ? ` ${t("(1er mois)")}` : ""}
           </Label>
-          <div role="radiogroup" aria-label="Statut de paiement" className="grid grid-cols-2 gap-2">
+          <div role="radiogroup" aria-label={t("Statut de paiement")} className="grid grid-cols-2 gap-2">
             <button
               type="button"
               role="radio"
@@ -360,7 +370,7 @@ export function ExpenseEditor({
               )}
             >
               <Check weight="bold" className="h-4 w-4" />
-              Payé
+              {t("Payé")}
             </button>
             <button
               type="button"
@@ -375,7 +385,7 @@ export function ExpenseEditor({
               )}
             >
               <Clock weight="bold" className="h-4 w-4" />
-              Pas encore
+              {t("Pas encore")}
             </button>
           </div>
           {alreadyPaid && <PaymentMethodPicker value={method} onChange={setMethod} />}
@@ -383,7 +393,7 @@ export function ExpenseEditor({
       )}
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="notes">Note (optionnel)</Label>
+        <Label htmlFor="notes">{t("Note (optionnel)")}</Label>
         <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
       </div>
 
@@ -391,14 +401,14 @@ export function ExpenseEditor({
 
       <div className="flex gap-2">
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back()}>
-          Annuler
+          {t("Annuler")}
         </Button>
         <Button
           type="submit"
           className="flex-1 gx-cta"
           disabled={isPending}
         >
-          {isPending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter la dépense"}
+          {isPending ? t("Enregistrement…") : isEdit ? t("Enregistrer") : t("Ajouter la dépense")}
         </Button>
       </div>
     </form>
@@ -472,11 +482,13 @@ export function keepAboveKeyboard(input: HTMLInputElement) {
 }
 
 export async function errorMessage(res: Response): Promise<string> {
+  const t = currentT();
   const body = await res.json().catch(() => null);
-  // A plain message from the server (e.g. "Solde insuffisant : …").
-  if (typeof body?.error === "string") return body.error;
+  // A plain message from the server (e.g. "Solde insuffisant : …"), in the
+  // device's language.
+  if (typeof body?.error === "string") return localizeMessage(body.error, t);
   const first =
     body?.error?.formErrors?.[0] ??
     (body?.error?.fieldErrors && (Object.values(body.error.fieldErrors)[0] as string[] | undefined))?.[0];
-  return first ?? "Une erreur est survenue. Vérifiez les champs.";
+  return first ? localizeMessage(first, t) : t("Une erreur est survenue. Vérifiez les champs.");
 }

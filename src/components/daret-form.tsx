@@ -5,7 +5,9 @@ import { CaretLeft, CaretRight, Minus, Plus } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import { useNavBack } from "@/lib/nav-history";
 import { mutate } from "@/lib/use-refresh-data";
-import { addMonths, monthKey, monthLabelFr, monthLabelShortFr, parseMonthKey, todayMonth } from "@/lib/date";
+import { addMonths, monthKey, parseMonthKey, todayMonth } from "@/lib/date";
+import { monthLabel, monthLabelShort } from "@/lib/i18n/dates";
+import { useI18n } from "@/lib/i18n/client";
 import type { DaretWithExpense } from "@/lib/types";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
@@ -26,6 +28,7 @@ const MAX_MEMBERS = 60;
 export function DaretForm({ currency, daret }: { currency: string; daret?: DaretWithExpense }) {
   const isEdit = daret != null;
   const nav = useNavBack();
+  const { lang, t } = useI18n();
   const [name, setName] = useState(daret?.expense.name ?? "");
   const [amount, setAmount] = useState(toDecimalInput(daret?.expense.amount ?? null));
   const [members, setMembers] = useState(daret?.members ?? 10);
@@ -50,13 +53,13 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!(amountValue > 0)) return setError("Indique la cotisation par mois.");
+    if (!(amountValue > 0)) return setError(t("Indique la cotisation par mois."));
     startTransition(async () => {
       const res = await mutate({
         method: isEdit ? "PATCH" : "POST",
         path: isEdit ? `/api/darets/${daret.id}` : "/api/darets",
         body: {
-          name: name.trim() || "Daret",
+          name: name.trim() || t("Daret"),
           amount: amountValue,
           members,
           startMonth,
@@ -64,7 +67,7 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
         },
       });
       if (!res.ok) return setError(await errorMessage(res));
-      toast.success(isEdit ? "Daret modifiée." : "Daret ajoutée.");
+      toast.success(isEdit ? t("Daret modifiée.") : t("Daret ajoutée."));
       nav.back("/daret");
     });
   }
@@ -75,7 +78,7 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-400 via-emerald-500 to-emerald-700 px-4 pb-4 pt-5 text-white shadow-lg shadow-emerald-600/20 dark:shadow-none">
         <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
         <Label htmlFor="amount" className="relative block text-center text-xs text-white/80">
-          Cotisation par mois
+          {t("Cotisation par mois")}
         </Label>
         <div className="relative mt-1 flex items-baseline justify-center gap-2">
           <input
@@ -93,32 +96,32 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
         </div>
         <div className="relative mt-4 flex items-center justify-between rounded-2xl bg-white/15 px-3.5 py-2.5 text-sm">
           <span className="text-white/85">
-            × {members} membres
+            × {t("{n} membres", { n: members })}
           </span>
           <span className="tabular-nums">
-            <span className="text-xs text-white/75">Tu reçois </span>
+            <span className="text-xs text-white/75">{t("Tu reçois")} </span>
             <b>{payout > 0 ? `${money(payout)} 🎉` : "—"}</b>
           </span>
         </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="name">Nom</Label>
-        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex : Daret famille" maxLength={80} />
+        <Label htmlFor="name">{t("Nom")}</Label>
+        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("Ex : Daret famille")} maxLength={80} />
       </div>
 
       {/* Members */}
       <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 dark:border-slate-800 dark:bg-slate-900">
         <span>
-          <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Membres</span>
-          <span className="block text-[11px] text-slate-400">= nombre de mois</span>
+          <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">{t("Membres")}</span>
+          <span className="block text-[11px] text-slate-400">{t("= nombre de mois")}</span>
         </span>
         <div className="flex items-center gap-2">
-          <StepButton label="Un membre de moins" onClick={() => setMembers((n) => Math.max(MIN_MEMBERS, n - 1))} disabled={members <= MIN_MEMBERS}>
+          <StepButton label={t("Un membre de moins")} onClick={() => setMembers((n) => Math.max(MIN_MEMBERS, n - 1))} disabled={members <= MIN_MEMBERS}>
             <Minus weight="bold" className="h-4 w-4" />
           </StepButton>
           <span className="w-8 text-center text-lg font-bold tabular-nums text-slate-900 dark:text-white">{members}</span>
-          <StepButton label="Un membre de plus" onClick={() => setMembers((n) => Math.min(MAX_MEMBERS, n + 1))} disabled={members >= MAX_MEMBERS}>
+          <StepButton label={t("Un membre de plus")} onClick={() => setMembers((n) => Math.min(MAX_MEMBERS, n + 1))} disabled={members >= MAX_MEMBERS}>
             <Plus weight="bold" className="h-4 w-4" />
           </StepButton>
         </div>
@@ -126,13 +129,13 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
 
       {/* First month */}
       <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 dark:border-slate-800 dark:bg-slate-900">
-        <span className="text-sm font-medium text-slate-800 dark:text-slate-100">Premier mois</span>
+        <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{t("Premier mois")}</span>
         <div className="flex items-center gap-1">
-          <StepButton label="Mois précédent" onClick={() => setStartMonth(monthKey(addMonths(start, -1)))}>
+          <StepButton label={t("Mois précédent")} onClick={() => setStartMonth(monthKey(addMonths(start, -1)))}>
             <CaretLeft weight="bold" className="h-4 w-4" />
           </StepButton>
-          <span className="w-32 text-center text-sm font-semibold capitalize text-slate-900 dark:text-white">{monthLabelFr(start)}</span>
-          <StepButton label="Mois suivant" onClick={() => setStartMonth(monthKey(addMonths(start, 1)))}>
+          <span className="w-32 text-center text-sm font-semibold capitalize text-slate-900 dark:text-white">{monthLabel(start, lang)}</span>
+          <StepButton label={t("Mois suivant")} onClick={() => setStartMonth(monthKey(addMonths(start, 1)))}>
             <CaretRight weight="bold" className="h-4 w-4" />
           </StepButton>
         </div>
@@ -141,10 +144,10 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
       {/* Turn */}
       <div className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between px-1">
-          <Label>Mon tour</Label>
-          <span className="text-[11px] text-slate-400">le mois où tu reçois la daret</span>
+          <Label>{t("Mon tour")}</Label>
+          <span className="text-[11px] text-slate-400">{t("le mois où tu reçois la daret")}</span>
         </div>
-        <div role="radiogroup" aria-label="Mon tour" className="grid grid-cols-4 gap-2">
+        <div role="radiogroup" aria-label={t("Mon tour")} className="grid grid-cols-4 gap-2">
           {months.map((m, i) => {
             const selected = i === turnIndex;
             return (
@@ -162,7 +165,7 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
                 )}
               >
                 <span className={cn("text-[10px] font-semibold", selected ? "text-white/80" : "text-slate-400")}>{i + 1}</span>
-                <span className="text-xs font-semibold">{monthLabelShortFr(m).replace(/ 20(\d\d)$/, " $1")}</span>
+                <span className="text-xs font-semibold">{monthLabelShort(m, lang).replace(/ 20(\d\d)$/, " $1")}</span>
               </button>
             );
           })}
@@ -172,11 +175,11 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
       {/* Summary */}
       <div className="rounded-2xl bg-emerald-600/10 px-4 py-3 text-sm text-emerald-700 dark:bg-emerald-600/15 dark:text-teal-200">
         <p>
-          Du <b className="capitalize">{monthLabelFr(start)}</b> au <b className="capitalize">{monthLabelFr(end)}</b> · {members} mois
+          {t("De {start} à {end}", { start: monthLabel(start, lang), end: monthLabel(end, lang) })} · {t("{n} mois", { n: members })}
         </p>
         {payout > 0 && (
           <p className="mt-0.5">
-            Tu reçois <b>{money(payout)}</b> en <b className="capitalize">{monthLabelFr(effectiveTurn)}</b> (tour {turnIndex + 1}/{members}).
+            {t("Tu reçois {amount} en {month} (tour {turn}/{members}).", { amount: money(payout), month: monthLabel(effectiveTurn, lang), turn: turnIndex + 1, members })}
           </p>
         )}
       </div>
@@ -185,14 +188,14 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
 
       <div className="flex gap-2">
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back("/daret")}>
-          Annuler
+          {t("Annuler")}
         </Button>
         <Button type="submit" className="flex-1 gx-cta" disabled={isPending}>
-          {isPending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter la daret"}
+          {isPending ? t("Enregistrement…") : isEdit ? t("Enregistrer") : t("Ajouter la daret")}
         </Button>
       </div>
 
-      {isEdit && <DeleteButton variant="full" {...daretDelete(daret)} />}
+      {isEdit && <DeleteButton variant="full" {...daretDelete(daret, t)} />}
     </form>
   );
 }

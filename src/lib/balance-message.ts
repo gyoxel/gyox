@@ -1,9 +1,13 @@
 import { formatMoney } from "./utils";
 import type { PaymentMethod } from "./types";
+import { translate, type T } from "./i18n";
 
-const WHERE: Record<PaymentMethod, string> = { cash: "en espèces", card: "sur la carte" };
-
-/** Why a change is refused: "Solde insuffisant : il te reste 120 DH en espèces." */
-export function insufficientMessage(account: PaymentMethod, available: number): string {
-  return `Solde insuffisant : il te reste ${formatMoney(Math.max(0, available))} ${WHERE[account]}.`;
+/** Why a change is refused: "Solde insuffisant : il te reste 120 DH en
+ *  espèces." — in French from the server (the browser shows it in the
+ *  device's language, see localizeMessage), in `t`'s language otherwise. */
+export function insufficientMessage(account: PaymentMethod, available: number, t: T = (text, vars) => translate("fr", text, vars)): string {
+  const amount = formatMoney(Math.max(0, available));
+  return account === "cash"
+    ? t("Solde insuffisant : il te reste {amount} en espèces.", { amount })
+    : t("Solde insuffisant : il te reste {amount} sur la carte.", { amount });
 }

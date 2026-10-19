@@ -1,5 +1,7 @@
 import { getAllCategories, getAllDarets, getAllExpenses, getAllLoans, getAllPayments, getAllSalaryAdvances, getSettings } from "@/lib/page-data";
-import { monthLabelFr, todayMonth } from "@/lib/date";
+import { todayMonth } from "@/lib/date";
+import { monthLabel } from "@/lib/i18n/dates";
+import { getLang } from "@/lib/i18n/server";
 
 import { loanState } from "@/lib/loans";
 import { getDaretState } from "@/lib/daret";
@@ -11,7 +13,7 @@ import { HomeDashboard } from "@/components/home-dashboard";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [settings, expenses, payments, categories, advances, wallet, loans, darets, account] = await Promise.all([
+  const [settings, expenses, payments, categories, advances, wallet, loans, darets, account, lang] = await Promise.all([
     getSettings(),
     getAllExpenses(),
     getAllPayments(),
@@ -21,6 +23,7 @@ export default async function HomePage() {
     getAllLoans(),
     getAllDarets(),
     currentAccount(),
+    getLang(),
   ]);
   const categoryEmoji = Object.fromEntries(categories.map((c) => [c.id, c.emoji]));
   const currentMonth = todayMonth();
@@ -31,7 +34,7 @@ export default async function HomePage() {
       slot: s.slot,
       expected: s.amount,
       received: s.received,
-      monthLabel: monthLabelFr(s.month),
+      monthLabel: monthLabel(s.month, lang),
     })),
   );
 
@@ -41,14 +44,13 @@ export default async function HomePage() {
     if (d.payoutMethod || !d.expense.active) return [];
     const state = getDaretState(d, payments, currentMonth);
     if (state.turnStatus === "upcoming") return [];
-    const label = monthLabelFr(state.turn);
     return [
       {
         daretId: d.id,
         name: d.expense.name,
         icon: d.expense.icon ?? "🤝🏻",
         payout: state.payout,
-        monthLabel: label.charAt(0).toUpperCase() + label.slice(1),
+        monthLabel: monthLabel(state.turn, lang),
       },
     ];
   });

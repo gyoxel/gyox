@@ -6,7 +6,10 @@ import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useNavBack } from "@/lib/nav-history";
 import { mutate } from "@/lib/use-refresh-data";
-import { addMonths, monthLabelFr, monthOfDateStr, monthsBetween, todayMonth } from "@/lib/date";
+import { addMonths, monthOfDateStr, monthsBetween, todayMonth } from "@/lib/date";
+import { msg } from "@/lib/i18n";
+import { monthLabel } from "@/lib/i18n/dates";
+import { useI18n } from "@/lib/i18n/client";
 import type { BudgetWithExpense, PaymentMethod } from "@/lib/types";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
@@ -23,9 +26,9 @@ const EMOJIS = ["🚌", "🚕", "⛽", "🍔", "🛒", "☕", "🚬", "📱", "�
 type Kind = "once" | "monthly" | "months";
 
 const KINDS: { key: Kind; icon: PhosphorIcon; label: string }[] = [
-  { key: "once", icon: NumberCircleOne, label: "Une fois" },
-  { key: "monthly", icon: Repeat, label: "Chaque mois" },
-  { key: "months", icon: CalendarDots, label: "X mois" },
+  { key: "once", icon: NumberCircleOne, label: msg("Une fois") },
+  { key: "monthly", icon: Repeat, label: msg("Chaque mois") },
+  { key: "months", icon: CalendarDots, label: msg("X mois") },
 ];
 
 /** The recurrence the form opens on for an existing budget. */
@@ -44,6 +47,8 @@ function initialKind(budget?: BudgetWithExpense): { kind: Kind; months: string }
 export function BudgetForm({ currency, budget }: { currency: string; budget?: BudgetWithExpense }) {
   const isEdit = budget != null;
   const nav = useNavBack();
+  const { lang, t } = useI18n();
+  const monthLabelFr = (m: Parameters<typeof monthLabel>[0]) => monthLabel(m, lang);
   const init = initialKind(budget);
   const [amount, setAmount] = useState(toDecimalInput(budget?.expense.amount ?? null));
   const [name, setName] = useState(budget?.expense.name ?? "");
@@ -62,19 +67,19 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
 
   const summary =
     kind === "monthly"
-      ? "Chaque mois, sans fin : il revient le mois suivant."
+      ? t("Chaque mois, sans fin : il revient le mois suivant.")
       : kind === "months" && monthsValue > 0
-        ? `${monthsValue} mois · jusqu'à ${monthLabelFr(addMonths(start, monthsValue - 1)).toLowerCase()}`
+        ? t("{n} mois · jusqu'à {month}", { n: monthsValue, month: monthLabelFr(addMonths(start, monthsValue - 1)).toLowerCase() })
         : kind === "once"
-          ? `Juste ${monthLabelFr(start).toLowerCase()}.`
+          ? t("Juste {month}.", { month: monthLabelFr(start).toLowerCase() })
           : null;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!(amountValue > 0)) return setError("Indique le montant du budget.");
-    if (!name.trim()) return setError("Indique un nom.");
-    if (kind === "months" && (monthsValue < 1 || monthsValue > 600)) return setError("Indique le nombre de mois.");
+    if (!(amountValue > 0)) return setError(t("Indique le montant du budget."));
+    if (!name.trim()) return setError(t("Indique un nom."));
+    if (kind === "months" && (monthsValue < 1 || monthsValue > 600)) return setError(t("Indique le nombre de mois."));
     const recurrence = kind === "months" ? { kind, months: monthsValue } : { kind };
     startTransition(async () => {
       const res = await mutate({
@@ -91,9 +96,9 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
       if (!res.ok) return setError(await errorMessage(res));
       if (!isEdit) {
         const created: { problems?: string[] } = await res.json();
-        if (created.problems?.includes("paid")) toast.error("Budget ajouté, mais pas pris : solde insuffisant.");
+        if (created.problems?.includes("paid")) toast.error(t("Budget ajouté, mais pas pris : solde insuffisant."));
       }
-      toast.success(isEdit ? "Budget modifié." : "Budget ajouté.");
+      toast.success(isEdit ? t("Budget modifié.") : t("Budget ajouté."));
       nav.back("/budgets");
     });
   }
@@ -103,7 +108,7 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-fuchsia-400 via-purple-500 to-violet-700 px-4 pb-4 pt-5 text-white shadow-lg shadow-purple-500/20 dark:shadow-none">
         <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
         <Label htmlFor="amount" className="relative block text-center text-xs text-white/80">
-          {emoji} Budget {kind === "once" ? "" : "par mois"}
+          {emoji} {kind === "once" ? t("Budget") : t("Budget par mois")}
         </Label>
         <div className="relative mt-1 flex items-baseline justify-center gap-2">
           <input
@@ -120,18 +125,18 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
           <span className="text-lg font-semibold text-white/70">{currency === "MAD" ? "DH" : currency}</span>
         </div>
         <p className="relative mt-2 text-center text-[11px] text-white/85">
-          Pris en une fois, puis tu notes chaque jour ce que tu en dépenses.
+          {t("Pris en une fois, puis tu notes chaque jour ce que tu en dépenses.")}
         </p>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="name">Nom</Label>
-        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex : Transport" maxLength={60} />
+        <Label htmlFor="name">{t("Nom")}</Label>
+        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("Ex : Transport")} maxLength={60} />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label>Emoji</Label>
-        <div role="radiogroup" aria-label="Emoji" className="grid grid-cols-6 gap-2">
+        <Label>{t("Emoji")}</Label>
+        <div role="radiogroup" aria-label={t("Emoji")} className="grid grid-cols-6 gap-2">
           {emojis.map((e) => (
             <button
               key={e}
@@ -154,31 +159,31 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label>Durée</Label>
-        <Segmented label="Durée" value={kind} onChange={setKind} options={KINDS} />
+        <Label>{t("Durée")}</Label>
+        <Segmented label={t("Durée")} value={kind} onChange={setKind} options={KINDS.map((k) => ({ ...k, label: t(k.label) }))} />
         {kind === "months" && (
           <div className="flex items-center gap-2">
             <Input
-              aria-label="Nombre de mois"
+              aria-label={t("Nombre de mois")}
               type="text"
               inputMode="numeric"
               value={months}
               onChange={(e) => setMonths(e.target.value.replace(/\D/g, "").slice(0, 3))}
-              placeholder="Nombre de mois, ex : 6"
+              placeholder={t("Nombre de mois, ex : 6")}
             />
-            <span className="shrink-0 text-sm text-slate-500">mois</span>
+            <span className="shrink-0 text-sm text-slate-500">{t("mois")}</span>
           </div>
         )}
         <ChoiceNote>
-          {summary ?? "Pendant combien de mois ?"}
-          {summary && amountValue > 0 && kind !== "once" && <> · {money(amountValue)} par mois</>}
+          {summary ?? t("Pendant combien de mois ?")}
+          {summary && amountValue > 0 && kind !== "once" && <> · {t("{amount} par mois", { amount: money(amountValue) })}</>}
         </ChoiceNote>
       </div>
 
       {!isEdit && (
         <div className="flex flex-col gap-2">
-          <Label>Ce mois-ci</Label>
-          <div role="radiogroup" aria-label="Ce mois-ci" className="grid grid-cols-2 gap-2">
+          <Label>{t("Ce mois-ci")}</Label>
+          <div role="radiogroup" aria-label={t("Ce mois-ci")} className="grid grid-cols-2 gap-2">
             <button
               type="button"
               role="radio"
@@ -192,7 +197,7 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
               )}
             >
               <Check weight="bold" className="h-4 w-4" />
-              Pris
+              {t("Pris")}
             </button>
             <button
               type="button"
@@ -207,13 +212,13 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
               )}
             >
               <Clock weight="bold" className="h-4 w-4" />
-              Pas encore
+              {t("Pas encore")}
             </button>
           </div>
           {taken ? (
-            <PaymentMethodPicker value={method} onChange={setMethod} label="Pris en" />
+            <PaymentMethodPicker value={method} onChange={setMethod} label={t("Pris en")} />
           ) : (
-            <p className="px-1 text-[11px] text-slate-400">Il t&apos;attend dans tes dépenses du mois : coche-le quand tu le prends.</p>
+            <p className="px-1 text-[11px] text-slate-400">{t("Il t'attend dans tes dépenses du mois : coche-le quand tu le prends.")}</p>
           )}
         </div>
       )}
@@ -222,14 +227,14 @@ export function BudgetForm({ currency, budget }: { currency: string; budget?: Bu
 
       <div className="flex gap-2">
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back("/budgets")}>
-          Annuler
+          {t("Annuler")}
         </Button>
         <Button type="submit" className="flex-1 gx-cta" disabled={isPending}>
-          {isPending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter le budget"}
+          {isPending ? t("Enregistrement…") : isEdit ? t("Enregistrer") : t("Ajouter le budget")}
         </Button>
       </div>
 
-      {isEdit && <DeleteButton variant="full" {...budgetDelete(budget)} />}
+      {isEdit && <DeleteButton variant="full" {...budgetDelete(budget, t)} />}
     </form>
   );
 }

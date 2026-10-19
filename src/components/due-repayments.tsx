@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { formatMoney } from "@/lib/utils";
 import { ReceiveRepayment } from "@/components/loan-repayments";
+import { useT } from "@/lib/i18n/client";
 
 export interface DueRepayment {
   loanId: string;
@@ -10,13 +13,14 @@ export interface DueRepayment {
   expected: number;
   /** Already received that month. */
   received: number;
-  /** "octobre 2026" */
+  /** "Octobre 2026", in the device's language. */
   monthLabel: string;
 }
 
 /** Accueil: a loan's installment whose month has come — received? It stays
  *  here until it's confirmed (cash or card). */
 export function DueRepayments({ items, currency }: { items: DueRepayment[]; currency: string }) {
+  const t = useT();
   if (items.length === 0) return null;
   return (
     <section className="flex flex-col gap-2">
@@ -36,8 +40,8 @@ export function DueRepayments({ items, currency }: { items: DueRepayment[]; curr
               {/* The title already says what's left: here, what came in. */}
               <span className="block truncate text-[11.5px] leading-snug text-amber-700 dark:text-amber-200">
                 {d.received > 0
-                  ? `${d.monthLabel} · ${formatMoney(d.received, currency)} déjà reçus`
-                  : `Remboursement · ${d.monthLabel}`}
+                  ? t("{month} · {amount} déjà reçus", { month: d.monthLabel, amount: formatMoney(d.received, currency) })
+                  : t("Remboursement · {month}", { month: d.monthLabel })}
               </span>
             </span>
           </Link>

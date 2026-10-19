@@ -1,6 +1,9 @@
+"use client";
+
 import type { DepositSource, PaymentMethod } from "@/lib/types";
 import { METHOD_META } from "@/lib/payment-method";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/client";
 
 const PICTURES: Record<PaymentMethod, { src: string; width: number; height: number }> = {
   cash: { src: "/icons/cash.png", width: 132, height: 68 },
@@ -35,12 +38,13 @@ export function MethodIcon({ method, className }: { method: PaymentMethod | Depo
   );
 }
 
-/** "[💵] Cash" / "[💳] Carte": the picture and the method's name. */
+/** "[💵] Espèces" / "[💳] Carte": the picture and the method's name. */
 export function MethodLabel({ method, className }: { method: PaymentMethod; className?: string }) {
+  const t = useT();
   return (
     <span className={cn("inline-flex items-center gap-1 whitespace-nowrap align-baseline", className)}>
       <MethodIcon method={method} />
-      {METHOD_META[method].label}
+      {t(METHOD_META[method].label)}
     </span>
   );
 }

@@ -18,6 +18,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { categoryName } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Ajouter / modifier un revenu (on top of the salary): amount, category
@@ -37,6 +39,7 @@ export function IncomeEditor({
 }) {
   const isEdit = income != null;
   const nav = useNavBack();
+  const t = useT();
   const [amount, setAmount] = useState(toDecimalInput(income?.amount ?? null));
   const [categories, setCategories] = useState(initialCategories);
   const [category, setCategory] = useState(income?.category ?? initialCategories[0]?.id ?? "autre");
@@ -52,13 +55,13 @@ export function IncomeEditor({
   const amountValue = parseDecimalInput(amount);
   const selected = incomeCategory(category, categories);
   // Until a name is typed, the category's label is the name.
-  const finalName = (nameTouched ? name : name || selected.label).trim();
+  const finalName = (nameTouched ? name : name || categoryName(selected.label, t)).trim();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!(amountValue > 0)) return setError("Indique un montant.");
-    if (!finalName) return setError("Indique un nom.");
+    if (!(amountValue > 0)) return setError(t("Indique un montant."));
+    if (!finalName) return setError(t("Indique un nom."));
     const body = { name: finalName, amount: amountValue, category, date, method, notes: notes.trim() || null };
     startTransition(async () => {
       const res = await mutate({
@@ -67,7 +70,7 @@ export function IncomeEditor({
         body,
       });
       if (!res.ok) return setError(await errorMessage(res));
-      toast.success(isEdit ? "Revenu modifié." : `+${formatMoney(amountValue)} ajouté à ton solde.`);
+      toast.success(isEdit ? t("Revenu modifié.") : t("{amount} ajouté à ton solde.", { amount: `+${formatMoney(amountValue)}` }));
       nav.back("/incomes");
     });
   }
@@ -77,7 +80,7 @@ export function IncomeEditor({
       {/* Amount */}
       <div className="relative flex flex-col items-center gap-1 overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-600 px-4 py-5 text-white shadow-lg dark:shadow-none">
         <Label htmlFor="amount" className="text-xs text-white/80">
-          Montant reçu
+          {t("Montant reçu")}
         </Label>
         <div className="flex items-baseline gap-2">
           <span className="text-2xl font-bold text-white/80">+</span>
@@ -97,7 +100,7 @@ export function IncomeEditor({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="name">Nom</Label>
+        <Label htmlFor="name">{t("Nom")}</Label>
         <Input
           id="name"
           value={name}
@@ -105,14 +108,14 @@ export function IncomeEditor({
             setNameTouched(true);
             setName(e.target.value);
           }}
-          placeholder={selected.label}
+          placeholder={categoryName(selected.label, t)}
           maxLength={60}
         />
       </div>
 
       {/* Category */}
       <div className="flex flex-col gap-2">
-        <Label>Catégorie</Label>
+        <Label>{t("Catégorie")}</Label>
         <CategoryPicker
           categories={categories}
           value={category}
@@ -122,14 +125,14 @@ export function IncomeEditor({
             setCategories((prev) => (prev.at(-1)?.id === "autre" ? [...prev.slice(0, -1), c, prev.at(-1)!] : [...prev, c]))
           }
           endpoint="/api/income-categories"
-          placeholder="Ex: Location voiture"
+          placeholder={t("Ex : Location voiture")}
         />
       </div>
 
-      <PaymentMethodPicker value={method} onChange={setMethod} label="Reçu en" />
+      <PaymentMethodPicker value={method} onChange={setMethod} label={t("Reçu en")} />
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="notes">Note (optionnel)</Label>
+        <Label htmlFor="notes">{t("Note (optionnel)")}</Label>
         <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
       </div>
 
@@ -137,18 +140,18 @@ export function IncomeEditor({
 
       <div className="flex gap-2">
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back("/incomes")}>
-          Annuler
+          {t("Annuler")}
         </Button>
         <Button type="submit" className="flex-1 gx-cta" disabled={isPending}>
-          {isPending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter le revenu"}
+          {isPending ? t("Enregistrement…") : isEdit ? t("Enregistrer") : t("Ajouter le revenu")}
         </Button>
       </div>
 
       {isEdit && source && (
-        <LockedDelete hint={`Ce revenu vient du ${source.label} : supprime-le depuis`} href={source.href} linkLabel="sa page" />
+        <LockedDelete hint={t("Ce revenu vient de {source} : supprime-le depuis", { source: source.label })} href={source.href} linkLabel={t("sa page")} />
       )}
 
-      {isEdit && !source && <DeleteButton variant="full" {...incomeDelete(income)} />}
+      {isEdit && !source && <DeleteButton variant="full" {...incomeDelete(income, t)} />}
     </form>
   );
 }

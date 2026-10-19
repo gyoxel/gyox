@@ -3,6 +3,8 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useOpenSection } from "@/lib/nav-history";
+import { msg } from "@/lib/i18n";
+import { currentT } from "@/lib/i18n/client";
 
 /** The bottom bar's tabs, in order: swipe left → next, right → previous. */
 const TABS = ["/", "/budget", "/credits", "/menu"];
@@ -13,7 +15,7 @@ const SLIDE_MS = 200;
 
 /** Each tab's page title (its <h1>): a snapshot is only kept when it shows
  *  that title, so one tab can never be stored under another's name. */
-const TITLES: Record<string, string> = { "/": "GX Salaire", "/budget": "Dépenses", "/credits": "Dettes", "/menu": "Menu" };
+const TITLES: Record<string, string> = { "/": "GX Salaire", "/budget": msg("Dépenses"), "/credits": msg("Dettes"), "/menu": msg("Menu") };
 
 /** Last seen look of each tab (its page's HTML), shown next to the current
  *  page while swiping so the neighbour is already there — no blank. Kept in
@@ -50,7 +52,7 @@ function validSnapshot(root: Element | null | undefined, path: string): string |
   // that frame's window and would fail it)
   if (!root) return null;
   if (root.querySelector('[aria-busy="true"]')) return null; // still the loading skeleton
-  if (root.querySelector("h1")?.textContent?.trim() !== TITLES[path]) return null;
+  if (root.querySelector("h1")?.textContent?.trim() !== currentT()(TITLES[path])) return null;
   // Amounts shown with Accueil's eye are never kept (snapshots stay in storage).
   const copy = root.cloneNode(true) as Element;
   copy.querySelectorAll("[data-private]").forEach((el) => {
@@ -68,7 +70,7 @@ function snapshotCurrent(path: string) {
 /** Stand-in while a tab has no snapshot yet: its header and a skeleton. */
 function placeholder(path: string): string {
   const block = (h: string) => `<div class="${h} animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800/70"></div>`;
-  return `<div data-tone class="gx-header sticky top-0 z-30 flex h-[72px] items-center px-5 pb-2 pt-4 text-slate-900 dark:text-white"><h1 class="text-[25px] font-extrabold tracking-tight">${TITLES[path] ?? ""}</h1></div><div class="flex flex-col gap-4 px-4 py-5">${block("h-28")}${block("h-20")}${block("h-14")}${block("h-14")}${block("h-14")}</div>`;
+  return `<div data-tone class="gx-header sticky top-0 z-30 flex h-[72px] items-center px-5 pb-2 pt-4 text-slate-900 dark:text-white"><h1 class="text-[25px] font-extrabold tracking-tight">${currentT()(TITLES[path] ?? "")}</h1></div><div class="flex flex-col gap-4 px-4 py-5">${block("h-28")}${block("h-20")}${block("h-14")}${block("h-14")}${block("h-14")}</div>`;
 }
 
 /** Loads the other tabs in a hidden frame, once per visit, to snapshot them

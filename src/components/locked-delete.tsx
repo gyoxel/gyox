@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Trash } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Delete button for something created elsewhere (a credit's income, a goal
@@ -10,6 +11,7 @@ import { toast } from "sonner";
  * delete it — only its source can remove it.
  */
 export function LockedDelete({ hint, href, linkLabel }: { hint: string; href: string; linkLabel: string }) {
+  const t = useT();
   return (
     <div className="flex flex-col gap-1.5">
       <button
@@ -19,7 +21,7 @@ export function LockedDelete({ hint, href, linkLabel }: { hint: string; href: st
         className="flex h-12 w-full cursor-not-allowed items-center justify-center gap-2 rounded-full bg-slate-200 text-sm font-medium text-slate-400 dark:bg-slate-800 dark:text-slate-500"
       >
         <Trash weight="bold" className="h-4 w-4" />
-        Supprimer
+        {t("Supprimer")}
       </button>
       <p className="px-1 text-center text-[11px] leading-snug text-slate-400">
         {hint}{" "}
@@ -33,10 +35,11 @@ export function LockedDelete({ hint, href, linkLabel }: { hint: string; href: st
 
 /** The header's bin for such a page: greyed, tapping it says where to delete. */
 export function LockedDeleteIcon({ hint }: { hint: string }) {
+  const t = useT();
   return (
     <button
       type="button"
-      aria-label="Supprimer (depuis sa source)"
+      aria-label={t("Supprimer (depuis sa source)")}
       aria-disabled
       onClick={() => toast(hint)}
       className="gx-pill flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-300 opacity-70 dark:text-white/35"

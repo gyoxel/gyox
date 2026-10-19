@@ -4,7 +4,9 @@ import { useState, useTransition } from "react";
 import { Check, Clock, ClockCountdown, Coins, Plus, Sparkle, X } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { Expense, PaymentMethod } from "@/lib/types";
-import { addMonths, monthKey, monthLabelShortFr, monthOfDateStr, todayDateStr } from "@/lib/date";
+import { addMonths, monthKey, monthOfDateStr, todayDateStr } from "@/lib/date";
+import { monthLabelShort } from "@/lib/i18n/dates";
+import { useI18n, useT } from "@/lib/i18n/client";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { useNavBack } from "@/lib/nav-history";
 import { monthlyFor } from "@/lib/plan";
@@ -46,6 +48,7 @@ export function CreditEditor({
 }) {
   const isEdit = expense != null;
   const nav = useNavBack();
+  const { lang, t } = useI18n();
   const startDate = expense?.startDate ?? todayDateStr();
 
   // The credit's full amount; what's already repaid comes off it.
@@ -109,9 +112,9 @@ export function CreditEditor({
     totalValue > 0 && customNumber > 0
       ? custom === "months"
         ? customNumber <= MAX_MONTHS
-          ? `${money(monthlyFor(totalValue, customNumber))} / mois`
+          ? t("{amount} / mois", { amount: money(monthlyFor(totalValue, customNumber)) })
           : null
-        : `${Math.ceil(totalValue / customNumber - 1e-9)} mois`
+        : t("{n} mois", { n: Math.ceil(totalValue / customNumber - 1e-9) })
       : null;
   function openCustom(row: "months" | "amount") {
     setCustomValue("");
@@ -132,15 +135,15 @@ export function CreditEditor({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!(fullTotal > 0)) return setError("Indique le montant total de la dette.");
-    if (!(totalValue > 0)) return setError("Le montant déjà remboursé doit être inférieur au total.");
-    if (!name.trim()) return setError("Indique un nom.");
-    if (mode === "months" && (monthsValue < 1 || monthsValue > MAX_MONTHS)) return setError("Indique le nombre de mois.");
-    if (!(monthlyValue > 0)) return setError("Indique le montant par mois.");
+    if (!(fullTotal > 0)) return setError(t("Indique le montant total de la dette."));
+    if (!(totalValue > 0)) return setError(t("Le montant déjà remboursé doit être inférieur au total."));
+    if (!name.trim()) return setError(t("Indique un nom."));
+    if (mode === "months" && (monthsValue < 1 || monthsValue > MAX_MONTHS)) return setError(t("Indique le nombre de mois."));
+    if (!(monthlyValue > 0)) return setError(t("Indique le montant par mois."));
     // (An older credit saved that way keeps it until its plan is changed.)
     const planChanged = !isEdit || monthlyValue !== expense.amount || totalValue !== expense.creditInitialAmount;
     if (planChanged && monthlyValue > totalValue) {
-      return setError("Le montant par mois ne peut pas dépasser ce qu'il reste à rembourser.");
+      return setError(t("Le montant par mois ne peut pas dépasser ce qu'il reste à rembourser."));
     }
 
     const fields = {
@@ -166,7 +169,7 @@ export function CreditEditor({
         // the expense as it was too.
         if (!res.ok) return setError(await errorMessage(res));
         if (payCall && pay && !pay.ok) return setError(await errorMessage(pay));
-        toast.success("Dette enregistrée.");
+        toast.success(t("Dette enregistrée."));
         nav.back();
         return;
       }
@@ -184,7 +187,7 @@ export function CreditEditor({
           linkedExpenseId: null,
           income: received
             ? {
-                name: `Dette · ${name.trim()}`,
+                name: t("Dette · {name}", { name: name.trim() }),
                 amount: totalValue,
                 category: "credit",
                 date: todayDateStr(),
@@ -197,9 +200,9 @@ export function CreditEditor({
       });
       if (!res.ok) return setError(await errorMessage(res));
       const created: { problems?: string[] } = await res.json();
-      if (created.problems?.includes("income")) toast.error("Dette ajoutée, mais l'argent reçu n'a pas pu être enregistré.");
-      if (created.problems?.includes("paid")) toast.error("Ajouté, mais le paiement n'a pas pu être enregistré.");
-      toast.success("Dette ajoutée.");
+      if (created.problems?.includes("income")) toast.error(t("Dette ajoutée, mais l'argent reçu n'a pas pu être enregistré."));
+      if (created.problems?.includes("paid")) toast.error(t("Ajouté, mais le paiement n'a pas pu être enregistré."));
+      toast.success(t("Dette ajoutée."));
       nav.back();
     });
   }
@@ -209,7 +212,7 @@ export function CreditEditor({
       {/* Total */}
       <div className="relative flex flex-col items-center gap-1 overflow-hidden rounded-3xl bg-gradient-to-br from-sky-500 to-blue-700 px-4 py-5 text-white shadow-lg dark:shadow-none">
         <Label htmlFor="total" className="text-xs text-white/80">
-          Montant total de la dette
+          {t("Montant total de la dette")}
         </Label>
         <div className="flex items-baseline gap-2">
           <input
@@ -228,22 +231,22 @@ export function CreditEditor({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="name">Nom</Label>
-        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex : Karim, Sara, Youssef…" />
+        <Label htmlFor="name">{t("Nom")}</Label>
+        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("Ex : Karim, Sara, Youssef…")} />
       </div>
 
       {/* Already repaid before it was added here */}
       {priorOpen ? (
         <div className="flex flex-col gap-1.5 rounded-2xl border border-sky-200 bg-sky-50/60 p-3 dark:border-sky-900 dark:bg-sky-950/30">
           <div className="flex items-center justify-between">
-            <Label htmlFor="priorPaid">Montant déjà remboursé</Label>
+            <Label htmlFor="priorPaid">{t("Montant déjà remboursé")}</Label>
             <button
               type="button"
               onClick={() => {
                 setPriorOpen(false);
                 setPriorPaid("");
               }}
-              aria-label="Retirer le montant déjà remboursé"
+              aria-label={t("Retirer le montant déjà remboursé")}
               className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-white dark:hover:bg-slate-800"
             >
               <X weight="bold" className="h-4 w-4" />
@@ -257,17 +260,17 @@ export function CreditEditor({
               autoComplete="off"
               value={priorPaid}
               onChange={(e) => setPriorPaid(cleanDecimalInput(e.target.value))}
-              placeholder="Ex : 4000"
+              placeholder={t("Ex : 4000")}
             />
             <span className="shrink-0 text-sm text-slate-500">DH</span>
           </div>
           {fullTotal > 0 && priorValue > 0 && (
             <p className="text-sm text-sky-800 dark:text-sky-200">
-              Reste à rembourser : <b>{money(totalValue)}</b>
+              {t("Reste à rembourser :")} <b>{money(totalValue)}</b>
             </p>
           )}
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Déjà remboursé avant d&apos;ajouter cette dette ici : retiré du total, pas de ton solde.
+            {t("Déjà remboursé avant d'ajouter cette dette ici : retiré du total, pas de ton solde.")}
           </p>
         </div>
       ) : (
@@ -277,7 +280,7 @@ export function CreditEditor({
           className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-sky-200 py-3 text-sm font-semibold text-sky-700 active:bg-sky-50 dark:border-sky-900 dark:text-sky-300 dark:active:bg-sky-950/30"
         >
           <Plus weight="bold" className="h-4 w-4" />
-          Montant déjà remboursé
+          {t("Montant déjà remboursé")}
         </button>
       )}
 
@@ -286,15 +289,16 @@ export function CreditEditor({
         <div className="flex flex-col gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3 dark:border-emerald-900 dark:bg-emerald-950/30">
           <label className="flex items-center justify-between gap-3">
             <span>
-              <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">J&apos;ai reçu cet argent</span>
+              <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">{t("J'ai reçu cet argent")}</span>
               <span className="block text-[11px] text-slate-500 dark:text-slate-400">
-                {totalValue > 0 ? `+${money(totalValue)} ` : ""}ajouté à ton solde comme revenu, aujourd&apos;hui
-                {priorValue > 0 ? " (total − déjà remboursé)" : ""}
+                {totalValue > 0 ? `+${money(totalValue)} ` : ""}
+                {t("ajouté à ton solde comme revenu, aujourd'hui")}
+                {priorValue > 0 ? ` ${t("(total − déjà remboursé)")}` : ""}
               </span>
             </span>
-            <Switch checked={received} onCheckedChange={setReceived} aria-label="J'ai reçu cet argent" />
+            <Switch checked={received} onCheckedChange={setReceived} aria-label={t("J'ai reçu cet argent")} />
           </label>
-          {received && <PaymentMethodPicker value={receivedMethod} onChange={setReceivedMethod} label="Reçu en" />}
+          {received && <PaymentMethodPicker value={receivedMethod} onChange={setReceivedMethod} label={t("Reçu en")} />}
         </div>
       )}
 
@@ -302,42 +306,44 @@ export function CreditEditor({
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-3.5 dark:border-slate-800">
         {totalValue > 0 && monthlyValue > totalValue && (
           <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
-            Le montant par mois ({money(monthlyValue)}) dépasse {priorValue > 0 ? "le reste à rembourser" : "le total de la dette"} (
-            {money(totalValue)}).
+            {priorValue > 0
+              ? t("Le montant par mois ({monthly}) dépasse le reste à rembourser ({total}).", { monthly: money(monthlyValue), total: money(totalValue) })
+              : t("Le montant par mois ({monthly}) dépasse le total de la dette ({total}).", { monthly: money(monthlyValue), total: money(totalValue) })}
           </p>
         )}
         {/* Live result, on top */}
         {plan ? (
           <div className="grid grid-cols-3 gap-2 rounded-xl bg-sky-50 p-3 text-center dark:bg-sky-950/40">
-            <Stat label="Par mois" value={money(monthlyValue)} highlight={mode === "months"} />
-            <Stat label="Durée" value={`${plan.count} mois`} highlight={mode === "monthly"} />
-            <Stat label="Fin" value={monthLabelShortFr(plan.end)} />
+            <Stat label={t("Par mois")} value={money(monthlyValue)} highlight={mode === "months"} />
+            <Stat label={t("Durée")} value={t("{n} mois", { n: plan.count })} highlight={mode === "monthly"} />
+            <Stat label={t("Fin")} value={monthLabelShort(plan.end, lang)} />
             {plan.last !== monthlyValue && (
               <p className="col-span-3 text-[11px] text-slate-500 dark:text-slate-400">
                 {mode === "months" && plan.count > monthsValue ? (
-                  <>
-                    Arrondi à {money(monthlyValue)} : il faut <b>{plan.count} mois</b>, dernier versement{" "}
-                    <b>{money(plan.last)}</b>.
-                  </>
+                  t("Arrondi à {monthly} : il faut {n} mois, dernier versement {last}.", {
+                    monthly: money(monthlyValue),
+                    n: plan.count,
+                    last: money(plan.last),
+                  })
                 ) : (
                   <>
-                    Dernier versement (le reste) : <b>{money(plan.last)}</b>
+                    {t("Dernier versement (le reste) :")} <b>{money(plan.last)}</b>
                   </>
                 )}
               </p>
             )}
           </div>
         ) : (
-          <p className="text-xs text-slate-400">Indique le total, puis le montant par mois ou le nombre de mois.</p>
+          <p className="text-xs text-slate-400">{t("Indique le total, puis le montant par mois ou le nombre de mois.")}</p>
         )}
 
-        <div role="radiogroup" aria-label="Mode de remboursement" className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+        <div role="radiogroup" aria-label={t("Mode de remboursement")} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
           <ModeButton selected={mode === "monthly"} onClick={() => switchMode("monthly")} icon={Coins}>
-            Par mois
+            {t("Par mois")}
           </ModeButton>
-          <span className="text-xs font-semibold uppercase text-slate-400">ou</span>
+          <span className="text-xs font-semibold uppercase text-slate-400">{t("ou")}</span>
           <ModeButton selected={mode === "months"} onClick={() => switchMode("months")} icon={ClockCountdown}>
-            Nombre de mois
+            {t("Nombre de mois")}
           </ModeButton>
         </div>
 
@@ -345,23 +351,23 @@ export function CreditEditor({
           <div className="flex items-center gap-2">
             <Input
               id="monthly"
-              aria-label="Montant par mois (DH)"
+              aria-label={t("Montant par mois (DH)")}
               type="text"
               inputMode="decimal"
               autoComplete="off"
               value={monthly}
               onChange={(e) => setMonthly(cleanDecimalInput(e.target.value))}
-              placeholder="Ex: 1000"
+              placeholder={`${t("Ex :")} 1000`}
               onFocus={(e) => keepAboveKeyboard(e.currentTarget)}
               className="text-base"
             />
-            <span className="shrink-0 text-sm text-slate-500">DH / mois</span>
+            <span className="shrink-0 text-sm text-slate-500">{t("DH / mois")}</span>
           </div>
         ) : (
           <div className="flex items-center gap-2">
             <Input
               id="months"
-              aria-label="Nombre de mois"
+              aria-label={t("Nombre de mois")}
               type="number"
               inputMode="numeric"
               min="1"
@@ -369,11 +375,11 @@ export function CreditEditor({
               step="1"
               value={months}
               onChange={(e) => setMonths(e.target.value)}
-              placeholder="Ex: 12"
+              placeholder={`${t("Ex :")} 12`}
               onFocus={(e) => keepAboveKeyboard(e.currentTarget)}
               className="text-base"
             />
-            <span className="shrink-0 text-sm text-slate-500">mois</span>
+            <span className="shrink-0 text-sm text-slate-500">{t("mois")}</span>
           </div>
         )}
 
@@ -382,22 +388,22 @@ export function CreditEditor({
           <div className="flex flex-col gap-2">
             <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
               <Sparkle weight="bold" className="h-3.5 w-3.5" />
-              Suggestions
+              {t("Suggestions")}
             </p>
-            <SuggestionRow label="Selon la durée">
-              <PlusChip open={custom === "months"} onClick={() => openCustom("months")} label="Autre durée" />
+            <SuggestionRow label={t("Selon la durée")}>
+              <PlusChip open={custom === "months"} onClick={() => openCustom("months")} label={t("Autre durée")} />
               {monthSuggestions.map((n) => (
                 <Chip key={n} selected={mode === "months" && monthsValue === n} onClick={() => pickMonths(n)}>
-                  <b>{n} mois</b>
-                  <span className="text-[10px] opacity-75">{money(monthlyFor(totalValue, n))}/mois</span>
+                  <b>{t("{n} mois", { n })}</b>
+                  <span className="text-[10px] opacity-75">{t("{amount}/mois", { amount: money(monthlyFor(totalValue, n)) })}</span>
                 </Chip>
               ))}
             </SuggestionRow>
             {custom === "months" && (
               <CustomTry
                 inputMode="numeric"
-                unit="mois"
-                placeholder="Ex: 15"
+                unit={t("mois")}
+                placeholder={`${t("Ex :")} 15`}
                 value={customValue}
                 onChange={(v) => setCustomValue(v.replace(/\D/g, "").slice(0, 3))}
                 result={customResult}
@@ -405,20 +411,20 @@ export function CreditEditor({
                 onClose={() => setCustom(null)}
               />
             )}
-            <SuggestionRow label="Selon le montant">
-              <PlusChip open={custom === "amount"} onClick={() => openCustom("amount")} label="Autre montant" />
+            <SuggestionRow label={t("Selon le montant")}>
+              <PlusChip open={custom === "amount"} onClick={() => openCustom("amount")} label={t("Autre montant")} />
               {amountSuggestions.map((n) => (
                 <Chip key={n} selected={mode === "monthly" && monthlyValue === n} onClick={() => pickMonthly(n)}>
                   <b>{money(n)}</b>
-                  <span className="text-[10px] opacity-75">{Math.ceil(totalValue / n - 1e-9)} mois</span>
+                  <span className="text-[10px] opacity-75">{t("{n} mois", { n: Math.ceil(totalValue / n - 1e-9) })}</span>
                 </Chip>
               ))}
             </SuggestionRow>
             {custom === "amount" && (
               <CustomTry
                 inputMode="decimal"
-                unit="DH / mois"
-                placeholder="Ex: 1200"
+                unit={t("DH / mois")}
+                placeholder={`${t("Ex :")} 1200`}
                 value={customValue}
                 onChange={(v) => setCustomValue(cleanDecimalInput(v))}
                 result={customResult}
@@ -432,10 +438,12 @@ export function CreditEditor({
 
       {(!isEdit || paymentStatus) && (
         <div className="flex flex-col gap-1.5">
-          <Label>Statut de paiement {isEdit ? (paymentStatus?.hint ?? "") : "(1er mois)"}</Label>
+          <Label>
+            {t("Statut de paiement")} {isEdit ? (paymentStatus?.hint ?? "") : t("(1er mois)")}
+          </Label>
           <div
             role="radiogroup"
-            aria-label="Statut de paiement"
+            aria-label={t("Statut de paiement")}
             className="flex overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700"
           >
             <button
@@ -449,7 +457,7 @@ export function CreditEditor({
               )}
             >
               <Check weight="bold" className="h-4 w-4" />
-              Payé
+              {t("Payé")}
             </button>
             <button
               type="button"
@@ -462,7 +470,7 @@ export function CreditEditor({
               )}
             >
               <Clock weight="bold" className="h-4 w-4" />
-              Pas encore
+              {t("Pas encore")}
             </button>
           </div>
           {/* Always shown: picking cash / card also marks it paid. */}
@@ -479,7 +487,7 @@ export function CreditEditor({
       )}
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="notes">Note (optionnel)</Label>
+        <Label htmlFor="notes">{t("Note (optionnel)")}</Label>
         <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
       </div>
 
@@ -487,10 +495,10 @@ export function CreditEditor({
 
       <div className="flex gap-2">
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back()}>
-          Annuler
+          {t("Annuler")}
         </Button>
         <Button type="submit" className="flex-1 gx-cta" disabled={isPending}>
-          {isPending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter"}
+          {isPending ? t("Enregistrement…") : isEdit ? t("Enregistrer") : t("Ajouter")}
         </Button>
       </div>
     </form>
@@ -583,6 +591,7 @@ function CustomTry({
   onApply: () => void;
   onClose: () => void;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-blue-200 bg-blue-50/60 p-2.5 dark:border-blue-900/60 dark:bg-blue-950/30">
       {/* Result first, so it stays visible above the keyboard */}
@@ -593,13 +602,13 @@ function CustomTry({
               = <b className="text-blue-700 dark:text-sky-300">{result}</b>
             </>
           ) : (
-            <span className="text-xs text-slate-400">Le résultat s&apos;affiche ici.</span>
+            <span className="text-xs text-slate-400">{t("Le résultat s'affiche ici.")}</span>
           )}
         </span>
         <button
           type="button"
           onClick={onClose}
-          aria-label="Fermer"
+          aria-label={t("Fermer")}
           className="rounded-lg p-1 text-slate-400 hover:bg-white/70 dark:hover:bg-slate-800"
         >
           <X weight="bold" className="h-4 w-4" />
@@ -636,7 +645,7 @@ function CustomTry({
           disabled={!result}
         >
           <Check weight="bold" className="h-4 w-4" />
-          Choisir
+          {t("Choisir")}
         </Button>
       </div>
     </div>

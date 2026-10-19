@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { isMoveCounted } from "@/lib/savings";
 import { savingsDelete } from "@/lib/delete-specs";
 import { PageHeader } from "@/components/page-header";
+import { getI18n } from "@/lib/i18n/server";
 import { SavingsEditor } from "@/components/savings-editor";
 import { DeleteButton } from "@/components/delete-button";
 
@@ -12,7 +13,7 @@ export const dynamic = "force-dynamic";
 /** Modifier une épargne / un retrait (from Épargne, Dépenses or Revenus). */
 export default async function EditSavingsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [settings, move, payments] = await Promise.all([getSettings(), getSavingsMove(id), getAllPayments()]);
+  const [settings, move, payments, { t }] = await Promise.all([getSettings(), getSavingsMove(id), getAllPayments(), getI18n()]);
   if (!move) notFound();
   if (move.kind === "goal") {
     // Given to a goal: changed from that goal's deposit.
@@ -22,9 +23,10 @@ export default async function EditSavingsPage({ params }: { params: Promise<{ id
   return (
     <>
       <PageHeader
-        title={move.kind === "out" ? "Modifier · Retrait" : "Modifier · Épargne"}
+        title={`${t("Modifier")} · ${move.kind === "out" ? t("Retrait") : t("Épargne")}`}
         back
-        action={<DeleteButton variant="icon" {...savingsDelete(move)} />}
+        info="savings-edit"
+        action={<DeleteButton variant="icon" {...savingsDelete(move, t)} />}
       />
       <main className="px-4 py-5">
         <SavingsEditor move={move} counted={isMoveCounted(move, payments)} currency={settings.currency} />

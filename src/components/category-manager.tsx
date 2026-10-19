@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { categoryName } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 export interface CategoryStats {
   /** Active expenses filed under it. */
@@ -61,6 +63,7 @@ export function CategoryManager({
   currency: string;
 }) {
   const refreshData = useRefreshData();
+  const t = useT();
   const income = kind === "income";
   const base = income ? "/api/income-categories" : "/api/categories";
   const [categories, setCategories] = useState(initial);
@@ -82,7 +85,7 @@ export function CategoryManager({
   async function submit() {
     if (!editing) return;
     const clean = { name: name.trim(), emoji: emoji.trim() || "🏷️" };
-    if (!clean.name) return toast.error("Donne un nom à la catégorie.");
+    if (!clean.name) return toast.error(t("Donne un nom à la catégorie."));
     setBusy(true);
     const res =
       editing.mode === "new"
@@ -97,7 +100,7 @@ export function CategoryManager({
             body: JSON.stringify(clean),
           });
     setBusy(false);
-    if (!res.ok) return toast.error(editing.mode === "new" ? "Ajout impossible." : "Modification impossible.");
+    if (!res.ok) return toast.error(editing.mode === "new" ? t("Ajout impossible.") : t("Modification impossible."));
     const saved: Category = await res.json();
     if (editing.mode === "new") {
       // The server files it before Santé / Autres (kept last): take its order.
@@ -108,7 +111,7 @@ export function CategoryManager({
     } else {
       setCategories((prev) => prev.map((c) => (c.id === saved.id ? saved : c)));
     }
-    toast.success(editing.mode === "new" ? `${saved.emoji} ${saved.name} ajoutée.` : "Catégorie modifiée.");
+    toast.success(editing.mode === "new" ? t("{name} ajoutée.", { name: `${saved.emoji} ${saved.name}` }) : t("Catégorie modifiée."));
     setEditing(null);
     void refreshData();
   }
@@ -312,9 +315,9 @@ export function CategoryManager({
       body: JSON.stringify({ ids }),
     });
     setBusy(false);
-    if (!res.ok) return toast.error("Réorganisation impossible.");
+    if (!res.ok) return toast.error(t("Réorganisation impossible."));
     setSavedOrder(ids);
-    toast.success("Ordre enregistré.");
+    toast.success(t("Ordre enregistré."));
     void refreshData();
   }
 
@@ -326,12 +329,12 @@ export function CategoryManager({
     setBusy(true);
     const res = await fetch(`${base}/reset`, { method: "POST" });
     setBusy(false);
-    if (!res.ok) return toast.error("Réinitialisation impossible.");
+    if (!res.ok) return toast.error(t("Réinitialisation impossible."));
     const list: Category[] = await res.json();
     setCategories(list);
     setSavedOrder(list.map((c) => c.id));
     setConfirmReset(false);
-    toast.success("Catégories réinitialisées.");
+    toast.success(t("Catégories réinitialisées."));
     void refreshData();
   }
 
@@ -340,10 +343,10 @@ export function CategoryManager({
     setBusy(true);
     const res = await fetch(`${base}/${toDelete.id}`, { method: "DELETE" });
     setBusy(false);
-    if (!res.ok) return toast.error("Suppression impossible.");
+    if (!res.ok) return toast.error(t("Suppression impossible."));
     setCategories((prev) => prev.filter((c) => c.id !== toDelete.id));
     setSavedOrder((prev) => prev.filter((id) => id !== toDelete.id));
-    toast.success("Catégorie supprimée.");
+    toast.success(t("Catégorie supprimée."));
     setToDelete(null);
     setEditing(null);
     void refreshData();
@@ -361,19 +364,19 @@ export function CategoryManager({
             {c.emoji}
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-semibold text-slate-900 dark:text-white">{c.name}</span>
+            <span className="block truncate text-sm font-semibold text-slate-900 dark:text-white">{categoryName(c.name, t)}</span>
             <span className="block truncate text-[11px] text-slate-500 dark:text-slate-400">
               {income
                 ? st.count === 0
-                  ? "Aucun revenu"
+                  ? t("Aucun revenu")
                   : st.count === 1
-                    ? "1 revenu"
-                    : `${st.count} revenus`
+                    ? t("1 revenu")
+                    : t("{n} revenus", { n: st.count })
                 : st.count === 0
-                  ? "Aucune dépense"
+                  ? t("Aucune dépense")
                   : st.count === 1
-                    ? "1 dépense"
-                    : `${st.count} dépenses`}
+                    ? t("1 dépense")
+                    : t("{n} dépenses", { n: st.count })}
             </span>
           </span>
         </span>
@@ -420,15 +423,15 @@ export function CategoryManager({
           income ? "from-emerald-500 to-green-700" : "from-violet-500 to-purple-700",
         )}
       >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">{categories.length} catégories</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">{t("{n} catégories", { n: categories.length })}</p>
         <p className="mt-0.5 text-2xl font-bold tabular-nums">{money(totalMonth)}</p>
         <p className="text-[11px] text-white/80">
-          {income ? "Revenus classés" : "Dépenses classées"} · {monthLabel}
+          {income ? t("Revenus classés") : t("Dépenses classées")} · {monthLabel}
         </p>
       </div>
 
       <p className="-mb-2 px-1 text-[11px] text-slate-400">
-        Touche une catégorie pour la modifier · maintiens-la puis glisse-la pour changer l&apos;ordre.
+        {t("Touche une catégorie pour la modifier · maintiens-la puis glisse-la pour changer l'ordre.")}
       </p>
 
       {/* relative: the tiles' offsetLeft/Top are measured from the grid */}
@@ -481,7 +484,7 @@ export function CategoryManager({
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl gx-tile">
             <Plus weight="bold" className="h-5 w-5" />
           </span>
-          <span className="text-sm font-semibold">Ajouter</span>
+          <span className="text-sm font-semibold">{t("Ajouter")}</span>
         </button>
       </div>
 
@@ -491,21 +494,19 @@ export function CategoryManager({
         className="mx-auto flex items-center gap-1.5 text-xs font-medium text-slate-400 underline underline-offset-2 active:text-slate-600 dark:active:text-slate-200"
       >
         <ArrowCounterClockwise weight="bold" className="h-3.5 w-3.5" />
-        Réinitialiser les catégories
+        {t("Réinitialiser les catégories")}
       </button>
 
       <ConfirmDialog
         open={confirmReset}
         onOpenChange={setConfirmReset}
-        title="Réinitialiser les catégories ?"
+        title={t("Réinitialiser les catégories ?")}
         description={
-          <>
-            Les catégories d&apos;origine reviennent avec leurs noms, leurs icônes et leur ordre. Celles que tu as
-            ajoutées sont supprimées{" "}
-            {income ? "(leurs revenus passent dans « Autre »)." : "(leurs dépenses sont gardées, sans catégorie)."}
-          </>
+          income
+            ? t("Les catégories d'origine reviennent avec leurs noms, leurs icônes et leur ordre. Celles que tu as ajoutées sont supprimées (leurs revenus passent dans « Autre »).")
+            : t("Les catégories d'origine reviennent avec leurs noms, leurs icônes et leur ordre. Celles que tu as ajoutées sont supprimées (leurs dépenses sont gardées, sans catégorie).")
         }
-        confirmLabel="Réinitialiser"
+        confirmLabel={t("Réinitialiser")}
         pending={busy}
         onConfirm={resetAll}
       />
@@ -514,11 +515,11 @@ export function CategoryManager({
         <div className="gx-float sticky bottom-[calc(env(safe-area-inset-bottom)+10.25rem)] z-20 flex gap-2 rounded-[26px] p-2">
           <Button type="button" variant="outline" className="flex-1" onClick={resetOrder} disabled={busy}>
             <ArrowCounterClockwise weight="bold" className="h-4 w-4" />
-            Annuler
+            {t("Annuler")}
           </Button>
           <Button type="button" className="flex-1 gx-cta" onClick={saveOrder} disabled={busy}>
             <Check weight="bold" className="h-4 w-4" />
-            Enregistrer l&apos;ordre
+            {t("Enregistrer l'ordre")}
           </Button>
         </div>
       )}
@@ -526,7 +527,7 @@ export function CategoryManager({
       <Dialog open={editing != null} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="max-h-[88dvh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing?.mode === "new" ? "Nouvelle catégorie" : "Modifier la catégorie"}</DialogTitle>
+            <DialogTitle>{editing?.mode === "new" ? t("Nouvelle catégorie") : t("Modifier la catégorie")}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
@@ -534,7 +535,7 @@ export function CategoryManager({
                 {emoji || "🏷️"}
               </span>
               <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                <Label htmlFor="cat-name">Nom</Label>
+                <Label htmlFor="cat-name">{t("Nom")}</Label>
                 <Input
                   id="cat-name"
                   value={name}
@@ -545,14 +546,14 @@ export function CategoryManager({
                       void submit();
                     }
                   }}
-                  placeholder="Ex: Restaurants"
+                  placeholder={t("Ex: Restaurants")}
                   maxLength={40}
                 />
               </div>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label>Emoji</Label>
+              <Label>{t("Emoji")}</Label>
               <div className="grid grid-cols-8 gap-1">
                 {EMOJIS.map((e) => (
                   <button
@@ -572,8 +573,8 @@ export function CategoryManager({
               <Input
                 value={emoji}
                 onChange={(e) => setEmoji(e.target.value)}
-                aria-label="Autre emoji"
-                placeholder="Ou tape un emoji"
+                aria-label={t("Autre emoji")}
+                placeholder={t("Ou tape un emoji")}
                 maxLength={8}
                 className="text-center text-lg"
               />
@@ -581,12 +582,12 @@ export function CategoryManager({
 
             <Button type="button" onClick={submit} disabled={busy} className="gx-cta">
               <Check weight="bold" className="h-4 w-4" />
-              {editing?.mode === "new" ? "Ajouter" : "Enregistrer"}
+              {editing?.mode === "new" ? t("Ajouter") : t("Enregistrer")}
             </Button>
             {editing?.mode === "edit" && !(income && editing.category.id === "autre") && (
               <Button type="button" variant="destructive" onClick={() => setToDelete(editing.category)} disabled={busy}>
                 <Trash weight="bold" className="h-4 w-4" />
-                Supprimer la catégorie
+                {t("Supprimer la catégorie")}
               </Button>
             )}
           </div>
@@ -596,13 +597,13 @@ export function CategoryManager({
       <ConfirmDialog
         open={toDelete != null}
         onOpenChange={(o) => !o && setToDelete(null)}
-        title="Supprimer cette catégorie ?"
+        title={t("Supprimer cette catégorie ?")}
         description={
           <>
-            « {toDelete?.emoji} {toDelete?.name} » sera supprimée.{" "}
+            {t("« {name} » sera supprimée.", { name: `${toDelete?.emoji} ${categoryName(toDelete?.name ?? "", t)}` })}{" "}
             {income
-              ? "Ses revenus sont gardés et passent dans « Autre »."
-              : "Les dépenses de cette catégorie sont gardées, sans catégorie."}
+              ? t("Ses revenus sont gardés et passent dans « Autre ».")
+              : t("Les dépenses de cette catégorie sont gardées, sans catégorie.")}
           </>
         }
         pending={busy}

@@ -3,25 +3,28 @@ import { PageHeader } from "@/components/page-header";
 import { currentAccount } from "@/lib/accounts";
 import { isAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
+import type { Lang } from "@/lib/i18n";
+import { formatDate } from "@/lib/i18n/dates";
+import { getI18n } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Admin · GX Salaire" };
 
-const when = (iso: string | null) =>
+const when = (iso: string | null, lang: Lang) =>
   iso
-    ? new Intl.DateTimeFormat("fr-FR", {
+    ? formatDate(new Date(iso), lang, {
         day: "numeric",
         month: "short",
         year: "numeric",
         hour: "2-digit",
         minute: "2-digit",
         timeZone: "Africa/Casablanca",
-      }).format(new Date(iso))
+      })
     : "—";
 
 /** The accounts: who signed up, when, and their last sign-in. Owner only. */
 export default async function AdminPage() {
-  const account = await currentAccount();
+  const [account, { lang, t }] = await Promise.all([currentAccount(), getI18n()]);
   if (!isAdmin(account?.email)) notFound();
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
@@ -30,10 +33,10 @@ export default async function AdminPage() {
 
   return (
     <>
-      <PageHeader title="Admin" back hideSettings />
+      <PageHeader title={t("Admin")} back hideSettings info="admin" />
       <main className="flex flex-col gap-4 px-4 py-5">
         <div className="rounded-3xl bg-gradient-to-br from-slate-700 via-slate-800 to-slate-950 px-5 py-4 text-white shadow-lg">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/70">Comptes</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/70">{t("Comptes")}</p>
           <p className="mt-1 text-4xl font-bold tabular-nums">{users.length}</p>
         </div>
 
@@ -54,9 +57,9 @@ export default async function AdminPage() {
                   <span className="block truncate text-[15px] font-semibold text-slate-900 dark:text-white">{name}</span>
                   <span className="block truncate text-sm text-slate-500 dark:text-slate-400">{u.email}</span>
                   <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-                    Inscrit le {when(u.createdAt)}
+                    {t("Inscrit le {date}", { date: when(u.createdAt, lang) })}
                     <br />
-                    Dernière connexion : {when(u.lastLoginAt)}
+                    {t("Dernière connexion : {date}", { date: when(u.lastLoginAt, lang) })}
                   </span>
                 </span>
               </li>

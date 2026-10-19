@@ -2,7 +2,10 @@ import { getAllCategories, getAllExpenses, getAllPayments, getSettings } from "@
 import Link from "next/link";
 import { CaretRight, Check, Clock } from "@phosphor-icons/react/ssr";
 
-import { monthFromSearchParams, monthKey, monthLabelFr, monthLabelShortFr, todayMonth } from "@/lib/date";
+import { monthFromSearchParams, monthKey, todayMonth } from "@/lib/date";
+import { monthLabel, monthLabelShort } from "@/lib/i18n/dates";
+import { categoryName, localName } from "@/lib/i18n";
+import { getI18n } from "@/lib/i18n/server";
 import { findPayment, getEffectiveEndMonth, getMonthPaymentStatus, getMonthSummary, lastPaidAt } from "@/lib/engine";
 import { MonthSwitcher } from "@/components/month-switcher";
 import { PageHeader } from "@/components/page-header";
@@ -33,12 +36,13 @@ interface Row {
  * its status (paid — cash or card — or to pay). Tapping one opens it.
  */
 export default async function BudgetPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
-  const [sp, settings, expenses, payments, categories] = await Promise.all([
+  const [sp, settings, expenses, payments, categories, { lang, t }] = await Promise.all([
     searchParams,
     getSettings(),
     getAllExpenses(),
     getAllPayments(),
     getAllCategories(),
+    getI18n(),
   ]);
   const money = (n: number) => formatMoney(n, settings.currency);
   const categoryEmoji = new Map(categories.map((c) => [c.id, c.emoji]));
@@ -67,12 +71,12 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
         method: payments.filter((p) => p.expenseId === e.id && p.monthKey === key && p.amountPaid > 0).at(-1)?.method ?? null,
         kind:
           e.type === "permanent"
-            ? "Chaque mois"
+            ? t("Chaque mois")
             : e.frequency === "one-time"
-              ? "Une fois"
+              ? t("Une fois")
               : end
-                ? `Jusqu'à ${monthLabelShortFr(end).toLowerCase()}`
-                : "Temporaire",
+                ? t("Jusqu'à {month}", { month: monthLabelShort(end, lang).toLowerCase() })
+                : t("Temporaire"),
       };
     });
 
@@ -85,8 +89,8 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
 
   // Grouped by category, in the categories' own order; uncategorized last.
   const groups = [
-    ...categories.map((c) => ({ id: c.id, label: c.name, emoji: c.emoji })),
-    { id: null as string | null, label: "Sans catégorie", emoji: "🏷️" },
+    ...categories.map((c) => ({ id: c.id, label: categoryName(c.name, t), emoji: c.emoji })),
+    { id: null as string | null, label: t("Sans catégorie"), emoji: "🏷️" },
   ]
     .map((g) => {
       const list = rows
@@ -99,37 +103,39 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
 
   return (
     <>
-      <PageHeader title="Dépenses" action={<HeaderAdd href="/expenses/new" label="Ajouter une dépense" />} />
+      <PageHeader title={t("Dépenses")} info="budget" action={<HeaderAdd href="/expenses/new" label={t("Ajouter une dépense")} />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         <MonthSwitcher month={viewMonth} basePath="/budget" />
 
         {/* Summary */}
         <div className="rounded-3xl bg-gradient-to-br from-rose-500 to-pink-700 px-5 pb-4 pt-5 text-white shadow-lg shadow-rose-500/20 dark:shadow-none">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Dépenses · {monthLabelFr(viewMonth)}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">
+            {t("Dépenses")} · {monthLabel(viewMonth, lang)}
+          </p>
           <p className="mt-0.5 text-3xl font-bold tabular-nums">{money(total)}</p>
           <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/25">
             <div className="h-full rounded-full bg-white" style={{ width: `${percent}%` }} />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <div className="rounded-xl bg-white/15 px-3 py-2">
-              <p className="text-[11px] text-white/75">Payé</p>
+              <p className="text-[11px] text-white/75">{t("Payé")}</p>
               <p className="text-sm font-bold tabular-nums">{money(paid)}</p>
             </div>
             <div className="rounded-xl bg-white/15 px-3 py-2">
-              <p className="text-[11px] text-white/75">Reste à payer</p>
+              <p className="text-[11px] text-white/75">{t("Reste à payer")}</p>
               <p className="text-sm font-bold tabular-nums">{money(total - paid)}</p>
             </div>
           </div>
           <p className="mt-2 text-[11px] text-white/80">
-            {paidCount}/{rows.length} payée{paidCount > 1 ? "s" : ""} · {percent}%
+            {t(paidCount > 1 ? "{paid}/{total} payées" : "{paid}/{total} payée", { paid: paidCount, total: rows.length })} · {percent}%
           </p>
         </div>
 
-        <AddLink href="/expenses/new" label="Ajouter une dépense" />
+        <AddLink href="/expenses/new" label={t("Ajouter une dépense")} />
 
         {groups.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-slate-200 px-3 py-8 text-center text-sm text-slate-400 dark:border-slate-700">
-            Aucune dépense prévue pour ce mois.
+            {t("Aucune dépense prévue pour ce mois.")}
           </p>
         ) : (
           groups.map((g) => (
@@ -167,10 +173,10 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
                               isPaid && "text-slate-500 dark:text-slate-400",
                             )}
                           >
-                            {r.expense.name}
+                            {localName(r.expense.name, t)}
                           </span>
                           <span className="block truncate text-[11px] text-slate-400">
-                            {partly ? `${money(r.paid)} payés sur ${money(r.amount)}` : r.kind}
+                            {partly ? t("{paid} payés sur {due}", { paid: money(r.paid), due: money(r.amount) }) : r.kind}
                           </span>
                         </span>
                         <span className="flex shrink-0 flex-col items-end gap-1">
@@ -185,12 +191,13 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
                           {isPaid ? (
                             <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
                               <Check weight="bold" className="h-3 w-3" />
-                              Payé{r.method && <MethodIcon method={r.method} className="ml-0.5" />}
+                              {t("Payé")}
+                              {r.method && <MethodIcon method={r.method} className="ml-0.5" />}
                             </span>
                           ) : partly ? (
                             <span className="flex items-center gap-1 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
                               <Clock weight="bold" className="h-3 w-3" />
-                              Reste {money(Math.max(0, r.amount - r.paid))}
+                              {t("Reste {amount}", { amount: money(Math.max(0, r.amount - r.paid)) })}
                             </span>
                           ) : (
                             <span
@@ -202,7 +209,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
                               )}
                             >
                               <Clock weight="bold" className="h-3 w-3" />
-                              {r.status === "unpaid" ? "À payer" : "À venir"}
+                              {r.status === "unpaid" ? t("À payer") : t("À venir")}
                             </span>
                           )}
                         </span>

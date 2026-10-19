@@ -3,6 +3,7 @@
 import { useEffect, useId, useState } from "react";
 import type { DisplayColor } from "@/lib/engine";
 import { cn, formatMoney } from "@/lib/utils";
+import { useT } from "@/lib/i18n/client";
 
 export interface DonutSegment {
   color: DisplayColor;
@@ -72,6 +73,7 @@ export function BudgetDonut({
   currency: string;
 }) {
   const uid = useId().replace(/:/g, "");
+  const t = useT();
   const [selected, setSelected] = useState<SliceKey | null>(null);
   // The ring spins in once, right after the first paint.
   const [shown, setShown] = useState(false);
@@ -89,7 +91,7 @@ export function BudgetDonut({
   // read "269%" on a slice before).
   const pct = (amount: number) => Math.round((amount / base) * 100);
 
-  const restSlice: Slice | null = rest > 0 ? { key: "rest", label: "Reste", amount: rest, items: [] } : null;
+  const restSlice: Slice | null = rest > 0 ? { key: "rest", label: t("Reste"), amount: rest, items: [] } : null;
   const parts: Slice[] = [
     ...filled.map((s) => ({ key: s.color, label: s.label, amount: s.amount, items: s.items })),
     ...(restSlice ? [restSlice] : []),
@@ -183,7 +185,7 @@ export function BudgetDonut({
 
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
           <span className="max-w-[100px] text-[10px] font-semibold uppercase leading-tight tracking-wider text-slate-400">
-            Total des dépenses
+            {t("Total des dépenses")}
           </span>
           <span className="mt-1 text-xl font-bold tabular-nums text-slate-900 dark:text-slate-900">
             {formatMoney(total, currency)}
@@ -208,8 +210,8 @@ export function BudgetDonut({
             <ul className="mx-2 flex flex-col gap-2 border-l-2 pl-3" style={{ borderColor: GRADIENT[current.key][1] }}>
               {current.key === "rest" ? (
                 <>
-                  <DetailLine label="Salaire" amount={salary} currency={currency} />
-                  <DetailLine label="Total des dépenses" amount={-total} currency={currency} />
+                  <DetailLine label={t("Salaire")} amount={salary} currency={currency} />
+                  <DetailLine label={t("Total des dépenses")} amount={-total} currency={currency} />
                 </>
               ) : (
                 current.items.map((item) => (
@@ -240,7 +242,7 @@ export function BudgetDonut({
             <div className="mt-1 border-t border-dashed border-slate-200 pt-1 dark:border-slate-700">
               <LegendRow
                 sliceKey="rest"
-                label="Reste"
+                label={t("Reste")}
                 amount={rest}
                 percent={pct(Math.max(0, rest))}
                 currency={currency}

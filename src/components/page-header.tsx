@@ -6,6 +6,8 @@ import { GearSix } from "@phosphor-icons/react/ssr";
 import { BackButton } from "@/components/back-button";
 import { HEADER_BUTTON } from "@/components/header-button";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/client";
+import { PageInfoButton } from "@/components/page-info";
 
 /**
  * Page header, the same on every page: on the page itself while at the top,
@@ -18,13 +20,17 @@ export function PageHeader({
   back = false,
   action,
   hideSettings = false,
+  info,
 }: {
   title: ReactNode;
   /** Back arrow: previous page, or home when this is the first page opened. */
   back?: boolean;
   action?: ReactNode;
   hideSettings?: boolean;
+  /** The page's « i »: what it is and what can be done on it (PAGE_INFO). */
+  info?: string;
 }) {
+  const t = useT();
   const ref = useScrolledFlag();
   // A long title ("Ajouter une dépense", "Modifier · Makla" beside a
   // delete button) would be cut between the buttons: smaller then.
@@ -33,17 +39,20 @@ export function PageHeader({
     <header ref={ref} data-tone className="gx-header sticky top-0 z-30 px-5 pb-2 pt-4 text-slate-900 dark:text-white">
       <div className="flex h-12 items-center gap-3">
         {back && <BackButton />}
-        <h1
-          className={cn(
-            "min-w-0 flex-1 truncate font-extrabold tracking-tight",
-            length > 24 ? "text-[18px]" : length > 17 ? "text-[21px]" : "text-[25px]",
-          )}
-        >
-          {title}
-        </h1>
+        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+          <h1
+            className={cn(
+              "min-w-0 truncate font-extrabold tracking-tight",
+              length > 24 ? "text-[18px]" : length > 17 ? "text-[21px]" : "text-[25px]",
+            )}
+          >
+            {title}
+          </h1>
+          {info && <PageInfoButton page={info} />}
+        </div>
         {action}
         {!hideSettings && (
-          <Link href="/settings" prefetch data-nav="section" aria-label="Paramètres" className={HEADER_BUTTON}>
+          <Link href="/settings" prefetch data-nav="section" aria-label={t("Paramètres")} className={HEADER_BUTTON}>
             <GearSix weight="bold" className="h-[19px] w-[19px]" />
           </Link>
         )}

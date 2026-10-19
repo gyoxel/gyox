@@ -2,14 +2,16 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/client";
 
 /** The GX logo on Accueil: tapping it reloads the page. */
 export function RefreshLogo() {
   const [reloading, setReloading] = useState(false);
+  const t = useT();
   return (
     <button
       type="button"
-      aria-label="Actualiser"
+      aria-label={t("Actualiser")}
       disabled={reloading}
       onClick={() => {
         setReloading(true);

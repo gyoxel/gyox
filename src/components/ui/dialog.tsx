@@ -5,6 +5,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "@phosphor-icons/react/ssr";
 import { cn } from "@/lib/utils";
 import { useCloseOnBack } from "@/lib/close-on-back";
+import { useT } from "@/lib/i18n/client";
 
 const Dialog = DialogPrimitive.Root;
 const DialogTrigger = DialogPrimitive.Trigger;
@@ -31,6 +32,7 @@ const DialogContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
   const closeButton = React.useRef<HTMLButtonElement>(null);
+  const t = useT();
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -48,7 +50,7 @@ const DialogContent = React.forwardRef<
           className="gx-pill absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-white"
         >
           <X weight="bold" className="h-4 w-4" />
-          <span className="sr-only">Fermer</span>
+          <span className="sr-only">{t("Fermer")}</span>
         </DialogPrimitive.Close>
         <CloseOnBack button={closeButton} />
       </DialogPrimitive.Content>

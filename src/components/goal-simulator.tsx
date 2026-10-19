@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { CalendarBlank, Coins, Gauge, Timer } from "@phosphor-icons/react/ssr";
-import { addMonths, monthKey, monthLabelFr, monthLabelShortFr, monthsBetween, parseMonthKey } from "@/lib/date";
+import { addMonths, monthKey, monthsBetween, parseMonthKey } from "@/lib/date";
+import { monthLabel, monthLabelShort } from "@/lib/i18n/dates";
+import { useI18n } from "@/lib/i18n/client";
 import { finishMonthFor, missingBy, savingNeeded, simulateSaving, type GoalSimBase } from "@/lib/goals";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -29,6 +31,9 @@ export function GoalSimulator({
   defaultMonthly: number | null;
   deadline: string | null;
 }) {
+  const { lang, t } = useI18n();
+  const monthLabelFr = (m: Parameters<typeof monthLabel>[0]) => monthLabel(m, lang);
+  const monthLabelShortFr = (m: Parameters<typeof monthLabel>[0]) => monthLabelShort(m, lang);
   const now = parseMonthKey(base.currentMonth);
   const money = (n: number) => formatMoney(n, currency);
   const done = base.reachedNow >= base.target;
@@ -50,9 +55,9 @@ export function GoalSimulator({
   return (
     <div className="flex flex-col gap-4">
       {/* 1 */}
-      <Panel icon={Coins} title="Si je mets de côté chaque mois…">
+      <Panel icon={Coins} title={t("Si je mets de côté chaque mois…")}>
         <div className="grid grid-cols-2 gap-2">
-          <Field label="DH / mois" className="col-span-2">
+          <Field label={t("DH / mois")} className="col-span-2">
             <Input
               type="text"
               inputMode="decimal"
@@ -61,10 +66,10 @@ export function GoalSimulator({
               onChange={(e) => setMonthly(cleanDecimalInput(e.target.value))}
             />
           </Field>
-          <Field label="De">
+          <Field label={t("De")}>
             <Input type="month" value={from} onChange={(e) => setFrom(e.target.value)} className="text-sm" />
           </Field>
-          <Field label="À">
+          <Field label={t("À")}>
             <Input type="month" value={to} onChange={(e) => setTo(e.target.value)} className="text-sm" />
           </Field>
         </div>
@@ -72,25 +77,25 @@ export function GoalSimulator({
           <Result
             percent={sim.percent}
             lines={[
-              [`Mis de côté (${sim.months} mois)`, `+${money(sim.added)}`],
-              ...(sim.fromDarets > 0 ? ([["Darets d'ici là", `+${money(sim.fromDarets)}`]] as [string, string][]) : []),
-              ["Total", money(sim.total)],
+              [t("Mis de côté ({n} mois)", { n: sim.months }), `+${money(sim.added)}`],
+              ...(sim.fromDarets > 0 ? ([[t("Darets d'ici là"), `+${money(sim.fromDarets)}`]] as [string, string][]) : []),
+              [t("Total"), money(sim.total)],
             ]}
             footer={
               sim.remaining > 0
-                ? `Il restera ${money(sim.remaining)} en ${monthLabelFr(parseMonthKey(to))}.`
-                : `Objectif atteint en ${monthLabelFr(parseMonthKey(to))} 🎉${sim.total > base.target ? ` (+${money(sim.total - base.target)} en plus)` : ""}`
+                ? t("Il restera {amount} en {month}.", { amount: money(sim.remaining), month: monthLabelFr(parseMonthKey(to)) })
+                : `${t("Objectif atteint en {month} 🎉", { month: monthLabelFr(parseMonthKey(to)) })}${sim.total > base.target ? ` ${t("(+{amount} en plus)", { amount: money(sim.total - base.target) })}` : ""}`
             }
           />
         ) : (
-          <Hint>Indique un montant et une période valide.</Hint>
+          <Hint>{t("Indique un montant et une période valide.")}</Hint>
         )}
       </Panel>
 
       {/* 2 */}
-      <Panel icon={CalendarBlank} title="Je veux réunir… avant…">
+      <Panel icon={CalendarBlank} title={t("Je veux réunir… avant…")}>
         <div className="grid grid-cols-2 gap-2">
-          <Field label="Montant (DH)">
+          <Field label={t("Montant (DH)")}>
             <Input
               type="text"
               inputMode="decimal"
@@ -99,7 +104,7 @@ export function GoalSimulator({
               onChange={(e) => setAmount(cleanDecimalInput(e.target.value))}
             />
           </Field>
-          <Field label="Avant">
+          <Field label={t("Avant")}>
             <Input
               type="month"
               value={by}
@@ -114,31 +119,31 @@ export function GoalSimulator({
         {need ? (
           <Result
             percent={need.percent}
-            highlight={`${money(need.monthly)} / mois`}
+            highlight={t("{amount} / mois", { amount: money(need.monthly) })}
             lines={[
-              ["Pendant", `${need.months} mois (jusqu'à ${monthLabelShortFr(parseMonthKey(by))})`],
-              ...(need.fromDarets > 0 ? ([["Darets d'ici là", `+${money(need.fromDarets)}`]] as [string, string][]) : []),
-              ["Objectif à ce moment", money(need.total)],
+              [t("Pendant"), t("{n} mois (jusqu'à {month})", { n: need.months, month: monthLabelShortFr(parseMonthKey(by)) })],
+              ...(need.fromDarets > 0 ? ([[t("Darets d'ici là"), `+${money(need.fromDarets)}`]] as [string, string][]) : []),
+              [t("Objectif à ce moment"), money(need.total)],
             ]}
-            footer={need.remaining > 0 ? `Il restera ${money(need.remaining)}.` : "Objectif atteint 🎉"}
+            footer={need.remaining > 0 ? t("Il restera {amount}.", { amount: money(need.remaining) }) : t("Objectif atteint 🎉")}
           />
         ) : (
-          <Hint>Indique un montant et un mois à venir.</Hint>
+          <Hint>{t("Indique un montant et un mois à venir.")}</Hint>
         )}
       </Panel>
 
       {!done && (
         <>
           {/* 3 */}
-          <Panel icon={Gauge} title="Selon ce que je mets par mois">
+          <Panel icon={Gauge} title={t("Selon ce que je mets par mois")}>
             <Table
-              head={["Par mois", "Atteint en", "Durée"]}
+              head={[t("Par mois"), t("Atteint en"), t("Durée")]}
               rows={monthlySteps.map((m) => {
                 const end = finishMonthFor(base, m);
                 return [
                   money(m),
                   end ? monthLabelShortFr(end) : "—",
-                  end ? `${monthsBetween(now, end) + 1} mois` : "+50 ans",
+                  end ? t("{n} mois", { n: monthsBetween(now, end) + 1 }) : t("+50 ans"),
                 ];
               })}
               highlightRow={defaultMonthly ? monthlySteps.indexOf(defaultMonthly) : -1}
@@ -146,13 +151,13 @@ export function GoalSimulator({
           </Panel>
 
           {/* 4 */}
-          <Panel icon={Timer} title="Pour finir en…">
+          <Panel icon={Timer} title={t("Pour finir en…")}>
             <Table
-              head={["Durée", "Fin", "Par mois"]}
+              head={[t("Durée"), t("Fin"), t("Par mois")]}
               rows={DURATIONS.map((n) => {
                 const end = addMonths(now, n - 1);
                 const missing = missingBy(base, end);
-                return [`${n} mois`, monthLabelShortFr(end), missing > 0 ? money(Math.ceil(missing / n)) : "Darets suffisent"];
+                return [t("{n} mois", { n }), monthLabelShortFr(end), missing > 0 ? money(Math.ceil(missing / n)) : t("Darets suffisent")];
               })}
             />
           </Panel>

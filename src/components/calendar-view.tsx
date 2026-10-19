@@ -8,6 +8,9 @@ import { cn, formatMoney } from "@/lib/utils";
 import { DayNoteEditor } from "@/components/day-note-editor";
 import { METHOD_META } from "@/lib/payment-method";
 import { MethodIcon } from "@/components/method-icon";
+import type { Lang } from "@/lib/i18n";
+import { formatDate } from "@/lib/i18n/dates";
+import { useI18n } from "@/lib/i18n/client";
 
 export interface CalendarEvent {
   id: string;
@@ -35,10 +38,14 @@ export interface CalendarInfo {
 // payment made just after midnight lands on the right day everywhere.
 const TIME_ZONE = "Africa/Casablanca";
 const DAY_KEY = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" });
-const TIME = new Intl.DateTimeFormat("fr-FR", { timeZone: TIME_ZONE, hour: "2-digit", minute: "2-digit" });
-const DAY_TITLE = new Intl.DateTimeFormat("fr-FR", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" });
+const TIME: Intl.DateTimeFormatOptions = { timeZone: TIME_ZONE, hour: "2-digit", minute: "2-digit" };
+const DAY_TITLE: Intl.DateTimeFormatOptions = { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" };
 const SWIPE_PX = 40;
-const WEEKDAYS = ["L", "M", "M", "J", "V", "S", "D"];
+const WEEKDAYS: Record<Lang, string[]> = {
+  fr: ["L", "M", "M", "J", "V", "S", "D"],
+  en: ["M", "T", "W", "T", "F", "S", "S"],
+  dar: ["Tn", "Tl", "Lr", "Kh", "Jm", "Sb", "7d"],
+};
 
 const dayKeyOf = (at: string) => (at.length === 10 ? at : DAY_KEY.format(new Date(at)));
 const todayKey = () => DAY_KEY.format(new Date());
@@ -76,6 +83,7 @@ export function CalendarView({
   nextHref: string;
   currency: string;
 }) {
+  const { lang, t } = useI18n();
   const [year, mon] = month.split("-").map(Number);
   const daysInMonth = new Date(year, mon, 0).getDate();
   const firstWeekday = (new Date(year, mon - 1, 1).getDay() + 6) % 7; // Monday first
@@ -121,25 +129,25 @@ export function CalendarView({
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-rose-400 via-pink-500 to-fuchsia-600 px-4 pb-4 pt-3.5 text-white shadow-lg shadow-pink-500/20 dark:shadow-none">
         <span aria-hidden className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10" />
         <div className="relative flex items-center justify-between gap-2">
-          <NavArrow href={prevHref} label="Mois précédent">
+          <NavArrow href={prevHref} label={t("Mois précédent")}>
             <CaretLeft weight="bold" className="h-4 w-4" />
           </NavArrow>
           <div className="text-lg font-bold capitalize">{monthLabel}</div>
-          <NavArrow href={nextHref} label="Mois suivant">
+          <NavArrow href={nextHref} label={t("Mois suivant")}>
             <CaretRight weight="bold" className="h-4 w-4" />
           </NavArrow>
         </div>
         <div className="relative mt-3 grid grid-cols-3 gap-2 text-center">
           <div className="rounded-2xl bg-white/15 px-2 py-2">
-            <p className="text-[10px] uppercase tracking-wide text-white/75">Entrées</p>
+            <p className="text-[10px] uppercase tracking-wide text-white/75">{t("Entrées")}</p>
             <p className="text-sm font-bold tabular-nums">+{formatMoney(monthIn, currency)}</p>
           </div>
           <div className="rounded-2xl bg-white/15 px-2 py-2">
-            <p className="text-[10px] uppercase tracking-wide text-white/75">Sorties</p>
+            <p className="text-[10px] uppercase tracking-wide text-white/75">{t("Sorties")}</p>
             <p className="text-sm font-bold tabular-nums">−{formatMoney(monthOut, currency)}</p>
           </div>
           <div className="rounded-2xl bg-white/15 px-2 py-2">
-            <p className="text-[10px] uppercase tracking-wide text-white/75">Reste</p>
+            <p className="text-[10px] uppercase tracking-wide text-white/75">{t("Reste")}</p>
             <p className="text-sm font-bold tabular-nums">
               {monthIn - monthOut < 0 ? "−" : ""}
               {formatMoney(Math.abs(monthIn - monthOut), currency)}
@@ -155,7 +163,7 @@ export function CalendarView({
         onTouchEnd={onTouchEnd}
       >
         <div className="grid grid-cols-7 pb-1">
-          {WEEKDAYS.map((w, i) => (
+          {WEEKDAYS[lang].map((w, i) => (
             <span key={i} className="py-1 text-center text-[11px] font-semibold text-slate-400">
               {w}
             </span>
@@ -219,9 +227,9 @@ export function CalendarView({
       </div>
 
       <div className="-mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400">
-        <Legend className="bg-violet-500">À savoir</Legend>
-        <Legend className="bg-amber-500">Note</Legend>
-        <Legend className="bg-teal-500">Objectif</Legend>
+        <Legend className="bg-violet-500">{t("À savoir")}</Legend>
+        <Legend className="bg-amber-500">{t("Note")}</Legend>
+        <Legend className="bg-teal-500">{t("Objectif")}</Legend>
       </div>
 
       {/* Selected day */}
@@ -229,7 +237,7 @@ export function CalendarView({
         <section className="flex flex-col gap-2">
           <h2 className="flex items-center gap-2 px-1 text-sm font-semibold capitalize text-slate-600 dark:text-slate-300">
             <span className="h-2 w-2 rounded-full bg-pink-500" />
-            {DAY_TITLE.format(new Date(`${selected}T12:00:00Z`))}
+            {formatDate(new Date(`${selected}T12:00:00Z`), lang, DAY_TITLE)}
           </h2>
           {selectedInfos.length > 0 && (
             <ul className="flex flex-col gap-1.5">
@@ -255,9 +263,9 @@ export function CalendarView({
                   <span className="text-lg leading-none">{e.icon}</span>
                   <span className="flex min-w-0 flex-1 items-baseline gap-2">
                     <span className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">{e.label}</span>
-                    {e.at.length > 10 && <span className="shrink-0 text-[11px] text-slate-400">{TIME.format(new Date(e.at))}</span>}
+                    {e.at.length > 10 && <span className="shrink-0 text-[11px] text-slate-400">{formatDate(new Date(e.at), lang, TIME)}</span>}
                     {e.method && (
-                      <span className="shrink-0 text-[11px]" title={METHOD_META[e.method].label}>
+                      <span className="shrink-0 text-[11px]" title={t(METHOD_META[e.method].label)}>
                         <MethodIcon method={e.method} />
                       </span>
                     )}
@@ -278,13 +286,13 @@ export function CalendarView({
             selected <= today &&
             selectedInfos.length === 0 && (
               <p className="rounded-xl border border-dashed border-slate-200 px-3 py-3 text-center text-sm text-slate-400 dark:border-slate-700">
-                Aucun mouvement ce jour-là.
+                {t("Aucun mouvement ce jour-là.")}
               </p>
             )
           )}
           <h3 className="mt-1 flex items-center gap-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
             <Note weight="bold" className="h-3.5 w-3.5" />
-            Note
+            {t("Note")}
           </h3>
           <DayNoteEditor key={`${selected}:${notes[selected] ?? ""}`} date={selected} text={notes[selected] ?? ""} />
         </section>

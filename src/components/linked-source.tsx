@@ -4,13 +4,14 @@ import { LockedDelete, LockedDeleteIcon } from "@/components/locked-delete";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getI18n } from "@/lib/i18n/server";
 
 /**
  * Page of an expense / income created by something else (money put into
  * the savings, a loan…): what it is, a button to its source, and a greyed
  * delete — only the source edits and deletes it.
  */
-export function LinkedSourcePage({
+export async function LinkedSourcePage({
   title,
   gradient,
   eyebrow,
@@ -32,12 +33,13 @@ export function LinkedSourcePage({
   href: string;
   editLabel: string;
   buttonClass: string;
-  /** "l'épargne", "le prêt"… */
+  /** "l'épargne", "le budget"… (translated). */
   sourceLabel: string;
 }) {
+  const { t } = await getI18n();
   return (
     <>
-      <PageHeader title={title} back action={<LockedDeleteIcon hint={`Supprime-le depuis ${sourceLabel}.`} />} />
+      <PageHeader title={title} back info="linked" action={<LockedDeleteIcon hint={t("Supprime-le depuis {source}.", { source: sourceLabel })} />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         <div className={cn("relative overflow-hidden rounded-3xl bg-gradient-to-br p-5 text-white shadow-lg dark:shadow-none", gradient)}>
           <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
@@ -52,7 +54,7 @@ export function LinkedSourcePage({
             {editLabel}
           </Link>
         </Button>
-        <LockedDelete hint="Il vient d'ailleurs : supprime-le depuis" href={href} linkLabel={sourceLabel} />
+        <LockedDelete hint={t("Il vient d'ailleurs : supprime-le depuis")} href={href} linkLabel={sourceLabel} />
       </main>
     </>
   );

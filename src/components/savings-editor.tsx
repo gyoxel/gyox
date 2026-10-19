@@ -13,8 +13,10 @@ import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatDate } from "@/lib/i18n/dates";
+import { useI18n } from "@/lib/i18n/client";
 
-const DATE_FMT = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+const DATE_FMT: Intl.DateTimeFormatOptions = { day: "numeric", month: "long", year: "numeric" };
 
 /**
  * Modifier une épargne (money put aside) or a retrait (taken back): amount,
@@ -23,6 +25,7 @@ const DATE_FMT = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long
  */
 export function SavingsEditor({ move, counted, currency }: { move: SavingsMove; counted: boolean; currency: string }) {
   const nav = useNavBack();
+  const { lang, t } = useI18n();
   const [amount, setAmount] = useState(toDecimalInput(move.amount));
   const [note, setNote] = useState(move.note ?? "");
   const [method, setMethod] = useState<PaymentMethod>(move.method);
@@ -35,7 +38,7 @@ export function SavingsEditor({ move, counted, currency }: { move: SavingsMove; 
   function save(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!(value > 0)) return setError("Indique un montant.");
+    if (!(value > 0)) return setError(t("Indique un montant."));
     startTransition(async () => {
       const res = await mutate({
         method: "PATCH",
@@ -43,7 +46,7 @@ export function SavingsEditor({ move, counted, currency }: { move: SavingsMove; 
         body: { amount: value, method, note: note.trim() || null },
       });
       if (!res.ok) return setError(await errorMessage(res));
-      toast.success("Enregistré.");
+      toast.success(t("Enregistré."));
       nav.back("/epargne");
     });
   }
@@ -53,7 +56,7 @@ export function SavingsEditor({ move, counted, currency }: { move: SavingsMove; 
       <div className="relative flex flex-col items-center gap-1 overflow-hidden rounded-3xl bg-gradient-to-br from-lime-400 via-green-500 to-emerald-700 px-4 py-5 text-white shadow-lg shadow-green-600/20 dark:shadow-none">
         <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
         <Label htmlFor="amount" className="relative text-xs text-white/80">
-          {isExisting ? "Déjà épargné 🏦" : isIn ? "Mis de côté 🐷" : "Retiré de l'épargne"}
+          {isExisting ? `${t("Déjà épargné")} 🏦` : isIn ? `${t("Mis de côté")} 🐷` : t("Retiré de l'épargne")}
         </Label>
         <div className="relative flex items-baseline gap-2">
           <span className="text-2xl font-semibold text-white/80">{isIn ? "+" : "−"}</span>
@@ -70,44 +73,44 @@ export function SavingsEditor({ move, counted, currency }: { move: SavingsMove; 
           />
           <span className="text-lg font-semibold text-white/70">{currency === "MAD" ? "DH" : currency}</span>
         </div>
-        <p className="relative text-[11px] text-white/80">{DATE_FMT.format(new Date(`${move.date}T12:00:00`))}</p>
+        <p className="relative text-[11px] text-white/80">{formatDate(new Date(`${move.date}T12:00:00`), lang, DATE_FMT)}</p>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="note">Note (optionnel)</Label>
+        <Label htmlFor="note">{t("Note (optionnel)")}</Label>
         <Input
           id="note"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           maxLength={80}
-          placeholder={isIn ? "Où, pourquoi : Banque CIH, vacances…" : "Pour quoi : réparation, voyage…"}
+          placeholder={isIn ? t("Où, pourquoi : Banque CIH, vacances…") : t("Pour quoi : réparation, voyage…")}
         />
       </div>
 
-      {!isExisting && <PaymentMethodPicker value={method} onChange={setMethod} label={isIn ? "Pris en" : "Mis en"} />}
+      {!isExisting && <PaymentMethodPicker value={method} onChange={setMethod} label={isIn ? t("Pris en") : t("Mis en")} />}
 
       <p className="px-1 text-[11px] text-slate-400">
         {isExisting
-          ? "Épargne que tu avais déjà : hors de ton solde, ni dans tes dépenses ni dans tes revenus."
+          ? t("Épargne que tu avais déjà : hors de ton solde, ni dans tes dépenses ni dans tes revenus.")
           : isIn
           ? counted
-            ? "Dans tes dépenses comme épargne (payée) : sorti de ton solde actuel."
-            : "Pas payée dans tes dépenses : elle ne compte pas encore dans l'épargne."
-          : "Dans tes revenus : revenu dans ton solde actuel."}
+            ? t("Dans tes dépenses comme épargne (payée) : sorti de ton solde actuel.")
+            : t("Pas payée dans tes dépenses : elle ne compte pas encore dans l'épargne.")
+          : t("Dans tes revenus : revenu dans ton solde actuel.")}
       </p>
 
       {error && <p className="text-sm text-rose-600">{error}</p>}
 
       <div className="flex gap-2">
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back("/epargne")}>
-          Annuler
+          {t("Annuler")}
         </Button>
         <Button type="submit" className="flex-1 gx-cta" disabled={pending}>
-          {pending ? "Enregistrement…" : "Enregistrer"}
+          {pending ? t("Enregistrement…") : t("Enregistrer")}
         </Button>
       </div>
 
-      <DeleteButton variant="full" {...savingsDelete(move)} />
+      <DeleteButton variant="full" {...savingsDelete(move, t)} />
     </form>
   );
 }

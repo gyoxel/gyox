@@ -2,7 +2,10 @@ import Link from "next/link";
 import { CaretRight } from "@phosphor-icons/react/ssr";
 import type { Expense, Payment } from "@/lib/types";
 import { getCreditDisplayProgress, getCreditEndMonth, getCreditRealState } from "@/lib/engine";
-import { compareMonths, monthLabelShortFr, monthsBetween, todayMonth } from "@/lib/date";
+import { compareMonths, monthsBetween, todayMonth } from "@/lib/date";
+import { monthLabelShort } from "@/lib/i18n/dates";
+import { localName } from "@/lib/i18n";
+import { getI18n } from "@/lib/i18n/server";
 import { cn, formatMoney } from "@/lib/utils";
 import type { DisplayColor } from "@/lib/engine";
 
@@ -14,7 +17,7 @@ const STROKE = 4;
  * repaid, the monthly amount and end, how many months are left, and the
  * remaining amount. Tapping it opens the credit.
  */
-export function CreditCard({
+export async function CreditCard({
   expense,
   payments,
   currency,
@@ -26,6 +29,7 @@ export function CreditCard({
   color?: DisplayColor;
   icon: string;
 }) {
+  const { lang, t } = await getI18n();
   const current = todayMonth();
   const state = getCreditRealState(expense, payments, current);
   const progress = getCreditDisplayProgress(expense, state);
@@ -69,34 +73,35 @@ export function CreditCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <h3 className="truncate text-[15px] font-semibold text-slate-900 dark:text-white">{expense.name}</h3>
+            <h3 className="truncate text-[15px] font-semibold text-slate-900 dark:text-white">{localName(expense.name, t)}</h3>
             {late && (
               <span className="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-950 dark:text-rose-300">
-                En retard
+                {t("En retard")}
               </span>
             )}
             {done && (
               <span className="shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-                Terminé ✓
+                {t("Terminé ✓")}
               </span>
             )}
           </div>
           <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-            <span className="font-medium text-slate-700 dark:text-slate-300">{money(expense.amount)}</span>/mois
+            <span className="font-medium text-slate-700 dark:text-slate-300">{money(expense.amount)}</span>
+            {t("/mois")}
             {endMonth && (
               <>
                 {" "}
-                · fin {monthLabelShortFr(endMonth).toLowerCase().replace(/ 20(\d\d)$/, " $1")}
+                · {t("fin {month}", { month: monthLabelShort(endMonth, lang).toLowerCase().replace(/ 20(\d\d)$/, " $1") })}
               </>
             )}
           </p>
           {!done && (
             <p className="mt-0.5 text-[11px] font-medium text-blue-600 dark:text-sky-400">
-              {pct}% payé
+              {t("{percent}% payé", { percent: pct })}
               {monthsLeft > 0 && (
                 <span className="text-slate-400">
                   {" "}
-                  · {monthsLeft === 1 ? "dernier mois" : `encore ${monthsLeft} mois`}
+                  · {monthsLeft === 1 ? t("dernier mois") : t("encore {n} mois", { n: monthsLeft })}
                 </span>
               )}
             </p>
@@ -107,7 +112,7 @@ export function CreditCard({
           <p className={cn("text-base font-bold tabular-nums", done ? "text-emerald-600" : "text-slate-900 dark:text-white")}>
             {money(state.remaining)}
           </p>
-          <p className="text-[10px] uppercase tracking-wide text-slate-400">{done ? "soldé" : "restant"}</p>
+          <p className="text-[10px] uppercase tracking-wide text-slate-400">{done ? t("soldé") : t("restant")}</p>
         </div>
         <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300" />
       </div>

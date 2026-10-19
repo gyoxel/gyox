@@ -18,6 +18,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MethodIcon, MethodLabel } from "@/components/method-icon";
+import { localName, msg, type Lang, type T } from "@/lib/i18n";
+import { formatDate, monthLabelShort } from "@/lib/i18n/dates";
+import { parseMonthKey } from "@/lib/date";
+import { useI18n } from "@/lib/i18n/client";
 
 const TIME_ZONE = "Africa/Casablanca";
 const DAY_KEY = new Intl.DateTimeFormat("en-CA", {
@@ -26,23 +30,9 @@ const DAY_KEY = new Intl.DateTimeFormat("en-CA", {
   month: "2-digit",
   day: "2-digit",
 });
-const DAY_TITLE = new Intl.DateTimeFormat("fr-FR", {
-  timeZone: TIME_ZONE,
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-});
-const DAY_TITLE_YEAR = new Intl.DateTimeFormat("fr-FR", {
-  timeZone: TIME_ZONE,
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-});
-const TIME = new Intl.DateTimeFormat("fr-FR", {
-  timeZone: TIME_ZONE,
-  hour: "2-digit",
-  minute: "2-digit",
-});
+const DAY_TITLE: Intl.DateTimeFormatOptions = { timeZone: TIME_ZONE, weekday: "long", day: "numeric", month: "long" };
+const DAY_TITLE_YEAR: Intl.DateTimeFormatOptions = { timeZone: TIME_ZONE, day: "numeric", month: "long", year: "numeric" };
+const TIME: Intl.DateTimeFormatOptions = { timeZone: TIME_ZONE, hour: "2-digit", minute: "2-digit" };
 
 const ACCOUNTS: {
   key: PaymentMethod;
@@ -52,13 +42,13 @@ const ACCOUNTS: {
 }[] = [
   {
     key: "cash",
-    name: "Espèces",
+    name: msg("Espèces"),
     tile: "bg-emerald-50 dark:bg-emerald-950/50",
     ring: "ring-emerald-500",
   },
   {
     key: "card",
-    name: "Carte",
+    name: msg("Carte"),
     tile: "bg-violet-50 dark:bg-violet-950/50",
     ring: "ring-violet-500",
   },
@@ -66,13 +56,22 @@ const ACCOUNTS: {
 
 const PAGE = 40;
 
-function dayTitle(iso: string, todayKey: string, yesterdayKey: string): string {
+function dayTitle(iso: string, todayKey: string, yesterdayKey: string, lang: Lang, t: T): string {
   const key = DAY_KEY.format(new Date(iso));
-  if (key === todayKey) return "Aujourd'hui";
-  if (key === yesterdayKey) return "Hier";
+  if (key === todayKey) return t("Aujourd'hui");
+  if (key === yesterdayKey) return t("Hier");
   const d = new Date(iso);
-  const label = key.slice(0, 4) === todayKey.slice(0, 4) ? DAY_TITLE.format(d) : DAY_TITLE_YEAR.format(d);
+  const label = formatDate(d, lang, key.slice(0, 4) === todayKey.slice(0, 4) ? DAY_TITLE : DAY_TITLE_YEAR);
   return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+/** An entry's name in the device's language (the app's own wording; a
+ *  name typed by the user stays as typed). */
+function entryLabel(entry: WalletEntry, lang: Lang, t: T): string {
+  if (!entry.say) return localName(entry.label, t);
+  const { text, vars, period } = entry.say;
+  const month = period ? monthLabelShort(parseMonthKey(period), lang) : null;
+  return t(text, { ...vars, ...(month ? { period: lang === "en" ? month : month.toLowerCase() } : {}) });
 }
 
 /**
@@ -81,6 +80,7 @@ function dayTitle(iso: string, todayKey: string, yesterdayKey: string): string {
  * movement with its date, time and account.
  */
 export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currency: string }) {
+  const { lang, t } = useI18n();
   const money = (n: number) => formatMoney(n, currency);
   const [filter, setFilter] = useState<PaymentMethod | "all">("all");
   const [shown, setShown] = useState(PAGE);
@@ -99,7 +99,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
   const yesterdayKey = DAY_KEY.format(new Date(now.getTime() - 86_400_000));
   const groups: { title: string; items: WalletEntry[] }[] = [];
   for (const e of visible) {
-    const title = dayTitle(e.at, todayKey, yesterdayKey);
+    const title = dayTitle(e.at, todayKey, yesterdayKey, lang, t);
     if (groups.at(-1)?.title !== title) groups.push({ title, items: [] });
     groups.at(-1)!.items.push(e);
   }
@@ -113,7 +113,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
         return;
       }
       setToDelete(null);
-      toast.success("Opération supprimée.");
+      toast.success(t("Opération supprimée."));
     });
   }
 
@@ -121,7 +121,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
     <>
       {/* Total */}
       <div className="rounded-3xl bg-gradient-to-br from-slate-800 to-slate-950 px-5 pb-4 pt-5 text-white shadow-md dark:from-slate-800 dark:to-slate-900 dark:ring-1 dark:ring-white/10">
-        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">Solde actuel</p>
+        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">{t("Solde actuel")}</p>
         <p className={cn("mt-1 text-center text-4xl font-bold tabular-nums", wallet.total < 0 && "text-rose-300")}>
           {money(wallet.total)}
         </p>
@@ -129,7 +129,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
           <div className="flex flex-col items-center gap-0.5">
             <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-white/60">
               <ArrowDown weight="bold" className="h-3 w-3 text-emerald-300" />
-              Entrées du mois
+              {t("Entrées du mois")}
             </span>
             <span className="text-sm font-bold tabular-nums text-emerald-300">{monthInTotal > 0 && "+"}
               {money(monthInTotal)}</span>
@@ -137,7 +137,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
           <div className="flex flex-col items-center gap-0.5">
             <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-white/60">
               <ArrowUp weight="bold" className="h-3 w-3 text-rose-300" />
-              Sorties du mois
+              {t("Sorties du mois")}
             </span>
             <span className="text-sm font-bold tabular-nums text-rose-300">{monthOutTotal > 0 && "−"}
               {money(monthOutTotal)}</span>
@@ -153,17 +153,17 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
           onClick={() => setTransferOpen(true)}
         >
           <ArrowsLeftRight weight="bold" className="h-4 w-4" />
-          Transférer
+          {t("Transférer")}
         </Button>
         <Button type="button" variant="outline" className="h-12" onClick={() => setAdjustOpen(true)}>
           <PencilSimpleLine weight="bold" className="h-4 w-4" />
-          Ajuster
+          {t("Ajuster")}
         </Button>
       </div>
 
       {/* Accounts */}
       <section className="flex flex-col gap-2.5">
-        <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Mes comptes</h2>
+        <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Mes comptes")}</h2>
         {ACCOUNTS.map((a) => {
           const active = filter === a.key;
           return (
@@ -184,7 +184,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
                 <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-2xl", a.tile)}>
                   <MethodIcon method={a.key} className="h-[15px]" />
                 </span>
-                <span className="flex-1 text-base font-semibold text-slate-900 dark:text-white">{a.name}</span>
+                <span className="flex-1 text-base font-semibold text-slate-900 dark:text-white">{t(a.name)}</span>
                 <span
                   className={cn(
                     "text-lg font-bold tabular-nums text-slate-900 dark:text-white",
@@ -196,7 +196,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
               </div>
               <div className="mt-3 grid grid-cols-2 divide-x divide-slate-100 border-t border-slate-100 pt-2.5 dark:divide-slate-800 dark:border-slate-800">
                 <span className="flex flex-col items-center">
-                  <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Entrées</span>
+                  <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">{t("Entrées")}</span>
                   <span className="flex items-center gap-0.5 text-sm font-semibold tabular-nums text-emerald-600">
                     {wallet.monthIn[a.key] > 0 && "+"}
                     {money(wallet.monthIn[a.key])}
@@ -204,7 +204,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
                   </span>
                 </span>
                 <span className="flex flex-col items-center">
-                  <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Sorties</span>
+                  <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">{t("Sorties")}</span>
                   <span className="flex items-center gap-0.5 text-sm font-semibold tabular-nums text-rose-600">
                     {wallet.monthOut[a.key] > 0 && "−"}
                     {money(wallet.monthOut[a.key])}
@@ -224,24 +224,24 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
             🐷
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-base font-semibold text-slate-900 dark:text-white">Épargne</span>
-            <span className="block text-[11px] text-slate-400">Mise de côté, hors solde actuel</span>
+            <span className="block text-base font-semibold text-slate-900 dark:text-white">{t("Épargne")}</span>
+            <span className="block text-[11px] text-slate-400">{t("Mise de côté, hors solde actuel")}</span>
           </span>
           <span className="text-lg font-bold tabular-nums text-lime-700 dark:text-lime-400">{money(wallet.savings)}</span>
           <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300" />
         </Link>
         <p className="px-1 text-[11px] text-slate-400">
-          Entrées et sorties de ce mois · touche un compte pour filtrer l&apos;historique.
+          {t("Entrées et sorties de ce mois · touche un compte pour filtrer l'historique.")}
         </p>
       </section>
 
       {/* History */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2 px-1">
-          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">Historique</h2>
+          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Historique")}</h2>
           <div
             role="radiogroup"
-            aria-label="Filtrer l'historique"
+            aria-label={t("Filtrer l'historique")}
             className="flex gap-1 rounded-full bg-slate-100 p-0.5 dark:bg-slate-800"
           >
             {(["all", "cash", "card"] as const).map((f) => (
@@ -259,7 +259,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
                   filter === f && "bg-white text-slate-900 shadow-sm dark:bg-slate-950 dark:text-white",
                 )}
               >
-                {f === "all" ? "Tout" : <MethodLabel method={f} />}
+                {f === "all" ? t("Tout") : <MethodLabel method={f} />}
               </button>
             ))}
           </div>
@@ -268,12 +268,9 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
         {list.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-slate-200 px-4 py-7 text-center text-sm text-slate-400 dark:border-slate-700">
             {wallet.entries.length === 0 ? (
-              <>
-                Rien encore. Commence par <b className="text-slate-600 dark:text-slate-300">Ajuster</b> : indique ce que
-                tu as en espèces et sur ta carte. Ensuite chaque salaire, revenu, daret et dépense payée s&apos;ajoute ici.
-              </>
+              t("Rien encore. Commence par « Ajuster » : indique ce que tu as en espèces et sur ta carte. Ensuite chaque salaire, revenu, daret et dépense payée s'ajoute ici.")
             ) : (
-              "Aucun mouvement sur ce compte."
+              t("Aucun mouvement sur ce compte.")
             )}
           </p>
         ) : (
@@ -292,7 +289,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
         )}
         {list.length > shown && (
           <Button type="button" variant="outline" onClick={() => setShown((n) => n + PAGE)}>
-            Voir plus
+            {t("Voir plus")}
           </Button>
         )}
       </section>
@@ -308,8 +305,8 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
       <ConfirmDialog
         open={toDelete != null}
         onOpenChange={(open) => !open && setToDelete(null)}
-        title={toDelete?.kind === "transfer" ? "Supprimer ce transfert ?" : "Supprimer cet ajustement ?"}
-        description={toDelete ? <>« {toDelete.label} » sera supprimé et le solde recalculé.</> : null}
+        title={toDelete?.kind === "transfer" ? t("Supprimer ce transfert ?") : t("Supprimer cet ajustement ?")}
+        description={toDelete ? t("« {name} » sera supprimé et le solde recalculé.", { name: entryLabel(toDelete, lang, t) }) : null}
         pending={deleting}
         onConfirm={() => toDelete && remove(toDelete)}
       />
@@ -328,6 +325,7 @@ function EntryRow({
   money: (n: number) => string;
   onDelete: () => void;
 }) {
+  const { lang, t } = useI18n();
   const transfer = entry.kind === "transfer";
   // A transfer shows as moving money; filtered on one account, its change there.
   const line = filter === "all" ? entry.lines[entry.lines.length - 1] : entry.lines.find((l) => l.account === filter)!;
@@ -355,9 +353,9 @@ function EntryRow({
         {entry.emoji}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{entry.label}</span>
+        <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{entryLabel(entry, lang, t)}</span>
         <span className="block text-[11px] tabular-nums text-slate-400">
-          {TIME.format(new Date(entry.at))} · {accounts}
+          {formatDate(new Date(entry.at), lang, TIME)} · {accounts}
         </span>
       </span>
       <span
@@ -393,7 +391,7 @@ function EntryRow({
       <button
         type="button"
         onClick={onDelete}
-        aria-label={`Supprimer « ${entry.label} »`}
+        aria-label={t("Supprimer « {name} »", { name: entryLabel(entry, lang, t) })}
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
       >
         <Trash weight="bold" className="h-4 w-4" />
@@ -414,6 +412,7 @@ function AdjustDialog({
   balance: Record<PaymentMethod, number>;
   money: (n: number) => string;
 }) {
+  const { t } = useI18n();
   const [account, setAccount] = useState<PaymentMethod>("cash");
   const [real, setReal] = useState(() => toDecimalInput(Math.max(0, balance.cash)));
   const [error, setError] = useState<string | null>(null);
@@ -429,7 +428,7 @@ function AdjustDialog({
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!Number.isFinite(target)) return setError("Indique le montant réel.");
+    if (!Number.isFinite(target)) return setError(t("Indique le montant réel."));
     if (delta === 0) return onOpenChange(false);
     startTransition(async () => {
       const res = await mutate({
@@ -439,7 +438,7 @@ function AdjustDialog({
       });
       if (!res.ok) return setError(await errorMessage(res));
       onOpenChange(false);
-      toast.success(`${METHOD_META[account].label} : ${money(target)}`);
+      toast.success(`${t(METHOD_META[account].label)} : ${money(target)}`);
     });
   }
 
@@ -453,13 +452,13 @@ function AdjustDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Ajuster le solde</DialogTitle>
-          <DialogDescription>Indique ce que tu as vraiment : la différence est enregistrée.</DialogDescription>
+          <DialogTitle>{t("Ajuster le solde")}</DialogTitle>
+          <DialogDescription>{t("Indique ce que tu as vraiment : la différence est enregistrée.")}</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="flex flex-col gap-4">
-          <PaymentMethodPicker value={account} onChange={pick} label="Compte" />
+          <PaymentMethodPicker value={account} onChange={pick} label={t("Compte")} />
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="adjust-real">Montant réel</Label>
+            <Label htmlFor="adjust-real">{t("Montant réel")}</Label>
             <Input
               id="adjust-real"
               type="text"
@@ -469,7 +468,7 @@ function AdjustDialog({
               onChange={(e) => setReal(cleanDecimalInput(e.target.value))}
             />
             <p className="text-[11px] text-slate-400">
-              Dans l&apos;app : {money(balance[account])}
+              {t("Dans l'app :")} {money(balance[account])}
               {delta !== 0 && (
                 <span className={delta > 0 ? "text-emerald-600" : "text-rose-600"}>
                   {" "}
@@ -482,7 +481,7 @@ function AdjustDialog({
           {error && <p className="text-sm text-rose-600">{error}</p>}
           <Button type="submit" disabled={pending}>
             <PencilSimpleLine weight="bold" className="h-4 w-4" />
-            {pending ? "Enregistrement…" : "Enregistrer"}
+            {pending ? t("Enregistrement…") : t("Enregistrer")}
           </Button>
         </form>
       </DialogContent>

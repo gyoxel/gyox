@@ -7,6 +7,7 @@ import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput }
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useT } from "@/lib/i18n/client";
 
 export interface AmountSheetProps {
   /** "Karim t'a rendu combien ?", "Tu as payé combien ?" */
@@ -45,6 +46,7 @@ const TONES = {
  */
 export function AmountSheet(props: AmountSheetProps) {
   const { expected, already = 0, tone } = props;
+  const t = useT();
   const [amount, setAmount] = useState(toDecimalInput(props.initialAmount));
   const [method, setMethod] = useState<PaymentMethod>(props.initialMethod);
   const [error, setError] = useState<string | null>(null);
@@ -76,13 +78,13 @@ export function AmountSheet(props: AmountSheetProps) {
           className="flex flex-col gap-4"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!(value > 0)) return setError("Indique un montant.");
+            if (!(value > 0)) return setError(t("Indique un montant."));
             run(() => props.onSubmit(value, method));
           }}
         >
           <div className="flex items-baseline justify-center gap-2 rounded-2xl bg-slate-50 px-3 py-3 dark:bg-slate-800/60">
             <input
-              aria-label="Montant (DH)"
+              aria-label={t("Montant (DH)")}
               type="text"
               inputMode="decimal"
               autoComplete="off"
@@ -124,15 +126,16 @@ export function AmountSheet(props: AmountSheetProps) {
             </div>
             <p className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400">
               <span>
-                {formatMoney(total)} sur {formatMoney(expected)}
-                {already > 0 && <> (dont {formatMoney(already)} déjà {tone === "amber" ? "reçus" : "payés"})</>}
+                {t("{paid} sur {due}", { paid: formatMoney(total), due: formatMoney(expected) })}
+                {already > 0 &&
+                  ` ${tone === "amber" ? t("(dont {amount} déjà reçus)", { amount: formatMoney(already) }) : t("(dont {amount} déjà payés)", { amount: formatMoney(already) })}`}
               </span>
               <span>
                 {total < expected - 0.005
-                  ? `reste ${formatMoney(expected - total)}`
+                  ? t("reste {amount}", { amount: formatMoney(expected - total) })
                   : total > expected + 0.005
                     ? `+${formatMoney(total - expected)}`
-                    : "tout ✓"}
+                    : t("tout ✓")}
               </span>
             </p>
           </div>
@@ -151,12 +154,12 @@ export function AmountSheet(props: AmountSheetProps) {
           <PaymentMethodPicker value={method} onChange={setMethod} label={props.methodLabel} />
           {error && <p className="text-sm text-rose-600">{error}</p>}
           <Button type="submit" className={colors.button} disabled={pending || !(value > 0)}>
-            {pending ? "Enregistrement…" : props.confirmLabel(typed)}
+            {pending ? t("Enregistrement…") : props.confirmLabel(typed)}
           </Button>
           {props.onDelete && (
             <Button type="button" variant="outline" className="text-rose-600" disabled={pending} onClick={() => run(props.onDelete!)}>
               <Trash weight="bold" className="h-4 w-4" />
-              Supprimer
+              {t("Supprimer")}
             </Button>
           )}
         </form>

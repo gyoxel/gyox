@@ -7,9 +7,11 @@ import { mutate } from "@/lib/use-refresh-data";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useT } from "@/lib/i18n/client";
 
 /** The free note of one calendar day: write, save, or delete (confirmed). */
 export function DayNoteEditor({ date, text }: { date: string; text: string }) {
+  const t = useT();
   const [draft, setDraft] = useState(text);
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -19,9 +21,9 @@ export function DayNoteEditor({ date, text }: { date: string; text: string }) {
     setSaving(true);
     const res = await mutate({ method: "PUT", path: `/api/day-notes/${date}`, body: { text: value } });
     setSaving(false);
-    if (!res.ok) return toast.error("Note non enregistrée.");
+    if (!res.ok) return toast.error(t("Note non enregistrée."));
     setConfirming(false);
-    toast.success(value.trim() ? "Note enregistrée." : "Note supprimée.");
+    toast.success(value.trim() ? t("Note enregistrée.") : t("Note supprimée."));
   }
 
   return (
@@ -29,7 +31,7 @@ export function DayNoteEditor({ date, text }: { date: string; text: string }) {
       <Textarea
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
-        placeholder="Ajouter une note pour ce jour…"
+        placeholder={t("Ajouter une note pour ce jour…")}
         maxLength={2000}
         rows={3}
       />
@@ -39,13 +41,13 @@ export function DayNoteEditor({ date, text }: { date: string; text: string }) {
           {text && (
             <Button type="button" variant="destructive" onClick={() => setConfirming(true)} disabled={saving}>
               <Trash weight="bold" className="h-4 w-4" />
-              Supprimer
+              {t("Supprimer")}
             </Button>
           )}
           {changed && draft.trim() && (
             <Button type="button" className="flex-1" onClick={() => save(draft)} disabled={saving}>
               <Check weight="bold" className="h-4 w-4" />
-              {saving ? "Enregistrement…" : "Enregistrer la note"}
+              {saving ? t("Enregistrement…") : t("Enregistrer la note")}
             </Button>
           )}
         </div>
@@ -53,8 +55,8 @@ export function DayNoteEditor({ date, text }: { date: string; text: string }) {
       <ConfirmDialog
         open={confirming}
         onOpenChange={setConfirming}
-        title="Supprimer la note ?"
-        description="La note de ce jour sera supprimée."
+        title={t("Supprimer la note ?")}
+        description={t("La note de ce jour sera supprimée.")}
         pending={saving}
         onConfirm={() => save("")}
       />

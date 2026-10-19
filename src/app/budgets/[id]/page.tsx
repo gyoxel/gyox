@@ -8,6 +8,7 @@ import { HEADER_BUTTON } from "@/components/header-button";
 import { PageHeader } from "@/components/page-header";
 import { MonthSwitcher } from "@/components/month-switcher";
 import { BudgetDetail } from "@/components/budget-detail";
+import { getI18n } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -20,12 +21,13 @@ export default async function BudgetPage({
   searchParams: Promise<{ month?: string }>;
 }) {
   const [{ id }, sp] = await Promise.all([params, searchParams]);
-  const [settings, budget, entries, payments, months] = await Promise.all([
+  const [settings, budget, entries, payments, months, { t }] = await Promise.all([
     getSettings(),
     getBudgetById(id),
     getAllBudgetEntries(),
     getAllPayments(),
     getAllBudgetMonths(),
+    getI18n(),
   ]);
   if (!budget) notFound();
   const current = monthKey(todayMonth());
@@ -39,8 +41,9 @@ export default async function BudgetPage({
       <PageHeader
         title={budget.expense.name}
         back
+        info="budget-detail"
         action={
-          <Link href={`/budgets/${id}/edit`} prefetch aria-label="Modifier le budget" className={HEADER_BUTTON}>
+          <Link href={`/budgets/${id}/edit`} prefetch aria-label={t("Modifier le budget")} className={HEADER_BUTTON}>
             <PencilSimple weight="bold" className="h-5 w-5" />
           </Link>
         }

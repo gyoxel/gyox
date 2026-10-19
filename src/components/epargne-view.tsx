@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowDownLeft, ArrowUpRight, Bank, CaretRight } from "@phosphor-icons/react/ssr";
 import type { PaymentMethod, SavingsMove } from "@/lib/types";
-import { monthKey, monthLabelFr, parseMonthKey, todayMonth } from "@/lib/date";
+import { monthKey, parseMonthKey, todayMonth } from "@/lib/date";
+import { monthLabel } from "@/lib/i18n/dates";
+import { useI18n } from "@/lib/i18n/client";
 import { cn, formatMoney } from "@/lib/utils";
 import { TransferDialog, type Account } from "@/components/transfer-dialog";
 import { ExistingSavingsDialog } from "@/components/existing-savings-dialog";
@@ -30,6 +32,7 @@ export function EpargneView({
   savings: number;
   currency: string;
 }) {
+  const { lang, t } = useI18n();
   const money = (n: number) => formatMoney(n, currency);
   const [dialog, setDialog] = useState<{ from: Account; to: Account } | null>(null);
   const [existingOpen, setExistingOpen] = useState(false);
@@ -54,16 +57,16 @@ export function EpargneView({
     <>
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-lime-400 via-green-500 to-emerald-700 px-5 pb-4 pt-5 text-white shadow-lg shadow-green-600/20 dark:shadow-none">
         <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
-        <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Mon épargne 🐷</p>
+        <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">{t("Mon épargne")} 🐷</p>
         <p className={cn("relative mt-1 text-4xl font-bold tabular-nums", savings < 0 && "text-rose-200")}>{money(savings)}</p>
-        <p className="relative text-xs text-white/85">Hors de ton solde actuel</p>
+        <p className="relative text-xs text-white/85">{t("Hors de ton solde actuel")}</p>
         <div className="relative mt-3 grid grid-cols-2 gap-2">
           <div className="rounded-2xl bg-white/15 px-3 py-2">
-            <p className="text-[10px] uppercase tracking-wide text-white/75">Mis de côté ce mois</p>
+            <p className="text-[10px] uppercase tracking-wide text-white/75">{t("Mis de côté ce mois")}</p>
             <p className="text-sm font-bold tabular-nums">{inMonth > 0 && "+"}{money(inMonth)}</p>
           </div>
           <div className="rounded-2xl bg-white/15 px-3 py-2">
-            <p className="text-[10px] uppercase tracking-wide text-white/75">Retiré ce mois</p>
+            <p className="text-[10px] uppercase tracking-wide text-white/75">{t("Retiré ce mois")}</p>
             <p className="text-sm font-bold tabular-nums">{outMonth > 0 && "−"}{money(outMonth)}</p>
           </div>
         </div>
@@ -72,11 +75,11 @@ export function EpargneView({
       <div className="grid grid-cols-2 gap-2.5">
         <Button type="button" className="h-12 gx-cta" onClick={() => setDialog({ from: "card", to: "savings" })}>
           <ArrowDownLeft weight="bold" className="h-4 w-4" />
-          Mettre de côté
+          {t("Mettre de côté")}
         </Button>
         <Button type="button" variant="outline" className="h-12" onClick={() => setDialog({ from: "savings", to: "cash" })}>
           <ArrowUpRight weight="bold" className="h-4 w-4" />
-          Retirer
+          {t("Retirer")}
         </Button>
         <Button
           type="button"
@@ -85,23 +88,20 @@ export function EpargneView({
           onClick={() => setExistingOpen(true)}
         >
           <Bank weight="bold" className="h-4 w-4" />
-          J&apos;ai déjà une épargne
+          {t("J'ai déjà une épargne")}
         </Button>
       </div>
 
       {months.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-slate-200 px-4 py-7 text-center text-sm text-slate-400 dark:border-slate-700">
-          Rien encore. <b className="text-slate-600 dark:text-slate-300">Mettre de côté</b> : l&apos;argent sort de ton solde,
-          s&apos;ajoute à tes dépenses comme épargne, et tu peux noter où tu l&apos;as mis.{" "}
-          <b className="text-slate-600 dark:text-slate-300">J&apos;ai déjà une épargne</b> : l&apos;argent que tu avais
-          déjà, sans toucher à ton solde.
+          {t("Rien encore. « Mettre de côté » : l'argent sort de ton solde, s'ajoute à tes dépenses comme épargne, et tu peux noter où tu l'as mis. « J'ai déjà une épargne » : l'argent que tu avais déjà, sans toucher à ton solde.")}
         </p>
       ) : (
         months.map((m) => {
           const list = moves.filter((x) => x.date.startsWith(m));
           return (
             <section key={m} className="flex flex-col gap-2">
-              <h2 className="px-1 text-sm font-semibold capitalize text-slate-600 dark:text-slate-300">{monthLabelFr(parseMonthKey(m))}</h2>
+              <h2 className="px-1 text-sm font-semibold capitalize text-slate-600 dark:text-slate-300">{monthLabel(parseMonthKey(m), lang)}</h2>
               <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 {list.map((x) => (
                   <li key={x.id} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
@@ -117,22 +117,23 @@ export function EpargneView({
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-1.5">
                           <span className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">
-                            {x.note || (x.kind === "existing" ? "Déjà épargné" : x.kind === "in" ? "Mis de côté" : x.kind === "goal" ? "Objectif" : "Retiré")}
+                            {x.note ||
+                              (x.kind === "existing" ? t("Déjà épargné") : x.kind === "in" ? t("Mis de côté") : x.kind === "goal" ? t("Objectif") : t("Retiré"))}
                           </span>
                           {!x.counted && (
                             <span className="shrink-0 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-slate-800">
-                              Non payé
+                              {t("Non payé")}
                             </span>
                           )}
                         </span>
                         <span className="block text-[11px] text-slate-400">
                           {x.date.slice(8, 10)}/{x.date.slice(5, 7)} ·{" "}
                           {x.kind === "existing"
-                            ? "Déjà épargné · hors solde"
+                            ? t("Déjà épargné · hors solde")
                             : x.kind === "in"
                               ? <><MethodIcon method={x.method} /> → 🐷</>
                               : x.kind === "goal"
-                                ? "🐷 → 🎯 Versement à l'objectif"
+                                ? `🐷 → 🎯 ${t("Versement à l'objectif")}`
                                 : <>🐷 → <MethodIcon method={x.method} /></>}
                         </span>
                       </span>

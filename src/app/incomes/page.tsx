@@ -5,7 +5,10 @@ import { CaretRight } from "@phosphor-icons/react/ssr";
 import { daretPayout } from "@/lib/daret";
 import { incomeCategory, incomesIn } from "@/lib/income";
 
-import { monthKey, monthLabelFr, parseMonthKey, todayMonth } from "@/lib/date";
+import { monthKey, parseMonthKey, todayMonth } from "@/lib/date";
+import { monthLabel } from "@/lib/i18n/dates";
+import { categoryName, localName } from "@/lib/i18n";
+import { getI18n } from "@/lib/i18n/server";
 import { formatMoney } from "@/lib/utils";
 import type { Income } from "@/lib/types";
 import { PageHeader } from "@/components/page-header";
@@ -17,12 +20,17 @@ export const dynamic = "force-dynamic";
 
 /** Revenus: extra money received on top of the salary, month by month. */
 export default async function IncomesPage() {
-  const [incomes, settings, darets, incomeCategories] = await Promise.all([
+  const [incomes, settings, darets, incomeCategories, { lang, t }] = await Promise.all([
     getAllIncomes(),
     getSettings(),
     getAllDarets(),
     getIncomeCategories(),
+    getI18n(),
   ]);
+  const categoryLabel = (key: string) => {
+    const c = incomeCategory(key, incomeCategories);
+    return c.system ? t(c.label) : categoryName(c.label, t);
+  };
   const money = (n: number) => formatMoney(n, settings.currency);
   const current = monthKey(todayMonth());
   const thisMonth = incomesIn(incomes, current);
@@ -47,13 +55,21 @@ export default async function IncomesPage() {
       id: i.id,
       href: `/incomes/${i.id}`,
       emoji: incomeCategory(i.category, incomeCategories).emoji,
-      name: i.name,
-      sub: incomeCategory(i.category, incomeCategories).label,
+      name: localName(i.name, t),
+      sub: categoryLabel(i.category),
       date: i.date,
       at: i.createdAt,
       method: i.method,
       amount: i.amount,
-      badge: i.expenseId ? "Dette" : i.category === "epargne" ? "Épargne" : i.category === "pret" ? "Argent prêté" : i.category === "budget" ? "Budget" : undefined,
+      badge: i.expenseId
+        ? t("Dette")
+        : i.category === "epargne"
+          ? t("Épargne")
+          : i.category === "pret"
+            ? t("Argent prêté")
+            : i.category === "budget"
+              ? t("Budget")
+              : undefined,
     })),
     ...darets
       .filter((d) => d.payoutMethod && d.payoutReceivedAt)
@@ -61,34 +77,34 @@ export default async function IncomesPage() {
         id: `daret-${d.id}`,
         href: "/daret",
         emoji: "🤝🏻",
-        name: `Daret · ${d.expense.name}`,
-        sub: "Daret reçue",
+        name: `${t("Daret")} · ${d.expense.name}`,
+        sub: t("Daret reçue"),
         date: dayOf(d.payoutReceivedAt!),
         at: d.payoutReceivedAt!,
         method: d.payoutMethod!,
         amount: daretPayout(d),
-        badge: "Daret",
+        badge: t("Daret"),
       })),
   ].sort((a, b) => b.date.localeCompare(a.date) || b.at.localeCompare(a.at));
   const months = [...new Set(rows.map((r) => r.date.slice(0, 7)))];
 
   return (
     <>
-      <PageHeader title="Revenus" back action={<HeaderAdd href="/incomes/new" label="Ajouter un revenu" />} />
+      <PageHeader title={t("Revenus")} back info="incomes" action={<HeaderAdd href="/incomes/new" label={t("Ajouter un revenu")} />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         <div className="rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-600 px-5 pb-4 pt-5 text-white shadow-lg shadow-emerald-600/20 dark:shadow-none">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Revenus en plus ce mois-ci</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">{t("Revenus en plus ce mois-ci")}</p>
           <p className="mt-0.5 text-3xl font-bold tabular-nums">+{money(thisMonth)}</p>
           <p className="mt-1 text-[11px] text-white/80">
-            En plus du salaire ({money(settings.salary)}), ajoutés à ton solde du mois.
+            {t("En plus du salaire ({salary}), ajoutés à ton solde du mois.", { salary: money(settings.salary) })}
           </p>
         </div>
 
-        <AddLink href="/incomes/new" label="Ajouter un revenu" />
+        <AddLink href="/incomes/new" label={t("Ajouter un revenu")} />
 
         {months.length === 0 ? (
           <p className="rounded-xl border border-dashed border-slate-200 px-3 py-6 text-center text-sm text-slate-400 dark:border-slate-700">
-            Aucun revenu en plus pour l&apos;instant : prime, freelance, cadeau, vente…
+            {t("Aucun revenu en plus pour l'instant : prime, freelance, cadeau, vente…")}
           </p>
         ) : (
           months.map((m) => {
@@ -96,7 +112,7 @@ export default async function IncomesPage() {
             return (
               <section key={m} className="flex flex-col gap-2">
                 <h2 className="flex items-center justify-between px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">
-                  <span className="capitalize">{monthLabelFr(parseMonthKey(m))}</span>
+                  <span className="capitalize">{monthLabel(parseMonthKey(m), lang)}</span>
                   <span className="tabular-nums text-emerald-600">+{money(list.reduce((sum, r) => sum + r.amount, 0))}</span>
                 </h2>
                 <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">

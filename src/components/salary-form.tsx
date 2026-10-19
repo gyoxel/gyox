@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { useT } from "@/lib/i18n/client";
 
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 
@@ -26,6 +27,7 @@ export function SalaryForm({
   plain?: boolean;
   onSaved?: () => void;
 }) {
+  const t = useT();
   const [salary, setSalary] = useState(toDecimalInput(settings.salary));
   const [payDay, setPayDay] = useState(String(settings.payDay));
   const [salaryMethod, setSalaryMethod] = useState<PaymentMethod>(settings.salaryMethod);
@@ -42,10 +44,10 @@ export function SalaryForm({
         body: { salary: parseDecimalInput(salary), payDay: Number(payDay), salaryMethod },
       });
       if (!res.ok) {
-        setError("Impossible d'enregistrer. Vérifie le montant.");
+        setError(t("Impossible d'enregistrer. Vérifie le montant."));
         return;
       }
-      toast.success("Salaire enregistré. Tous les calculs sont mis à jour.");
+      toast.success(t("Salaire enregistré. Tous les calculs sont mis à jour."));
       onSaved?.();
     });
   }
@@ -53,7 +55,7 @@ export function SalaryForm({
   const fields = (
     <>
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="salary">Salaire mensuel (DH)</Label>
+        <Label htmlFor="salary">{t("Salaire mensuel (DH)")}</Label>
         <Input
           id="salary"
           type="text"
@@ -66,21 +68,20 @@ export function SalaryForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="payDay">Jour du salaire</Label>
+        <Label htmlFor="payDay">{t("Jour du salaire")}</Label>
         <Select id="payDay" value={payDay} onChange={(e) => setPayDay(e.target.value)}>
           {DAYS.map((d) => (
             <option key={d} value={d}>
-              Le {d === 1 ? "1er" : d} du mois
+              {d === 1 ? t("Le 1er du mois") : t("Le {day} du mois", { day: d })}
             </option>
           ))}
         </Select>
         <p className="text-xs text-slate-400">
-          Le compte à rebours de l&apos;accueil compte jusqu&apos;à ce jour. Si le mois est plus court, c&apos;est son
-          dernier jour.
+          {t("Le compte à rebours de l'accueil compte jusqu'à ce jour. Si le mois est plus court, c'est son dernier jour.")}
         </p>
       </div>
 
-      <PaymentMethodPicker value={salaryMethod} onChange={setSalaryMethod} label="Reçu en" />
+      <PaymentMethodPicker value={salaryMethod} onChange={setSalaryMethod} label={t("Reçu en")} />
 
       {error && <p className="text-sm text-rose-600">{error}</p>}
 
@@ -89,7 +90,7 @@ export function SalaryForm({
         disabled={isPending}
         className="gx-cta"
       >
-        {isPending ? "Enregistrement…" : "Enregistrer"}
+        {isPending ? t("Enregistrement…") : t("Enregistrer")}
       </Button>
     </>
   );

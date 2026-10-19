@@ -7,7 +7,10 @@ import { toast } from "sonner";
 import type { BudgetEntry, BudgetWithExpense, PaymentMethod } from "@/lib/types";
 import type { BudgetMonthState } from "@/lib/budgets";
 import { lastDayOfMonth } from "@/lib/daret";
-import { addMonths, monthLabelFr, parseMonthKey } from "@/lib/date";
+import { addMonths, parseMonthKey } from "@/lib/date";
+import type { Lang } from "@/lib/i18n";
+import { formatDate, monthLabel } from "@/lib/i18n/dates";
+import { useI18n } from "@/lib/i18n/client";
 import { mutate } from "@/lib/use-refresh-data";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { errorMessage, keepAboveKeyboard } from "@/components/expense-editor";
@@ -18,8 +21,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MethodIcon, MethodLabel } from "@/components/method-icon";
 
-const DAY_FMT = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short" });
-const dayLabel = (date: string) => DAY_FMT.format(new Date(`${date}T12:00:00`));
+const DAY_FMT: Intl.DateTimeFormatOptions = { weekday: "short", day: "numeric", month: "short" };
+const dayLabel = (date: string, lang: Lang) => formatDate(new Date(`${date}T12:00:00`), lang, DAY_FMT);
 
 /**
  * A budget's month: how much is left (or gone past), whether it's taken,
@@ -46,6 +49,8 @@ export function BudgetDetail({
   resteIncomeId: string | null;
   currency: string;
 }) {
+  const { lang, t } = useI18n();
+  const monthLabelFr = (m: Parameters<typeof monthLabel>[0]) => monthLabel(m, lang);
   const money = (n: number) => formatMoney(n, currency);
   const key = state.monthKey;
   const label = monthLabelFr(parseMonthKey(key));
@@ -78,17 +83,17 @@ export function BudgetDetail({
           {state.over > 0 ? `+${money(state.over)}` : money(state.left)}
         </p>
         <p className="relative text-xs text-white/85">
-          {state.over > 0 ? "dépassé" : "reste"} · {money(state.spent)} dépensés sur {money(state.amount)}
+          {state.over > 0 ? t("dépassé") : t("reste")} · {t("{spent} dépensés sur {amount}", { spent: money(state.spent), amount: money(state.amount) })}
         </p>
         <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-white/20">
           <div className={cn("h-full rounded-full", state.over > 0 ? "bg-rose-300" : "bg-white")} style={{ width: `${pct}%` }} />
         </div>
         <p className="relative mt-2 text-[11px] text-white/85">
           {state.taken
-            ? <>✓ Pris{state.takenMethod && <> · <MethodLabel method={state.takenMethod} /></>}</>
+            ? <>✓ {t("Pris")}{state.takenMethod && <> · <MethodLabel method={state.takenMethod} /></>}</>
             : runs
-              ? "Pas encore pris"
-              : "Ce budget ne court pas ce mois-là."}
+              ? t("Pas encore pris")
+              : t("Ce budget ne court pas ce mois-là.")}
         </p>
       </div>
 
@@ -100,14 +105,14 @@ export function BudgetDetail({
             <SourceLink
               href={overflowExpenseId ? `/expenses/${overflowExpenseId}` : null}
               tone="rose"
-              text={`Dépassé de ${money(state.over)} : dans tes dépenses comme « ${name} + »`}
+              text={t("Dépassé de {amount} : dans tes dépenses comme « {name} »", { amount: money(state.over), name: `${name} +` })}
             />
           )}
           {state.closed && state.reste > 0 && (
             <SourceLink
               href={resteIncomeId ? `/incomes/${resteIncomeId}` : null}
               tone="emerald"
-              text={`Reste ${money(state.reste)} : revenu « ${name} - Reste » le 1er ${monthLabelFr(addMonths(parseMonthKey(key), 1)).toLowerCase()}`}
+              text={t("Reste {amount} : revenu « {name} » le 1er {month}", { amount: money(state.reste), name: `${name} - Reste`, month: monthLabelFr(addMonths(parseMonthKey(key), 1)).toLowerCase() })}
             />
           )}
         </div>
@@ -119,11 +124,11 @@ export function BudgetDetail({
 
       <section className="flex flex-col gap-2">
         <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">
-          Dépenses de <span className="lowercase">{label}</span>
+          {t("Dépenses de {month}", { month: label.toLowerCase() })}
         </h2>
         {days.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400 dark:border-slate-700">
-            Rien noté pour l&apos;instant.
+            {t("Rien noté pour l'instant.")}
           </p>
         ) : (
           <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -133,7 +138,7 @@ export function BudgetDetail({
               return (
                 <li key={day} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
                   <p className="flex items-center justify-between bg-slate-50 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
-                    <span className="capitalize">{dayLabel(day)}</span>
+                    <span className="capitalize">{dayLabel(day, lang)}</span>
                     <span className="tabular-nums normal-case tracking-normal">{money(total)}</span>
                   </p>
                   {list.map((e) => {
@@ -145,7 +150,7 @@ export function BudgetDetail({
                         onClick={() => setEditing(e)}
                         className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-slate-50 dark:active:bg-slate-800/60"
                       >
-                        <span className="min-w-0 flex-1 truncate text-sm text-slate-800 dark:text-slate-100">{e.note || "Dépense"}</span>
+                        <span className="min-w-0 flex-1 truncate text-sm text-slate-800 dark:text-slate-100">{e.note || t("Dépense")}</span>
                         {over > 0 && (
                           <span className="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-950 dark:text-rose-300">
                             +{money(over)} <MethodIcon method={e.method} />
@@ -166,7 +171,7 @@ export function BudgetDetail({
         href={`/budgets/${budget.id}/edit`}
         className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 active:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
       >
-        Modifier le budget
+        {t("Modifier le budget")}
       </Link>
 
       {editing && (
@@ -201,6 +206,7 @@ function SourceLink({ href, tone, text }: { href: string | null; tone: "rose" | 
 
 /** "Prendre le budget": this month's amount leaves the Solde (its tick in Dépenses). */
 function TakeBudget({ expenseId, monthKey, amount }: { expenseId: string; monthKey: string; amount: string }) {
+  const t = useI18n().t;
   const [method, setMethod] = useState<PaymentMethod>("cash");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -209,18 +215,18 @@ function TakeBudget({ expenseId, monthKey, amount }: { expenseId: string; monthK
     startTransition(async () => {
       const res = await mutate({ method: "POST", path: `/api/expenses/${expenseId}/payments`, body: { monthKey, method } });
       if (!res.ok) return setError(await errorMessage(res));
-      toast.success("Budget pris.");
+      toast.success(t("Budget pris."));
     });
   }
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-3.5 dark:border-amber-900/60 dark:bg-amber-950/20">
       <p className="text-xs text-amber-800 dark:text-amber-200">
-        Pas encore pris ce mois-ci. Pris, ses {amount} sortent de ton solde en une fois (comme le cocher dans tes dépenses).
+        {t("Pas encore pris ce mois-ci. Pris, ses {amount} sortent de ton solde en une fois (comme le cocher dans tes dépenses).", { amount })}
       </p>
-      <PaymentMethodPicker value={method} onChange={setMethod} label="Pris en" />
+      <PaymentMethodPicker value={method} onChange={setMethod} label={t("Pris en")} />
       {error && <p className="text-sm text-rose-600">{error}</p>}
       <Button type="button" className="gx-cta" disabled={pending} onClick={take}>
-        {pending ? "…" : `Prendre ${amount}`}
+        {pending ? "…" : t("Prendre {amount}", { amount })}
       </Button>
     </div>
   );
@@ -244,6 +250,7 @@ function AddLine({
   money: (n: number) => string;
   name: string;
 }) {
+  const t = useI18n().t;
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [date, setDate] = useState(defaultDate);
@@ -256,7 +263,7 @@ function AddLine({
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!(value > 0)) return setError("Indique combien tu as dépensé.");
+    if (!(value > 0)) return setError(t("Indique combien tu as dépensé."));
     startTransition(async () => {
       const res = await mutate({
         method: "POST",
@@ -266,37 +273,37 @@ function AddLine({
       if (!res.ok) return setError(await errorMessage(res));
       setAmount("");
       setNote("");
-      toast.success(goesOver > 0 ? `Noté · +${money(goesOver)} dans tes dépenses.` : "Noté.");
+      toast.success(goesOver > 0 ? t("Noté · {amount} dans tes dépenses.", { amount: `+${money(goesOver)}` }) : t("Noté."));
     });
   }
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Noter une dépense</h2>
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-white">{t("Noter une dépense")}</h2>
       <div className="flex gap-2">
         <Input
-          aria-label="Montant dépensé (DH)"
+          aria-label={t("Montant dépensé (DH)")}
           type="text"
           inputMode="decimal"
           autoComplete="off"
           value={amount}
           onChange={(e) => setAmount(cleanDecimalInput(e.target.value))}
-          placeholder="Montant"
+          placeholder={t("Montant")}
           onFocus={(e) => keepAboveKeyboard(e.currentTarget)}
           className="w-32 shrink-0 text-base font-semibold"
         />
-        <Input aria-label="Pour quoi" value={note} onChange={(e) => setNote(e.target.value)} maxLength={80} placeholder="Pour quoi : taxi, bus…" />
+        <Input aria-label={t("Pour quoi")} value={note} onChange={(e) => setNote(e.target.value)} maxLength={80} placeholder={t("Pour quoi : taxi, bus…")} />
       </div>
       <div className="flex items-center gap-3">
         <Label htmlFor="line-date" className="shrink-0 text-sm">
-          Le
+          {t("Le")}
         </Label>
         <Input id="line-date" type="date" value={date} min={min} max={max} onChange={(e) => setDate(e.target.value || defaultDate)} />
       </div>
       {goesOver > 0 && (
         <div className="flex flex-col gap-2 rounded-xl bg-rose-50 p-3 dark:bg-rose-950/30">
           <p className="text-xs text-rose-700 dark:text-rose-300">
-            Ça dépasse le budget : <b>+{money(goesOver)}</b> s&apos;ajoutent à « {name} + » dans tes dépenses.
+            {t("Ça dépasse le budget : {amount} s'ajoutent à « {name} » dans tes dépenses.", { amount: `+${money(goesOver)}`, name: `${name} +` })}
           </p>
           <PaymentMethodPicker value={method} onChange={setMethod} />
         </div>
@@ -304,7 +311,7 @@ function AddLine({
       {error && <p className="text-sm text-rose-600">{error}</p>}
       <Button type="submit" className="gx-cta" disabled={pending || !(value > 0)}>
         <Plus weight="bold" className="h-4 w-4" />
-        {pending ? "Enregistrement…" : "Ajouter"}
+        {pending ? t("Enregistrement…") : t("Ajouter")}
       </Button>
     </form>
   );
@@ -324,6 +331,7 @@ function EditLine({
   max: string;
   onClose: () => void;
 }) {
+  const { lang, t } = useI18n();
   const [amount, setAmount] = useState(toDecimalInput(entry.amount));
   const [note, setNote] = useState(entry.note ?? "");
   const [date, setDate] = useState(entry.date);
@@ -347,41 +355,41 @@ function EditLine({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Modifier la dépense</DialogTitle>
-          <DialogDescription>{dayLabel(entry.date)}</DialogDescription>
+          <DialogTitle>{t("Modifier la dépense")}</DialogTitle>
+          <DialogDescription>{dayLabel(entry.date, lang)}</DialogDescription>
         </DialogHeader>
         <form
           className="flex flex-col gap-3"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!(value > 0)) return setError("Indique un montant.");
-            run({ method: "PATCH", path, body: { amount: value, note: note.trim() || null, date, method } }, "Modifié.");
+            if (!(value > 0)) return setError(t("Indique un montant."));
+            run({ method: "PATCH", path, body: { amount: value, note: note.trim() || null, date, method } }, t("Modifié."));
           }}
         >
           <Input
-            aria-label="Montant (DH)"
+            aria-label={t("Montant (DH)")}
             type="text"
             inputMode="decimal"
             autoComplete="off"
             value={amount}
             onChange={(e) => setAmount(cleanDecimalInput(e.target.value))}
           />
-          <Input aria-label="Pour quoi" value={note} onChange={(e) => setNote(e.target.value)} maxLength={80} placeholder="Pour quoi" />
-          <Input aria-label="Date" type="date" value={date} min={min} max={max} onChange={(e) => setDate(e.target.value || entry.date)} />
-          <PaymentMethodPicker value={method} onChange={setMethod} label="Si ça dépasse" />
+          <Input aria-label={t("Pour quoi")} value={note} onChange={(e) => setNote(e.target.value)} maxLength={80} placeholder={t("Pour quoi")} />
+          <Input aria-label={t("Date")} type="date" value={date} min={min} max={max} onChange={(e) => setDate(e.target.value || entry.date)} />
+          <PaymentMethodPicker value={method} onChange={setMethod} label={t("Si ça dépasse")} />
           {error && <p className="text-sm text-rose-600">{error}</p>}
           <Button type="submit" className="gx-cta" disabled={pending}>
-            {pending ? "…" : "Enregistrer"}
+            {pending ? "…" : t("Enregistrer")}
           </Button>
           <Button
             type="button"
             variant="outline"
             className="text-rose-600"
             disabled={pending}
-            onClick={() => run({ method: "DELETE", path }, "Supprimé.")}
+            onClick={() => run({ method: "DELETE", path }, t("Supprimé."))}
           >
             <Trash weight="bold" className="h-4 w-4" />
-            Supprimer
+            {t("Supprimer")}
           </Button>
         </form>
       </DialogContent>

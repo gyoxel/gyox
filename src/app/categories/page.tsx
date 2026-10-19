@@ -2,7 +2,9 @@ import { getAllCategories, getAllExpenses, getAllIncomes, getIncomeCategories, g
 import Link from "next/link";
 
 import { getMonthSummary } from "@/lib/engine";
-import { monthKey, monthLabelFr, todayMonth } from "@/lib/date";
+import { monthKey, todayMonth } from "@/lib/date";
+import { monthLabel } from "@/lib/i18n/dates";
+import { getI18n } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { CategoryManager, type CategoryStats } from "@/components/category-manager";
@@ -13,7 +15,7 @@ export const dynamic = "force-dynamic";
 export default async function CategoriesPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const income = (await searchParams).tab === "revenus";
   const month = todayMonth();
-  const settings = await getSettings();
+  const [settings, { lang, t }] = await Promise.all([getSettings(), getI18n()]);
   let categories;
   const stats: Record<string, CategoryStats> = {};
 
@@ -49,11 +51,11 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
 
   return (
     <>
-      <PageHeader title="Catégories" back />
+      <PageHeader title={t("Catégories")} back info="categories" />
       <main className="flex flex-col gap-5 px-4 py-5">
-        <nav aria-label="Type de catégories" className="flex gap-1 rounded-full bg-slate-100 p-1 dark:bg-slate-800">
+        <nav aria-label={t("Type de catégories")} className="flex gap-1 rounded-full bg-slate-100 p-1 dark:bg-slate-800">
           <Link href="/categories" replace scroll={false} aria-current={!income ? "page" : undefined} className={tab(!income)}>
-            🧾 Dépenses
+            🧾 {t("Dépenses")}
           </Link>
           <Link
             href="/categories?tab=revenus"
@@ -62,7 +64,7 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
             aria-current={income ? "page" : undefined}
             className={tab(income)}
           >
-            💰 Revenus
+            💰 {t("Revenus")}
           </Link>
         </nav>
         <CategoryManager
@@ -70,7 +72,7 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
           kind={income ? "income" : "expense"}
           categories={categories}
           stats={stats}
-          monthLabel={monthLabelFr(month)}
+          monthLabel={monthLabel(month, lang)}
           currency={settings.currency}
         />
       </main>

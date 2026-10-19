@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { cn, formatMoney } from "@/lib/utils";
+import { useT } from "@/lib/i18n/client";
 
 export interface StairMonth {
   key: string;
@@ -31,6 +32,7 @@ const BARS_PX = 110;
  * month: what's paid that month, credit by credit.
  */
 export function CreditStairs({ months, currency }: { months: StairMonth[]; currency: string }) {
+  const t = useT();
   const [selected, setSelected] = useState(0);
   const max = Math.max(1, ...months.map((m) => m.total));
   const month = months[Math.min(selected, months.length - 1)];
@@ -43,7 +45,7 @@ export function CreditStairs({ months, currency }: { months: StairMonth[]; curre
       <div className="-mx-4 overflow-x-auto overscroll-x-contain px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div
           role="listbox"
-          aria-label="Mensualités de dettes par mois"
+          aria-label={t("Mensualités de dettes par mois")}
           className="grid w-max min-w-full items-end gap-x-1.5 pt-7"
           style={{ gridTemplateColumns: `repeat(${months.length}, minmax(26px, 1fr)) 40px` }}
         >
@@ -101,7 +103,7 @@ export function CreditStairs({ months, currency }: { months: StairMonth[]; curre
             <span className="flex w-full items-end justify-center pb-1" style={{ height: BARS_PX }}>
               <span className="text-2xl leading-none">🏁</span>
             </span>
-            <span className="text-[10px] font-bold leading-none text-violet-700 dark:text-violet-200">Libre</span>
+            <span className="text-[10px] font-bold leading-none text-violet-700 dark:text-violet-200">{t("Libre")}</span>
             <span className="h-2" />
           </div>
         </div>
@@ -114,7 +116,7 @@ export function CreditStairs({ months, currency }: { months: StairMonth[]; curre
           <p className="text-[15px] font-extrabold tabular-nums text-violet-700 dark:text-violet-200">{money(month.total)}</p>
         </div>
         {month.items.length === 0 ? (
-          <p className="mt-1 text-[12.5px] text-slate-500 dark:text-slate-400">Aucune mensualité ce mois-là.</p>
+          <p className="mt-1 text-[12.5px] text-slate-500 dark:text-slate-400">{t("Aucune mensualité ce mois-là.")}</p>
         ) : (
           <ul className="mt-2 flex flex-col gap-2">
             {month.items.map((item) => (

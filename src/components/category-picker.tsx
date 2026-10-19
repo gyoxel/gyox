@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { categoryName } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 /** Swipeable row of category chips; the last chip adds a new category. */
 export function CategoryPicker({
@@ -17,7 +19,7 @@ export function CategoryPicker({
   onChange,
   onCreated,
   endpoint = "/api/categories",
-  placeholder = "Ex: Cadeaux",
+  placeholder,
 }: {
   categories: Category[];
   /** Where new categories are created (expenses' or incomes'). */
@@ -27,6 +29,7 @@ export function CategoryPicker({
   onChange: (id: string) => void;
   onCreated: (category: Category) => void;
 }) {
+  const t = useT();
   const refreshData = useRefreshData();
   const rowRef = useRef<HTMLDivElement>(null);
   const [adding, setAdding] = useState(false);
@@ -45,7 +48,7 @@ export function CategoryPicker({
   async function create() {
     setError(null);
     if (!name.trim()) {
-      setError("Donne un nom à la catégorie.");
+      setError(t("Donne un nom à la catégorie."));
       return;
     }
     setSaving(true);
@@ -56,7 +59,7 @@ export function CategoryPicker({
     });
     setSaving(false);
     if (!res.ok) {
-      setError("Impossible d'ajouter la catégorie.");
+      setError(t("Impossible d'ajouter la catégorie."));
       return;
     }
     const category: Category = await res.json();
@@ -75,12 +78,12 @@ export function CategoryPicker({
       <div
         ref={rowRef}
         role="radiogroup"
-        aria-label="Catégorie"
+        aria-label={t("Catégorie")}
         className="no-scrollbar -mx-4 overflow-x-auto overscroll-x-contain px-4 pb-1"
       >
         <div className="flex w-max flex-col gap-2">
           {splitInTwo([...categories.map((c) => ({ kind: "category" as const, category: c })), { kind: "add" as const }], (chip) =>
-            chipWidth(chip.kind === "add" ? "Ajouter" : chip.category.name),
+            chipWidth(chip.kind === "add" ? t("Ajouter") : categoryName(chip.category.name, t)),
           ).map(
             (row, rowIndex) => (
               <div key={rowIndex} className="flex gap-2">
@@ -93,7 +96,7 @@ export function CategoryPicker({
                       className="flex shrink-0 items-center gap-1.5 rounded-full border border-dashed border-slate-300 px-3.5 py-2 text-sm whitespace-nowrap text-slate-500 active:bg-slate-50 dark:border-slate-600 dark:text-slate-400"
                     >
                       <Plus weight="bold" className="h-4 w-4" />
-                      Ajouter
+                      {t("Ajouter")}
                     </button>
                   ) : (
                     <button
@@ -111,7 +114,7 @@ export function CategoryPicker({
                       )}
                     >
                       <span className="text-base leading-none">{chip.category.emoji}</span>
-                      {chip.category.name}
+                      {categoryName(chip.category.name, t)}
                     </button>
                   ),
                 )}
@@ -124,11 +127,11 @@ export function CategoryPicker({
       <Dialog open={adding} onOpenChange={setAdding}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nouvelle catégorie</DialogTitle>
+            <DialogTitle>{t("Nouvelle catégorie")}</DialogTitle>
           </DialogHeader>
           <div className="flex gap-3">
             <div className="flex w-20 flex-col gap-1.5">
-              <Label htmlFor="new-cat-emoji">Emoji</Label>
+              <Label htmlFor="new-cat-emoji">{t("Emoji")}</Label>
               <Input
                 id="new-cat-emoji"
                 value={emoji}
@@ -138,12 +141,12 @@ export function CategoryPicker({
               />
             </div>
             <div className="flex flex-1 flex-col gap-1.5">
-              <Label htmlFor="new-cat-name">Nom</Label>
+              <Label htmlFor="new-cat-name">{t("Nom")}</Label>
               <Input
                 id="new-cat-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder={placeholder}
+                placeholder={placeholder ?? t("Ex : Cadeaux")}
                 maxLength={40}
                 autoFocus
               />
@@ -152,10 +155,10 @@ export function CategoryPicker({
           {error && <p className="mt-2 text-sm text-rose-600">{error}</p>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setAdding(false)} disabled={saving}>
-              Annuler
+              {t("Annuler")}
             </Button>
             <Button type="button" onClick={create} disabled={saving}>
-              {saving ? "Ajout…" : "Ajouter"}
+              {saving ? t("Ajout…") : t("Ajouter")}
             </Button>
           </DialogFooter>
         </DialogContent>

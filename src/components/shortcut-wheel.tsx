@@ -4,18 +4,20 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarDots, Cardholder, CaretRight, ChartLineUp, HandCoins, Handshake, Target, TrendUp } from "@phosphor-icons/react/ssr";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
+import { msg } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 // Every page worth a shortcut — not the ones the bar, the + menu or
 // Accueil itself already open (Dépenses, Crédits, Solde, Épargne, Salaire),
 // nor Profil / Paramètres / Catégories.
 const ITEMS: { href: string; label: string; hint: string; icon: PhosphorIcon }[] = [
-  { href: "/incomes", label: "Revenus", hint: "Prime, freelance, cadeau…", icon: TrendUp },
-  { href: "/budgets", label: "Budgets", hint: "Transport, courses…", icon: Cardholder },
-  { href: "/daret", label: "Daret", hint: "Tes darets et ton tour", icon: Handshake },
-  { href: "/prets", label: "Argent prêté", hint: "Ce qu'on doit te rendre", icon: HandCoins },
-  { href: "/goals", label: "Objectifs", hint: "Voiture, maison, voyage…", icon: Target },
-  { href: "/calendar", label: "Calendrier", hint: "Jour par jour", icon: CalendarDots },
-  { href: "/stats", label: "Statistiques", hint: "Répartition, prévisions", icon: ChartLineUp },
+  { href: "/incomes", label: msg("Revenus"), hint: msg("Prime, freelance, cadeau…"), icon: TrendUp },
+  { href: "/budgets", label: msg("Budgets"), hint: msg("Transport, courses…"), icon: Cardholder },
+  { href: "/daret", label: msg("Daret"), hint: msg("Tes darets et ton tour"), icon: Handshake },
+  { href: "/prets", label: msg("Argent prêté"), hint: msg("Ce qu'on doit te rendre"), icon: HandCoins },
+  { href: "/goals", label: msg("Objectifs"), hint: msg("Voiture, maison, voyage…"), icon: Target },
+  { href: "/calendar", label: msg("Calendrier"), hint: msg("Jour par jour"), icon: CalendarDots },
+  { href: "/stats", label: msg("Statistiques"), hint: msg("Répartition, prévisions"), icon: ChartLineUp },
 ];
 const N = ITEMS.length;
 
@@ -76,6 +78,7 @@ function styleFor(d: number): React.CSSProperties & { "--wheel-content": string 
  * to bring it to the centre. It loops around.
  */
 export function ShortcutWheel() {
+  const t = useT();
   const router = useRouter();
   const root = useRef<HTMLDivElement | null>(null);
   const cards = useRef<(HTMLButtonElement | null)[]>([]);
@@ -219,7 +222,7 @@ export function ShortcutWheel() {
       ref={root}
       data-no-tab-swipe
       role="listbox"
-      aria-label="Raccourcis"
+      aria-label={t("Raccourcis")}
       tabIndex={0}
       // isolate: the cards' z-index stays inside the wheel (it would put
       // them over the bar's + menu).
@@ -236,7 +239,7 @@ export function ShortcutWheel() {
           data-index={i}
           role="option"
           aria-selected={false}
-          aria-label={label}
+          aria-label={t(label)}
           tabIndex={-1}
           // Same look as the first frame drawn by the effect (centre: Revenus).
           style={{ ...styleFor(offsetOf(i, 0)), height: CARD_PX }}
@@ -246,8 +249,8 @@ export function ShortcutWheel() {
             <Icon weight="duotone" className="h-5 w-5 @min-[16rem]:h-[22px] @min-[16rem]:w-[22px]" />
           </span>
           <span className="min-w-0 flex-1 opacity-[var(--wheel-content)]">
-            <span className="block truncate text-[15px] font-semibold text-slate-900 @min-[16rem]:text-base dark:text-white">{label}</span>
-            <span className="block truncate text-[11.5px] text-slate-500 @min-[16rem]:text-xs dark:text-slate-400">{hint}</span>
+            <span className="block truncate text-[15px] font-semibold text-slate-900 @min-[16rem]:text-base dark:text-white">{t(label)}</span>
+            <span className="block truncate text-[11.5px] text-slate-500 @min-[16rem]:text-xs dark:text-slate-400">{t(hint)}</span>
           </span>
           {/* Narrow (beside the countdown): no room for the arrow. */}
           <CaretRight weight="bold" className="hidden h-4 w-4 shrink-0 text-slate-300 opacity-[var(--wheel-content)] @min-[16rem]:block" />

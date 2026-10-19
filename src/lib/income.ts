@@ -1,5 +1,6 @@
 // Extra incomes (on top of the salary): categories and month totals.
 import type { Category, Income } from "./types";
+import { msg } from "./i18n";
 
 /** The default categories (also in the database, with these keys as ids):
  *  used when a list isn't at hand, or for an id no longer in it. */
@@ -18,14 +19,16 @@ const DEFAULT_INCOME_CATEGORIES = [
 /** Set by the app only (not offered in the form): a credit's money, money
  *  taken back from the savings, a loan's repayment, what's left of a budget. */
 const SYSTEM_CATEGORIES = [
-  { key: "credit", label: "Argent emprunté", emoji: "🏦" },
-  { key: "epargne", label: "Épargne", emoji: "🐷" },
-  { key: "pret", label: "Argent rendu", emoji: "💸" },
-  { key: "budget", label: "Reste de budget", emoji: "👛" },
+  { key: "credit", label: msg("Argent emprunté"), emoji: "🏦", system: true },
+  { key: "epargne", label: msg("Épargne"), emoji: "🐷", system: true },
+  { key: "pret", label: msg("Argent rendu"), emoji: "💸", system: true },
+  { key: "budget", label: msg("Reste de budget"), emoji: "👛", system: true },
 ];
 
-/** Label and emoji of an income's category (from `list` when given). */
-export function incomeCategory(key: string, list?: Category[]): { key: string; label: string; emoji: string } {
+/** Label and emoji of an income's category (from `list` when given).
+ *  `system`: the app's own (its label is shown translated; the user's
+ *  categories keep their names). */
+export function incomeCategory(key: string, list?: Category[]): { key: string; label: string; emoji: string; system?: boolean } {
   const own = list?.find((c) => c.id === key);
   if (own) return { key: own.id, label: own.name, emoji: own.emoji };
   return (

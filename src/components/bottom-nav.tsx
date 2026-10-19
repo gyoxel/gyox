@@ -7,12 +7,14 @@ import { DATA_CHANGED_EVENT } from "@/lib/use-refresh-data";
 import { Bank, HandArrowDown, HandArrowUp, HandCoins, Handshake, House, PiggyBank, Plus, Receipt, SquaresFour, Target, Wallet } from "@phosphor-icons/react/ssr";
 import { cn } from "@/lib/utils";
 import { useCloseOnBack } from "@/lib/close-on-back";
+import { msg } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 const ITEMS = [
-  { href: "/", label: "Accueil", icon: House },
-  { href: "/budget", label: "Dépenses", icon: Receipt },
-  { href: "/credits", label: "Dettes", icon: Bank },
-  { href: "/menu", label: "Menu", icon: SquaresFour },
+  { href: "/", label: msg("Accueil"), icon: House },
+  { href: "/budget", label: msg("Dépenses"), icon: Receipt },
+  { href: "/credits", label: msg("Dettes"), icon: Bank },
+  { href: "/menu", label: msg("Menu"), icon: SquaresFour },
 ];
 
 // Pages opened from the Menu tab keep it highlighted.
@@ -22,14 +24,14 @@ const MENU_PATHS = ["/menu", "/budgets", "/daret", "/goals", "/calendar", "/stat
 // glass just above it — each in its colour of meaning. The everyday ones
 // on the bottom row, Dépense in the corner next to the + itself.
 const ACTIONS = [
-  { href: "/daret/new", label: "Daret", icon: Handshake, tint: "text-amber-600 dark:text-amber-300" },
-  { href: "/prets/new", label: "Argent prêté", icon: HandCoins, tint: "text-rose-600 dark:text-rose-300" },
-  { href: "/goals/new", label: "Objectif", icon: Target, tint: "text-amber-600 dark:text-amber-300" },
-  { href: "/epargne?ajouter=1", label: "Épargne", icon: PiggyBank, tint: "text-emerald-600 dark:text-emerald-300" },
-  { href: "/budgets/new", label: "Budget", icon: Wallet, tint: "text-violet-600 dark:text-violet-300" },
-  { href: "/expenses/new?type=credit", label: "Dette", icon: Bank, tint: "text-violet-600 dark:text-violet-300" },
-  { href: "/incomes/new", label: "Revenu", icon: HandArrowDown, tint: "text-emerald-600 dark:text-emerald-300" },
-  { href: "/expenses/new", label: "Dépense", icon: HandArrowUp, tint: "text-rose-600 dark:text-rose-300" },
+  { href: "/daret/new", label: msg("Daret"), icon: Handshake, tint: "text-amber-600 dark:text-amber-300" },
+  { href: "/prets/new", label: msg("Argent prêté"), icon: HandCoins, tint: "text-rose-600 dark:text-rose-300" },
+  { href: "/goals/new", label: msg("Objectif"), icon: Target, tint: "text-amber-600 dark:text-amber-300" },
+  { href: "/epargne?ajouter=1", label: msg("Épargne"), icon: PiggyBank, tint: "text-emerald-600 dark:text-emerald-300" },
+  { href: "/budgets/new", label: msg("Budget"), icon: Wallet, tint: "text-violet-600 dark:text-violet-300" },
+  { href: "/expenses/new?type=credit", label: msg("Dette"), icon: Bank, tint: "text-violet-600 dark:text-violet-300" },
+  { href: "/incomes/new", label: msg("Revenu"), icon: HandArrowDown, tint: "text-emerald-600 dark:text-emerald-300" },
+  { href: "/expenses/new", label: msg("Dépense"), icon: HandArrowUp, tint: "text-rose-600 dark:text-rose-300" },
 ];
 
 /** A tab: its icon and name — the current one filled, in violet, over the
@@ -47,6 +49,7 @@ function NavLink({
   active: boolean;
   onNavigate: (href: string) => void;
 }) {
+  const t = useT();
   return (
     <Link
       href={href}
@@ -71,7 +74,7 @@ function NavLink({
           active ? "font-bold text-violet-800 dark:text-white" : "font-semibold text-slate-500 dark:text-slate-400",
         )}
       >
-        {label}
+        {t(label)}
       </span>
     </Link>
   );
@@ -109,6 +112,7 @@ export function BottomNav() {
 
 function AppBar({ pathname }: { pathname: string }) {
   const router = useRouter();
+  const t = useT();
 
   useEffect(() => {
     // On load the bar's own <Link prefetch>es cover their routes; only
@@ -216,14 +220,14 @@ function AppBar({ pathname }: { pathname: string }) {
                 Closed, it lets taps through to the page under it. */}
             <div
               role="menu"
-              aria-label="Ajouter"
+              aria-label={t("Ajouter")}
               aria-hidden={!open}
               className={cn(
                 "gx-float absolute bottom-full right-0 mb-3 w-[min(calc(100vw-2rem),28rem)] origin-bottom-right rounded-[28px] px-2.5 pb-2 pt-3.5 transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.34,1.25,0.64,1)]",
                 open ? "pointer-events-auto scale-100 opacity-100" : "pointer-events-none translate-y-3 scale-95 opacity-0",
               )}
             >
-              <p className="px-2 pb-1.5 text-[13px] font-bold text-slate-500 dark:text-slate-400">Ajouter</p>
+              <p className="px-2 pb-1.5 text-[13px] font-bold text-slate-500 dark:text-slate-400">{t("Ajouter")}</p>
               <div className="grid grid-cols-4">
                 {ACTIONS.map(({ href, label, icon: Icon, tint }) => (
                   <Link
@@ -238,7 +242,7 @@ function AppBar({ pathname }: { pathname: string }) {
                     <span className={cn("gx-pill flex h-[50px] w-[50px] items-center justify-center rounded-full", tint)}>
                       <Icon weight="duotone" className="h-6 w-6" />
                     </span>
-                    <span className="whitespace-nowrap text-[12px] font-semibold text-slate-800 dark:text-slate-100">{label}</span>
+                    <span className="whitespace-nowrap text-[12px] font-semibold text-slate-800 dark:text-slate-100">{t(label)}</span>
                   </Link>
                 ))}
               </div>
@@ -248,7 +252,7 @@ function AppBar({ pathname }: { pathname: string }) {
               type="button"
               onClick={toggle}
               aria-expanded={open}
-              aria-label={open ? "Fermer le menu d'ajout" : "Ajouter"}
+              aria-label={open ? t("Fermer le menu d'ajout") : t("Ajouter")}
               className="gx-fab relative flex h-[60px] w-[60px] items-center justify-center rounded-full text-violet-700 transition-transform duration-200 active:scale-95 dark:text-violet-100"
             >
               <Plus weight="bold" className={cn("h-7 w-7 transition-transform duration-300", open && "rotate-[135deg]")} />

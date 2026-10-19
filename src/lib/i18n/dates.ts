@@ -26,6 +26,11 @@ export function monthLabelShort(m: MonthId, lang: Lang): string {
   return `${MONTHS_SHORT[lang][m.month - 1]} ${m.year}`;
 }
 
+/** The month's short name alone: "Oct." / "Oct". */
+export function monthShortName(month: number, lang: Lang): string {
+  return MONTHS_SHORT[lang][month - 1];
+}
+
 /** The month's name alone: "Octobre" / "October". */
 export function monthName(month: number, lang: Lang): string {
   return MONTHS[lang][month - 1];
