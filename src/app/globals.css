@@ -7,6 +7,8 @@
 :root {
   --background: #f5f5f9;
   --foreground: #14121f;
+  /* The phone's status bar above the page: HEADER_COLOR (lib/theme.ts). */
+  --gx-statusbar: #f5f5f9;
 }
 
 @theme inline {
@@ -19,6 +21,7 @@
 :root.dark {
   --background: #070c19;
   --foreground: #f1f5f9;
+  --gx-statusbar: #090e1e;
   color-scheme: dark;
 }
 
@@ -372,6 +375,9 @@ body {
   z-index: -1;
   pointer-events: none;
   background:
+    /* The phone's bar takes one colour only: the light rises from under
+       it, so the bar and the page meet without a line. */
+    linear-gradient(180deg, var(--gx-statusbar), transparent 44px),
     radial-gradient(75% 42% at 10% -6%, rgb(124 58 237 / 0.34), transparent 70%),
     radial-gradient(65% 40% at 102% 2%, rgb(34 211 238 / 0.18), transparent 70%),
     radial-gradient(60% 40% at -10% 60%, rgb(20 184 166 / 0.07), transparent 70%),
@@ -381,6 +387,8 @@ body {
 /* Accueil: the brand's soft light behind the greeting and the balance. */
 .gx-home-glow {
   background:
+    /* Out of the phone's bar (one colour): no line between the two. */
+    linear-gradient(180deg, var(--gx-statusbar), transparent 44px),
     radial-gradient(70% 60% at 85% 10%, color-mix(in oklab, var(--gx-brand-200) 55%, transparent), transparent 70%),
     radial-gradient(60% 55% at 0% 30%, rgb(253 230 238 / 0.7), transparent 70%),
     linear-gradient(180deg, #fbfaff 0%, var(--background) 100%);
