@@ -221,6 +221,9 @@ model GoalDeposit {
   method    String?
   /// The paid one-time expense it shows as in Dépenses (deleted with it).
   expenseId String?
+  /// Every month (cash / card): its expense comes back each month in
+  /// Dépenses, and every month ticked there goes to the goal.
+  monthly   Boolean @default(false)
   createdAt String
 
   goal    Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
@@ -401,6 +404,9 @@ model SavingsMove {
   incomeId  String? @unique
   /// "goal": the deposit it is (deleted with it).
   goalDepositId String? @unique
+  /// "in" every month: its expense comes back each month in Dépenses, and
+  /// every month ticked there is put aside (lib/monthly-plan.ts).
+  monthly   Boolean @default(false)
   createdAt String
 
   expense     Expense?     @relation(fields: [expenseId], references: [id], onDelete: Cascade)

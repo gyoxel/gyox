@@ -20,7 +20,7 @@ import { ExpenseEditor, type PaymentStatusInit, type RecurrenceInit } from "@/co
 import { CreditEditor } from "@/components/credit-editor";
 import { MonthPayments } from "@/components/payment-parts";
 import { formatMoney } from "@/lib/utils";
-import type { Expense, Payment } from "@/lib/types";
+import type { Expense, Payment, PaymentMethod } from "@/lib/types";
 import { MethodIcon, MethodLabel } from "@/components/method-icon";
 
 export const dynamic = "force-dynamic";
@@ -41,11 +41,22 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
   const expense = allExpenses.find((e) => e.id === id);
   if (!expense) notFound();
 
+  // Put aside every month (Épargne, a goal): what counts here is this month.
+  const monthly = Boolean(linkedMove?.monthly || linkedDeposit?.deposit.monthly);
+  const thisMonth = monthKey(todayMonth());
+  const paidNow = payments.find((p) => p.expenseId === expense.id && p.amountPaid > 0 && (!monthly || p.monthKey === thisMonth));
+  const status = (method: PaymentMethod | null | undefined, paid: boolean) => (
+    <>
+      {monthly && <>{t("Chaque mois")} · </>}
+      {paid ? <>{monthly ? t("Payé ce mois") : t("Payé")}{method && <> <MethodIcon method={method} /></>}</> : monthly ? t("Pas encore ce mois") : t("Pas encore payé")}
+    </>
+  );
+
   // A goal deposit: edited and deleted from the goal only; here it can just
   // be ticked / unticked (from Dépenses).
   if (linkedDeposit) {
     const { goal, deposit } = linkedDeposit;
-    const payment = payments.find((p) => p.expenseId === expense.id && p.amountPaid > 0);
+    const payment = paidNow;
     return (
       <>
         <PageHeader
@@ -60,12 +71,13 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
             <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">{t("Versement · objectif")}</p>
             <p className="relative mt-1 text-4xl font-bold tabular-nums">{formatMoney(expense.amount, settings.currency)}</p>
             <p className="relative mt-1 text-sm text-white/90">
-              {goal.emoji} {goal.name} ·{" "}
-              {payment?.method ? <>{t("Payé")} <MethodIcon method={payment.method} /></> : payment ? t("Payé") : t("Pas encore payé")}
+              {goal.emoji} {goal.name} · {status(payment?.method, !!payment)}
             </p>
           </div>
           <p className="px-1 text-sm text-slate-500 dark:text-slate-400">
-            {t("Ce versement vient de l'objectif « {goal} ». Tu peux le cocher ou le décocher dans tes dépenses ; pour le modifier, c'est depuis le versement.", { goal: goal.name })}
+            {monthly
+              ? t("Ce versement revient chaque mois pour l'objectif « {goal} ». Coche-le dans tes dépenses quand tu le mets de côté : il s'ajoute à l'objectif. Pour le modifier ou l'arrêter, c'est depuis le versement.", { goal: goal.name })
+              : t("Ce versement vient de l'objectif « {goal} ». Tu peux le cocher ou le décocher dans tes dépenses ; pour le modifier, c'est depuis le versement.", { goal: goal.name })}
           </p>
           <Button asChild className="gx-cta">
             <Link href={`/goals/${goal.id}/deposits/${deposit.id}`}>
@@ -82,16 +94,20 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
       </>
     );
   }
-  const paidWith = payments.find((p) => p.expenseId === expense.id && p.amountPaid > 0)?.method;
+  const paidWith = paidNow?.method;
   if (linkedMove) {
     return (
       <LinkedSourcePage
         title={localName(expense.name, t)}
         gradient="from-lime-400 via-green-500 to-emerald-700"
-        eyebrow={`${t("Épargne")} 🐷`}
+        eyebrow={`${t("Épargne")} ${monthly ? "🔁" : "🐷"}`}
         amount={formatMoney(expense.amount, settings.currency)}
-        subtitle={<>{linkedMove.note ?? t("Mis de côté")} · {paidWith ? <>{t("Payé")} <MethodIcon method={paidWith} /></> : t("Pas encore payé")}</>}
-        text={t("Cet argent a été mis dans ton épargne. Tu peux le cocher ou le décocher dans tes dépenses ; pour le modifier ou le supprimer, c'est depuis l'épargne.")}
+        subtitle={<>{linkedMove.note ?? t("Mis de côté")} · {status(paidWith, !!paidNow)}</>}
+        text={
+          monthly
+            ? t("Cette épargne revient chaque mois. Coche-la dans tes dépenses quand tu la mets de côté : elle s'ajoute à l'épargne. Pour la modifier ou l'arrêter, c'est depuis l'épargne.")
+            : t("Cet argent a été mis dans ton épargne. Tu peux le cocher ou le décocher dans tes dépenses ; pour le modifier ou le supprimer, c'est depuis l'épargne.")
+        }
         href={`/epargne/${linkedMove.id}`}
         editLabel={t("Modifier l'épargne")}
         buttonClass="gx-cta"

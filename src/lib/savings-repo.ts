@@ -2,8 +2,10 @@
 // (Dépenses) and money taken back an income (Revenus): those are what move
 // cash / the card in the Solde, and they're deleted with their move. Savings
 // held already ("existing") are neither: they only add to the savings.
+// Put aside every month ("monthly"), its expense comes back each month.
 import { randomUUID } from "crypto";
 import { prisma } from "./prisma";
+import { stopMonthlyExpense } from "./monthly-repo";
 import type { PaymentMethod, SavingsMove } from "./types";
 
 export function mapMove(row: {
@@ -31,6 +33,8 @@ export interface SavingsInput {
   method: PaymentMethod;
   note: string | null;
   date: string;
+  /** "in" only: every month, this month's put aside now. */
+  monthly?: boolean;
 }
 
 const expenseName = (note: string | null) => (note ? `Épargne · ${note}` : "Épargne");
@@ -72,8 +76,8 @@ export async function createSavingsMove(input: SavingsInput): Promise<SavingsMov
           id: expenseId,
           name: expenseName(input.note),
           amount: input.amount,
-          type: "temporary",
-          frequency: "one-time",
+          type: input.monthly ? "permanent" : "temporary",
+          frequency: input.monthly ? "monthly" : "one-time",
           startDate: input.date,
           endDate: null,
           active: true,
@@ -106,6 +110,7 @@ export async function createSavingsMove(input: SavingsInput): Promise<SavingsMov
     return mapMove(move);
   }
   const incomeId = randomUUID();
+  input = { ...input, monthly: false };
   const [, move] = await prisma.$transaction([
     prisma.income.create({
       data: {
@@ -133,6 +138,17 @@ export async function updateSavingsMove(
   const move = await prisma.savingsMove.findUnique({ where: { id } });
   if (!move) return null;
   const now = new Date().toISOString();
+  if (move.monthly && move.expenseId) {
+    // Every month: the months to come follow; those put aside stay as paid.
+    const [, row] = await prisma.$transaction([
+      prisma.expense.update({
+        where: { id: move.expenseId },
+        data: { name: expenseName(input.note), amount: input.amount, notes: input.note, updatedAt: now },
+      }),
+      prisma.savingsMove.update({ where: { id }, data: { amount: input.amount, note: input.note } }),
+    ]);
+    return mapMove(row);
+  }
   if (move.expenseId) {
     await prisma.$transaction([
       prisma.expense.update({
@@ -152,6 +168,15 @@ export async function updateSavingsMove(
     });
   }
   return mapMove(await prisma.savingsMove.update({ where: { id }, data: input }));
+}
+
+/** Stops putting aside every month: the months put aside stay. One that
+ *  never put anything aside goes altogether (the pages gone with it). */
+export async function stopSavingsMove(id: string): Promise<{ gone: string[] } | null> {
+  const move = await prisma.savingsMove.findUnique({ where: { id } });
+  if (!move?.monthly || !move.expenseId) return null;
+  if (await stopMonthlyExpense(move.expenseId)) return { gone: [] };
+  return { gone: (await deleteSavingsMove(id)) ?? [] };
 }
 
 /** Removes a move with its expense / income; gives the app pages gone with it. */

@@ -112,6 +112,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     summary: msg("L'argent mis de côté, en dehors de ton solde actuel."),
     points: [
       msg("Mettre de côté : l'argent sort de ton solde et s'ajoute à tes dépenses comme épargne."),
+      msg("« Chaque mois » : elle revient chaque mois dans tes dépenses ; chaque mois coché s'ajoute à l'épargne."),
       msg("Retirer de l'épargne : l'argent revient dans ton solde comme un revenu."),
       msg("Ajouter une épargne que tu avais déjà (« J'ai déjà une épargne »), sans toucher ton solde."),
       msg("Voir ce qui a été mis de côté et retiré ce mois-ci, et chaque mouvement avec sa note."),
@@ -178,6 +179,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     points: [
       msg("Voir le pourcentage atteint, ce qui est déjà là et ce qu'il manque."),
       msg("Ajouter un versement (espèces, carte ou épargne)."),
+      msg("« Chaque mois » : le versement revient chaque mois dans tes dépenses ; chaque mois coché s'ajoute à l'objectif."),
       msg("Voir les étapes : épargne de départ, chaque versement et chaque daret liée."),
       msg("Simuler : combien tu auras en mettant X par mois, ou combien mettre pour finir avant une date."),
       msg("Modifier ou supprimer l'objectif."),
@@ -323,6 +325,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Changer le montant ou le nom."),
       msg("Changer d'où il est pris (espèces ou carte)."),
       msg("Le marquer payé ou pas encore : pas encore payé, il ne compte pas."),
+      msg("Chaque mois : le nouveau montant compte pour les mois à venir ; « Arrêter chaque mois » garde ce qui est déjà mis de côté."),
       msg("Supprimer le versement (et sa dépense)."),
     ],
   },
@@ -332,6 +335,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     points: [
       msg("Changer le montant ou la note."),
       msg("Changer le compte (espèces ou carte)."),
+      msg("Chaque mois : le nouveau montant compte pour les mois à venir ; « Arrêter chaque mois » garde ce qui est déjà mis de côté."),
       msg("Supprimer le mouvement : ton solde et ton épargne sont recalculés."),
     ],
   },

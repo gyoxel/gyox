@@ -1,4 +1,6 @@
-import { getAllGoals, getAllPayments, getAllSavingsMoves, getSettings } from "@/lib/page-data";
+import { getAllExpenses, getAllGoals, getAllPayments, getAllSavingsMoves, getSettings } from "@/lib/page-data";
+import { monthlyPlan } from "@/lib/monthly-plan";
+import { todayMonth } from "@/lib/date";
 import { getWallet } from "@/lib/wallet-data";
 import { isMoveCounted } from "@/lib/savings";
 import { PageHeader } from "@/components/page-header";
@@ -10,14 +12,17 @@ export const dynamic = "force-dynamic";
 
 /** Épargne: what's put aside, putting more / taking some back, the history. */
 export default async function EpargnePage() {
-  const [settings, wallet, moves, payments, goals, { t }] = await Promise.all([
+  const [settings, wallet, moves, payments, goals, expenses, { t }] = await Promise.all([
     getSettings(),
     getWallet(),
     getAllSavingsMoves(),
     getAllPayments(),
     getAllGoals(),
+    getAllExpenses(),
     getI18n(),
   ]);
+  const expenseById = new Map(expenses.map((e) => [e.id, e]));
+  const current = todayMonth();
   // Given to a goal: it opens that deposit, on the goal.
   const depositHref = new Map(goals.flatMap((g) => g.deposits.map((d) => [d.id, `/goals/${g.id}/deposits/${d.id}`] as const)));
   return (
@@ -29,6 +34,7 @@ export default async function EpargnePage() {
             ...m,
             counted: isMoveCounted(m, payments),
             href: (m.goalDepositId && depositHref.get(m.goalDepositId)) || `/epargne/${m.id}`,
+            plan: m.monthly && m.expenseId && expenseById.has(m.expenseId) ? monthlyPlan(expenseById.get(m.expenseId)!, payments, current) : null,
           }))}
           balance={wallet.balance}
           savings={wallet.savings}

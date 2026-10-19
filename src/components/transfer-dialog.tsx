@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MethodIcon } from "@/components/method-icon";
+import { MonthlyToggle } from "@/components/monthly-toggle";
 import { msg } from "@/lib/i18n";
 import { useT } from "@/lib/i18n/client";
 
@@ -29,8 +30,9 @@ const METHODS: Account[] = ["cash", "card"];
 
 /**
  * Moves money between cash, the card and the savings. Into the savings it
- * leaves the Solde (an expense "Épargne" in Dépenses); out of it, it comes
- * back (an income in Revenus). Cash ⇄ card is a plain transfer.
+ * leaves the Solde (an expense "Épargne" in Dépenses — every month, if so);
+ * out of it, it comes back (an income in Revenus). Cash ⇄ card is a plain
+ * transfer.
  */
 export function TransferDialog({
   open,
@@ -58,6 +60,7 @@ export function TransferDialog({
   const [to, setTo] = useState<Account>(initialTo);
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
+  const [monthly, setMonthly] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const value = parseDecimalInput(amount);
@@ -87,7 +90,7 @@ export function TransferDialog({
     const cleanNote = note.trim() || null;
     const request =
       to === "savings"
-        ? { url: "/api/savings", body: { kind: "in", amount: value, method: from, note: cleanNote } }
+        ? { url: "/api/savings", body: { kind: "in", amount: value, method: from, note: cleanNote, monthly } }
         : from === "savings"
           ? { url: "/api/savings", body: { kind: "out", amount: value, method: to, note: cleanNote } }
           : { url: "/api/wallet", body: { kind: "transfer", fromAccount: from, toAccount: to, amount: value, note: cleanNote } };
@@ -97,13 +100,18 @@ export function TransferDialog({
       onOpenChange(false);
       setAmount("");
       setNote("");
-      toast.success(`${money(value)} : ${t(ACCOUNT_META[from].label)} → ${t(ACCOUNT_META[to].label)}`);
+      setMonthly(false);
+      toast.success(
+        `${money(value)} : ${t(ACCOUNT_META[from].label)} → ${t(ACCOUNT_META[to].label)}${to === "savings" && monthly ? ` · ${t("chaque mois")}` : ""}`,
+      );
     });
   }
 
   const hint =
     to === "savings"
-      ? t("Sort de ton solde actuel et s'ajoute à tes dépenses comme épargne.")
+      ? monthly
+        ? t("Sort de ton solde maintenant, puis revient chaque mois dans tes dépenses : coche-la quand tu la mets de côté.")
+        : t("Sort de ton solde actuel et s'ajoute à tes dépenses comme épargne.")
       : from === "savings"
         ? t("Revient dans ton solde actuel, comme un revenu.")
         : t("Retrait au guichet ou versement sur la carte.");
@@ -164,6 +172,9 @@ export function TransferDialog({
               }
             />
           </div>
+          {to === "savings" && (
+            <MonthlyToggle checked={monthly} onChange={setMonthly} hint={t("Revient chaque mois dans tes dépenses")} />
+          )}
           {error && <p className="text-sm text-rose-600">{error}</p>}
           <Button type="submit" className="gx-cta" disabled={pending || !(value > 0)}>
             <ArrowsLeftRight weight="bold" className="h-4 w-4" />

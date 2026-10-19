@@ -6,6 +6,7 @@ import { defaultSettings } from "./user-defaults";
 import { getAllSavingsMoves } from "./savings-repo";
 import { getAllLoanRepayments, getAllLoans } from "./loans-repo";
 import { getIncomeCategories } from "./income-categories-repo";
+import { stopMonthlyExpense } from "./monthly-repo";
 import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote, DepositSource, SalaryAdvance, Income, PaymentMethod, SalaryReceipt, WalletOp, SavingsMove, Loan, LoanRepayment } from "./types";
 
 /** Names the app gave before Crédits / Prêts became Dettes / Argent prêté
@@ -921,7 +922,7 @@ export async function deleteGoal(id: string): Promise<boolean> {
 
 export async function addGoalDeposit(
   goalId: string,
-  input: { name: string; amount: number; date: string; method: DepositSource | null },
+  { monthly = false, ...input }: { name: string; amount: number; date: string; method: DepositSource | null; monthly?: boolean },
 ): Promise<GoalDeposit> {
   const now = new Date().toISOString();
   const goal = await prisma.goal.findUniqueOrThrow({ where: { id: goalId } });
@@ -950,7 +951,8 @@ export async function addGoalDeposit(
     return mapDeposit(deposit);
   }
   // Taken from cash / the card: it also shows in Dépenses as a paid one-time
-  // expense (that payment is what comes off the Solde).
+  // expense (that payment is what comes off the Solde) — every month, a
+  // monthly one, this month's paid now.
   const expenseId = randomUUID();
   const [, , deposit] = await prisma.$transaction([
     prisma.expense.create({
@@ -958,8 +960,8 @@ export async function addGoalDeposit(
         id: expenseId,
         name: `Versement · ${goal.name}`,
         amount: input.amount,
-        type: "temporary",
-        frequency: "one-time",
+        type: monthly ? "permanent" : "temporary",
+        frequency: monthly ? "monthly" : "one-time",
         startDate: input.date,
         endDate: null,
         active: true,
@@ -987,9 +989,19 @@ export async function addGoalDeposit(
         createdAt: now,
       },
     }),
-    prisma.goalDeposit.create({ data: { id: randomUUID(), goalId, ...input, expenseId, createdAt: now } }),
+    prisma.goalDeposit.create({ data: { id: randomUUID(), goalId, ...input, expenseId, monthly, createdAt: now } }),
   ]);
   return mapDeposit(deposit);
+}
+
+/** Stops a deposit made every month: the months put aside stay. One that
+ *  never put anything aside goes altogether (true: it's gone). */
+export async function stopGoalDeposit(goalId: string, depositId: string): Promise<{ deleted: boolean } | null> {
+  const deposit = await prisma.goalDeposit.findFirst({ where: { id: depositId, goalId } });
+  if (!deposit?.monthly || !deposit.expenseId) return null;
+  if (await stopMonthlyExpense(deposit.expenseId)) return { deleted: false };
+  await deleteGoalDeposit(goalId, depositId);
+  return { deleted: true };
 }
 
 /** The goal deposit an expense stands for, if any. */
@@ -1021,6 +1033,17 @@ export async function updateGoalDeposit(
   if (!deposit) return null;
   const now = new Date().toISOString();
   const name = input.name || "Versement";
+  if (deposit.monthly && deposit.expenseId) {
+    // Every month: the months to come follow; those put aside stay as paid.
+    const [, row] = await prisma.$transaction([
+      prisma.expense.update({
+        where: { id: deposit.expenseId },
+        data: { amount: input.amount, notes: name !== "Versement" ? name : null, updatedAt: now },
+      }),
+      prisma.goalDeposit.update({ where: { id: depositId }, data: { name, amount: input.amount } }),
+    ]);
+    return mapDeposit(row);
+  }
   if (deposit.method === "savings") {
     const [row] = await prisma.$transaction([
       prisma.goalDeposit.update({ where: { id: depositId }, data: { name, amount: input.amount } }),

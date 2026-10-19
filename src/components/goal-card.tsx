@@ -8,7 +8,8 @@ import { errorMessage } from "@/components/expense-editor";
 import type { DepositSource, Goal } from "@/lib/types";
 import { DepositSourcePicker } from "@/components/payment-method-picker";
 import type { GoalProgress } from "@/lib/goals";
-import type { MonthId } from "@/lib/date";
+import { parseMonthKey, type MonthId } from "@/lib/date";
+import type { MonthlyPlan } from "@/lib/monthly-plan";
 import { formatDate, monthLabel, monthLabelShort } from "@/lib/i18n/dates";
 import { useI18n } from "@/lib/i18n/client";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput } from "@/lib/utils";
@@ -18,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MethodIcon } from "@/components/method-icon";
+import { MonthlyToggle } from "@/components/monthly-toggle";
 
 /** Progress ring around the goal's emoji: solid = in hand, light = with darets. */
 function GoalRing({
@@ -93,6 +95,7 @@ export function GoalCard({
   currency,
   linkToDetail = false,
   depositsPaid,
+  depositPlans = {},
   savings,
 }: {
   goal: Goal;
@@ -101,6 +104,8 @@ export function GoalCard({
   linkToDetail?: boolean;
   /** Detail page: whether each deposit is paid (ticked in Dépenses). */
   depositsPaid?: Record<string, boolean>;
+  /** Detail page: the deposits made every month, what they put aside. */
+  depositPlans?: Record<string, MonthlyPlan>;
   /** Detail page: what's in the savings (a deposit can come from there). */
   savings?: number;
 }) {
@@ -163,14 +168,17 @@ export function GoalCard({
   // the goal reaches after it; not paid ones stay listed but don't count.
   type Row =
     | { kind: "step"; key: string; step: GoalProgress["steps"][number] }
-    | { kind: "deposit"; key: string; deposit: Goal["deposits"][number]; paid: boolean; percent: number };
+    | { kind: "deposit"; key: string; deposit: Goal["deposits"][number]; paid: boolean; amount: number; plan: MonthlyPlan | null; percent: number };
   const stepRow = (step: GoalProgress["steps"][number], i: number): Row => ({ kind: "step", key: `step-${i}`, step });
   const depositRows = [...goal.deposits].reverse().reduce<{ rows: Row[]; reached: number }>(
     (acc, d) => {
       const paid = depositsPaid?.[d.id] ?? true;
-      const reached = acc.reached + (paid ? d.amount : 0);
+      const plan = depositPlans[d.id] ?? null;
+      // Every month: all its months ticked.
+      const amount = plan ? plan.total : d.amount;
+      const reached = acc.reached + (paid ? amount : 0);
       const percent = p.target > 0 ? Math.min(100, Math.round((reached / p.target) * 100)) : 0;
-      return { rows: [...acc.rows, { kind: "deposit", key: `deposit-${d.id}`, deposit: d, paid, percent }], reached };
+      return { rows: [...acc.rows, { kind: "deposit", key: `deposit-${d.id}`, deposit: d, paid, amount, plan, percent }], reached };
     },
     { rows: [], reached: goal.savedAmount },
   ).rows.reverse(); // the last one on top
@@ -237,15 +245,26 @@ export function GoalCard({
                     className="flex items-center gap-3 px-4 py-3 text-sm active:bg-slate-50 dark:active:bg-slate-800/60"
                   >
                     <StepIcon>
-                      {row.deposit.method === "savings" ? "🐷" : <MethodIcon method={row.deposit.method ?? "cash"} className="h-3" />}
+                      {row.plan ? "🔁" : row.deposit.method === "savings" ? "🐷" : <MethodIcon method={row.deposit.method ?? "cash"} className="h-3" />}
                     </StepIcon>
                     <span className="min-w-0 flex-1">
                       <span className={cn("block truncate font-medium text-slate-800 dark:text-slate-100", !row.paid && "text-slate-400")}>
                         {row.deposit.name === "Versement" ? t("Versement") : row.deposit.name}
                       </span>
                       <span className="block text-[11px] text-slate-400">
-                        {formatDate(new Date(`${row.deposit.date}T12:00:00`), lang, DEPOSIT_DATE)}
-                        {row.deposit.method && (
+                        {row.plan ? (
+                          <>
+                            {t("{amount}/mois", { amount: money(row.plan.amount) })} ·{" "}
+                            {row.plan.running
+                              ? t("depuis {month}", { month: monthLabelShortFr(parseMonthKey(row.plan.since)).toLowerCase() })
+                              : t("arrêté")}{" "}
+                            · {t("{n} mois", { n: row.plan.paid.length })}
+                            {row.plan.dueNow && <span className="ml-1 font-semibold text-amber-600">· {t("à cocher ce mois")}</span>}
+                          </>
+                        ) : (
+                          formatDate(new Date(`${row.deposit.date}T12:00:00`), lang, DEPOSIT_DATE)
+                        )}
+                        {!row.plan && row.deposit.method && (
                           <>
                             {" "}
                             · <MethodIcon method={row.deposit.method} />
@@ -262,7 +281,7 @@ export function GoalCard({
                           row.paid ? "text-slate-900 dark:text-white" : "text-slate-400 line-through",
                         )}
                       >
-                        +{money(row.deposit.amount)}
+                        +{money(row.amount)}
                       </span>
                       {row.paid && (
                         <span className="block text-[11px] font-semibold tabular-nums text-orange-600 dark:text-amber-400">
@@ -354,7 +373,7 @@ export function GoalCard({
 }
 
 /** "+ Versement": money put aside for the goal (from cash, the card or the
- *  savings), with an optional label. */
+ *  savings — from cash / the card, maybe every month), with an optional label. */
 function DepositDialog({
   goal,
   currency,
@@ -372,7 +391,9 @@ function DepositDialog({
   const [deposit, setDeposit] = useState("");
   const [depositName, setDepositName] = useState("");
   const [method, setMethod] = useState<DepositSource>("cash");
+  const [monthly, setMonthly] = useState(false);
   const [saving, setSaving] = useState(false);
+  const everyMonth = monthly && method !== "savings";
 
   async function addDeposit() {
     const value = parseDecimalInput(deposit);
@@ -381,14 +402,19 @@ function DepositDialog({
     const res = await mutate({
       method: "POST",
       path: `/api/goals/${goal.id}/deposits`,
-      body: { amount: value, name: depositName.trim(), method },
+      body: { amount: value, name: depositName.trim(), method, monthly: everyMonth },
     });
     setSaving(false);
     if (!res.ok) return toast.error(await errorMessage(res));
-    toast.success(`${t("{amount} pour {goal}", { amount: `+${formatMoney(value, currency)}`, goal: goal.name })} · ${method === "savings" ? t("pris de l'épargne") : t("ajouté aux dépenses")}`);
+    toast.success(
+      `${t("{amount} pour {goal}", { amount: `+${formatMoney(value, currency)}`, goal: goal.name })} · ${
+        method === "savings" ? t("pris de l'épargne") : everyMonth ? t("chaque mois dans les dépenses") : t("ajouté aux dépenses")
+      }`,
+    );
     onOpenChange(false);
     setDeposit("");
     setDepositName("");
+    setMonthly(false);
   }
 
   return (
@@ -423,8 +449,13 @@ function DepositDialog({
           />
         </div>
         <DepositSourcePicker value={method} onChange={setMethod} />
+        {method !== "savings" && (
+          <MonthlyToggle checked={monthly} onChange={setMonthly} hint={t("Revient chaque mois dans tes dépenses")} />
+        )}
         <p className="text-[11px] text-slate-400">
-          {method === "savings"
+          {everyMonth
+            ? t("Il s'ajoute à l'objectif et sort de ton solde maintenant, puis revient chaque mois dans tes dépenses : coche-le quand tu le mets de côté.")
+            : method === "savings"
             ? savings != null
               ? t("Il s'ajoute à l'objectif et sort de ton épargne ({amount} dedans). Ton solde et tes dépenses ne bougent pas.", { amount: formatMoney(savings, currency) })
               : t("Il s'ajoute à l'objectif et sort de ton épargne. Ton solde et tes dépenses ne bougent pas.")

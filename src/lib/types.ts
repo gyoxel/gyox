@@ -193,6 +193,9 @@ export interface GoalDeposit {
   method: DepositSource | null;
   /** The paid one-time expense it shows as in Dépenses (newer deposits). */
   expenseId?: string | null;
+  /** Every month (cash / card): its expense comes back each month in
+   *  Dépenses, and every month ticked there goes to the goal. */
+  monthly?: boolean;
   createdAt: string;
 }
 
@@ -279,6 +282,9 @@ export interface SavingsMove {
   incomeId: string | null;
   /** "goal": the goal deposit it is. */
   goalDepositId?: string | null;
+  /** "in" every month: its expense comes back each month in Dépenses, and
+   *  every month ticked there is put aside (lib/monthly-plan.ts). */
+  monthly?: boolean;
   createdAt: string;
 }
 

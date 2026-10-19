@@ -1,4 +1,6 @@
-import { getAllPayments, getGoalById, getGoalDeposit, getSettings } from "@/lib/page-data";
+import { getAllPayments, getExpenseById, getGoalById, getGoalDeposit, getSettings } from "@/lib/page-data";
+import { monthlyPlan } from "@/lib/monthly-plan";
+import { todayMonth } from "@/lib/date";
 import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/page-header";
@@ -21,6 +23,8 @@ export default async function EditDepositPage({ params }: { params: Promise<{ id
   ]);
   if (!goal || !deposit) notFound();
   const payment = deposit.expenseId ? payments.find((p) => p.expenseId === deposit.expenseId && p.amountPaid > 0) : undefined;
+  const expense = deposit.monthly && deposit.expenseId ? await getExpenseById(deposit.expenseId) : null;
+  const plan = expense ? monthlyPlan(expense, payments, todayMonth()) : null;
   return (
     <>
       <PageHeader
@@ -35,6 +39,7 @@ export default async function EditDepositPage({ params }: { params: Promise<{ id
           deposit={deposit}
           paid={deposit.expenseId ? payment != null : true}
           currency={settings.currency}
+          plan={plan}
         />
       </main>
     </>

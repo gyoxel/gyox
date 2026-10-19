@@ -4,17 +4,20 @@ import { useState, useTransition } from "react";
 import { Check, Clock } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { GoalDeposit, PaymentMethod } from "@/lib/types";
+import type { MonthlyPlan } from "@/lib/monthly-plan";
+import { parseMonthKey } from "@/lib/date";
 import { useNavBack } from "@/lib/nav-history";
 import { mutate } from "@/lib/use-refresh-data";
-import { cleanDecimalInput, cn, parseDecimalInput, toDecimalInput } from "@/lib/utils";
+import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
 import { DeleteButton } from "@/components/delete-button";
 import { depositDelete } from "@/lib/delete-specs";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
+import { StopMonthlyButton } from "@/components/stop-monthly-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatDate } from "@/lib/i18n/dates";
+import { formatDate, monthLabel } from "@/lib/i18n/dates";
 import { useI18n } from "@/lib/i18n/client";
 
 const DATE_FMT: Intl.DateTimeFormatOptions = { day: "numeric", month: "long", year: "numeric" };
@@ -22,18 +25,22 @@ const DATE_FMT: Intl.DateTimeFormatOptions = { day: "numeric", month: "long", ye
 /**
  * Modifier un versement: amount, name, cash / card and — for one shown in
  * Dépenses — paid or not (not paid: it stays here but doesn't count). It's
- * deleted from here only (with its expense).
+ * deleted from here only (with its expense). Made every month (`plan`): the
+ * amount is for the months to come (each month is ticked in Dépenses), and
+ * it can be stopped.
  */
 export function DepositEditor({
   goal,
   deposit,
   paid: initialPaid,
   currency,
+  plan,
 }: {
   goal: { id: string; name: string; emoji: string };
   deposit: GoalDeposit;
   paid: boolean;
   currency: string;
+  plan: MonthlyPlan | null;
 }) {
   const nav = useNavBack();
   const { lang, t } = useI18n();
@@ -46,6 +53,7 @@ export function DepositEditor({
   const [pending, startTransition] = useTransition();
   const linked = deposit.expenseId != null;
   const value = parseDecimalInput(amount);
+  const month = (key: string) => monthLabel(parseMonthKey(key), lang).toLowerCase();
 
   function save(e: React.FormEvent) {
     e.preventDefault();
@@ -68,7 +76,7 @@ export function DepositEditor({
       <div className="relative flex flex-col items-center gap-1 overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 px-4 py-5 text-white shadow-lg shadow-orange-500/20 dark:shadow-none">
         <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
         <Label htmlFor="amount" className="relative text-xs text-white/80">
-          {t("Versement")} · {goal.emoji} {goal.name}
+          {plan ? `${t("Chaque mois")} 🔁` : t("Versement")} · {goal.emoji} {goal.name}
         </Label>
         <div className="relative flex items-baseline gap-2">
           <input
@@ -84,15 +92,33 @@ export function DepositEditor({
           />
           <span className="text-lg font-semibold text-white/70">DH</span>
         </div>
-        <p className="relative text-[11px] text-white/80">{formatDate(new Date(`${deposit.date}T12:00:00`), lang, DATE_FMT)}</p>
+        <p className="relative text-[11px] text-white/80">
+          {plan
+            ? plan.until
+              ? t("De {from} à {to}", { from: month(plan.since), to: month(plan.until) })
+              : t("Depuis {month}", { month: month(plan.since) })
+            : formatDate(new Date(`${deposit.date}T12:00:00`), lang, DATE_FMT)}
+        </p>
       </div>
+
+      {plan && (
+        <p className="-mt-2 px-1 text-center text-sm text-slate-600 dark:text-slate-300">
+          {t("{n} mois mis de côté : {amount}", { n: plan.paid.length, amount: formatMoney(plan.total, currency) })}
+        </p>
+      )}
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="name">{t("Nom (optionnel)")}</Label>
         <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("Ex : Prime, reste du mois…")} maxLength={60} />
       </div>
 
-      {fromSavings ? (
+      {plan ? (
+        <p className="px-1 text-[11px] text-slate-400">
+          {plan.running
+            ? t("Revient chaque mois dans tes dépenses : coche-le quand tu le mets de côté (espèces ou carte). Un nouveau montant compte pour les mois à venir.")
+            : t("Arrêté : il ne revient plus dans tes dépenses. Les mois mis de côté restent dans l'objectif.")}
+        </p>
+      ) : fromSavings ? (
         <p className="flex items-center gap-2 rounded-xl bg-lime-50 px-3 py-2.5 text-sm text-lime-800 dark:bg-lime-950/40 dark:text-lime-300">
           <span className="text-base leading-none">🐷</span>
           {t("Pris de l'épargne : il en sort, ton solde ne bouge pas.")}
@@ -140,6 +166,16 @@ export function DepositEditor({
           {pending ? t("Enregistrement…") : t("Enregistrer")}
         </Button>
       </div>
+
+      {plan?.running && (
+        <StopMonthlyButton
+          endpoint={`/api/goals/${goal.id}/deposits/${deposit.id}/stop`}
+          fallback={`/goals/${goal.id}`}
+          description={t("Il ne reviendra plus dans tes dépenses. Ce qui est déjà mis de côté ({amount}) reste dans l'objectif.", {
+            amount: formatMoney(plan.total, currency),
+          })}
+        />
+      )}
 
       <DeleteButton variant="full" {...depositDelete(goal.id, deposit, currency, t)} />
     </form>

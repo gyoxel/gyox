@@ -1,4 +1,5 @@
-import { getAllDarets, getAllPayments, getGoalById, getSettings } from "@/lib/page-data";
+import { getAllDarets, getAllExpenses, getAllPayments, getGoalById, getSettings } from "@/lib/page-data";
+import { monthlyPlan } from "@/lib/monthly-plan";
 import { notFound } from "next/navigation";
 import { getWallet } from "@/lib/wallet-data";
 
@@ -18,16 +19,24 @@ export const dynamic = "force-dynamic";
 /** One goal in detail: progress, deposits, its darets, and simulations. */
 export default async function GoalDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [settings, goal, darets, payments, wallet, { lang, t }] = await Promise.all([
+  const [settings, goal, darets, payments, wallet, expenses, { lang, t }] = await Promise.all([
     getSettings(),
     getGoalById(id),
     getAllDarets(),
     getAllPayments(),
     getWallet(),
+    getAllExpenses(),
     getI18n(),
   ]);
   if (!goal) notFound();
   const current = todayMonth();
+  const expenseById = new Map(expenses.map((e) => [e.id, e]));
+  const plans = Object.fromEntries(
+    goal.deposits.flatMap((d) => {
+      const e = d.monthly && d.expenseId ? expenseById.get(d.expenseId) : undefined;
+      return e ? [[d.id, monthlyPlan(e, payments, current)] as const] : [];
+    }),
+  );
   const progress = getGoalProgress(goal, darets, payments, current);
   const daretSteps = progress.steps.filter((s) => s.kind === "daret");
   const base: GoalSimBase = {
@@ -46,6 +55,7 @@ export default async function GoalDetailPage({ params }: { params: Promise<{ id:
           progress={progress}
           currency={settings.currency}
           depositsPaid={Object.fromEntries(goal.deposits.map((d) => [d.id, isDepositPaid(d, payments)]))}
+          depositPlans={plans}
           savings={wallet.savings}
         />
 

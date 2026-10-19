@@ -116,8 +116,17 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
   for (const g of goals) {
     for (const d of g.deposits) {
+      const label = `${d.name === "Versement" ? t("Versement") : d.name} · ${g.emoji} ${g.name}`;
+      if (d.monthly) {
+        // Every month: each month ticked, the day it was.
+        for (const p of payments) {
+          if (p.expenseId !== d.expenseId || !(p.amountPaid > 0) || !p.paidAt.startsWith(key)) continue;
+          events.push({ id: `${d.id}-${p.id}`, kind: "saving", label, icon: "🐷", amount: p.amountPaid, at: p.paidAt });
+        }
+        continue;
+      }
       if (!d.date.startsWith(key)) continue;
-      events.push({ id: d.id, kind: "saving", label: `${d.name === "Versement" ? t("Versement") : d.name} · ${g.emoji} ${g.name}`, icon: "🐷", amount: d.amount, at: d.date });
+      events.push({ id: d.id, kind: "saving", label, icon: "🐷", amount: d.amount, at: d.date });
     }
   }
 

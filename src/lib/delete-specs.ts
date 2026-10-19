@@ -63,8 +63,9 @@ export function depositDelete(goalId: string, deposit: GoalDeposit, currency: st
     label: t("Supprimer ce versement"),
     endpoint: `/api/goals/${goalId}/deposits/${deposit.id}`,
     title: t("Supprimer ce versement ?"),
-    description:
-      deposit.method === "savings"
+    description: deposit.monthly
+      ? t("Tous ses mois sont retirés de l'objectif et de tes dépenses : ils reviennent dans ton solde. Pour garder ce qui est mis de côté, arrête-le plutôt.")
+      : deposit.method === "savings"
         ? t("{amount} sera retiré de l'objectif et reviendra dans l'épargne.", { amount })
         : deposit.expenseId
           ? t("{amount} sera retiré de l'objectif et de tes dépenses.", { amount })
@@ -105,8 +106,9 @@ export function savingsDelete(move: SavingsMove, t: T) {
     label: move.kind === "in" ? t("Supprimer cette épargne") : t("Supprimer ce retrait"),
     endpoint: `/api/savings/${move.id}`,
     title: move.kind === "in" ? t("Supprimer cette épargne ?") : t("Supprimer ce retrait ?"),
-    description:
-      move.kind === "in"
+    description: move.monthly
+      ? t("Tous ses mois sont retirés de l'épargne et de tes dépenses : ils reviennent dans ton solde. Pour garder ce qui est mis de côté, arrête-la plutôt.")
+      : move.kind === "in"
         ? t("{amount} retirés de l'épargne et de tes dépenses : ils reviennent dans ton solde.", { amount })
         : t("{amount} retirés de tes revenus : ils reviennent dans l'épargne.", { amount }),
     success: move.kind === "in" ? t("Épargne supprimée.") : t("Retrait supprimé."),
