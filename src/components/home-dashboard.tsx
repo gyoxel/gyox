@@ -17,13 +17,16 @@ import { DueDaretPayouts, type DueDaretPayout } from "@/components/due-daret-pay
 import { ShortcutWheel } from "@/components/shortcut-wheel";
 import { TransferDialog } from "@/components/transfer-dialog";
 import { MethodIcon } from "@/components/method-icon";
+import { InstallAppCard } from "@/components/install-app";
+import { msg } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 // Transfert has no page of its own: it opens the transfer right here.
 const QUICK_ACTIONS: { href?: string; label: string; icon: PhosphorIcon }[] = [
-  { href: "/expenses/new", label: "Dépense", icon: HandArrowUp },
-  { href: "/incomes/new", label: "Revenu", icon: HandArrowDown },
-  { href: "/epargne", label: "Épargne", icon: PiggyBank },
-  { label: "Transfert", icon: Swap },
+  { href: "/expenses/new", label: msg("Dépense"), icon: HandArrowUp },
+  { href: "/incomes/new", label: msg("Revenu"), icon: HandArrowDown },
+  { href: "/epargne", label: msg("Épargne"), icon: PiggyBank },
+  { label: msg("Transfert"), icon: Swap },
 ];
 
 /** Disponible's card: the living violet one (a link once the amounts
@@ -83,6 +86,7 @@ export function HomeDashboard({
   /** Darets whose turn has come, the pot not confirmed yet. */
   dueDaretPayouts: DueDaretPayout[];
 }) {
+  const t = useT();
   const [localPayments, setLocalPayments] = useState<Payment[]>(payments);
   const [seenPayments, setSeenPayments] = useState(payments);
   if (payments !== seenPayments) {
@@ -106,7 +110,7 @@ export function HomeDashboard({
       <span aria-hidden className="gx-twinkle absolute left-5 top-5 text-[9px] text-white/75">✦</span>
       <span aria-hidden className="gx-twinkle absolute right-6 top-4 text-[11px] text-white/80 [animation-delay:1.4s]">✦</span>
       <span aria-hidden className="gx-twinkle absolute right-12 top-10 text-[6px] text-white/60 [animation-delay:2.3s]">✦</span>
-      <p className="relative text-[15px] font-semibold text-white/85">Disponible maintenant</p>
+      <p className="relative text-[15px] font-semibold text-white/85">{t("Disponible maintenant")}</p>
       <div className="relative mt-2.5 flex items-center gap-2">
         <p
           data-private
@@ -125,7 +129,7 @@ export function HomeDashboard({
             e.stopPropagation();
             setRevealed(!revealed);
           }}
-          aria-label={revealed ? "Masquer le montant" : "Afficher le montant"}
+          aria-label={revealed ? t("Masquer le montant") : t("Afficher le montant")}
           className="flex h-9 w-9 items-center justify-center rounded-full text-white/90 transition-colors active:bg-white/15"
         >
           {revealed ? <EyeSlash weight="bold" className="h-5 w-5" /> : <Eye weight="bold" className="h-5 w-5" />}
@@ -139,7 +143,7 @@ export function HomeDashboard({
             <MethodIcon method={m} className="h-[14px]" />
             <span className="min-w-0">
               <span className="block text-[11px] font-medium leading-tight text-white/70">
-                {m === "cash" ? "Espèces" : "Carte"}
+                {m === "cash" ? t("Espèces") : t("Carte")}
               </span>
               <span data-private className="block truncate text-[14px] font-bold leading-tight tabular-nums text-white">
                 {show(balance[m])}
@@ -153,6 +157,9 @@ export function HomeDashboard({
 
   return (
     <>
+      {/* Chrome offers to install the app (on the site, not installed). */}
+      <InstallAppCard />
+
       {/* What's available now, big and centred on the living violet card —
           the first thing on Accueil. Once shown, the whole card opens the
           Solde; hidden (the dots), it doesn't. */}
@@ -172,7 +179,7 @@ export function HomeDashboard({
               <span className="gx-pill flex h-[58px] w-[58px] items-center justify-center rounded-full text-violet-700 dark:text-violet-200">
                 <Icon weight="duotone" className="h-6 w-6" />
               </span>
-              <span className="text-[12px] font-semibold text-slate-700 dark:text-slate-300">{label}</span>
+              <span className="text-[12px] font-semibold text-slate-700 dark:text-slate-300">{t(label)}</span>
             </>
           );
           const className = "flex flex-col items-center gap-1.5 transition-transform active:scale-95";

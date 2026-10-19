@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { HEADER_COLOR, SIMPLE_HEADER } from "@/lib/theme";
+import { HEADER_COLOR, SIMPLE_HEADER, SPLASH_BAR } from "@/lib/theme";
 
 // The browser's bar (theme-color) takes the header's colour — the same on
 // every page, light or dark (the simple theme's plain one with it).
@@ -11,7 +11,8 @@ import { HEADER_COLOR, SIMPLE_HEADER } from "@/lib/theme";
 function paint() {
   const root = document.documentElement;
   const colors = root.classList.contains("simple") ? SIMPLE_HEADER : HEADER_COLOR;
-  const value = root.classList.contains("dark") ? colors.dark : colors.light;
+  // The launch screen is always light (like Android's splash before it).
+  const value = root.classList.contains("gx-launching") ? SPLASH_BAR : root.classList.contains("dark") ? colors.dark : colors.light;
   const metas = document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]');
   if (metas.length === 0) {
     const meta = document.createElement("meta");

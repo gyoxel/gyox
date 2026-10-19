@@ -5,15 +5,16 @@ import { CaretRight } from "@phosphor-icons/react/ssr";
 import { currentAccount } from "@/lib/accounts";
 import { PageHeader } from "@/components/page-header";
 import { SettingsForm } from "@/components/settings-form";
+import { getI18n } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const [settings, account] = await Promise.all([getSettings(), currentAccount()]);
-  const name = account?.name || account?.email.split("@")[0] || "Mon compte";
+  const [settings, account, { t }] = await Promise.all([getSettings(), currentAccount(), getI18n()]);
+  const name = account?.name || account?.email.split("@")[0] || t("Mon compte");
   return (
     <>
-      <PageHeader title="Paramètres" back hideSettings />
+      <PageHeader title={t("Paramètres")} back hideSettings />
       <main className="flex flex-col gap-5 px-4 py-5">
         {/* The account: opens Profil (Déconnexion there). */}
         <Link
@@ -33,7 +34,7 @@ export default async function SettingsPage() {
             )}
             <span className="min-w-0 flex-1">
               <span className="block truncate text-base font-semibold">{name}</span>
-              <span className="block truncate text-xs text-white/70">{account?.email ?? "Profil, déconnexion"}</span>
+              <span className="block truncate text-xs text-white/70">{account?.email ?? t("Profil, déconnexion")}</span>
             </span>
             <CaretRight weight="bold" className="h-5 w-5 shrink-0 text-white/60" />
           </div>

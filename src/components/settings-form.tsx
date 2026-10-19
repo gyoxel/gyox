@@ -10,15 +10,20 @@ import { THEME_STORAGE_KEY, applyTheme, composeTheme, parseTheme, type ThemeBase
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Switch } from "@/components/ui/switch";
+import { LANGS, LANG_NAMES, msg, type Lang } from "@/lib/i18n";
+import { setLang, useI18n } from "@/lib/i18n/client";
 
 const THEMES: { value: ThemeBase; label: string; icon: typeof Sun }[] = [
-  { value: "system", label: "Système", icon: Monitor },
-  { value: "light", label: "Clair", icon: Sun },
-  { value: "dark", label: "Sombre", icon: Moon },
+  { value: "system", label: msg("Système"), icon: Monitor },
+  { value: "light", label: msg("Clair"), icon: Sun },
+  { value: "dark", label: msg("Sombre"), icon: Moon },
 ];
 
-/** Paramètres: theme (applied instantly) and data backup. */
+const LANG_FLAGS: Record<Lang, string> = { fr: "🇫🇷", en: "🇬🇧", dar: "🇲🇦" };
+
+/** Paramètres: theme (applied instantly), language and data backup. */
 export function SettingsForm({ settings }: { settings: Settings }) {
+  const { lang, t } = useI18n();
   const refreshData = useRefreshData();
   const [theme, setTheme] = useState<ThemeChoice>(settings.theme);
   const { base, simple } = parseTheme(theme);
@@ -55,7 +60,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
     if (!res.ok) {
       setTheme(previous);
       applyTheme(previous);
-      toast.error("Impossible d'enregistrer le thème.");
+      toast.error(t("Impossible d'enregistrer le thème."));
     }
   }
 
@@ -69,13 +74,13 @@ export function SettingsForm({ settings }: { settings: Settings }) {
         body: JSON.stringify(json),
       });
       if (!res.ok) {
-        toast.error("Import impossible : fichier invalide.");
+        toast.error(t("Import impossible : fichier invalide."));
         return;
       }
-      toast.success("Données importées avec succès.");
+      toast.success(t("Données importées avec succès."));
       await refreshData();
     } catch {
-      toast.error("Le fichier sélectionné n'est pas un JSON valide.");
+      toast.error(t("Le fichier sélectionné n'est pas un JSON valide."));
     }
   }
 
@@ -86,8 +91,8 @@ export function SettingsForm({ settings }: { settings: Settings }) {
   return (
     <div className="flex flex-col gap-5">
       <section className="flex flex-col gap-2">
-        <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Apparence</h2>
-        <div role="radiogroup" aria-label="Thème" className="grid grid-cols-3 gap-2.5">
+        <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Apparence")}</h2>
+        <div role="radiogroup" aria-label={t("Thème")} className="grid grid-cols-3 gap-2.5">
           {THEMES.map(({ value, label, icon: Icon }) => {
             const selected = base === value;
             return (
@@ -96,7 +101,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                aria-label={label}
+                aria-label={t(label)}
                 onClick={() => chooseTheme(composeTheme(value, simple))}
                 className={cn(
                   "flex flex-col items-center gap-2 rounded-2xl border bg-white p-2.5 transition-colors dark:bg-slate-900",
@@ -106,7 +111,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
                 <ThemePreview kind={value} simple={simple} />
                 <span className="flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
                   <Icon weight="bold" className="h-3.5 w-3.5" />
-                  {label}
+                  {t(label)}
                 </span>
               </button>
             );
@@ -117,23 +122,51 @@ export function SettingsForm({ settings }: { settings: Settings }) {
             <Leaf weight="bold" className="h-4 w-4" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Mode simple</span>
-            <span className="block text-xs text-slate-400">Moins de couleurs, plus doux pour les yeux</span>
+            <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">{t("Mode simple")}</span>
+            <span className="block text-xs text-slate-400">{t("Moins de couleurs, plus doux pour les yeux")}</span>
           </span>
-          <Switch checked={simple} onCheckedChange={(on) => chooseTheme(composeTheme(base, on))} aria-label="Mode simple" />
+          <Switch checked={simple} onCheckedChange={(on) => chooseTheme(composeTheme(base, on))} aria-label={t("Mode simple")} />
         </label>
       </section>
 
+      {/* The app's language on this device (each name in its own language). */}
       <section className="flex flex-col gap-2">
-        <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Raccourcis</h2>
+        <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Langue")}</h2>
+        <div role="radiogroup" aria-label={t("Langue")} className="grid grid-cols-3 gap-2.5">
+          {LANGS.map((value) => {
+            const selected = lang === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => !selected && setLang(value)}
+                className={cn(
+                  "flex flex-col items-center gap-1.5 rounded-2xl border bg-white px-2 py-3 transition-colors dark:bg-slate-900",
+                  selected ? "border-slate-500 ring-2 ring-slate-500 dark:border-slate-300 dark:ring-slate-300" : "border-slate-200 dark:border-slate-700",
+                )}
+              >
+                <span aria-hidden className="text-2xl leading-none">
+                  {LANG_FLAGS[value]}
+                </span>
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{LANG_NAMES[value]}</span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Raccourcis")}</h2>
         <div className={section}>
           <Link href="/salary" className={rowClass}>
             <RowIcon className="from-emerald-400 to-teal-600">
               <Money weight="bold" className="h-4 w-4" />
             </RowIcon>
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Salaire</span>
-              <span className="block text-xs text-slate-400">Montant, jour de paie, espèces ou carte</span>
+              <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">{t("Salaire")}</span>
+              <span className="block text-xs text-slate-400">{t("Montant, jour de paie, espèces ou carte")}</span>
             </span>
             <CaretRight weight="bold" className="h-4 w-4 text-slate-300" />
           </Link>
@@ -142,8 +175,8 @@ export function SettingsForm({ settings }: { settings: Settings }) {
               <Tag weight="bold" className="h-4 w-4" />
             </RowIcon>
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Catégories</span>
-              <span className="block text-xs text-slate-400">Ajouter, renommer, ordonner</span>
+              <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">{t("Catégories")}</span>
+              <span className="block text-xs text-slate-400">{t("Ajouter, renommer, ordonner")}</span>
             </span>
             <CaretRight weight="bold" className="h-4 w-4 text-slate-300" />
           </Link>
@@ -151,15 +184,15 @@ export function SettingsForm({ settings }: { settings: Settings }) {
       </section>
 
       <section className="flex flex-col gap-2">
-        <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Sauvegarde des données</h2>
+        <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Sauvegarde des données")}</h2>
         <div className={section}>
           <a href="/api/export" download className={rowClass}>
             <RowIcon className="from-sky-400 to-blue-600">
               <DownloadSimple weight="bold" className="h-4 w-4" />
             </RowIcon>
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Exporter</span>
-              <span className="block text-xs text-slate-400">Télécharger toutes tes données (JSON)</span>
+              <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">{t("Exporter")}</span>
+              <span className="block text-xs text-slate-400">{t("Télécharger toutes tes données (JSON)")}</span>
             </span>
           </a>
           <button type="button" onClick={() => fileInputRef.current?.click()} className={rowClass}>
@@ -167,8 +200,8 @@ export function SettingsForm({ settings }: { settings: Settings }) {
               <UploadSimple weight="bold" className="h-4 w-4" />
             </RowIcon>
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Importer</span>
-              <span className="block text-xs text-slate-400">Remplace toutes les données actuelles</span>
+              <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">{t("Importer")}</span>
+              <span className="block text-xs text-slate-400">{t("Remplace toutes les données actuelles")}</span>
             </span>
           </button>
         </div>
@@ -186,14 +219,9 @@ export function SettingsForm({ settings }: { settings: Settings }) {
         <ConfirmDialog
           open={pendingImport != null}
           onOpenChange={(open) => !open && setPendingImport(null)}
-          title="Remplacer toutes les données ?"
-          description={
-            <>
-              Toutes les données actuelles (dépenses, dettes, darets, objectifs…) seront remplacées par celles de «{" "}
-              {pendingImport?.name} ». Cette action est irréversible.
-            </>
-          }
-          confirmLabel="Importer"
+          title={t("Remplacer toutes les données ?")}
+          description={t("Toutes les données actuelles (dépenses, dettes, darets, objectifs…) seront remplacées par celles de « {file} ». Cette action est irréversible.", { file: pendingImport?.name ?? "" })}
+          confirmLabel={t("Importer")}
           onConfirm={() => {
             const file = pendingImport;
             setPendingImport(null);
