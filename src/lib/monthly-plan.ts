@@ -28,6 +28,8 @@ export interface MonthlyPlan {
   running: boolean;
   /** This month counts and isn't ticked yet. */
   dueNow: boolean;
+  /** Put aside this month so far (part of it, or all, or more). */
+  paidNow: number;
 }
 
 export function monthlyPlan(expense: Expense, payments: Payment[], current: MonthId): MonthlyPlan {
@@ -54,6 +56,7 @@ export function monthlyPlan(expense: Expense, payments: Payment[], current: Mont
     total: round(paid.reduce((s, m) => s + m.amount, 0)),
     running: end == null && expense.active,
     dueNow: thisMonthCounts && expense.active && !byMonth.has(monthKey(current)),
+    paidNow: byMonth.get(monthKey(current))?.amount ?? 0,
   };
 }
 

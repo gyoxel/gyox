@@ -45,12 +45,22 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
   const monthly = Boolean(linkedMove?.monthly || linkedDeposit?.deposit.monthly);
   const thisMonth = monthKey(todayMonth());
   const paidNow = payments.find((p) => p.expenseId === expense.id && p.amountPaid > 0 && (!monthly || p.monthKey === thisMonth));
+  // This month's payments, to correct (its amount is free, like any expense).
+  const monthParts = monthly ? getPaidMonth(expense, payments.filter((p) => p.expenseId === expense.id), todayMonth(), lang) : null;
+  const partPaid = monthParts ? Math.round(monthParts.parts.reduce((s, p) => s + p.amountPaid, 0) * 100) / 100 : 0;
   const status = (method: PaymentMethod | null | undefined, paid: boolean) => (
     <>
       {monthly && <>{t("Chaque mois")} · </>}
-      {paid ? <>{monthly ? t("Payé ce mois") : t("Payé")}{method && <> <MethodIcon method={method} /></>}</> : monthly ? t("Pas encore ce mois") : t("Pas encore payé")}
+      {monthParts && partPaid < monthParts.due - 0.005
+        ? t("{paid} payés sur {due}", { paid: formatMoney(partPaid, settings.currency), due: formatMoney(monthParts.due, settings.currency) })
+        : paid
+          ? <>{monthly ? t("Payé ce mois") : t("Payé")}{method && <> <MethodIcon method={method} /></>}</>
+          : monthly
+            ? t("Pas encore ce mois")
+            : t("Pas encore payé")}
     </>
   );
+  const monthPayments = monthParts && <MonthPayments expense={expense} {...monthParts} currency={settings.currency} />;
 
   // A goal deposit: edited and deleted from the goal only; here it can just
   // be ticked / unticked (from Dépenses).
@@ -79,6 +89,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
               ? t("Ce versement revient chaque mois pour l'objectif « {goal} ». Coche-le dans tes dépenses quand tu le mets de côté : il s'ajoute à l'objectif. Pour le modifier ou l'arrêter, c'est depuis le versement.", { goal: goal.name })
               : t("Ce versement vient de l'objectif « {goal} ». Tu peux le cocher ou le décocher dans tes dépenses ; pour le modifier, c'est depuis le versement.", { goal: goal.name })}
           </p>
+          {monthPayments}
           <Button asChild className="gx-cta">
             <Link href={`/goals/${goal.id}/deposits/${deposit.id}`}>
               <PencilSimple weight="bold" className="h-4 w-4" />
@@ -112,7 +123,9 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
         editLabel={t("Modifier l'épargne")}
         buttonClass="gx-cta"
         sourceLabel={t("l'épargne")}
-      />
+      >
+        {monthPayments}
+      </LinkedSourcePage>
     );
   }
   if (linkedLoan) {

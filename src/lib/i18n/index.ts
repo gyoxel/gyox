@@ -76,14 +76,19 @@ const NAME_PREFIXES = [
   msg("Daret reçue"),
   msg("Dette"),
   msg("Remboursement"),
+  msg("Objectif"),
   msg("Versement"),
 ];
+
+// Words the app used to write, shown as it writes them now (what's stored
+// stays): a goal's deposit in Dépenses was "Versement · <goal>".
+const NOW_SHOWN_AS: Record<string, string> = { Versement: msg("Objectif") };
 
 /** A stored name, with the app's own words in the device's language. */
 export function localName(name: string, t: T): string {
   for (const prefix of NAME_PREFIXES) {
     if (name === prefix) return t(prefix);
-    if (name.startsWith(`${prefix} · `)) return `${t(prefix)}${name.slice(prefix.length)}`;
+    if (name.startsWith(`${prefix} · `)) return `${t(NOW_SHOWN_AS[prefix] ?? prefix)}${name.slice(prefix.length)}`;
   }
   if (name.endsWith(" - Reste")) return `${name.slice(0, -" - Reste".length)} - ${t("Reste")}`;
   return categoryName(name, t); // an income named after its category ("Prime")

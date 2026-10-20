@@ -113,6 +113,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     points: [
       msg("Mettre de côté : l'argent sort de ton solde et s'ajoute à tes dépenses comme épargne."),
       msg("« Chaque mois » : elle revient chaque mois dans tes dépenses ; chaque mois coché s'ajoute à l'épargne."),
+      msg("Un mois peut être moins (ou plus) avec le crayon, comme une dépense : seul ce qui est payé compte, et rien ne passe au mois suivant."),
       msg("Retirer de l'épargne : l'argent revient dans ton solde comme un revenu."),
       msg("Ajouter une épargne que tu avais déjà (« J'ai déjà une épargne »), sans toucher ton solde."),
       msg("Voir ce qui a été mis de côté et retiré ce mois-ci, et chaque mouvement avec sa note."),
@@ -180,6 +181,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Voir le pourcentage atteint, ce qui est déjà là et ce qu'il manque."),
       msg("Ajouter un versement (espèces, carte ou épargne)."),
       msg("« Chaque mois » : le versement revient chaque mois dans tes dépenses ; chaque mois coché s'ajoute à l'objectif."),
+      msg("Un mois peut être moins (ou plus) avec le crayon, comme une dépense : seul ce qui est payé compte, et rien ne passe au mois suivant."),
       msg("Voir les étapes : épargne de départ, chaque versement et chaque daret liée."),
       msg("Simuler : combien tu auras en mettant X par mois, ou combien mettre pour finir avant une date."),
       msg("Modifier ou supprimer l'objectif."),

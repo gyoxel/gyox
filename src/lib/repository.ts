@@ -958,7 +958,7 @@ export async function addGoalDeposit(
     prisma.expense.create({
       data: {
         id: expenseId,
-        name: `Versement · ${goal.name}`,
+        name: `Objectif · ${goal.name}`,
         amount: input.amount,
         type: monthly ? "permanent" : "temporary",
         frequency: monthly ? "monthly" : "one-time",

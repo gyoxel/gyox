@@ -140,13 +140,17 @@ export function EpargneView({
                   </span>
                   <span
                     className={cn(
-                      "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                      m.plan!.dueNow
+                      "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums",
+                      m.plan!.paidNow < m.plan!.amount - 0.005
                         ? "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
                         : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300",
                     )}
                   >
-                    {m.plan!.dueNow ? t("À cocher ce mois") : t("Fait ce mois ✓")}
+                    {m.plan!.dueNow
+                      ? t("À cocher ce mois")
+                      : m.plan!.paidNow < m.plan!.amount - 0.005
+                        ? t("{paid} sur {amount} ce mois", { paid: money(m.plan!.paidNow), amount: money(m.plan!.amount) })
+                        : t("Fait ce mois ✓")}
                   </span>
                   <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300" />
                 </Link>

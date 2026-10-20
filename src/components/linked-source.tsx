@@ -22,6 +22,7 @@ export async function LinkedSourcePage({
   editLabel,
   buttonClass,
   sourceLabel,
+  children,
 }: {
   title: string;
   /** Hero card's gradient classes. */
@@ -35,6 +36,8 @@ export async function LinkedSourcePage({
   buttonClass: string;
   /** "l'épargne", "la daret"… (translated). */
   sourceLabel: string;
+  /** Under the text (e.g. this month's payments, to correct). */
+  children?: React.ReactNode;
 }) {
   const { t } = await getI18n();
   return (
@@ -48,6 +51,7 @@ export async function LinkedSourcePage({
           <p className="relative mt-1 text-sm text-white/90">{subtitle}</p>
         </div>
         <p className="px-1 text-sm text-slate-500 dark:text-slate-400">{text}</p>
+        {children}
         <Button asChild className={buttonClass}>
           <Link href={href}>
             <PencilSimple weight="bold" className="h-4 w-4" />
