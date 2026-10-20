@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { DATA_CHANGED_EVENT } from "@/lib/use-refresh-data";
-import { Bank, HandArrowDown, HandArrowUp, HandCoins, Handshake, House, PiggyBank, Plus, Receipt, SquaresFour, Target, Wallet } from "@phosphor-icons/react/ssr";
+import { Bank, HandArrowDown, HandArrowUp, HandCoins, Handshake, House, Lightning, PiggyBank, Plus, Receipt, SquaresFour, Target, Wallet } from "@phosphor-icons/react/ssr";
 import { cn } from "@/lib/utils";
 import { useCloseOnBack } from "@/lib/close-on-back";
 import { msg } from "@/lib/i18n";
 import { useT } from "@/lib/i18n/client";
 import { SIGNED_OUT_PAGES } from "@/lib/signed-out-pages";
+import { QUICK_HREF } from "@/lib/quick-expense";
 
 const ITEMS = [
   { href: "/", label: msg("Accueil"), icon: House },
@@ -34,6 +35,12 @@ const ACTIONS = [
   { href: "/incomes/new", label: msg("Revenu"), icon: HandArrowDown, tint: "text-emerald-600 dark:text-emerald-300" },
   { href: "/expenses/new", label: msg("Dépense"), icon: HandArrowUp, tint: "text-rose-600 dark:text-rose-300" },
 ];
+
+/** Holding the + this long opens Dépense rapide (a ring fills around it). */
+const HOLD_MS = 550;
+// The ring around the + (an SVG circle, its stroke drawn as it fills).
+const RING_R = 34;
+const RING_C = 2 * Math.PI * RING_R;
 
 /** A tab: its icon and name — the current one filled, in violet, over the
  *  bar's glass lens. */
@@ -95,6 +102,7 @@ const PREFETCH_HREFS = [
   "/incomes/new",
   "/categories",
   "/expenses/new",
+  QUICK_HREF,
   "/expenses/new?type=credit",
   "/daret/new",
   "/budgets/new",
@@ -192,6 +200,35 @@ function AppBar({ pathname }: { pathname: string }) {
     setOpen((v) => !v);
   }
 
+  // A tap on + opens the menu; holding it (the ring fills) opens Dépense
+  // rapide. The click that follows a completed hold is ignored.
+  const [holding, setHolding] = useState(false);
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const held = useRef(false);
+  function startHold(e: React.PointerEvent) {
+    if (open || (e.pointerType === "mouse" && e.button !== 0)) return;
+    held.current = false;
+    setHolding(true);
+    holdTimer.current = setTimeout(() => {
+      held.current = true;
+      setHolding(false);
+      navigator.vibrate?.(15);
+      router.push(QUICK_HREF);
+    }, HOLD_MS);
+  }
+  function endHold() {
+    if (holdTimer.current) clearTimeout(holdTimer.current);
+    holdTimer.current = null;
+    setHolding(false);
+  }
+  function tapPlus() {
+    if (held.current) {
+      held.current = false;
+      return;
+    }
+    toggle();
+  }
+
   return (
     <>
       <div
@@ -245,16 +282,63 @@ function AppBar({ pathname }: { pathname: string }) {
                   </Link>
                 ))}
               </div>
+              <Link
+                href={QUICK_HREF}
+                role="menuitem"
+                tabIndex={open ? 0 : -1}
+                onClick={() => setOpen(false)}
+                className="mx-1 mt-1 flex items-center gap-2 rounded-2xl px-2.5 py-2 text-[12px] text-slate-500 active:bg-violet-500/10 dark:text-slate-400"
+              >
+                <Lightning weight="fill" className="h-4 w-4 shrink-0 text-rose-500" />
+                <span>
+                  <b className="font-semibold text-slate-800 dark:text-slate-100">{t("Dépense rapide")}</b> · {t("garde le doigt sur +")}
+                </span>
+              </Link>
             </div>
+
+            {/* While the + is held: what it opens, above it. */}
+            <span
+              aria-hidden
+              className={cn(
+                "gx-float pointer-events-none absolute bottom-full right-0 mb-3 flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-[13px] font-semibold text-slate-800 transition-[transform,opacity] dark:text-white",
+                holding ? "translate-y-0 opacity-100 delay-150 duration-200" : "translate-y-1 opacity-0 duration-100",
+              )}
+            >
+              <Lightning weight="fill" className="h-4 w-4 text-rose-500" />
+              {t("Dépense rapide")}
+            </span>
 
             <button
               type="button"
-              onClick={toggle}
+              onClick={tapPlus}
+              onPointerDown={startHold}
+              onPointerUp={endHold}
+              onPointerLeave={endHold}
+              onPointerCancel={endHold}
+              onContextMenu={(e) => e.preventDefault()}
               aria-expanded={open}
               aria-label={open ? t("Fermer le menu d'ajout") : t("Ajouter")}
-              className="gx-fab relative flex h-[60px] w-[60px] items-center justify-center rounded-full text-violet-700 transition-transform duration-200 active:scale-95 dark:text-violet-100"
+              className="gx-fab relative flex h-[60px] w-[60px] touch-manipulation select-none items-center justify-center rounded-full text-violet-700 transition-transform duration-200 [-webkit-touch-callout:none] active:scale-95 dark:text-violet-100"
             >
               <Plus weight="bold" className={cn("h-7 w-7 transition-transform duration-300", open && "rotate-[135deg]")} />
+              {/* Fills while the + is held; full: Dépense rapide. */}
+              <svg aria-hidden viewBox="0 0 76 76" className="pointer-events-none absolute -inset-2 h-[76px] w-[76px] -rotate-90">
+                <circle
+                  cx="38"
+                  cy="38"
+                  r={RING_R}
+                  fill="none"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  className="stroke-rose-500"
+                  style={{
+                    strokeDasharray: RING_C,
+                    strokeDashoffset: holding ? 0 : RING_C,
+                    opacity: holding ? 1 : 0,
+                    transition: holding ? `stroke-dashoffset ${HOLD_MS}ms linear, opacity 80ms` : "stroke-dashoffset 150ms ease-out, opacity 150ms",
+                  }}
+                />
+              </svg>
             </button>
           </div>
 

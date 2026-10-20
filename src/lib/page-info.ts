@@ -199,6 +199,17 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Ajouter une note si tu veux."),
     ],
   },
+  "expense-quick": {
+    title: msg("Dépense rapide"),
+    summary: msg("Une petite dépense payée aujourd'hui, en un geste : taxi, café, courses…"),
+    points: [
+      msg("Garder le doigt sur + : le cercle se remplit et ouvre la dépense rapide (un simple appui ouvre le menu)."),
+      msg("Indiquer le montant, choisir la catégorie et espèces ou carte ; la note est optionnelle."),
+      msg("Elle est payée tout de suite : elle sort de ton solde et s'ajoute à tes dépenses du mois."),
+      msg("Une catégorie avec un budget montre où il en sera."),
+      msg("La prochaine fois, la même catégorie et le même compte sont déjà choisis."),
+    ],
+  },
   "credit-new": {
     title: msg("Ajouter une dette"),
     summary: msg("Une nouvelle dette : le total à rembourser et comment tu le rembourses chaque mois."),
