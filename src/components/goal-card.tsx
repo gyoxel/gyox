@@ -8,7 +8,10 @@ import { errorMessage } from "@/components/expense-editor";
 import type { DepositSource, Goal } from "@/lib/types";
 import { DepositSourcePicker } from "@/components/payment-method-picker";
 import type { GoalProgress } from "@/lib/goals";
-import { monthLabelFr, monthLabelShortFr } from "@/lib/date";
+import { parseMonthKey, type MonthId } from "@/lib/date";
+import type { MonthlyPlan } from "@/lib/monthly-plan";
+import { formatDate, monthLabel, monthLabelShort } from "@/lib/i18n/dates";
+import { useI18n } from "@/lib/i18n/client";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput } from "@/lib/utils";
 import { mutate } from "@/lib/use-refresh-data";
 import { Button } from "@/components/ui/button";
@@ -16,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MethodIcon } from "@/components/method-icon";
+import { MonthlyToggle } from "@/components/monthly-toggle";
 
 /** Progress ring around the goal's emoji: solid = in hand, light = with darets. */
 function GoalRing({
@@ -91,6 +95,7 @@ export function GoalCard({
   currency,
   linkToDetail = false,
   depositsPaid,
+  depositPlans = {},
   savings,
 }: {
   goal: Goal;
@@ -99,10 +104,15 @@ export function GoalCard({
   linkToDetail?: boolean;
   /** Detail page: whether each deposit is paid (ticked in Dépenses). */
   depositsPaid?: Record<string, boolean>;
+  /** Detail page: the deposits made every month, what they put aside. */
+  depositPlans?: Record<string, MonthlyPlan>;
   /** Detail page: what's in the savings (a deposit can come from there). */
   savings?: number;
 }) {
   const [adding, setAdding] = useState(false);
+  const { lang, t } = useI18n();
+  const monthLabelFr = (m: MonthId) => monthLabel(m, lang);
+  const monthLabelShortFr = (m: MonthId) => monthLabelShort(m, lang);
   const p = progress;
   const money = (n: number) => formatMoney(n, currency);
 
@@ -116,7 +126,7 @@ export function GoalCard({
               <h3 className="truncate text-base font-semibold text-slate-900 dark:text-white">{goal.name}</h3>
               {p.completed && (
                 <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
-                  Atteint 🎉
+                  {t("Atteint 🎉")}
                 </span>
               )}
             </div>
@@ -124,9 +134,9 @@ export function GoalCard({
               <b className="font-semibold text-slate-800 dark:text-slate-100">{money(p.reachedNow)}</b> / {money(p.target)}
             </p>
             {p.percentProjected > p.percentNow ? (
-              <p className="mt-0.5 text-[11px] text-orange-600 dark:text-amber-400">Avec tes darets : {p.percentProjected}%</p>
+              <p className="mt-0.5 text-[11px] text-orange-600 dark:text-amber-400">{t("Avec tes darets : {percent}%", { percent: p.percentProjected })}</p>
             ) : (
-              !p.completed && <p className="mt-0.5 text-[11px] text-slate-400">Il manque {money(p.remainingNow)}</p>
+              !p.completed && <p className="mt-0.5 text-[11px] text-slate-400">{t("Il manque {amount}", { amount: money(p.remainingNow) })}</p>
             )}
           </div>
           <span className="shrink-0 text-xl font-bold tabular-nums text-orange-600 dark:text-amber-400">{p.percentNow}%</span>
@@ -139,14 +149,14 @@ export function GoalCard({
             className="flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-orange-600 active:bg-slate-50 dark:text-amber-400 dark:active:bg-slate-800"
           >
             <Plus weight="bold" className="h-4 w-4" />
-            Versement
+            {t("Versement")}
           </button>
           <Link
             href={`/goals/${goal.id}/edit`}
             className="flex items-center justify-center gap-1.5 border-l border-slate-100 py-2.5 text-sm font-medium text-slate-600 active:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:active:bg-slate-800"
           >
             <PencilSimple weight="bold" className="h-4 w-4" />
-            Modifier
+            {t("Modifier")}
           </Link>
         </div>
         <DepositDialog goal={goal} currency={currency} savings={savings} open={adding} onOpenChange={setAdding} />
@@ -158,14 +168,17 @@ export function GoalCard({
   // the goal reaches after it; not paid ones stay listed but don't count.
   type Row =
     | { kind: "step"; key: string; step: GoalProgress["steps"][number] }
-    | { kind: "deposit"; key: string; deposit: Goal["deposits"][number]; paid: boolean; percent: number };
+    | { kind: "deposit"; key: string; deposit: Goal["deposits"][number]; paid: boolean; amount: number; plan: MonthlyPlan | null; percent: number };
   const stepRow = (step: GoalProgress["steps"][number], i: number): Row => ({ kind: "step", key: `step-${i}`, step });
   const depositRows = [...goal.deposits].reverse().reduce<{ rows: Row[]; reached: number }>(
     (acc, d) => {
       const paid = depositsPaid?.[d.id] ?? true;
-      const reached = acc.reached + (paid ? d.amount : 0);
+      const plan = depositPlans[d.id] ?? null;
+      // Every month: all its months ticked.
+      const amount = plan ? plan.total : d.amount;
+      const reached = acc.reached + (paid ? amount : 0);
       const percent = p.target > 0 ? Math.min(100, Math.round((reached / p.target) * 100)) : 0;
-      return { rows: [...acc.rows, { kind: "deposit", key: `deposit-${d.id}`, deposit: d, paid, percent }], reached };
+      return { rows: [...acc.rows, { kind: "deposit", key: `deposit-${d.id}`, deposit: d, paid, amount, plan, percent }], reached };
     },
     { rows: [], reached: goal.savedAmount },
   ).rows.reverse(); // the last one on top
@@ -184,36 +197,36 @@ export function GoalCard({
           <GoalRing size={88} stroke={7} now={p.percentNow} projected={p.percentProjected} emoji={goal.emoji} light />
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">
-              {p.completed ? "Objectif atteint 🎉" : "Progression"}
+              {p.completed ? t("Objectif atteint 🎉") : t("Progression")}
             </p>
             <p className="text-4xl font-bold leading-tight tabular-nums">{p.percentNow}%</p>
-            <p className="text-sm text-white/85">sur {money(p.target)}</p>
+            <p className="text-sm text-white/85">{t("sur {amount}", { amount: money(p.target) })}</p>
           </div>
         </div>
         <div className="relative mt-4 grid grid-cols-2 gap-2">
           <div className="rounded-2xl bg-white/15 px-3 py-2">
-            <p className="text-[10px] uppercase tracking-wide text-white/75">Déjà là</p>
+            <p className="text-[10px] uppercase tracking-wide text-white/75">{t("Déjà là")}</p>
             <p className="text-sm font-bold tabular-nums">{money(p.reachedNow)}</p>
           </div>
           <div className="rounded-2xl bg-white/15 px-3 py-2">
-            <p className="text-[10px] uppercase tracking-wide text-white/75">Il manque</p>
+            <p className="text-[10px] uppercase tracking-wide text-white/75">{t("Il manque")}</p>
             <p className="text-sm font-bold tabular-nums">{money(p.remainingNow)}</p>
           </div>
         </div>
         {p.percentProjected > p.percentNow && (
           <p className="relative mt-2 text-xs text-white/85">
-            Avec tes darets : <b>{p.percentProjected}%</b>
+            {t("Avec tes darets : {percent}%", { percent: p.percentProjected })}
           </p>
         )}
         <div className="relative mt-4 grid grid-cols-2 gap-2">
           <Button type="button" onClick={() => setAdding(true)} className="bg-white text-orange-600 hover:bg-white/90 dark:bg-white dark:text-orange-600">
             <Plus weight="bold" className="h-4 w-4" />
-            Versement
+            {t("Versement")}
           </Button>
           <Button asChild className="bg-white/20 text-white hover:bg-white/30 dark:bg-white/20 dark:text-white">
             <Link href={`/goals/${goal.id}/edit`}>
               <PencilSimple weight="bold" className="h-4 w-4" />
-              Modifier
+              {t("Modifier")}
             </Link>
           </Button>
         </div>
@@ -222,7 +235,7 @@ export function GoalCard({
       {/* Steps and deposits, in one list */}
       {(p.steps.length > 0 || goal.deposits.length > 0) && (
         <section className="flex flex-col gap-2">
-          <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Étapes et versements</h2>
+          <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Étapes et versements")}</h2>
           <ol className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
             {stepRows.map((row) =>
               row.kind === "deposit" ? (
@@ -232,22 +245,33 @@ export function GoalCard({
                     className="flex items-center gap-3 px-4 py-3 text-sm active:bg-slate-50 dark:active:bg-slate-800/60"
                   >
                     <StepIcon>
-                      {row.deposit.method === "savings" ? "🐷" : <MethodIcon method={row.deposit.method ?? "cash"} className="h-3" />}
+                      {row.plan ? "🔁" : row.deposit.method === "savings" ? "🐷" : <MethodIcon method={row.deposit.method ?? "cash"} className="h-3" />}
                     </StepIcon>
                     <span className="min-w-0 flex-1">
                       <span className={cn("block truncate font-medium text-slate-800 dark:text-slate-100", !row.paid && "text-slate-400")}>
-                        {row.deposit.name}
+                        {row.deposit.name === "Versement" ? t("Versement") : row.deposit.name}
                       </span>
                       <span className="block text-[11px] text-slate-400">
-                        {DEPOSIT_DATE.format(new Date(`${row.deposit.date}T12:00:00`))}
-                        {row.deposit.method && (
+                        {row.plan ? (
+                          <>
+                            {t("{amount}/mois", { amount: money(row.plan.amount) })} ·{" "}
+                            {row.plan.running
+                              ? t("depuis {month}", { month: monthLabelShortFr(parseMonthKey(row.plan.since)).toLowerCase() })
+                              : t("arrêté")}{" "}
+                            · {t("{n} mois", { n: row.plan.paid.length })}
+                            {row.plan.dueNow && <span className="ml-1 font-semibold text-amber-600">· {t("à cocher ce mois")}</span>}
+                          </>
+                        ) : (
+                          formatDate(new Date(`${row.deposit.date}T12:00:00`), lang, DEPOSIT_DATE)
+                        )}
+                        {!row.plan && row.deposit.method && (
                           <>
                             {" "}
                             · <MethodIcon method={row.deposit.method} />
-                            {row.deposit.method === "savings" ? " Épargne" : ""}
+                            {row.deposit.method === "savings" ? ` ${t("Épargne")}` : ""}
                           </>
                         )}
-                        {!row.paid && <span className="ml-1 font-semibold text-rose-500">· Non payé</span>}
+                        {!row.paid && <span className="ml-1 font-semibold text-rose-500">· {t("Non payé")}</span>}
                       </span>
                     </span>
                     <span className="text-right">
@@ -257,7 +281,7 @@ export function GoalCard({
                           row.paid ? "text-slate-900 dark:text-white" : "text-slate-400 line-through",
                         )}
                       >
-                        +{money(row.deposit.amount)}
+                        +{money(row.amount)}
                       </span>
                       {row.paid && (
                         <span className="block text-[11px] font-semibold tabular-nums text-orange-600 dark:text-amber-400">
@@ -272,13 +296,13 @@ export function GoalCard({
                 <li key={row.key} className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm first:border-t-0 dark:border-slate-800">
                   <StepIcon>{row.step.kind === "saved" ? "💰" : "🤝🏻"}</StepIcon>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium text-slate-800 dark:text-slate-100">{row.step.label}</span>
+                    <span className="block truncate font-medium text-slate-800 dark:text-slate-100">{row.step.kind === "saved" ? t(row.step.label) : row.step.label}</span>
                     <span className="block text-[11px] text-slate-400">
                       {row.step.month
                         ? row.step.received
-                          ? `Reçue en ${monthLabelFr(row.step.month)}`
-                          : `En ${monthLabelFr(row.step.month)}`
-                        : "Disponible"}
+                          ? t("Reçue en {month}", { month: monthLabelFr(row.step.month) })
+                          : t("En {month}", { month: monthLabelFr(row.step.month) })
+                        : t("Disponible")}
                     </span>
                   </span>
                   <span className="text-right">
@@ -299,27 +323,25 @@ export function GoalCard({
         <div className="flex flex-col gap-2 rounded-3xl bg-amber-50 px-4 py-3.5 text-sm text-slate-700 dark:bg-amber-950/30 dark:text-slate-200">
           {p.reachedByDaretsIn ? (
             <Insight icon={Sparkle}>
-              Tes darets suffisent : objectif atteint en <b>{monthLabelFr(p.reachedByDaretsIn)}</b>.
+              {t("Tes darets suffisent : objectif atteint en {month}.", { month: monthLabelFr(p.reachedByDaretsIn) })}
             </Insight>
           ) : (
             p.remainingAfterDarets < p.remainingNow && (
               <Insight icon={Target}>
-                Après tes darets, il manquera <b>{money(p.remainingAfterDarets)}</b>.
+                {t("Après tes darets, il manquera {amount}.", { amount: money(p.remainingAfterDarets) })}
               </Insight>
             )
           )}
           {p.deadline && p.monthlyNeeded != null && p.monthsToDeadline != null && (
             <Insight icon={ClockCountdown}>
               {p.monthsToDeadline <= 0 ? (
-                <>
-                  Date limite ({monthLabelShortFr(p.deadline)}) dépassée — il manque <b>{money(p.monthlyNeeded)}</b>.
-                </>
+                <>{t("Date limite ({month}) dépassée — il manque {amount}.", { month: monthLabelShortFr(p.deadline), amount: money(p.monthlyNeeded) })}</>
               ) : p.monthlyNeeded > 0 ? (
                 <>
-                  Pour {monthLabelFr(p.deadline)} : mets <b>{money(p.monthlyNeeded)}/mois</b> de côté ({p.monthsToDeadline} mois).
+                  {t("Pour {month} : mets {amount}/mois de côté ({n} mois).", { month: monthLabelFr(p.deadline), amount: money(p.monthlyNeeded), n: p.monthsToDeadline })}
                 </>
               ) : (
-                <>Atteint avant {monthLabelFr(p.deadline)} avec tes darets 👌</>
+                <>{t("Atteint avant {month} avec tes darets 👌", { month: monthLabelFr(p.deadline) })}</>
               )}
             </Insight>
           )}
@@ -327,10 +349,10 @@ export function GoalCard({
             <Insight icon={TrendUp}>
               {p.estimatedMonth ? (
                 <>
-                  En mettant {money(goal.monthlySaving)}/mois : atteint en <b>{monthLabelFr(p.estimatedMonth)}</b>.
+                  {t("En mettant {amount}/mois : atteint en {month}.", { amount: money(goal.monthlySaving), month: monthLabelFr(p.estimatedMonth) })}
                 </>
               ) : (
-                <>En mettant {money(goal.monthlySaving)}/mois, il faudrait plus de 50 ans.</>
+                <>{t("En mettant {amount}/mois, il faudrait plus de 50 ans.", { amount: money(goal.monthlySaving) })}</>
               )}
             </Insight>
           ) : (
@@ -338,7 +360,7 @@ export function GoalCard({
             !p.reachedByDaretsIn &&
             p.remainingAfterDarets >= p.remainingNow && (
               <Insight icon={Target}>
-                Il manque <b>{money(p.remainingNow)}</b>. Ajoute une épargne par mois ou une date dans « Modifier ».
+                {t("Il manque {amount}. Ajoute une épargne par mois ou une date dans « Modifier ».", { amount: money(p.remainingNow) })}
               </Insight>
             )
           )}
@@ -351,7 +373,7 @@ export function GoalCard({
 }
 
 /** "+ Versement": money put aside for the goal (from cash, the card or the
- *  savings), with an optional label. */
+ *  savings — from cash / the card, maybe every month), with an optional label. */
 function DepositDialog({
   goal,
   currency,
@@ -365,10 +387,13 @@ function DepositDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useI18n().t;
   const [deposit, setDeposit] = useState("");
   const [depositName, setDepositName] = useState("");
   const [method, setMethod] = useState<DepositSource>("cash");
+  const [monthly, setMonthly] = useState(false);
   const [saving, setSaving] = useState(false);
+  const everyMonth = monthly && method !== "savings";
 
   async function addDeposit() {
     const value = parseDecimalInput(deposit);
@@ -377,14 +402,19 @@ function DepositDialog({
     const res = await mutate({
       method: "POST",
       path: `/api/goals/${goal.id}/deposits`,
-      body: { amount: value, name: depositName.trim(), method },
+      body: { amount: value, name: depositName.trim(), method, monthly: everyMonth },
     });
     setSaving(false);
     if (!res.ok) return toast.error(await errorMessage(res));
-    toast.success(`+${formatMoney(value, currency)} pour ${goal.name} · ${method === "savings" ? "pris de l'épargne" : "ajouté aux dépenses"}`);
+    toast.success(
+      `${t("{amount} pour {goal}", { amount: `+${formatMoney(value, currency)}`, goal: goal.name })} · ${
+        method === "savings" ? t("pris de l'épargne") : everyMonth ? t("chaque mois dans les dépenses") : t("ajouté aux dépenses")
+      }`,
+    );
     onOpenChange(false);
     setDeposit("");
     setDepositName("");
+    setMonthly(false);
   }
 
   return (
@@ -392,11 +422,11 @@ function DepositDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            Versement · {goal.emoji} {goal.name}
+            {t("Versement")} · {goal.emoji} {goal.name}
           </DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor={`deposit-${goal.id}`}>Montant mis de côté (DH)</Label>
+          <Label htmlFor={`deposit-${goal.id}`}>{t("Montant mis de côté (DH)")}</Label>
           <Input
             id={`deposit-${goal.id}`}
             type="text"
@@ -404,29 +434,36 @@ function DepositDialog({
             autoComplete="off"
             value={deposit}
             onChange={(e) => setDeposit(cleanDecimalInput(e.target.value))}
-            placeholder="Ex : 500"
+            placeholder={t("Ex : 500")}
             className="text-lg font-semibold"
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor={`deposit-name-${goal.id}`}>Nom (optionnel)</Label>
+          <Label htmlFor={`deposit-name-${goal.id}`}>{t("Nom (optionnel)")}</Label>
           <Input
             id={`deposit-name-${goal.id}`}
             value={depositName}
             onChange={(e) => setDepositName(e.target.value)}
-            placeholder="Ex : Prime, reste du mois…"
+            placeholder={t("Ex : Prime, reste du mois…")}
             maxLength={60}
           />
         </div>
         <DepositSourcePicker value={method} onChange={setMethod} />
+        {method !== "savings" && (
+          <MonthlyToggle checked={monthly} onChange={setMonthly} hint={t("Revient chaque mois dans tes dépenses")} />
+        )}
         <p className="text-[11px] text-slate-400">
-          {method === "savings"
-            ? `Il s'ajoute à l'objectif et sort de ton épargne${savings != null ? ` (${formatMoney(savings, currency)} dedans)` : ""}. Ton solde et tes dépenses ne bougent pas.`
-            : "Il s'ajoute à l'objectif et à tes dépenses (payé), et sort de ton solde."}
+          {everyMonth
+            ? t("Il s'ajoute à l'objectif et sort de ton solde maintenant, puis revient chaque mois dans tes dépenses : coche-le quand tu le mets de côté.")
+            : method === "savings"
+            ? savings != null
+              ? t("Il s'ajoute à l'objectif et sort de ton épargne ({amount} dedans). Ton solde et tes dépenses ne bougent pas.", { amount: formatMoney(savings, currency) })
+              : t("Il s'ajoute à l'objectif et sort de ton épargne. Ton solde et tes dépenses ne bougent pas.")
+            : t("Il s'ajoute à l'objectif et à tes dépenses (payé), et sort de ton solde.")}
         </p>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            Annuler
+            {t("Annuler")}
           </Button>
           <Button
             type="button"
@@ -435,7 +472,7 @@ function DepositDialog({
             className="gx-cta"
           >
             <Check weight="bold" className="h-4 w-4" />
-            {saving ? "Ajout…" : "Ajouter"}
+            {saving ? t("Ajout…") : t("Ajouter")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -443,7 +480,7 @@ function DepositDialog({
   );
 }
 
-const DEPOSIT_DATE = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+const DEPOSIT_DATE: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" };
 
 function StepIcon({ children }: { children: React.ReactNode }) {
   return (

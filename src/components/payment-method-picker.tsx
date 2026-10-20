@@ -4,6 +4,7 @@ import type { DepositSource, PaymentMethod } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { DEPOSIT_SOURCE_META, METHOD_META } from "@/lib/payment-method";
 import { MethodIcon } from "@/components/method-icon";
+import { useT } from "@/lib/i18n/client";
 
 /** One of a few accounts, as a switch: icon and label each. */
 function AccountPicker<T extends string>({
@@ -17,6 +18,7 @@ function AccountPicker<T extends string>({
   label: string;
   options: Record<T, { emoji: string; label: string }>;
 }) {
+  const t = useT();
   const keys = Object.keys(options) as T[];
   // Three don't fit beside the label: it goes above them.
   const wide = keys.length > 2;
@@ -39,7 +41,7 @@ function AccountPicker<T extends string>({
             )}
           >
             <MethodIcon method={m as PaymentMethod | DepositSource} className={m === "savings" ? "text-base" : "h-[12px]"} />
-            {options[m].label}
+            {t(options[m].label)}
           </button>
         ))}
       </div>
@@ -51,24 +53,26 @@ function AccountPicker<T extends string>({
 export function PaymentMethodPicker({
   value,
   onChange,
-  label = "Payé en",
+  label,
 }: {
   value: PaymentMethod;
   onChange: (method: PaymentMethod) => void;
   label?: string;
 }) {
-  return <AccountPicker value={value} onChange={onChange} label={label} options={METHOD_META} />;
+  const t = useT();
+  return <AccountPicker value={value} onChange={onChange} label={label ?? t("Payé en")} options={METHOD_META} />;
 }
 
 /** Where a goal deposit comes from: cash, the card or the savings. */
 export function DepositSourcePicker({
   value,
   onChange,
-  label = "Pris de",
+  label,
 }: {
   value: DepositSource;
   onChange: (source: DepositSource) => void;
   label?: string;
 }) {
-  return <AccountPicker value={value} onChange={onChange} label={label} options={DEPOSIT_SOURCE_META} />;
+  const t = useT();
+  return <AccountPicker value={value} onChange={onChange} label={label ?? t("Pris de")} options={DEPOSIT_SOURCE_META} />;
 }

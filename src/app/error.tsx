@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { ArrowsClockwise } from "@phosphor-icons/react/ssr";
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/components/sign-out-button";
+import { localizeMessage } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 // Remembered across boundary re-renders: up to 3 quiet retries with growing
 // delays per failure streak (a streak resets after 30s), so a database that
@@ -16,6 +18,7 @@ export default function Error({ error, retry }: { error: Error & { digest?: stri
   // Decided once per error (a boundary can stay mounted across retries, so
   // this is re-evaluated whenever a new error arrives). Most failures are
   // the database waking up after a pause: quietly retry a few times first.
+  const t = useT();
   const [seenError, setSeenError] = useState<Error | null>(null);
   const [autoDelay, setAutoDelay] = useState<number | null>(null);
   if (error !== seenError) {
@@ -39,10 +42,10 @@ export default function Error({ error, retry }: { error: Error & { digest?: stri
       <ArrowsClockwise weight="duotone" className={retrying ? "h-8 w-8 animate-spin text-emerald-600" : "h-8 w-8 text-slate-400"} />
       <div>
         <p className="text-base font-semibold text-slate-900 dark:text-white">
-          {retrying ? "Connexion au serveur…" : "Le serveur ne répond pas"}
+          {retrying ? t("Connexion au serveur…") : t("Le serveur ne répond pas")}
         </p>
         <p className="mt-1 text-sm text-slate-500">
-          {retrying ? "Un instant, on réessaie." : "Vérifie ta connexion puis réessaie."}
+          {retrying ? t("Un instant, on réessaie.") : t("Vérifie ta connexion puis réessaie.")}
         </p>
       </div>
       {!retrying && (
@@ -53,19 +56,19 @@ export default function Error({ error, retry }: { error: Error & { digest?: stri
             retry();
           }}
         >
-          Réessayer
+          {t("Réessayer")}
         </Button>
       )}
       {/* Way out if the session itself is the problem (e.g. an account gone). */}
       {!retrying && (
         <button type="button" onClick={() => void signOut()} className="text-xs text-slate-400 underline underline-offset-2">
-          Se reconnecter
+          {t("Se reconnecter")}
         </button>
       )}
       {!retrying && diagnosis && (
         <p className="max-w-sm text-xs break-words text-slate-500 select-text">{diagnosis}</p>
       )}
-      {error.digest && <p className="text-[11px] text-slate-300">Code : {error.digest}</p>}
+      {error.digest && <p className="text-[11px] text-slate-300">{t("Code : {code}", { code: error.digest })}</p>}
     </main>
   );
 }
@@ -82,6 +85,7 @@ function nextAutoRetryDelay(): number | null {
 /** Once the automatic retries are over, asks /api/health what actually
  *  fails (production pages only expose an opaque code) and shows it. */
 function useDiagnosis(enabled: boolean): string | null {
+  const t = useT();
   const [diagnosis, setDiagnosis] = useState<string | null>(null);
   useEffect(() => {
     if (!enabled) return;
@@ -90,14 +94,14 @@ function useDiagnosis(enabled: boolean): string | null {
       .then(async (res) => {
         const body = await res.json().catch(() => null);
         if (cancelled) return;
-        if (body?.ok) setDiagnosis("Diagnostic : la base de données répond normalement.");
-        else if (body) setDiagnosis(`Diagnostic (${body.step}) : ${body.message}`);
-        else setDiagnosis(`Diagnostic : réponse ${res.status} du serveur.`);
+        if (body?.ok) setDiagnosis(t("Diagnostic : la base de données répond normalement."));
+        else if (body) setDiagnosis(t("Diagnostic ({step}) : {message}", { step: body.step, message: localizeMessage(String(body.message), t) }));
+        else setDiagnosis(t("Diagnostic : réponse {status} du serveur.", { status: res.status }));
       })
-      .catch(() => !cancelled && setDiagnosis("Diagnostic : serveur injoignable (connexion internet ?)."));
+      .catch(() => !cancelled && setDiagnosis(t("Diagnostic : serveur injoignable (connexion internet ?).")));
     return () => {
       cancelled = true;
     };
-  }, [enabled]);
+  }, [enabled, t]);
   return diagnosis;
 }

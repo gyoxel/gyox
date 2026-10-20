@@ -10,12 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Savings held already (in a bank, at home…): added to the Épargne only —
  * not taken from the Solde, not an expense, not an income.
  */
 export function ExistingSavingsDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const t = useT();
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export function ExistingSavingsDialog({ open, onOpenChange }: { open: boolean; o
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!(value > 0)) return setError("Indique un montant.");
+    if (!(value > 0)) return setError(t("Indique un montant."));
     startTransition(async () => {
       const res = await mutate({
         method: "POST",
@@ -33,7 +35,7 @@ export function ExistingSavingsDialog({ open, onOpenChange }: { open: boolean; o
         body: { kind: "existing", amount: value, method: "cash", note: note.trim() || null },
       });
       if (!res.ok) return setError(await errorMessage(res));
-      toast.success("Ajouté à ton épargne.");
+      toast.success(t("Ajouté à ton épargne."));
       setAmount("");
       setNote("");
       onOpenChange(false);
@@ -50,15 +52,14 @@ export function ExistingSavingsDialog({ open, onOpenChange }: { open: boolean; o
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>J&apos;ai déjà une épargne</DialogTitle>
+          <DialogTitle>{t("J'ai déjà une épargne")}</DialogTitle>
           <DialogDescription>
-            L&apos;argent que tu avais déjà de côté. Il s&apos;ajoute à ton épargne sans sortir de ton solde, et
-            n&apos;apparaît ni dans tes dépenses ni dans tes revenus.
+            {t("L'argent que tu avais déjà de côté. Il s'ajoute à ton épargne sans sortir de ton solde, et n'apparaît ni dans tes dépenses ni dans tes revenus.")}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="existing-amount">Montant</Label>
+            <Label htmlFor="existing-amount">{t("Montant")}</Label>
             <Input
               id="existing-amount"
               type="text"
@@ -70,19 +71,19 @@ export function ExistingSavingsDialog({ open, onOpenChange }: { open: boolean; o
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="existing-note">Où (optionnel)</Label>
+            <Label htmlFor="existing-note">{t("Où (optionnel)")}</Label>
             <Input
               id="existing-note"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               maxLength={80}
-              placeholder="Ex. Compte épargne CIH, à la maison…"
+              placeholder={t("Ex. Compte épargne CIH, à la maison…")}
             />
           </div>
           {error && <p className="text-sm text-rose-600">{error}</p>}
           <Button type="submit" className="gx-cta" disabled={pending || !(value > 0)}>
             <Bank weight="bold" className="h-4 w-4" />
-            {pending ? "Enregistrement…" : "Ajouter à l'épargne"}
+            {pending ? t("Enregistrement…") : t("Ajouter à l'épargne")}
           </Button>
         </form>
       </DialogContent>

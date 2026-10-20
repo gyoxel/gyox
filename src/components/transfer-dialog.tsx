@@ -13,13 +13,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MethodIcon } from "@/components/method-icon";
+import { MonthlyToggle } from "@/components/monthly-toggle";
+import { msg } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 export type Account = PaymentMethod | "savings";
 
 export const ACCOUNT_META: Record<Account, { emoji: string; label: string }> = {
-  cash: { emoji: "💵", label: "Espèces" },
-  card: { emoji: "💳", label: "Carte" },
-  savings: { emoji: "🐷", label: "Épargne" },
+  cash: { emoji: "💵", label: msg("Espèces") },
+  card: { emoji: "💳", label: msg("Carte") },
+  savings: { emoji: "🐷", label: msg("Épargne") },
 };
 
 const ACCOUNTS: Account[] = ["cash", "card", "savings"];
@@ -27,8 +30,9 @@ const METHODS: Account[] = ["cash", "card"];
 
 /**
  * Moves money between cash, the card and the savings. Into the savings it
- * leaves the Solde (an expense "Épargne" in Dépenses); out of it, it comes
- * back (an income in Revenus). Cash ⇄ card is a plain transfer.
+ * leaves the Solde (an expense "Épargne" in Dépenses — every month, if so);
+ * out of it, it comes back (an income in Revenus). Cash ⇄ card is a plain
+ * transfer.
  */
 export function TransferDialog({
   open,
@@ -51,10 +55,12 @@ export function TransferDialog({
    *  where it goes (the other side is the savings). */
   mode?: "any" | "in" | "out";
 }) {
+  const t = useT();
   const [from, setFrom] = useState<Account>(initialFrom);
   const [to, setTo] = useState<Account>(initialTo);
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
+  const [monthly, setMonthly] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const value = parseDecimalInput(amount);
@@ -72,19 +78,19 @@ export function TransferDialog({
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!(value > 0)) return setError("Indique un montant.");
-    if (from === to) return setError("Choisis deux comptes différents.");
+    if (!(value > 0)) return setError(t("Indique un montant."));
+    if (from === to) return setError(t("Choisis deux comptes différents."));
     if (value > available(from) + 0.005) {
       return setError(
         from === "savings"
-          ? `Épargne insuffisante : il te reste ${money(Math.max(0, savings))}.`
-          : insufficientMessage(from, available(from)),
+          ? t("Épargne insuffisante : il te reste {amount}.", { amount: money(Math.max(0, savings)) })
+          : insufficientMessage(from, available(from), t),
       );
     }
     const cleanNote = note.trim() || null;
     const request =
       to === "savings"
-        ? { url: "/api/savings", body: { kind: "in", amount: value, method: from, note: cleanNote } }
+        ? { url: "/api/savings", body: { kind: "in", amount: value, method: from, note: cleanNote, monthly } }
         : from === "savings"
           ? { url: "/api/savings", body: { kind: "out", amount: value, method: to, note: cleanNote } }
           : { url: "/api/wallet", body: { kind: "transfer", fromAccount: from, toAccount: to, amount: value, note: cleanNote } };
@@ -94,16 +100,21 @@ export function TransferDialog({
       onOpenChange(false);
       setAmount("");
       setNote("");
-      toast.success(`${money(value)} : ${ACCOUNT_META[from].label} → ${ACCOUNT_META[to].label}`);
+      setMonthly(false);
+      toast.success(
+        `${money(value)} : ${t(ACCOUNT_META[from].label)} → ${t(ACCOUNT_META[to].label)}${to === "savings" && monthly ? ` · ${t("chaque mois")}` : ""}`,
+      );
     });
   }
 
   const hint =
     to === "savings"
-      ? "Sort de ton solde actuel et s'ajoute à tes dépenses comme épargne."
+      ? monthly
+        ? t("Sort de ton solde maintenant, puis revient chaque mois dans tes dépenses : coche-la quand tu la mets de côté.")
+        : t("Sort de ton solde actuel et s'ajoute à tes dépenses comme épargne.")
       : from === "savings"
-        ? "Revient dans ton solde actuel, comme un revenu."
-        : "Retrait au guichet ou versement sur la carte.";
+        ? t("Revient dans ton solde actuel, comme un revenu.")
+        : t("Retrait au guichet ou versement sur la carte.");
 
   return (
     <Dialog
@@ -119,18 +130,18 @@ export function TransferDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{mode === "in" ? "Mettre de côté" : mode === "out" ? "Retirer de l'épargne" : "Transférer"}</DialogTitle>
+          <DialogTitle>{mode === "in" ? t("Mettre de côté") : mode === "out" ? t("Retirer de l'épargne") : t("Transférer")}</DialogTitle>
           <DialogDescription>{hint}</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="flex flex-col gap-4">
           {mode !== "out" && (
-            <AccountRow label={mode === "in" ? "Pris de" : "De"} value={from} onPick={pickFrom} accounts={mode === "in" ? METHODS : ACCOUNTS} />
+            <AccountRow label={mode === "in" ? t("Pris de") : t("De")} value={from} onPick={pickFrom} accounts={mode === "in" ? METHODS : ACCOUNTS} />
           )}
           {mode !== "in" && (
-            <AccountRow label="Vers" value={to} onPick={pickTo} accounts={mode === "out" ? METHODS : ACCOUNTS} />
+            <AccountRow label={t("Vers")} value={to} onPick={pickTo} accounts={mode === "out" ? METHODS : ACCOUNTS} />
           )}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="transfer-amount">Montant</Label>
+            <Label htmlFor="transfer-amount">{t("Montant")}</Label>
             <Input
               id="transfer-amount"
               type="text"
@@ -141,12 +152,12 @@ export function TransferDialog({
               onChange={(e) => setAmount(cleanDecimalInput(e.target.value))}
             />
             <p className="text-[11px] text-slate-400">
-              {ACCOUNT_META[from].label} : {money(available(from))}
+              {t(ACCOUNT_META[from].label)} : {money(available(from))}
               {value > 0 && <> → {money(available(from) - value)}</>}
             </p>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="transfer-note">Note (optionnel)</Label>
+            <Label htmlFor="transfer-note">{t("Note (optionnel)")}</Label>
             <Input
               id="transfer-note"
               value={note}
@@ -154,17 +165,20 @@ export function TransferDialog({
               maxLength={80}
               placeholder={
                 to === "savings"
-                  ? "Ex. Banque CIH, pour les vacances…"
+                  ? t("Ex. Banque CIH, pour les vacances…")
                   : from === "savings"
-                    ? "Ex. Réparation de la voiture"
-                    : "Ex. Guichet Attijari"
+                    ? t("Ex. Réparation de la voiture")
+                    : t("Ex. Guichet Attijari")
               }
             />
           </div>
+          {to === "savings" && (
+            <MonthlyToggle checked={monthly} onChange={setMonthly} hint={t("Revient chaque mois dans tes dépenses")} />
+          )}
           {error && <p className="text-sm text-rose-600">{error}</p>}
           <Button type="submit" className="gx-cta" disabled={pending || !(value > 0)}>
             <ArrowsLeftRight weight="bold" className="h-4 w-4" />
-            {pending ? "Enregistrement…" : mode === "in" ? "Mettre de côté" : mode === "out" ? "Retirer" : "Transférer"}
+            {pending ? t("Enregistrement…") : mode === "in" ? t("Mettre de côté") : mode === "out" ? t("Retirer") : t("Transférer")}
           </Button>
         </form>
       </DialogContent>
@@ -183,6 +197,7 @@ function AccountRow({
   onPick: (a: Account) => void;
   accounts: Account[];
 }) {
+  const t = useT();
   return (
     <div className="flex flex-col gap-1.5">
       <Label>{label}</Label>
@@ -193,7 +208,7 @@ function AccountRow({
             type="button"
             role="radio"
             aria-checked={value === a}
-            aria-label={`${label} ${ACCOUNT_META[a].label}`}
+            aria-label={`${label} ${t(ACCOUNT_META[a].label)}`}
             onClick={() => onPick(a)}
             className={cn(
               "flex flex-col items-center gap-0.5 rounded-xl border px-2 py-2 text-xs font-medium transition-colors",
@@ -203,7 +218,7 @@ function AccountRow({
             )}
           >
             <MethodIcon method={a} className={a === "savings" ? "text-xl" : "h-[15px]"} />
-            {ACCOUNT_META[a].label}
+            {t(ACCOUNT_META[a].label)}
           </button>
         ))}
       </div>

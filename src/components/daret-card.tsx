@@ -7,7 +7,9 @@ import { toast } from "sonner";
 import { mutate } from "@/lib/use-refresh-data";
 import { errorMessage } from "@/components/expense-editor";
 import type { DaretState } from "@/lib/daret";
-import { addMonths, monthKey, monthLabelFr, monthLabelShortFr } from "@/lib/date";
+import { addMonths, monthKey } from "@/lib/date";
+import { formatDate, monthLabel, monthLabelShort } from "@/lib/i18n/dates";
+import { useI18n, useT } from "@/lib/i18n/client";
 import type { DaretWithExpense, PaymentMethod } from "@/lib/types";
 import { METHOD_META } from "@/lib/payment-method";
 import { cn, formatMoney } from "@/lib/utils";
@@ -35,6 +37,7 @@ export function DaretCard({
   /** Days from today until the 1st of the turn month (only when upcoming). */
   daysToTurn: number | null;
 }) {
+  const { lang, t } = useI18n();
   const [paid, setPaid] = useState(state.paidThisMonth);
   const [paidMonths, setPaidMonths] = useState(() => new Set(state.paidMonths));
   const [busy, setBusy] = useState(false);
@@ -92,7 +95,7 @@ export function DaretCard({
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
       {/* Header and rounds: tapping them opens the daret (edit). The
           contribution and payout below keep their own buttons. */}
-      <Link href={`/daret/${daret.id}`} aria-label={`Modifier ${daret.expense.name}`} className="block pb-0.5 active:opacity-70">
+      <Link href={`/daret/${daret.id}`} aria-label={t("Modifier {name}", { name: daret.expense.name })} className="block pb-0.5 active:opacity-70">
       <div className="flex items-center gap-3 px-4 pt-4">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl gx-tile text-xl">
           {daret.expense.icon ?? "🤝🏻"}
@@ -100,7 +103,8 @@ export function DaretCard({
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-base font-semibold text-slate-900 dark:text-white">{daret.expense.name}</h3>
           <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-            <b className="font-semibold text-slate-700 dark:text-slate-200">{money(daret.expense.amount)}</b>/mois · {daret.members} mbr.
+            <b className="font-semibold text-slate-700 dark:text-slate-200">{money(daret.expense.amount)}</b>
+            {t("/mois")} · {t("{n} mbr.", { n: daret.members })}
           </p>
         </div>
         <span
@@ -113,7 +117,11 @@ export function DaretCard({
                 : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
           )}
         >
-          {state.phase === "running" ? `Tour ${state.round}/${daret.members}` : state.phase === "finished" ? "Terminée" : "À venir"}
+          {state.phase === "running"
+            ? t("Tour {round}/{members}", { round: state.round ?? 0, members: daret.members })
+            : state.phase === "finished"
+              ? t("Terminée")
+              : t("À venir")}
         </span>
         <span aria-hidden className="-mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400">
           <PencilSimple weight="bold" className="h-4 w-4" />
@@ -122,7 +130,7 @@ export function DaretCard({
 
       {/* Rounds */}
       <div className="px-4 pt-4">
-        <div className="flex gap-1" aria-label={`${paidMonths.size} cotisations payées sur ${daret.members}`}>
+        <div className="flex gap-1" aria-label={t("{paid} cotisations payées sur {members}", { paid: paidMonths.size, members: daret.members })}>
           {rounds.map((key) => {
             const isPaid = paidMonths.has(key);
             const isNow = key === currentMonthKey;
@@ -143,10 +151,10 @@ export function DaretCard({
         </div>
         <div className="mt-1.5 flex justify-between text-[11px] text-slate-400">
           <span>
-            {paidMonths.size}/{daret.members} payées · {percent}%
+            {t("{paid}/{total} payées", { paid: paidMonths.size, total: daret.members })} · {percent}%
           </span>
           <span>
-            {short(monthLabelShortFr(state.start))} → {short(monthLabelShortFr(state.end))}
+            {short(monthLabelShort(state.start, lang))} → {short(monthLabelShort(state.end, lang))}
           </span>
         </div>
       </div>
@@ -156,16 +164,16 @@ export function DaretCard({
       {paid != null && (
         <div className="mx-4 mt-3 flex items-center justify-between gap-2 rounded-2xl bg-slate-50 py-1.5 pl-3.5 pr-1.5 dark:bg-slate-800/60">
           <span className={cn("text-sm font-medium text-slate-800 dark:text-slate-200", paid && "text-slate-400 line-through")}>
-            Cotisation de ce mois · {money(daret.expense.amount)}
+            {t("Cotisation de ce mois")} · {money(daret.expense.amount)}
           </span>
           {choosing === "contribution" ? (
-            <MethodChoice label="Payée" onPick={(m) => togglePaid(m)} />
+            <MethodChoice label={t("Payée")} onPick={(m) => togglePaid(m)} />
           ) : (
             <button
               type="button"
               onClick={() => (paid ? togglePaid() : setChoosing("contribution"))}
               disabled={busy}
-              aria-label={paid ? "Annuler la cotisation de ce mois" : "Marquer la cotisation de ce mois comme payée"}
+              aria-label={paid ? t("Annuler la cotisation de ce mois") : t("Marquer la cotisation de ce mois comme payée")}
               className="flex h-9 w-9 shrink-0 items-center justify-center disabled:opacity-60"
             >
               <span
@@ -185,17 +193,17 @@ export function DaretCard({
       <div className="m-4 mt-3 rounded-2xl bg-gradient-to-br from-teal-400/15 to-emerald-500/15 px-4 py-3 dark:from-teal-400/10 dark:to-emerald-500/10">
         <div className="flex items-center justify-between">
           <p className="text-xs font-medium text-emerald-700 dark:text-teal-300">
-            Mon tour · <span className="capitalize">{monthLabelFr(state.turn)}</span>
+            {t("Mon tour")} · <span className="capitalize">{monthLabel(state.turn, lang)}</span>
           </p>
           <p className="text-xs font-semibold text-emerald-700 dark:text-teal-300">
             {payoutReceived
-              ? <>Reçue ✓ <MethodIcon method={daret.payoutMethod!} /></>
+              ? <>{t("Reçue ✓")} <MethodIcon method={daret.payoutMethod!} /></>
               : state.turnStatus === "now"
-                ? "C'est ce mois-ci 🎉"
+                ? t("C'est ce mois-ci 🎉")
                 : state.turnStatus === "received"
-                  ? "À confirmer"
+                  ? t("À confirmer")
                   : daysToTurn != null
-                    ? `J-${daysToTurn}`
+                    ? t("J-{days}", { days: daysToTurn })
                     : ""}
           </p>
         </div>
@@ -207,18 +215,20 @@ export function DaretCard({
           (payoutReceived ? (
             <p className="mt-1 flex items-center justify-between text-[11px] text-emerald-700/80 dark:text-teal-300/80">
               <span>
-                Reçue en {METHOD_META[daret.payoutMethod!].label.toLowerCase()}
+                {t("Reçue en {method}", { method: t(METHOD_META[daret.payoutMethod!].label).toLowerCase() })}
                 {daret.payoutReceivedAt &&
-                  ` le ${new Intl.DateTimeFormat("fr-FR", { timeZone: "Africa/Casablanca", day: "2-digit", month: "2-digit" }).format(new Date(daret.payoutReceivedAt))}`}
+                  ` ${t("le {date}", {
+                    date: formatDate(new Date(daret.payoutReceivedAt), lang, { timeZone: "Africa/Casablanca", day: "2-digit", month: "2-digit" }),
+                  })}`}
               </span>
               <button type="button" onClick={() => setPayout(null)} disabled={busy} className="font-medium underline underline-offset-2">
-                Annuler
+                {t("Annuler")}
               </button>
             </p>
           ) : choosing === "payout" ? (
             <div className="mt-2 flex items-center justify-between gap-2 rounded-xl bg-white/80 py-1 pl-3 pr-1 dark:bg-slate-900/60">
-              <span className="text-xs font-medium text-emerald-700 dark:text-teal-300">Reçue comment ?</span>
-              <MethodChoice label="Reçue" onPick={(m) => setPayout(m)} />
+              <span className="text-xs font-medium text-emerald-700 dark:text-teal-300">{t("Reçue comment ?")}</span>
+              <MethodChoice label={t("Reçue")} onPick={(m) => setPayout(m)} />
             </div>
           ) : (
             <Button
@@ -228,7 +238,7 @@ export function DaretCard({
               disabled={busy}
             >
               <Check weight="bold" className="h-4 w-4" />
-              J&apos;ai reçu la daret
+              {t("J'ai reçu la daret")}
             </Button>
           ))}
       </div>
@@ -238,14 +248,15 @@ export function DaretCard({
 
 /** Cash / card: how it was paid / received. */
 function MethodChoice({ label, onPick }: { label: string; onPick: (method: PaymentMethod) => void }) {
+  const t = useT();
   return (
-    <span className="flex shrink-0 items-center gap-1" aria-label={`${label} comment ?`}>
+    <span className="flex shrink-0 items-center gap-1" aria-label={t("{label} comment ?", { label })}>
       {(["cash", "card"] as const).map((m) => (
         <button
           key={m}
           type="button"
           onClick={() => onPick(m)}
-          aria-label={`${label} en ${METHOD_META[m].label}`}
+          aria-label={t("{label} en {method}", { label, method: t(METHOD_META[m].label) })}
           className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-lg shadow-sm transition-transform active:scale-90 dark:border-slate-700 dark:bg-slate-800"
         >
           <MethodIcon method={m} className="h-[11px]" />

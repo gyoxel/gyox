@@ -2,7 +2,10 @@ import { getAllCategories, getAllDarets, getAllDayNotes, getAllExpenses, getAllG
 import { advancesOn } from "@/lib/salary";
 import { incomeCategory } from "@/lib/income";
 
-import { addMonths, compareMonths, monthFromSearchParams, monthKey, monthLabelFr, todayMonth, type MonthId } from "@/lib/date";
+import { addMonths, compareMonths, monthFromSearchParams, monthKey, todayMonth, type MonthId } from "@/lib/date";
+import { monthLabel } from "@/lib/i18n/dates";
+import { localName } from "@/lib/i18n";
+import { getI18n } from "@/lib/i18n/server";
 import { displayIcon } from "@/lib/category";
 import { getCreditRealState, projectCreditInstallment } from "@/lib/engine";
 import { getDaretState } from "@/lib/daret";
@@ -28,7 +31,7 @@ const dueDayOf = (startDate: string) => Number(startDate.slice(8, 10)) || 1;
  * daret payout, goal reached, deadlines, next salary) and a free note per day.
  */
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
-  const [sp, settings, expenses, payments, categories, goals, darets, dayNotes, advances, incomes, incomeCategories] = await Promise.all([
+  const [sp, settings, expenses, payments, categories, goals, darets, dayNotes, advances, incomes, incomeCategories, { lang, t }] = await Promise.all([
     searchParams,
     getSettings(),
     getAllExpenses(),
@@ -40,7 +43,9 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     getAllSalaryAdvances(),
     getAllIncomes(),
     getIncomeCategories(),
+    getI18n(),
   ]);
+  const monthLabelFr = (m: MonthId) => monthLabel(m, lang);
   const current = todayMonth();
 
   const month = monthFromSearchParams(sp.month, current);
@@ -59,7 +64,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     events.push({
       id: p.id,
       kind: "out",
-      label: expense?.name ?? "Dépense supprimée",
+      label: expense ? localName(expense.name, t) : t("Dépense supprimée"),
       icon: expense ? displayIcon(expense, emojiById) : "💸",
       amount: p.amountPaid,
       at: p.paidAt,
@@ -77,7 +82,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     events.push({
       id: `salary-${key}`,
       kind: "in",
-      label: taken > 0 ? "Salaire (moins l'avance)" : "Salaire",
+      label: taken > 0 ? t("Salaire (moins l'avance)") : t("Salaire"),
       icon: "💰",
       amount: salaryHere,
       at: payday,
@@ -89,7 +94,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     events.push({
       id: i.id,
       kind: "in",
-      label: i.name,
+      label: localName(i.name, t),
       icon: incomeCategory(i.category, incomeCategories).emoji,
       amount: i.amount,
       at: i.date,
@@ -102,7 +107,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     events.push({
       id: a.id,
       kind: "in",
-      label: `Avance sur salaire · ${monthLabelFr({ year: y, month: m })}`,
+      label: `${t("Avance sur salaire")} · ${monthLabelFr({ year: y, month: m })}`,
       icon: "💵",
       amount: a.amount,
       at: a.date,
@@ -111,8 +116,17 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
   for (const g of goals) {
     for (const d of g.deposits) {
+      const label = `${d.name === "Versement" ? t("Versement") : d.name} · ${g.emoji} ${g.name}`;
+      if (d.monthly) {
+        // Every month: each month ticked, the day it was.
+        for (const p of payments) {
+          if (p.expenseId !== d.expenseId || !(p.amountPaid > 0) || !p.paidAt.startsWith(key)) continue;
+          events.push({ id: `${d.id}-${p.id}`, kind: "saving", label, icon: "🐷", amount: p.amountPaid, at: p.paidAt });
+        }
+        continue;
+      }
       if (!d.date.startsWith(key)) continue;
-      events.push({ id: d.id, kind: "saving", label: `${d.name} · ${g.emoji} ${g.name}`, icon: "🐷", amount: d.amount, at: d.date });
+      events.push({ id: d.id, kind: "saving", label, icon: "🐷", amount: d.amount, at: d.date });
     }
   }
 
@@ -126,8 +140,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       id: `salary-${key}`,
       date: payday,
       icon: "💰",
-      label: "Salaire prévu",
-      detail: taken > 0 ? `+${money(salaryHere)} (avance de ${money(taken)} déduite)` : `+${money(salaryHere)}`,
+      label: t("Salaire prévu"),
+      detail: taken > 0 ? `+${money(salaryHere)} ${t("(avance de {amount} déduite)", { amount: money(taken) })}` : `+${money(salaryHere)}`,
     });
   }
 
@@ -139,13 +153,13 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     const icon = displayIcon(e, emojiById);
     infos.push(
       state.status === "completed"
-        ? { id: `credit-${e.id}`, date, icon, label: `Dette ${e.name} remboursée ✅` }
+        ? { id: `credit-${e.id}`, date, icon, label: t("Dette {name} remboursée ✅", { name: e.name }) }
         : {
             id: `credit-${e.id}`,
             date,
             icon,
-            label: `Dernière mensualité · ${e.name}`,
-            detail: `${money(projectCreditInstallment(e, payments, month, current) ?? Math.min(e.amount, state.remaining))} — fin de la dette 🎉`,
+            label: `${t("Dernière mensualité")} · ${e.name}`,
+            detail: `${money(projectCreditInstallment(e, payments, month, current) ?? Math.min(e.amount, state.remaining))} — ${t("fin de la dette 🎉")}`,
           },
     );
   }
@@ -154,10 +168,10 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     const state = getDaretState(d, payments, current);
     const date = dayIn(month, dueDayOf(d.expense.startDate));
     if (same(state.turn)) {
-      infos.push({ id: `daret-turn-${d.id}`, date, icon: "🤝🏻", label: `Tu prends la daret ${d.expense.name}`, detail: `+${money(state.payout)}` });
+      infos.push({ id: `daret-turn-${d.id}`, date, icon: "🤝🏻", label: t("Tu prends la daret {name}", { name: d.expense.name }), detail: `+${money(state.payout)}` });
     }
     if (same(state.end) && !same(state.turn)) {
-      infos.push({ id: `daret-end-${d.id}`, date, icon: "🤝🏻", label: `Dernière cotisation · daret ${d.expense.name}`, detail: money(d.expense.amount) });
+      infos.push({ id: `daret-end-${d.id}`, date, icon: "🤝🏻", label: t("Dernière cotisation · daret {name}", { name: d.expense.name }), detail: money(d.expense.amount) });
     }
   }
 
@@ -171,8 +185,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         id: `goal-${g.id}`,
         date: viaDaret ? dayIn(month, dueDayOf(viaDaret.expense.startDate)) : payday,
         icon: g.emoji,
-        label: `Objectif ${g.name} atteint 🎉`,
-        detail: p.reachedByDaretsIn ? "Grâce à tes darets" : `En mettant ${money(g.monthlySaving ?? 0)}/mois`,
+        label: t("Objectif {name} atteint 🎉", { name: g.name }),
+        detail: p.reachedByDaretsIn ? t("Grâce à tes darets") : t("En mettant {amount}/mois", { amount: money(g.monthlySaving ?? 0) }),
       });
     }
     if (same(p.deadline)) {
@@ -180,8 +194,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         id: `goal-deadline-${g.id}`,
         date: dayIn(month, 31),
         icon: g.emoji,
-        label: `Date limite · objectif ${g.name}`,
-        detail: p.remainingNow > 0 ? `Il manque ${money(p.remainingNow)}` : undefined,
+        label: t("Date limite · objectif {name}", { name: g.name }),
+        detail: p.remainingNow > 0 ? t("Il manque {amount}", { amount: money(p.remainingNow) }) : undefined,
       });
     }
   }
@@ -190,7 +204,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageHeader title="Calendrier" back />
+      <PageHeader title={t("Calendrier")} back info="calendar" />
       <main className="px-4 py-5">
         <CalendarView
           key={key}

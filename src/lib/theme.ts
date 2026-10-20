@@ -16,6 +16,10 @@ export const SIMPLE_HEADER = { light: "#ffffff", dark: "#0f172a" };
  *  night's in dark. */
 export const HEADER_COLOR = { light: "#f5f5f9", dark: "#090e1e" };
 
+/** The launch screen's colour, always light like Android's splash before
+ *  it (the manifest's background_color): the bar's too while it's shown. */
+export const SPLASH_BAR = "#f5f5f9";
+
 export function parseTheme(choice: ThemeChoice): { base: ThemeBase; simple: boolean } {
   if (choice === "simple") return { base: "system", simple: true };
   if (choice.startsWith("simple-")) return { base: choice.slice(7) as ThemeBase, simple: true };

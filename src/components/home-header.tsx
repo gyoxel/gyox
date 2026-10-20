@@ -2,6 +2,8 @@ import Link from "next/link";
 import { GearSix } from "@phosphor-icons/react/ssr";
 import { HEADER_BUTTON } from "@/components/header-button";
 import { RefreshLogo } from "@/components/refresh-logo";
+import { formatDate } from "@/lib/i18n/dates";
+import { getI18n } from "@/lib/i18n/server";
 
 const TIME_ZONE = "Africa/Casablanca";
 
@@ -10,11 +12,12 @@ const TIME_ZONE = "Africa/Casablanca";
  * GX mark (tap: refresh), Bonjour / Bonsoir and the first name, today's date
  * in a round button (tap: the Calendrier), and settings.
  */
-export function HomeHeader({ name }: { name: string }) {
+export async function HomeHeader({ name }: { name: string }) {
+  const { lang, t } = await getI18n();
   const now = new Date();
   const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: TIME_ZONE, hour: "numeric", hourCycle: "h23" }).format(now));
-  const greeting = hour >= 5 && hour < 18 ? "Bonjour" : "Bonsoir";
-  const part = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("fr-FR", { timeZone: TIME_ZONE, ...o }).format(now);
+  const greeting = hour >= 5 && hour < 18 ? t("Bonjour") : t("Bonsoir");
+  const part = (o: Intl.DateTimeFormatOptions) => formatDate(now, lang, { timeZone: TIME_ZONE, ...o });
   const firstName = name.split(" ")[0];
 
   return (
@@ -28,7 +31,7 @@ export function HomeHeader({ name }: { name: string }) {
         <Link
           href="/calendar"
           prefetch
-          aria-label={`Calendrier · ${part({ weekday: "long", day: "numeric", month: "long" })}`}
+          aria-label={`${t("Calendrier")} · ${part({ weekday: "long", day: "numeric", month: "long" })}`}
           className={`${HEADER_BUTTON} flex-col gap-0 leading-none`}
         >
           <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-violet-600 dark:text-violet-300">
@@ -36,7 +39,7 @@ export function HomeHeader({ name }: { name: string }) {
           </span>
           <span className="text-[15px] font-bold">{part({ day: "numeric" })}</span>
         </Link>
-        <Link href="/settings" prefetch data-nav="section" aria-label="Paramètres" className={HEADER_BUTTON}>
+        <Link href="/settings" prefetch data-nav="section" aria-label={t("Paramètres")} className={HEADER_BUTTON}>
           <GearSix weight="bold" className="h-[19px] w-[19px]" />
         </Link>
       </div>

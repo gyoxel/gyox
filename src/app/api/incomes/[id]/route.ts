@@ -2,7 +2,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { deleteIncome, getIncomeById, updateIncome } from "@/lib/repository";
 import { getSavingsMoveOfIncome } from "@/lib/savings-repo";
 import { getLoanOfIncome } from "@/lib/loans-repo";
-import { budgetIdOfIncome } from "@/lib/budgets-repo";
 import { incomeInputSchema } from "@/lib/validation";
 import { withBalanceGuard } from "@/lib/balance-guard";
 
@@ -19,8 +18,7 @@ export const DELETE = withBalanceGuard(async function remove(_req: NextRequest, 
   const { id } = await params;
   const income = await getIncomeById(id);
   if (income?.expenseId) return NextResponse.json({ error: "Ce revenu vient d'une dette : supprime la dette." }, { status: 409 });
-  const [move, loan, budget] = await Promise.all([getSavingsMoveOfIncome(id), getLoanOfIncome(id), budgetIdOfIncome(id)]);
-  if (budget) return NextResponse.json({ error: "Ce revenu est le reste d'un budget : il suit ses dépenses." }, { status: 409 });
+  const [move, loan] = await Promise.all([getSavingsMoveOfIncome(id), getLoanOfIncome(id)]);
   if (move) return NextResponse.json({ error: "Ce revenu vient de l'épargne : supprime-le depuis l'épargne." }, { status: 409 });
   if (loan) return NextResponse.json({ error: "Cet argent prêté t'a été rendu : annule-le depuis « Argent prêté »." }, { status: 409 });
   const ok = await deleteIncome(id);

@@ -14,12 +14,13 @@ export async function GET() {
   return NextResponse.json(await getAllSavingsMoves());
 }
 
-/** POST { kind: "in" | "out" | "existing", amount, method, note }: into / out
- *  of the savings, or savings already held (the Solde doesn't move). */
+/** POST { kind: "in" | "out" | "existing", amount, method, note, monthly }:
+ *  into (every month: `monthly`) / out of the savings, or savings already
+ *  held (the Solde doesn't move). */
 export const POST = withBalanceGuard(async function post(req: NextRequest) {
-  const parsed = savingsSchema.extend({ kind: z.enum(["in", "out", "existing"]) }).safeParse(await req.json().catch(() => null));
+  const parsed = savingsSchema.extend({ kind: z.enum(["in", "out", "existing"]), monthly: z.boolean().default(false) }).safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  const { kind, amount, method, note, date } = parsed.data;
+  const { kind, amount, method, note, date, monthly } = parsed.data;
   if (kind === "out") {
     const [moves, payments] = await Promise.all([getAllSavingsMoves(), getAllPayments()]);
     const balance = savingsBalance(moves, payments);
@@ -27,6 +28,13 @@ export const POST = withBalanceGuard(async function post(req: NextRequest) {
       return NextResponse.json({ error: `Il n'y a que ${formatMoney(balance)} dans l'épargne.` }, { status: 400 });
     }
   }
-  const move = await createSavingsMove({ kind, amount: Math.round(amount * 100) / 100, method, note, date: date ?? todayDateStr() });
+  const move = await createSavingsMove({
+    kind,
+    amount: Math.round(amount * 100) / 100,
+    method,
+    note,
+    date: date ?? todayDateStr(),
+    monthly: kind === "in" && monthly,
+  });
   return NextResponse.json(move, { status: 201 });
 });

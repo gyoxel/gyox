@@ -5,7 +5,10 @@ import { flushSync } from "react-dom";
 import { flushPendingRefresh, mutate, trackMutation } from "@/lib/use-refresh-data";
 import Link from "next/link";
 import { ArrowUUpLeft, CaretLeft, CaretRight, Check, Confetti, PencilSimple, Plus } from "@phosphor-icons/react/ssr";
-import { addMonths, monthKey as toMonthKey, monthLabelFr, monthLabelShortFr, type MonthId } from "@/lib/date";
+import { addMonths, monthKey as toMonthKey, type MonthId } from "@/lib/date";
+import { monthLabel, monthLabelShort } from "@/lib/i18n/dates";
+import { localName, type T } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n/client";
 import { findPayment, getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, getMonthLedgerItems, lastPaidAt, type DisplayColor, type LedgerItem } from "@/lib/engine";
 import type { Expense, Payment, PaymentMethod } from "@/lib/types";
 import { toast } from "sonner";
@@ -90,6 +93,7 @@ export function DueNowList({
   currentMonth: MonthId;
   currency: string;
 }) {
+  const { lang, t } = useI18n();
   const [viewMonth, setViewMonth] = useState<MonthId>(currentMonth);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const touchStartX = useRef<number | null>(null);
@@ -128,7 +132,7 @@ export function DueNowList({
     const settled = findPayment(parts, expense.id, key);
     if (settled) setEditing({ expense, parts, due: settled.amountDue });
     // A credit paid ahead: this month is covered by another month's payment.
-    else toast.info("Ce mois est couvert par une mensualité payée un autre mois : modifie-la depuis ce mois-là.");
+    else toast.info(t("Ce mois est couvert par une mensualité payée un autre mois : modifie-la depuis ce mois-là."));
   }
 
   /** This month's amount due and what's paid of it so far (its parts). */
@@ -200,7 +204,7 @@ export function DueNowList({
     const optimistic = { ...buildOptimisticPayment(expense, viewMonth, localPayments, amount), method };
     if (balance && optimistic.amountPaid > balance[method] + 0.005) {
       settlePending(expense.id, setPendingIds);
-      toast.error(insufficientMessage(method, balance[method]));
+      toast.error(insufficientMessage(method, balance[method], t));
       return;
     }
     animateReorder(rowRefs.current, () => setLocalPayments((prev) => [...prev, optimistic]));
@@ -229,12 +233,12 @@ export function DueNowList({
   function kindOf(expense: Expense): string {
     if (expense.type === "credit") {
       const left = getCreditRealState(expense, localPayments, viewMonth).remaining;
-      return `Dette · reste ${formatMoney(left, currency)}`;
+      return t("Dette · reste {amount}", { amount: formatMoney(left, currency) });
     }
-    if (expense.type === "permanent") return "Chaque mois";
-    if (expense.frequency === "one-time") return "Une fois";
+    if (expense.type === "permanent") return t("Chaque mois");
+    if (expense.frequency === "one-time") return t("Une fois");
     const end = getEffectiveEndMonth(expense, byId);
-    return end ? `Jusqu'à ${monthLabelShortFr(end).toLowerCase()}` : "Temporaire";
+    return end ? t("Jusqu'à {month}", { month: monthLabelShort(end, lang).toLowerCase() }) : t("Temporaire");
   }
 
   const paidCount = items.filter((i) => i.paid).length;
@@ -248,8 +252,8 @@ export function DueNowList({
     <div className="flex flex-col gap-3">
       {/* What this list is, and what the round boxes are for. */}
       <div className="flex items-baseline justify-between gap-2 px-1">
-        <h2 className="text-base font-bold text-slate-900 dark:text-white">🧾 Dépenses du mois</h2>
-        {items.length > paidCount && <span className="text-[11px] text-slate-400">Coche ◯ quand c&apos;est payé</span>}
+        <h2 className="text-base font-bold text-slate-900 dark:text-white">🧾 {t("Dépenses du mois")}</h2>
+        {items.length > paidCount && <span className="text-[11px] text-slate-400">{t("Coche ◯ quand c'est payé")}</span>}
       </div>
       {/* Month: ‹ › or swipe */}
       <div
@@ -261,20 +265,20 @@ export function DueNowList({
         <button
           type="button"
           onClick={() => goMonth(addMonths(viewMonth, -1))}
-          aria-label="Mois précédent"
+          aria-label={t("Mois précédent")}
           className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 active:bg-slate-100 dark:text-slate-400 dark:active:bg-slate-800"
         >
           <CaretLeft weight="bold" className="h-4 w-4" />
         </button>
         <div className="min-w-0 text-center">
-          <p className="text-[15px] font-semibold capitalize text-slate-900 dark:text-white">{monthLabelFr(viewMonth)}</p>
+          <p className="text-[15px] font-semibold capitalize text-slate-900 dark:text-white">{monthLabel(viewMonth, lang)}</p>
           {items.length > 0 && (
             <p className="text-[11px] text-slate-400">
-              {paidCount}/{items.length} payées
+              {t("{paid}/{total} payées", { paid: paidCount, total: items.length })}
               {left > 0 && (
                 <>
                   {" "}
-                  · <b className="font-semibold text-rose-600 dark:text-rose-400">{formatMoney(left, currency)}</b> à payer
+                  · <b className="font-semibold text-rose-600 dark:text-rose-400">{formatMoney(left, currency)}</b> {t("à payer")}
                 </>
               )}
             </p>
@@ -288,7 +292,7 @@ export function DueNowList({
         <button
           type="button"
           onClick={() => goMonth(addMonths(viewMonth, 1))}
-          aria-label="Mois suivant"
+          aria-label={t("Mois suivant")}
           className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 active:bg-slate-100 dark:text-slate-400 dark:active:bg-slate-800"
         >
           <CaretRight weight="bold" className="h-4 w-4" />
@@ -298,7 +302,7 @@ export function DueNowList({
       {items.length === 0 ? (
         <div className="flex items-center justify-center gap-2 rounded-3xl border border-emerald-200 bg-emerald-50/60 py-5 text-sm font-medium text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-300">
           <Confetti weight="bold" className="h-4 w-4" />
-          Rien à payer pour le moment
+          {t("Rien à payer pour le moment")}
         </div>
       ) : (
         <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -310,12 +314,12 @@ export function DueNowList({
             const month = paid || rest ? monthPaid(expense) : null;
             const header =
               index === 0 && !paid ? (
-                <GroupHeader key="h-unpaid" tone="unpaid" label="À payer" count={items.length - paidCount} total={formatMoney(left, currency)} />
+                <GroupHeader key="h-unpaid" tone="unpaid" label={t("À payer")} count={items.length - paidCount} total={formatMoney(left, currency)} />
               ) : index === firstPaid ? (
                 <GroupHeader
                   key="h-paid"
                   tone="paid"
-                  label={paidCount === items.length ? "Tout est payé 🎉" : "Payées"}
+                  label={paidCount === items.length ? t("Tout est payé 🎉") : t("Payées")}
                   count={paidCount}
                   total={formatMoney(paidTotal, currency)}
                 />
@@ -357,11 +361,11 @@ export function DueNowList({
                           paid && "text-slate-400 dark:text-slate-500",
                         )}
                       >
-                        {expense.name}
+                        {localName(expense.name, t)}
                       </span>
                       {rest && (
                         <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-px text-[10px] font-semibold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
-                          reste
+                          {t("reste")}
                         </span>
                       )}
                     </span>
@@ -372,9 +376,9 @@ export function DueNowList({
                       )}
                     >
                       {paid
-                        ? paidLine(methods, month, currency)
+                        ? paidLine(methods, month, currency, t)
                         : rest && month
-                          ? `${formatMoney(month.paid, currency)} déjà payés sur ${formatMoney(month.due, currency)}`
+                          ? t("{paid} déjà payés sur {due}", { paid: formatMoney(month.paid, currency), due: formatMoney(month.due, currency) })
                           : kindOf(expense)}
                     </span>
                   </span>
@@ -389,14 +393,14 @@ export function DueNowList({
                   </span>
                 </Link>
                 {choosingId === key && paid ? (
-                  <div ref={chooserRef} className="flex shrink-0 items-center gap-1 py-1 pl-1" aria-label="Modifier ou annuler ?">
+                  <div ref={chooserRef} className="flex shrink-0 items-center gap-1 py-1 pl-1" aria-label={t("Modifier ou annuler ?")}>
                     <button
                       type="button"
                       onClick={() => {
                         setChoosingId(null);
                         editPayment(expense);
                       }}
-                      aria-label="Modifier le paiement"
+                      aria-label={t("Modifier le paiement")}
                       className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm transition-transform active:scale-90 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
                     >
                       <PencilSimple weight="bold" className="h-4 w-4" />
@@ -407,20 +411,20 @@ export function DueNowList({
                         setChoosingId(null);
                         untick(expense);
                       }}
-                      aria-label="Annuler le paiement"
+                      aria-label={t("Annuler le paiement")}
                       className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 shadow-sm transition-transform active:scale-90 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                     >
                       <ArrowUUpLeft weight="bold" className="h-4 w-4" />
                     </button>
                   </div>
                 ) : choosingId === key ? (
-                  <div ref={chooserRef} className="flex shrink-0 items-center gap-1 py-1 pl-1" aria-label="Payé comment ?">
+                  <div ref={chooserRef} className="flex shrink-0 items-center gap-1 py-1 pl-1" aria-label={t("Payé comment ?")}>
                     {(["cash", "card"] as const).map((m) => (
                       <button
                         key={m}
                         type="button"
                         onClick={() => pay(expense, amount, m)}
-                        aria-label={`Payé en ${METHOD_META[m].label}`}
+                        aria-label={t("Payé en {method}", { method: t(METHOD_META[m].label) })}
                         className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-lg shadow-sm transition-transform active:scale-90 dark:border-slate-700 dark:bg-slate-800"
                       >
                         <MethodIcon method={m} className="h-[11px]" />
@@ -432,7 +436,7 @@ export function DueNowList({
                         setChoosingId(null);
                         setOtherAmount(rest && month ? { expense, due: month.due, already: month.paid } : { expense, due: amount, already: 0 });
                       }}
-                      aria-label="Payé un autre montant"
+                      aria-label={t("Payé un autre montant")}
                       className="flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-600 shadow-sm transition-transform active:scale-90 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300"
                     >
                       <PencilSimple weight="bold" className="h-4 w-4" />
@@ -445,10 +449,10 @@ export function DueNowList({
                     disabled={isPending}
                     aria-label={
                       paid
-                        ? `Modifier ou annuler le paiement de ${expense.name}`
+                        ? t("Modifier ou annuler le paiement de {name}", { name: localName(expense.name, t) })
                         : rest
-                          ? `Marquer le reste de ${expense.name} comme payé`
-                          : `Marquer ${expense.name} comme payé`
+                          ? t("Marquer le reste de {name} comme payé", { name: localName(expense.name, t) })
+                          : t("Marquer {name} comme payé", { name: localName(expense.name, t) })
                     }
                     className="group flex h-11 w-11 shrink-0 items-center justify-center"
                   >
@@ -502,7 +506,7 @@ export function DueNowList({
         className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-rose-200 py-3 text-sm font-semibold text-rose-600 active:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:active:bg-rose-950/30"
       >
         <Plus weight="bold" className="h-4 w-4" />
-        Ajouter une dépense
+        {t("Ajouter une dépense")}
       </Link>
     </div>
   );
@@ -539,11 +543,11 @@ function settlePending(id: string, setPendingIds: React.Dispatch<React.SetStateA
 
 /** "✓ Payé [cash] Cash"; paid in several times: "✓ Payé [cash] [card]"; and
  *  "sur 600 DH" when that's not all of the month. */
-function paidLine(methods: PaymentMethod[], month: { due: number; paid: number } | null, currency: string): React.ReactNode {
-  const part = month && month.paid < month.due - 0.005 ? ` · sur ${formatMoney(month.due, currency)}` : "";
+function paidLine(methods: PaymentMethod[], month: { due: number; paid: number } | null, currency: string, t: T): React.ReactNode {
+  const part = month && month.paid < month.due - 0.005 ? ` · ${t("sur {amount}", { amount: formatMoney(month.due, currency) })}` : "";
   return (
     <>
-      ✓ Payé{" "}
+      ✓ {t("Payé")}{" "}
       {methods.length === 1 ? (
         <MethodLabel method={methods[0]} />
       ) : (
@@ -619,8 +623,9 @@ function EditPayment({
   onClose: () => void;
 }) {
   const [picked, setPicked] = useState<Payment | null>(parts.length === 1 ? parts[0] : null);
+  const { lang, t } = useI18n();
   const money = (n: number) => formatMoney(n, currency);
-  const label = monthLabelFr(viewMonth);
+  const label = monthLabel(viewMonth, lang);
   const paid = round(parts.reduce((s, p) => s + p.amountPaid, 0));
 
   if (picked) {
@@ -642,9 +647,9 @@ function EditPayment({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Quel paiement modifier ?</DialogTitle>
+          <DialogTitle>{t("Quel paiement modifier ?")}</DialogTitle>
           <DialogDescription>
-            {expense.icon ?? "🧾"} {expense.name} · {label} · {money(paid)} payés sur {money(due)}
+            {expense.icon ?? "🧾"} {localName(expense.name, t)} · {label} · {t("{paid} payés sur {due}", { paid: money(paid), due: money(due) })}
           </DialogDescription>
         </DialogHeader>
         <ul className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
@@ -654,7 +659,7 @@ function EditPayment({
             </li>
           ))}
         </ul>
-        <p className="text-center text-[11px] text-slate-400">Touche un paiement pour changer son montant, espèces ou carte, ou le supprimer.</p>
+        <p className="text-center text-[11px] text-slate-400">{t("Touche un paiement pour changer son montant, espèces ou carte, ou le supprimer.")}</p>
       </DialogContent>
     </Dialog>
   );
@@ -684,32 +689,35 @@ function OtherAmountSheet({
   balance?: Record<PaymentMethod, number>;
   onClose: () => void;
 }) {
+  const { lang, t } = useI18n();
   const money = (n: number) => formatMoney(n, currency);
-  const label = monthLabelFr(viewMonth);
+  const label = monthLabel(viewMonth, lang);
   const left = round(Math.max(0, due - already));
   return (
     <AmountSheet
-      title={already > 0 ? "Tu paies combien du reste ?" : "Tu as payé combien ?"}
-      subtitle={`${expense.icon ?? "🧾"} ${expense.name} · ${label} · ${already > 0 ? `${money(already)} déjà payés sur ${money(due)}` : `prévu ${money(due)}`}`}
+      title={already > 0 ? t("Tu paies combien du reste ?") : t("Tu as payé combien ?")}
+      subtitle={`${expense.icon ?? "🧾"} ${localName(expense.name, t)} · ${label} · ${
+        already > 0 ? t("{paid} déjà payés sur {due}", { paid: money(already), due: money(due) }) : t("prévu {amount}", { amount: money(due) })
+      }`}
       expected={due}
       already={already}
       initialAmount={left}
       initialMethod="cash"
-      chips={left > 0 ? [[already > 0 ? "Tout le reste" : "Tout", left]] : []}
-      explain={(v) => explainPayment(expense, left, v, money)}
-      methodLabel="Payé en"
-      confirmLabel={(v) => `Payé ${money(v)}`}
+      chips={left > 0 ? [[already > 0 ? t("Tout le reste") : t("Tout"), left]] : []}
+      explain={(v) => explainPayment(expense, left, v, money, t)}
+      methodLabel={t("Payé en")}
+      confirmLabel={(v) => t("Payé {amount}", { amount: money(v) })}
       tone="rose"
       onClose={onClose}
       onSubmit={async (value, method) => {
-        if (balance && value > balance[method] + 0.005) return insufficientMessage(method, balance[method]);
+        if (balance && value > balance[method] + 0.005) return insufficientMessage(method, balance[method], t);
         const res = await mutate({
           method: "POST",
           path: `/api/expenses/${expense.id}/payments`,
           body: { monthKey: toMonthKey(viewMonth), method, amount: value },
         });
         if (!res.ok) return errorMessage(res);
-        toast.success(`${expense.name} : ${money(value)} payés.`);
+        toast.success(t("{name} : {amount} payés.", { name: localName(expense.name, t), amount: money(value) }));
         return null;
       }}
     />

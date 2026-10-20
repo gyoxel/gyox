@@ -1,12 +1,13 @@
 import type { DaretWithExpense, Expense, Payment } from "@/lib/types";
-import { addMonths, compareMonths, monthKey, monthLabelFr, monthsBetween, parseMonthKey, todayMonth, type MonthId } from "@/lib/date";
+import { addMonths, compareMonths, monthKey, monthsBetween, parseMonthKey, todayMonth, type MonthId } from "@/lib/date";
+import { monthLabel, monthShortName } from "@/lib/i18n/dates";
+import { getI18n } from "@/lib/i18n/server";
 import { getDaretState } from "@/lib/daret";
 import { findPayment, getCreditDisplayProgress, getCreditRealState, projectCreditSchedule } from "@/lib/engine";
 import { cn, formatMoney } from "@/lib/utils";
 import { displayIcon } from "@/lib/category";
 import { CreditStairs, type StairMonth } from "@/components/credit-stairs";
 
-const SHORT = ["Janv.", "Févr.", "Mars", "Avr.", "Mai", "Juin", "Juil.", "Août", "Sept.", "Oct.", "Nov.", "Déc."];
 /** Months drawn one by one at most (a longer credit's end is still among
  *  the milestones). */
 const MAX_MONTHS = 48;
@@ -51,7 +52,7 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
  * credit's last installment and what's left to pay after it, a credit
  * starting, a daret's turn and end), down to the 🏁.
  */
-export function TimelineSection({
+export async function TimelineSection({
   expenses,
   darets,
   payments,
@@ -64,6 +65,7 @@ export function TimelineSection({
   currency: string;
   categoryEmoji: ReadonlyMap<string, string>;
 }) {
+  const { lang, t } = await getI18n();
   const current = todayMonth();
   const currentKey = monthKey(current);
   const money = (n: number) => formatMoney(n, currency);
@@ -110,8 +112,8 @@ export function TimelineSection({
     const key = monthKey(m);
     return {
       key,
-      short: SHORT[m.month - 1],
-      label: monthLabelFr(m),
+      short: monthShortName(m.month, lang),
+      label: monthLabel(m, lang),
       year: i === 0 || m.month === 1 ? String(m.year) : undefined,
       total: totalAt(m),
       items: plans
@@ -123,11 +125,11 @@ export function TimelineSection({
           amount: p.months.get(key)!,
           note:
             key === currentKey && p.paidNow
-              ? "payé ✓"
+              ? t("payé ✓")
               : key === p.last
-                ? "dernière"
+                ? t("dernière")
                 : key === p.first && p.startsLater
-                  ? "1ère"
+                  ? t("1ère")
                   : undefined,
         }))
         .sort((a, b) => b.amount - a.amount),
@@ -138,7 +140,7 @@ export function TimelineSection({
   const milestones: Milestone[] = [];
   for (const p of plans) {
     if (p.startsLater && p.first) {
-      milestones.push({ key: p.first, order: 0, icon: p.icon, title: p.expense.name, detail: "Première mensualité", amount: money(p.months.get(p.first)!) });
+      milestones.push({ key: p.first, order: 0, icon: p.icon, title: p.expense.name, detail: t("Première mensualité"), amount: money(p.months.get(p.first)!) });
     }
     if (p.last) {
       const done = p.last === currentKey && p.paidNow && p.remaining <= 0;
@@ -147,7 +149,7 @@ export function TimelineSection({
         order: 2,
         icon: p.icon,
         title: p.expense.name,
-        detail: done ? "Remboursé ✓" : "Dernière mensualité",
+        detail: done ? t("Remboursé ✓") : t("Dernière mensualité"),
         amount: money(p.months.get(p.last)!),
         creditEnd: true,
       });
@@ -160,7 +162,7 @@ export function TimelineSection({
         order: 1,
         icon: "💰",
         title: daret.expense.name,
-        detail: daret.payoutMethod ? "Ton tour · reçue ✓" : "Ton tour · tu reçois la daret",
+        detail: daret.payoutMethod ? t("Ton tour · reçue ✓") : t("Ton tour · tu reçois la daret"),
         amount: `+${money(state.payout)}`,
         income: true,
       });
@@ -171,7 +173,7 @@ export function TimelineSection({
         order: 2,
         icon: displayIcon(daret.expense, categoryEmoji),
         title: daret.expense.name,
-        detail: "Dernière cotisation",
+        detail: t("Dernière cotisation"),
         amount: money(daret.expense.amount),
       });
     }
@@ -193,31 +195,31 @@ export function TimelineSection({
 
   return (
     <section className="flex flex-col gap-2.5">
-      <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Timeline</h2>
+      <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Timeline")}</h2>
 
       {freeAt && (
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-500 to-violet-700 px-5 pb-4 pt-5 text-white">
           <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
-          <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Libre de toutes tes dettes</p>
+          <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">{t("Libre de toutes tes dettes")}</p>
           <p className="relative mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[27px] font-extrabold leading-tight">
-            🏁 {monthLabelFr(freeAt)}
+            🏁 {monthLabel(freeAt, lang)}
             <span className="rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-semibold">
-              {monthsLeft === 0 ? "ce mois-ci" : `dans ${monthsLeft} mois`}
+              {monthsLeft === 0 ? t("ce mois-ci") : t("dans {n} mois", { n: monthsLeft })}
             </span>
           </p>
           <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-white/25">
             <div className="h-full rounded-full bg-white" style={{ width: `${percent}%` }} />
           </div>
           <p className="relative mt-1.5 text-[11.5px] text-white/80">
-            <b className="text-white">{percent}% remboursé</b> · {money(paid)} sur {money(total)}
+            <b className="text-white">{t("{percent}% remboursé", { percent })}</b> · {t("{paid} sur {due}", { paid: money(paid), due: money(total) })}
           </p>
           <div className="relative mt-3 grid grid-cols-2 gap-2">
             <div className="rounded-2xl bg-white/15 px-3 py-2">
-              <p className="text-[10px] uppercase tracking-wide text-white/75">Reste à payer</p>
+              <p className="text-[10px] uppercase tracking-wide text-white/75">{t("Reste à payer")}</p>
               <p className="text-sm font-bold tabular-nums">{money(remaining)}</p>
             </div>
             <div className="rounded-2xl bg-white/15 px-3 py-2">
-              <p className="text-[10px] uppercase tracking-wide text-white/75">Ce mois-ci</p>
+              <p className="text-[10px] uppercase tracking-wide text-white/75">{t("Ce mois-ci")}</p>
               <p className="text-sm font-bold tabular-nums">{money(totalAt(current))}</p>
             </div>
           </div>
@@ -227,8 +229,8 @@ export function TimelineSection({
       {stairs.length > 0 && (
         <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-baseline justify-between gap-2">
-            <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">Chaque mois</h3>
-            <p className="text-[11px] text-slate-400">Touche un mois pour le détail</p>
+            <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">{t("Chaque mois")}</h3>
+            <p className="text-[11px] text-slate-400">{t("Touche un mois pour le détail")}</p>
           </div>
           <CreditStairs months={stairs} currency={currency} />
         </div>
@@ -236,7 +238,7 @@ export function TimelineSection({
 
       {groups.length > 0 && (
         <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">Les étapes</h3>
+          <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">{t("Les étapes")}</h3>
           <ol className="mt-3 flex flex-col">
             {groups.map((group) => {
               const month = parseMonthKey(group.key);
@@ -252,8 +254,10 @@ export function TimelineSection({
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-violet-600 dark:text-violet-300">
-                      {monthLabelFr(month)}
-                      {group.key === currentKey && <span className="font-semibold normal-case tracking-normal text-slate-400"> · ce mois-ci</span>}
+                      {monthLabel(month, lang)}
+                      {group.key === currentKey && (
+                        <span className="font-semibold normal-case tracking-normal text-slate-400"> · {t("ce mois-ci")}</span>
+                      )}
                     </p>
                     <ul className="mt-2 flex flex-col gap-2">
                       {group.items.map((m, i) => (
@@ -278,7 +282,7 @@ export function TimelineSection({
                     </ul>
                     {after != null && Math.abs(after - totalAt(month)) > 0.5 && (
                       <p className="mt-2 text-[12px] text-slate-500 dark:text-slate-400">
-                        Ensuite <b className="text-slate-800 dark:text-slate-100">{money(after)}</b> de dettes par mois
+                        {t("Ensuite")} <b className="text-slate-800 dark:text-slate-100">{money(after)}</b> {t("de dettes par mois")}
                       </p>
                     )}
                   </div>
@@ -291,8 +295,10 @@ export function TimelineSection({
                   🏁
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[15px] font-extrabold text-violet-700 dark:text-violet-200">Libre de toutes tes dettes !</p>
-                  <p className="text-[12px] text-slate-500 dark:text-slate-400">Après {monthLabelFr(freeAt)}, plus aucune mensualité à rembourser.</p>
+                  <p className="text-[15px] font-extrabold text-violet-700 dark:text-violet-200">{t("Libre de toutes tes dettes !")}</p>
+                  <p className="text-[12px] text-slate-500 dark:text-slate-400">
+                    {t("Après {month}, plus aucune mensualité à rembourser.", { month: monthLabel(freeAt, lang) })}
+                  </p>
                 </div>
               </li>
             )}

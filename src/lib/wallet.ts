@@ -6,6 +6,7 @@ import { displayIcon } from "./category";
 import { daretPayout } from "./daret";
 import { incomeCategory } from "./income";
 import { savingsBalance } from "./savings";
+import { msg } from "./i18n";
 import type {
   Category,
   DaretWithExpense,
@@ -40,7 +41,10 @@ export interface WalletEntry {
   /** ISO timestamp. */
   at: string;
   emoji: string;
+  /** In French; the app's own wording also as `say`, to show it in the
+   *  device's language (a name typed by the user stays as typed). */
   label: string;
+  say?: { text: string; vars?: Record<string, string>; period?: string };
   /** Signed change per account (a transfer moves money out of one, into the other). */
   lines: { account: PaymentMethod; amount: number }[];
   /** Page to open it, when it has one. */
@@ -120,6 +124,7 @@ export function buildWallet(input: {
       at: r.createdAt,
       emoji: "💼",
       label: `Salaire ${periodLabel(r.period)}`,
+      say: { text: msg("Salaire {period}"), period: r.period },
       lines: [{ account: r.method, amount: r.amount }],
       href: "/salary",
     });
@@ -131,6 +136,7 @@ export function buildWallet(input: {
       at: a.createdAt,
       emoji: "🤲",
       label: `Avance sur salaire ${periodLabel(a.period)}`,
+      say: { text: msg("Avance sur salaire {period}"), period: a.period },
       lines: [{ account: a.method, amount: a.amount }],
       href: "/salary",
     });
@@ -154,6 +160,7 @@ export function buildWallet(input: {
       at: d.payoutReceivedAt,
       emoji: "🤝🏻",
       label: `Daret reçue · ${d.expense.name}`,
+      say: { text: msg("Daret reçue · {name}"), vars: { name: d.expense.name } },
       lines: [{ account: d.payoutMethod, amount: daretPayout(d) }],
       href: "/daret",
     });
@@ -182,6 +189,7 @@ export function buildWallet(input: {
         at: d.createdAt,
         emoji: g.emoji,
         label: `Versement · ${g.name}`,
+        say: { text: msg("Versement · {name}"), vars: { name: g.name } },
         lines: [{ account: d.method, amount: -d.amount }],
         href: `/goals/${g.id}`,
       });
@@ -190,14 +198,18 @@ export function buildWallet(input: {
   for (const o of input.ops) {
     if (!o.toAccount) continue;
     const transfer = o.kind === "transfer" && o.fromAccount;
+    const opLabel = transfer
+      ? o.toAccount === "card"
+        ? msg("Versement sur la carte")
+        : msg("Retrait en espèces")
+      : msg("Ajustement du solde");
     entries.push({
       id: `op-${o.id}`,
       kind: o.kind,
       at: o.createdAt,
       emoji: transfer ? "🔁" : "✏️",
-      label:
-        o.note ||
-        (transfer ? (o.toAccount === "card" ? "Versement sur la carte" : "Retrait en espèces") : "Ajustement du solde"),
+      label: o.note || opLabel,
+      say: o.note ? undefined : { text: opLabel },
       lines: transfer
         ? [
             { account: o.fromAccount!, amount: -o.amount },

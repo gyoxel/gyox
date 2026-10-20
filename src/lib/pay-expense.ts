@@ -15,22 +15,23 @@ import {
 } from "./repository";
 import { getSavingsMoveOfExpense } from "./savings-repo";
 import { getLoanOfExpense } from "./loans-repo";
-import { budgetIdOfExpense } from "./budgets-repo";
 import type { Payment, PaymentMethod } from "./types";
 
 export const AMOUNT_LOCKED = "Ce montant se change depuis là d'où vient la dépense.";
 
 /** Whether the expense comes from somewhere else (a daret, a goal, savings,
- *  a loan, a budget), whose amount it follows: it's paid as it is. */
+ *  a loan), whose amount it follows: it's paid as it is. Put aside every
+ *  month (Épargne, a goal), each month is what's really put aside, like
+ *  any expense: part of it (the rest that month only) or more. */
 export async function amountLocked(id: string): Promise<boolean> {
-  const links = await Promise.all([
+  const [daret, deposit, move, loan] = await Promise.all([
     getDaretOfExpense(id),
     getDepositOfExpense(id),
     getSavingsMoveOfExpense(id),
     getLoanOfExpense(id),
-    budgetIdOfExpense(id),
   ]);
-  return links.some(Boolean);
+  if (move?.monthly || deposit?.deposit.monthly) return false;
+  return [daret, deposit, move, loan].some(Boolean);
 }
 
 /**

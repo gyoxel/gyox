@@ -8,15 +8,17 @@ import { PageHeader } from "@/components/page-header";
 import { HeaderAdd } from "@/components/header-add";
 import { AddLink } from "@/components/add-link";
 import { GoalCard } from "@/components/goal-card";
+import { getI18n } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function GoalsPage() {
-  const [settings, goals, darets, payments] = await Promise.all([
+  const [settings, goals, darets, payments, { t }] = await Promise.all([
     getSettings(),
     getAllGoals(),
     getAllDarets(),
     getAllPayments(),
+    getI18n(),
   ]);
   const current = todayMonth();
   // The last added on top.
@@ -27,35 +29,35 @@ export default async function GoalsPage() {
 
   return (
     <>
-      <PageHeader title="Objectifs" back action={<HeaderAdd href="/goals/new" label="Ajouter un objectif" />} />
+      <PageHeader title={t("Objectifs")} back info="goals" action={<HeaderAdd href="/goals/new" label={t("Ajouter un objectif")} />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         {rows.length > 0 && (
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 px-5 py-4 text-white shadow-lg shadow-orange-500/20 dark:shadow-none">
             <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
             <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">
-              {rows.length > 1 ? "Tous mes objectifs" : "Mon objectif"}
+              {rows.length > 1 ? t("Tous mes objectifs") : t("Mon objectif")}
             </p>
             <div className="relative mt-1 flex items-baseline justify-between gap-2">
               <span className="text-3xl font-bold tabular-nums">{formatMoney(totalNow, settings.currency)}</span>
               <span className="text-2xl font-bold tabular-nums">{overall}%</span>
             </div>
-            <p className="relative text-sm text-white/85">sur {formatMoney(totalTarget, settings.currency)}</p>
+            <p className="relative text-sm text-white/85">{t("sur {amount}", { amount: formatMoney(totalTarget, settings.currency) })}</p>
             <div className="relative mt-3 h-2.5 w-full overflow-hidden rounded-full bg-white/25">
               <div className="h-full rounded-full bg-white" style={{ width: `${overall}%` }} />
             </div>
           </div>
         )}
 
-        <AddLink href="/goals/new" label="Ajouter un objectif" />
+        <AddLink href="/goals/new" label={t("Ajouter un objectif")} />
 
         {rows.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-slate-200 px-6 py-10 text-center dark:border-slate-700">
             <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm">
               <Target weight="duotone" className="h-7 w-7" />
             </span>
-            <p className="text-base font-semibold text-slate-900 dark:text-white">Aucun objectif</p>
+            <p className="text-base font-semibold text-slate-900 dark:text-white">{t("Aucun objectif")}</p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Voiture, maison, voyage… Ajoute un objectif, relie-lui tes darets et suis ta progression.
+              {t("Voiture, maison, voyage… Ajoute un objectif, relie-lui tes darets et suis ta progression.")}
             </p>
           </div>
         ) : (

@@ -7,16 +7,18 @@ import { AddLink } from "@/components/add-link";
 import { CreditCard } from "@/components/credit-card";
 import { getCreditRealState, getExpenseDisplayColor } from "@/lib/engine";
 import { todayMonth } from "@/lib/date";
+import { getI18n } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function CreditsPage() {
-  const [settings, payments, expenses, categories, darets] = await Promise.all([
+  const [settings, payments, expenses, categories, darets, { t }] = await Promise.all([
     getSettings(),
     getAllPayments(),
     getAllExpenses(),
     getAllCategories(),
     getAllDarets(),
+    getI18n(),
   ]);
   const categoryEmoji = new Map(categories.map((c) => [c.id, c.emoji]));
   // The last added on top; finished credits last.
@@ -32,19 +34,19 @@ export default async function CreditsPage() {
 
   return (
     <>
-      <PageHeader title="Dettes" action={<HeaderAdd href="/expenses/new?type=credit" label="Ajouter une dette" />} />
+      <PageHeader title={t("Dettes")} info="credits" action={<HeaderAdd href="/expenses/new?type=credit" label={t("Ajouter une dette")} />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         <TimelineSection expenses={expenses} darets={darets} payments={payments} currency={settings.currency} categoryEmoji={categoryEmoji} />
 
-        <AddLink href="/expenses/new?type=credit" label="Ajouter une dette" className="mt-1" />
+        <AddLink href="/expenses/new?type=credit" label={t("Ajouter une dette")} className="mt-1" />
 
         <h2 className="-mb-2 flex items-baseline justify-between px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">
-          <span>Dettes</span>
-          <span className="text-xs font-normal">{credits.length} en tout</span>
+          <span>{t("Dettes")}</span>
+          <span className="text-xs font-normal">{t("{n} en tout", { n: credits.length })}</span>
         </h2>
         {credits.length === 0 ? (
           <p className="rounded-3xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-400 dark:border-slate-700">
-            Aucune dette en cours.
+            {t("Aucune dette en cours.")}
           </p>
         ) : (
           credits.map((c) => (

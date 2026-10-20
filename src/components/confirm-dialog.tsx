@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useT } from "@/lib/i18n/client";
 
 /** Asks before anything destructive (delete, replace…): every delete in the
  *  app goes through a confirmation like this one. */
@@ -17,7 +18,7 @@ export function ConfirmDialog({
   onOpenChange,
   title,
   description,
-  confirmLabel = "Supprimer",
+  confirmLabel,
   pending = false,
   onConfirm,
 }: {
@@ -29,6 +30,7 @@ export function ConfirmDialog({
   pending?: boolean;
   onConfirm: () => void;
 }) {
+  const t = useT();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -38,10 +40,10 @@ export function ConfirmDialog({
         </DialogHeader>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
-            Annuler
+            {t("Annuler")}
           </Button>
           <Button type="button" variant="destructive" onClick={onConfirm} disabled={pending}>
-            {pending ? "En cours…" : confirmLabel}
+            {pending ? t("En cours…") : (confirmLabel ?? t("Supprimer"))}
           </Button>
         </DialogFooter>
       </DialogContent>

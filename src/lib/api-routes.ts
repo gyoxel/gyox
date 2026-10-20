@@ -1,12 +1,9 @@
 // The app's mutating API routes, callable in-process by the callApi Server
 // Function (src/app/api-actions.ts) — see there for why.
 import type { NextRequest } from "next/server";
-import * as budgets from "@/app/api/budgets/route";
-import * as budgetsById from "@/app/api/budgets/[id]/route";
-import * as budgetsByIdEntries from "@/app/api/budgets/[id]/entries/route";
-import * as budgetsByIdEntriesByEntryId from "@/app/api/budgets/[id]/entries/[entryId]/route";
 import * as categories from "@/app/api/categories/route";
 import * as categoriesById from "@/app/api/categories/[id]/route";
+import * as categoriesByIdBudget from "@/app/api/categories/[id]/budget/route";
 import * as categoriesOrder from "@/app/api/categories/order/route";
 import * as categoriesReset from "@/app/api/categories/reset/route";
 import * as darets from "@/app/api/darets/route";
@@ -22,6 +19,7 @@ import * as goals from "@/app/api/goals/route";
 import * as goalsById from "@/app/api/goals/[id]/route";
 import * as goalsByIdDeposits from "@/app/api/goals/[id]/deposits/route";
 import * as goalsByIdDepositsByDepositId from "@/app/api/goals/[id]/deposits/[depositId]/route";
+import * as goalsByIdDepositsByDepositIdStop from "@/app/api/goals/[id]/deposits/[depositId]/stop/route";
 import * as incomeCategories from "@/app/api/income-categories/route";
 import * as incomeCategoriesById from "@/app/api/income-categories/[id]/route";
 import * as incomeCategoriesOrder from "@/app/api/income-categories/order/route";
@@ -36,6 +34,7 @@ import * as salaryAdvances from "@/app/api/salary-advances/route";
 import * as salaryAdvancesById from "@/app/api/salary-advances/[id]/route";
 import * as savings from "@/app/api/savings/route";
 import * as savingsById from "@/app/api/savings/[id]/route";
+import * as savingsByIdStop from "@/app/api/savings/[id]/stop/route";
 import * as settings from "@/app/api/settings/route";
 import * as wallet from "@/app/api/wallet/route";
 import * as walletById from "@/app/api/wallet/[id]/route";
@@ -44,12 +43,9 @@ type Handler = (req: NextRequest, ctx: { params: Promise<Record<string, string>>
 type RouteModule = Partial<Record<"POST" | "PATCH" | "PUT" | "DELETE", unknown>>;
 
 const ROUTES: [string, RouteModule][] = [
-  ["budgets", budgets],
-  ["budgets/[id]", budgetsById],
-  ["budgets/[id]/entries", budgetsByIdEntries],
-  ["budgets/[id]/entries/[entryId]", budgetsByIdEntriesByEntryId],
   ["categories", categories],
   ["categories/[id]", categoriesById],
+  ["categories/[id]/budget", categoriesByIdBudget],
   ["categories/order", categoriesOrder],
   ["categories/reset", categoriesReset],
   ["darets", darets],
@@ -65,6 +61,7 @@ const ROUTES: [string, RouteModule][] = [
   ["goals/[id]", goalsById],
   ["goals/[id]/deposits", goalsByIdDeposits],
   ["goals/[id]/deposits/[depositId]", goalsByIdDepositsByDepositId],
+  ["goals/[id]/deposits/[depositId]/stop", goalsByIdDepositsByDepositIdStop],
   ["income-categories", incomeCategories],
   ["income-categories/[id]", incomeCategoriesById],
   ["income-categories/order", incomeCategoriesOrder],
@@ -79,6 +76,7 @@ const ROUTES: [string, RouteModule][] = [
   ["salary-advances/[id]", salaryAdvancesById],
   ["savings", savings],
   ["savings/[id]", savingsById],
+  ["savings/[id]/stop", savingsByIdStop],
   ["settings", settings],
   ["wallet", wallet],
   ["wallet/[id]", walletById],

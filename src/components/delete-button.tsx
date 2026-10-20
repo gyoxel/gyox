@@ -7,6 +7,8 @@ import { pagesGone, useNavBack } from "@/lib/nav-history";
 import { mutate } from "@/lib/use-refresh-data";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
+import { localizeMessage } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 /** Round red bin, in the page header. */
 export const DELETE_ICON_BUTTON =
@@ -41,13 +43,14 @@ export function DeleteButton({
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const nav = useNavBack();
+  const t = useT();
 
   function remove() {
     startTransition(async () => {
       const res = await mutate({ method: "DELETE", path: endpoint });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: unknown } | null;
-        toast.error(typeof body?.error === "string" ? body.error : "Suppression impossible.");
+        toast.error(typeof body?.error === "string" ? localizeMessage(body.error, t) : t("Suppression impossible."));
         return;
       }
       const gone = await pagesGone(res);

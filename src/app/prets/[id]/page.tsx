@@ -5,7 +5,10 @@ import { Check, Clock, PencilSimple } from "@phosphor-icons/react/ssr";
 
 import { loanState, type LoanSlot } from "@/lib/loans";
 import { loanDelete } from "@/lib/delete-specs";
-import { compareMonths, monthLabelFr, todayMonth } from "@/lib/date";
+import { compareMonths, todayMonth } from "@/lib/date";
+import type { T } from "@/lib/i18n";
+import { monthLabel } from "@/lib/i18n/dates";
+import { getI18n } from "@/lib/i18n/server";
 import { cn, formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { DeleteButton } from "@/components/delete-button";
@@ -18,7 +21,8 @@ export const dynamic = "force-dynamic";
 
 /** One loan: what came back, every installment (received, due, to come). */
 export default async function LoanPage({ params }: { params: Promise<{ id: string }> }) {
-  const [settings, loan] = await Promise.all([getSettings(), getLoan((await params).id)]);
+  const [settings, loan, { lang, t }] = await Promise.all([getSettings(), getLoan((await params).id), getI18n()]);
+  const monthLabelFr = (m: Parameters<typeof monthLabel>[0]) => monthLabel(m, lang);
   if (!loan) notFound();
   const money = (n: number) => formatMoney(n, settings.currency);
   const current = todayMonth();
@@ -27,39 +31,39 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
 
   return (
     <>
-      <PageHeader title={loan.name} back action={<DeleteButton variant="icon" {...loanDelete(loan)} />} />
+      <PageHeader title={loan.name} back info="pret" action={<DeleteButton variant="icon" {...loanDelete(loan, t)} />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-amber-700 px-5 pb-4 pt-5 text-white shadow-lg shadow-orange-600/20 dark:shadow-none">
           <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
           <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">
-            {state.done ? "Tout est rendu ✓" : "Reste à te rendre"}
+            {state.done ? t("Tout est rendu ✓") : t("Reste à te rendre")}
           </p>
           <p className="relative mt-1 text-4xl font-bold tabular-nums">{money(state.remaining)}</p>
           <p className="relative text-sm text-white/85">
-            sur {money(state.toRepay)}
-            {loan.priorRepaid ? ` (${money(loan.priorRepaid)} déjà rendus avant)` : ""}
+            {t("sur {amount}", { amount: money(state.toRepay) })}
+            {loan.priorRepaid ? ` ${t("({amount} déjà rendus avant)", { amount: money(loan.priorRepaid) })}` : ""}
           </p>
           <div className="relative mt-3 h-2.5 overflow-hidden rounded-full bg-white/25">
             <div className="h-full rounded-full bg-white" style={{ width: `${percent}%` }} />
           </div>
           <div className="relative mt-3 grid grid-cols-3 gap-2 text-center">
             <div className="rounded-2xl bg-white/15 px-2 py-2">
-              <p className="text-[10px] uppercase tracking-wide text-white/75">Prêté</p>
+              <p className="text-[10px] uppercase tracking-wide text-white/75">{t("Prêté")}</p>
               <p className="text-sm font-bold tabular-nums">{money(loan.amount)}</p>
             </div>
             <div className="rounded-2xl bg-white/15 px-2 py-2">
-              <p className="text-[10px] uppercase tracking-wide text-white/75">Reçu</p>
+              <p className="text-[10px] uppercase tracking-wide text-white/75">{t("Reçu")}</p>
               <p className="text-sm font-bold tabular-nums">{money(state.received)}</p>
             </div>
             <div className="rounded-2xl bg-white/15 px-2 py-2">
-              <p className="text-[10px] uppercase tracking-wide text-white/75">Sorti de</p>
+              <p className="text-[10px] uppercase tracking-wide text-white/75">{t("Sorti de")}</p>
               <p className="text-sm font-bold">{loan.method ? <MethodLabel method={loan.method} /> : "—"}</p>
             </div>
           </div>
         </div>
 
         <section className="flex flex-col gap-2">
-          <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Remboursements</h2>
+          <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Remboursements")}</h2>
           <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
             {state.slots.map((s) => {
               const isDue = s.open && compareMonths(s.month, current) <= 0;
@@ -89,7 +93,7 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
                           s.open ? "text-slate-900 dark:text-white" : s.received > 0 ? "text-emerald-600" : "text-slate-400",
                         )}
                       >
-                        {s.open ? (s.received > 0 ? `reste ${money(s.left)}` : money(s.amount)) : `+${money(s.received)}`}
+                        {s.open ? (s.received > 0 ? t("reste {amount}", { amount: money(s.left) }) : money(s.amount)) : `+${money(s.received)}`}
                       </span>
                     </span>
                     {s.received > 0 && (
@@ -101,7 +105,7 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
                           />
                         </span>
                         <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">
-                          {money(s.received)} reçus sur {money(s.amount)}
+                          {t("{received} reçus sur {amount}", { received: money(s.received), amount: money(s.amount) })}
                         </span>
                       </span>
                     )}
@@ -121,8 +125,8 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
                         ))}
                       </span>
                     )}
-                    {slotNote(s, money) && (
-                      <span className="mt-0.5 block text-[11px] font-medium text-amber-700 dark:text-amber-400">{slotNote(s, money)}</span>
+                    {slotNote(s, money, t) && (
+                      <span className="mt-0.5 block text-[11px] font-medium text-amber-700 dark:text-amber-400">{slotNote(s, money, t)}</span>
                     )}
                     {isDue ? (
                       <span className="mt-2 block">
@@ -136,7 +140,7 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
                         />
                       </span>
                     ) : (
-                      s.open && s.received === 0 && <span className="block text-[11px] text-slate-400">À venir</span>
+                      s.open && s.received === 0 && <span className="block text-[11px] text-slate-400">{t("À venir")}</span>
                     )}
                   </span>
                 </li>
@@ -149,32 +153,32 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
         <Button asChild className="gx-cta">
           <Link href={`/prets/${loan.id}/edit`}>
             <PencilSimple weight="bold" className="h-4 w-4" />
-            Modifier
+            {t("Modifier")}
           </Link>
         </Button>
 
-        <DeleteButton variant="full" {...loanDelete(loan)} />
+        <DeleteButton variant="full" {...loanDelete(loan, t)} />
       </main>
     </>
   );
 }
 
 /** Where a month stands, and what moved between months. */
-function slotNote(s: LoanSlot, money: (n: number) => string): string | null {
-  if (s.open && s.received > 0) return `Reste ${money(s.left)} à recevoir ce mois-ci`;
+function slotNote(s: LoanSlot, money: (n: number) => string, t: T): string | null {
+  if (s.open && s.received > 0) return t("Reste {amount} à recevoir ce mois-ci", { amount: money(s.left) });
   if (!s.open) {
     const diff = Math.round((s.amount - s.received) * 100) / 100;
     if (diff > 0.005) {
       return s.received > 0
-        ? `Reçu ${money(s.received)} sur ${money(s.amount)} · ${money(diff)} passés au mois suivant`
-        : `Pas reçu · ${money(diff)} passés au mois suivant`;
+        ? t("Reçu {received} sur {amount} · {diff} passés au mois suivant", { received: money(s.received), amount: money(s.amount), diff: money(diff) })
+        : t("Pas reçu · {diff} passés au mois suivant", { diff: money(diff) });
     }
-    if (diff < -0.005) return `${money(-diff)} en avance sur les mois suivants`;
+    if (diff < -0.005) return t("{amount} en avance sur les mois suivants", { amount: money(-diff) });
     return null;
   }
-  if (s.planned === 0) return "Ce qui reste des mois précédents";
+  if (s.planned === 0) return t("Ce qui reste des mois précédents");
   const diff = Math.round((s.amount - s.planned) * 100) / 100;
-  if (diff > 0) return `Dont ${money(diff)} du mois précédent`;
-  if (diff < 0) return `${money(-diff)} déjà rendus en avance`;
+  if (diff > 0) return t("Dont {amount} du mois précédent", { amount: money(diff) });
+  if (diff < 0) return t("{amount} déjà rendus en avance", { amount: money(-diff) });
   return null;
 }

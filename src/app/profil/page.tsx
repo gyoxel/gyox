@@ -2,22 +2,26 @@ import { CalendarDots, CaretRight, Envelope, ShieldCheck, Users } from "@phospho
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { SignOutButton } from "@/components/sign-out-button";
+import { DeleteAccountButton } from "@/components/delete-account-button";
 import { currentAccount } from "@/lib/accounts";
 import { isAdmin } from "@/lib/admin";
+import type { Lang } from "@/lib/i18n";
+import { formatDate } from "@/lib/i18n/dates";
+import { getI18n } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Profil · GX Salaire" };
 
-const memberSince = (iso: string) =>
-  new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric", timeZone: "Africa/Casablanca" }).format(new Date(iso));
+const memberSince = (iso: string, lang: Lang) =>
+  formatDate(new Date(iso), lang, { month: "long", year: "numeric", timeZone: "Africa/Casablanca" });
 
 /** The signed-in account (from Google) and Déconnexion. */
 export default async function ProfilPage() {
-  const account = await currentAccount();
+  const [account, { lang, t }] = await Promise.all([currentAccount(), getI18n()]);
   const name = account?.name || account?.email.split("@")[0] || "";
   return (
     <>
-      <PageHeader title="Profil" back hideSettings />
+      <PageHeader title={t("Profil")} back hideSettings />
       <main className="flex flex-col gap-5 px-4 py-5">
         {account ? (
           <>
@@ -44,9 +48,9 @@ export default async function ProfilPage() {
             </div>
 
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <Row icon={Envelope} label="Connecté avec Google" value={account.email} />
-              <Row icon={CalendarDots} label="Membre depuis" value={memberSince(account.createdAt)} />
-              <Row icon={ShieldCheck} label="Sécurité" value="Tes informations sont protégées" />
+              <Row icon={Envelope} label={t("Connecté avec Google")} value={account.email} />
+              <Row icon={CalendarDots} label={t("Membre depuis")} value={memberSince(account.createdAt, lang)} />
+              <Row icon={ShieldCheck} label={t("Sécurité")} value={t("Tes informations sont protégées")} />
             </div>
 
             {isAdmin(account.email) && (
@@ -59,28 +63,29 @@ export default async function ProfilPage() {
                   <Users weight="bold" className="h-[18px] w-[18px]" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[15px] font-semibold text-slate-900 dark:text-white">Admin</span>
-                  <span className="block truncate text-xs text-slate-500 dark:text-slate-400">Les comptes inscrits</span>
+                  <span className="block text-[15px] font-semibold text-slate-900 dark:text-white">{t("Admin")}</span>
+                  <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{t("Les comptes inscrits")}</span>
                 </span>
                 <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300" />
               </Link>
             )}
 
             <SignOutButton />
+            <DeleteAccountButton />
           </>
         ) : (
           <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <p className="text-sm text-slate-600 dark:text-slate-300">Ta session a expiré : reconnecte-toi avec Google.</p>
+            <p className="text-sm text-slate-600 dark:text-slate-300">{t("Ta session a expiré : reconnecte-toi avec Google.")}</p>
             <SignOutButton />
           </div>
         )}
         <p className="text-center text-xs text-slate-400">
           <Link href="/confidentialite" className="underline underline-offset-2">
-            Confidentialité
+            {t("Confidentialité")}
           </Link>
           {" · "}
           <Link href="/conditions" className="underline underline-offset-2">
-            Conditions
+            {t("Conditions")}
           </Link>
         </p>
       </main>

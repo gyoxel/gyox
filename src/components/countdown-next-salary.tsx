@@ -16,6 +16,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { SalaryForm } from "@/components/salary-form";
 import { MethodIcon } from "@/components/method-icon";
 import { useRevealedBalance } from "@/lib/reveal-balance";
+import type { Lang } from "@/lib/i18n";
+import { formatDate, monthName } from "@/lib/i18n/dates";
+import { currentT, useI18n, useT } from "@/lib/i18n/client";
 
 /**
  * Countdown to the next salary, with a check that it actually arrived:
@@ -37,10 +40,9 @@ interface CountdownState {
   period: string;
   /** "YYYY-MM" of the pay day counted down to (can be marked paid early). */
   nextPeriod: string;
-  /** The last and next pay days, e.g. "jeu. 1 octobre" (short: it fits
-   *  Accueil's half-width tile). */
-  lastLabel: string;
-  nextLabel: string;
+  /** The last and next pay days (ms), shown e.g. "jeu. 1 octobre". */
+  lastAt: number;
+  nextAt: number;
   days: number;
   hours: number;
   minutes: number;
@@ -95,7 +97,8 @@ function writeLate(period: string | null) {
   window.dispatchEvent(new Event(LATE_EVENT));
 }
 
-const DAY = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "long" });
+/** A pay day, short enough for Accueil's half-width tile: "jeu. 1 octobre". */
+const DAY: Intl.DateTimeFormatOptions = { weekday: "short", day: "numeric", month: "long" };
 
 function compute(payDay: number, receivedMonth: string | null): CountdownState {
   const now = new Date();
@@ -118,8 +121,8 @@ function compute(payDay: number, receivedMonth: string | null): CountdownState {
     phase,
     period,
     nextPeriod: periodKey(next),
-    lastLabel: DAY.format(last),
-    nextLabel: DAY.format(next),
+    lastAt: last.getTime(),
+    nextAt: next.getTime(),
     days: Math.floor(diff / 86_400_000),
     hours: Math.floor((diff / 3_600_000) % 24),
     minutes: Math.floor((diff / 60_000) % 60),
@@ -135,8 +138,8 @@ const sameState = (a: CountdownState, b: CountdownState) =>
   a.phase === b.phase &&
   a.period === b.period &&
   a.nextPeriod === b.nextPeriod &&
-  a.lastLabel === b.lastLabel &&
-  a.nextLabel === b.nextLabel &&
+  a.lastAt === b.lastAt &&
+  a.nextAt === b.nextAt &&
   a.days === b.days &&
   a.hours === b.hours &&
   a.minutes === b.minutes &&
@@ -158,8 +161,8 @@ const SERVER_SNAPSHOT: CountdownState = {
   phase: "counting",
   period: "",
   nextPeriod: "",
-  lastLabel: "",
-  nextLabel: "",
+  lastAt: 0,
+  nextAt: 0,
   days: 0,
   hours: 0,
   minutes: 0,
@@ -168,13 +171,15 @@ const SERVER_SNAPSHOT: CountdownState = {
 };
 const getServerSnapshot = () => SERVER_SNAPSHOT;
 
-const MONTH = new Intl.DateTimeFormat("fr-FR", { month: "long" });
-
-/** "d'octobre", "de novembre". */
-function ofMonth(period: string): string {
-  const [y, m] = period.split("-").map(Number);
-  const name = MONTH.format(new Date(y, m - 1, 1));
-  return /^[aeiouéèh]/i.test(name) ? `d'${name}` : `de ${name}`;
+/** The salary's month as the sentences around it take it: "d'octobre",
+ *  "de novembre" / "October" / "dyal octobre". */
+function ofMonth(period: string, lang: Lang): string {
+  const m = Number(period.split("-")[1]);
+  const name = monthName(m, lang);
+  if (lang === "en") return name;
+  const lower = name.toLowerCase();
+  if (lang === "dar") return `dyal ${lower}`;
+  return /^[aeiouéèh]/i.test(lower) ? `d'${lower}` : `de ${lower}`;
 }
 
 const RING = 58;
@@ -182,6 +187,7 @@ const RING_STROKE = 5.5;
 
 /** The pay period as a ring filling up, the days left inside. */
 function SalaryRing({ progress, days, late }: { progress: number; days: number; late: boolean }) {
+  const t = useT();
   const r = (RING - RING_STROKE) / 2;
   const c = 2 * Math.PI * r;
   return (
@@ -210,14 +216,14 @@ function SalaryRing({ progress, days, late }: { progress: number; days: number; 
       <span className="absolute inset-0 flex flex-col items-center justify-center">
         {days === 0 && !late ? (
           // Under a day before the pay day (it starts at midnight).
-          <span className="text-[12px] font-extrabold leading-none">Demain</span>
+          <span className="text-[12px] font-extrabold leading-none">{t("Demain")}</span>
         ) : (
           <>
             <span className={cn("text-[21px] font-extrabold leading-none tabular-nums", late && "text-rose-300")}>
               {late && "−"}
               {days}
             </span>
-            <span className="mt-0.5 text-[7.5px] font-semibold uppercase tracking-wider text-white/60">{days > 1 ? "jours" : "jour"}</span>
+            <span className="mt-0.5 text-[7.5px] font-semibold uppercase tracking-wider text-white/60">{days > 1 ? t("jours") : t("jour")}</span>
           </>
         )}
       </span>
@@ -235,7 +241,7 @@ function todayStr(): string {
 async function markReceived(period: string): Promise<boolean> {
   const res = await mutate({ method: "PATCH", path: "/api/settings", body: { salaryReceivedMonth: period } });
   if (!res.ok) {
-    toast.error("Impossible d'enregistrer.");
+    toast.error(currentT()("Impossible d'enregistrer."));
     return false;
   }
   writeLate(null);
@@ -248,6 +254,7 @@ function useSalaryState(settings: Settings) {
 }
 
 export function CountdownNextSalary({ settings, advances }: { settings: Settings; advances: SalaryAdvance[] }) {
+  const { lang, t } = useI18n();
   const [editing, setEditing] = useState(false);
   const [saving, startSaving] = useTransition();
   const state = useSalaryState(settings);
@@ -256,7 +263,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
   function confirmReceived() {
     startSaving(async () => {
       if (!(await markReceived(state.period))) return;
-      toast.success("Salaire reçu ✅ Le compte à rebours repart pour le mois prochain.");
+      toast.success(t("Salaire reçu ✅ Le compte à rebours repart pour le mois prochain."));
     });
   }
 
@@ -267,8 +274,12 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
     0,
     settings.salary - advances.filter((a) => a.period === toReceivePeriod).reduce((sum, a) => sum + a.amount, 0),
   );
-  const capitalize = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
-  const caption = state.period ? (late ? `prévu le ${state.lastLabel}` : capitalize(state.nextLabel)) : "";
+  const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+  const caption = state.period
+    ? late
+      ? t("prévu le {date}", { date: formatDate(new Date(state.lastAt), lang, DAY) })
+      : capitalize(formatDate(new Date(state.nextAt), lang, DAY))
+    : "";
 
   // A question (or a first step) takes the whole row on Accueil; the
   // countdown itself is a tile beside the shortcuts.
@@ -293,10 +304,9 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
           {glow}
           <p className="relative text-3xl">👋</p>
           <div className="relative">
-            <p className="text-base font-semibold">Commence par ton salaire</p>
+            <p className="text-base font-semibold">{t("Commence par ton salaire")}</p>
             <p className="mt-1 text-sm text-white/70">
-              Son montant, le jour où tu le reçois et où il arrive (espèces ou carte) : le compte à rebours et tes calculs
-              partent de là.
+              {t("Son montant, le jour où tu le reçois et où il arrive (espèces ou carte) : le compte à rebours et tes calculs partent de là.")}
             </p>
           </div>
           <Button
@@ -305,13 +315,13 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
             onClick={() => setEditing(true)}
           >
             <Money weight="bold" className="h-4 w-4" />
-            Ajouter mon salaire
+            {t("Ajouter mon salaire")}
           </Button>
         </div>
         <Dialog open={editing} onOpenChange={setEditing}>
           <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="max-h-[88dvh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Ton salaire</DialogTitle>
+              <DialogTitle>{t("Ton salaire")}</DialogTitle>
             </DialogHeader>
             <SalaryForm settings={settings} plain onSaved={() => setEditing(false)} />
           </DialogContent>
@@ -326,7 +336,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
         <div className={cn(shell, "col-span-2 flex flex-col items-center gap-3 p-4 text-center")}>
           {glow}
           <p className="relative text-3xl">💰</p>
-          <p className="relative text-base font-semibold">As-tu reçu ton salaire {ofMonth(state.period)} ?</p>
+          <p className="relative text-base font-semibold">{t("As-tu reçu ton salaire {of} ?", { of: ofMonth(state.period, lang) })}</p>
           <div className="relative grid w-full grid-cols-2 gap-2">
             <Button
               type="button"
@@ -336,7 +346,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
               disabled={saving}
             >
               <X weight="bold" className="h-4 w-4" />
-              Non, pas encore
+              {t("Non, pas encore")}
             </Button>
             <Button
               type="button"
@@ -345,7 +355,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
               disabled={saving}
             >
               <Check weight="bold" className="h-4 w-4" />
-              Oui
+              {t("Oui")}
             </Button>
           </div>
         </div>
@@ -353,7 +363,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
         <button
           type="button"
           onClick={() => setEditing(true)}
-          aria-label={late ? "Confirmer le salaire" : "Modifier le salaire"}
+          aria-label={late ? t("Confirmer le salaire") : t("Modifier le salaire")}
           className={cn(shell, "flex h-full flex-col rounded-[22px] p-3 text-left transition-transform active:scale-[0.98]")}
         >
           {glow}
@@ -365,7 +375,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
                 late ? "text-rose-300" : "text-indigo-200/80",
               )}
             >
-              {late ? "Salaire en retard" : "Prochain salaire"}
+              {late ? t("Salaire en retard") : t("Prochain salaire")}
             </span>
             <CaretRight weight="bold" className="h-3.5 w-3.5 shrink-0 text-white/40" />
           </span>
@@ -375,7 +385,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
             {/* What arrives, and where: the salary less the advances already
                 taken on it (hidden like Disponible's amounts). */}
             <span className="flex min-w-0 flex-1 flex-col">
-              <span className="text-[9.5px] font-medium text-white/60">{late ? "attendu" : "tu reçois"}</span>
+              <span className="text-[9.5px] font-medium text-white/60">{late ? t("attendu") : t("tu reçois")}</span>
               <span
                 data-private
                 className={cn("truncate text-[15px] font-extrabold leading-tight tabular-nums", !revealed && "tracking-wider")}
@@ -384,7 +394,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
               </span>
               <span className="mt-1.5 inline-flex w-fit items-center gap-1 rounded-full bg-white/15 px-2 py-[3px] text-[10px] font-semibold">
                 <MethodIcon method={settings.salaryMethod} className="h-[9px]" />
-                {METHOD_META[settings.salaryMethod].label}
+                {t(METHOD_META[settings.salaryMethod].label)}
               </span>
             </span>
           </span>
@@ -397,7 +407,7 @@ export function CountdownNextSalary({ settings, advances }: { settings: Settings
         {/* No autofocus: the keyboard opens only when a field is tapped. */}
         <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="max-h-[88dvh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Salaire</DialogTitle>
+            <DialogTitle>{t("Salaire")}</DialogTitle>
           </DialogHeader>
           <SalaryPanel settings={settings} advances={advances} onDone={() => setEditing(false)} />
         </DialogContent>
@@ -422,6 +432,7 @@ export function SalaryPanel({
   onDone?: () => void;
 }) {
   const { payDay, salaryReceivedMonth } = settings;
+  const { lang, t } = useI18n();
   const [advanceInput, setAdvanceInput] = useState("");
   const [advanceOpen, setAdvanceOpen] = useState(false);
   const [advanceMethod, setAdvanceMethod] = useState<PaymentMethod>(settings.salaryMethod);
@@ -438,7 +449,7 @@ export function SalaryPanel({
       if (!(await markReceived(period))) return;
       onDone?.();
       toast.success(
-        early ? "Salaire reçu en avance ✅" : "Salaire reçu ✅ Le compte à rebours repart pour le mois prochain.",
+        early ? t("Salaire reçu en avance ✅") : t("Salaire reçu ✅ Le compte à rebours repart pour le mois prochain."),
       );
     });
   }
@@ -456,7 +467,7 @@ export function SalaryPanel({
       }
       writeLate(null);
       onDone?.();
-      toast.success(`Annulé : salaire ${ofMonth(salaryReceivedMonth)} pas encore reçu.`);
+      toast.success(t("Annulé : salaire {of} pas encore reçu.", { of: ofMonth(salaryReceivedMonth, lang) }));
     });
   }
 
@@ -476,12 +487,12 @@ export function SalaryPanel({
         body: { amount, date: todayStr(), period: advancePeriod, method: advanceMethod },
       });
       if (!res.ok) {
-        toast.error("Avance non enregistrée.");
+        toast.error(t("Avance non enregistrée."));
         return;
       }
       setAdvanceInput("");
       setAdvanceOpen(false);
-      toast.success(`Avance de ${money(amount)} ajoutée au solde.`);
+      toast.success(t("Avance de {amount} ajoutée au solde.", { amount: money(amount) }));
     });
   }
 
@@ -493,7 +504,7 @@ export function SalaryPanel({
         return;
       }
       setToDelete(null);
-      toast.success("Avance supprimée.");
+      toast.success(t("Avance supprimée."));
     });
   }
 
@@ -504,15 +515,19 @@ export function SalaryPanel({
           enabled={canPayEarly}
           pending={saving}
           onClick={() => confirmReceived(state.nextPeriod, true)}
-          label={canPayEarly ? `J'ai reçu mon salaire ${ofMonth(state.nextPeriod)} en avance` : "J'ai reçu mon salaire en avance"}
-          note="Possible pendant les 7 jours avant le jour du salaire."
+          label={
+            canPayEarly
+              ? t("J'ai reçu mon salaire {of} en avance", { of: ofMonth(state.nextPeriod, lang) })
+              : t("J'ai reçu mon salaire en avance")
+          }
+          note={t("Possible pendant les 7 jours avant le jour du salaire.")}
         />
         <ActionButton
           enabled={late}
           pending={saving}
           onClick={() => confirmReceived(state.period)}
-          label={late ? `Oui, j'ai reçu mon salaire ${ofMonth(state.period)}` : "Oui, j'ai reçu mon salaire"}
-          note="Possible une fois le jour du salaire passé, si tu as répondu « Non » à « As-tu reçu ton salaire ? »."
+          label={late ? t("Oui, j'ai reçu mon salaire {of}", { of: ofMonth(state.period, lang) }) : t("Oui, j'ai reçu mon salaire")}
+          note={t("Possible une fois le jour du salaire passé, si tu as répondu « Non » à « As-tu reçu ton salaire ? ».")}
         />
         {state.phase === "counting" && salaryReceivedMonth && salaryReceivedMonth >= state.period && (
           <button
@@ -521,7 +536,7 @@ export function SalaryPanel({
             disabled={saving}
             className="self-center text-xs font-medium text-slate-500 underline underline-offset-2 dark:text-slate-400"
           >
-            Annuler « salaire {ofMonth(salaryReceivedMonth)} reçu »
+            {t("Annuler « salaire {of} reçu »", { of: ofMonth(salaryReceivedMonth, lang) })}
           </button>
         )}
 
@@ -534,8 +549,8 @@ export function SalaryPanel({
                   type="text"
                   inputMode="decimal"
                   autoComplete="off"
-                  placeholder="Montant (DH)"
-                  aria-label="Montant de l'avance"
+                  placeholder={t("Montant (DH)")}
+                  aria-label={t("Montant de l'avance")}
                   value={advanceInput}
                   onChange={(e) => setAdvanceInput(cleanDecimalInput(e.target.value))}
                 />
@@ -546,10 +561,10 @@ export function SalaryPanel({
                   disabled={saving || !(parseDecimalInput(advanceInput) > 0)}
                 >
                   <Check weight="bold" className="h-4 w-4" />
-                  Ajouter
+                  {t("Ajouter")}
                 </Button>
               </div>
-              <PaymentMethodPicker value={advanceMethod} onChange={setAdvanceMethod} label="Reçue en" />
+              <PaymentMethodPicker value={advanceMethod} onChange={setAdvanceMethod} label={t("Reçue en")} />
             </>
           ) : (
             <Button
@@ -559,12 +574,11 @@ export function SalaryPanel({
               disabled={!advancePeriod}
             >
               <HandCoins weight="bold" className="h-4 w-4" />
-              Avance sur salaire
+              {t("Avance sur salaire")}
             </Button>
           )}
           <p className="text-[11px] leading-snug text-amber-800/80 dark:text-amber-200/70">
-            * Ajoutée au solde maintenant, puis déduite de ton salaire{" "}
-            {advancePeriod ? ofMonth(advancePeriod) : ""}.
+            * {t("Ajoutée au solde maintenant, puis déduite de ton salaire {of}.", { of: advancePeriod ? ofMonth(advancePeriod, lang) : "" })}
           </p>
           {periodAdvances.length > 0 && (
             <ul className="flex flex-col gap-1 border-t border-amber-200/70 pt-2 text-sm dark:border-amber-900/60">
@@ -573,13 +587,13 @@ export function SalaryPanel({
                   <span className="flex-1 text-slate-700 dark:text-slate-200">
                     {money(a.amount)}
                     <span className="ml-1.5 text-[11px] text-slate-400">
-                      le {a.date.slice(8, 10)}/{a.date.slice(5, 7)} · <MethodIcon method={a.method} />
+                      {t("le {date}", { date: `${a.date.slice(8, 10)}/${a.date.slice(5, 7)}` })} · <MethodIcon method={a.method} />
                     </span>
                   </span>
                   <button
                     type="button"
                     onClick={() => setToDelete(a)}
-                    aria-label="Supprimer l'avance"
+                    aria-label={t("Supprimer l'avance")}
                     className="rounded-lg p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40"
                   >
                     <Trash weight="bold" className="h-4 w-4" />
@@ -587,7 +601,7 @@ export function SalaryPanel({
                 </li>
               ))}
               <li className="text-[11px] text-slate-500 dark:text-slate-400">
-                Salaire {ofMonth(advancePeriod)} restant :{" "}
+                {t("Salaire {of} restant :", { of: ofMonth(advancePeriod, lang) })}{" "}
                 <b className="text-slate-700 dark:text-slate-200">{money(Math.max(0, settings.salary - advancedTotal))}</b>
               </li>
             </ul>
@@ -595,14 +609,14 @@ export function SalaryPanel({
         </div>
       </div>
       <h3 className="mb-3 border-t border-slate-100 pt-4 text-sm font-semibold text-slate-700 dark:border-slate-800 dark:text-slate-200">
-        Réglages du salaire
+        {t("Réglages du salaire")}
       </h3>
       <SalaryForm key={`${settings.salary}-${payDay}`} settings={settings} plain onSaved={onDone} />
       <ConfirmDialog
         open={toDelete != null}
         onOpenChange={(open) => !open && setToDelete(null)}
-        title="Supprimer cette avance ?"
-        description={toDelete ? <>L&apos;avance de {money(toDelete.amount)} sera supprimée.</> : null}
+        title={t("Supprimer cette avance ?")}
+        description={toDelete ? t("L'avance de {amount} sera supprimée.", { amount: money(toDelete.amount) }) : null}
         pending={saving}
         onConfirm={() => toDelete && deleteAdvance(toDelete)}
       />

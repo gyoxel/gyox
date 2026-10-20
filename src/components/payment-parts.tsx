@@ -10,34 +10,41 @@ import { formatMoney } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
 import { AmountSheet } from "@/components/amount-sheet";
 import { MethodLabel } from "@/components/method-icon";
+import { localName, type T } from "@/lib/i18n";
+import { formatDate } from "@/lib/i18n/dates";
+import { useI18n } from "@/lib/i18n/client";
 
 const round = (n: number) => Math.round(n * 100) / 100;
-const WHEN = new Intl.DateTimeFormat("fr-FR", { timeZone: "Africa/Casablanca", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const WHEN: Intl.DateTimeFormatOptions = { timeZone: "Africa/Casablanca", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" };
 
 /** What paying `value` of a month does, `left` being still to pay of it. */
-export function explainPayment(expense: Expense, left: number, value: number, money: (n: number) => string): string {
+export function explainPayment(expense: Expense, left: number, value: number, money: (n: number) => string, t: T): string {
   const credit = expense.type === "credit";
   const after = round(left - value);
   if (after > 0.005) {
-    return `Il restera ${money(after)} à payer ce mois-ci (« ${expense.name} · reste »). Pas payés d'ici la fin du mois, ${
-      credit ? "ils s'ajoutent à la dernière mensualité de la dette." : "ils ne passent pas au mois suivant."
-    }`;
+    const vars = { amount: money(after), rest: `${localName(expense.name, t)} · ${t("reste")}` };
+    return credit
+      ? t("Il restera {amount} à payer ce mois-ci (« {rest} »). Pas payés d'ici la fin du mois, ils s'ajoutent à la dernière mensualité de la dette.", vars)
+      : t("Il restera {amount} à payer ce mois-ci (« {rest} »). Pas payés d'ici la fin du mois, ils ne passent pas au mois suivant.", vars);
   }
   if (after < -0.005) {
-    return credit ? `${money(-after)} en avance : la dernière mensualité baisse d'autant.` : `${money(-after)} de plus que prévu ce mois-ci.`;
+    return credit
+      ? t("{amount} en avance : la dernière mensualité baisse d'autant.", { amount: money(-after) })
+      : t("{amount} de plus que prévu ce mois-ci.", { amount: money(-after) });
   }
-  return "Ce mois est réglé ✓";
+  return t("Ce mois est réglé ✓");
 }
 
 /** One payment of a month: when, cash / card, how much — tap to correct it. */
 export function PaymentPartRow({ payment, currency, onClick }: { payment: Payment; currency: string; onClick: () => void }) {
+  const { lang } = useI18n();
   return (
     <button
       type="button"
       onClick={onClick}
       className="flex w-full items-center gap-2 px-3 py-3 text-left text-sm active:bg-slate-50 dark:active:bg-slate-800"
     >
-      <span className="text-slate-500 dark:text-slate-400">{WHEN.format(new Date(payment.paidAt))}</span>
+      <span className="text-slate-500 dark:text-slate-400">{formatDate(new Date(payment.paidAt), lang, WHEN)}</span>
       {payment.method && (
         <span className="text-slate-500 dark:text-slate-400">
           <MethodLabel method={payment.method} />
@@ -75,36 +82,37 @@ export function PaymentPartSheet({
   balance?: Record<PaymentMethod, number>;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   const money = (n: number) => formatMoney(n, currency);
   const left = round(Math.max(0, due - others));
   const path = `/api/expenses/${expense.id}/payments/${payment.id}`;
   return (
     <AmountSheet
-      title="Modifier le paiement"
-      subtitle={`${expense.icon ?? "🧾"} ${expense.name} · ${monthLabel} · prévu ${money(due)}`}
+      title={t("Modifier le paiement")}
+      subtitle={`${expense.icon ?? "🧾"} ${localName(expense.name, t)} · ${monthLabel} · ${t("prévu {amount}", { amount: money(due) })}`}
       expected={due}
       already={others}
       initialAmount={payment.amountPaid}
       initialMethod={payment.method ?? "cash"}
-      chips={left > 0 && Math.abs(left - payment.amountPaid) > 0.005 ? [[others > 0 ? "Tout le reste" : "Tout", left]] : []}
-      explain={(v) => explainPayment(expense, left, v, money)}
-      methodLabel="Payé en"
-      confirmLabel={(v) => `Enregistrer ${money(v)}`}
+      chips={left > 0 && Math.abs(left - payment.amountPaid) > 0.005 ? [[others > 0 ? t("Tout le reste") : t("Tout"), left]] : []}
+      explain={(v) => explainPayment(expense, left, v, money, t)}
+      methodLabel={t("Payé en")}
+      confirmLabel={(v) => t("Enregistrer {amount}", { amount: money(v) })}
       tone="rose"
       onClose={onClose}
       onSubmit={async (value, method) => {
         // Same account: only what's added comes out of it.
         const out = method === payment.method ? value - payment.amountPaid : value;
-        if (balance && out > balance[method] + 0.005) return insufficientMessage(method, balance[method]);
+        if (balance && out > balance[method] + 0.005) return insufficientMessage(method, balance[method], t);
         const res = await mutate({ method: "PATCH", path, body: { amount: value, method } });
         if (!res.ok) return errorMessage(res);
-        toast.success("Paiement modifié.");
+        toast.success(t("Paiement modifié."));
         return null;
       }}
       onDelete={async () => {
         const res = await mutate({ method: "DELETE", path });
         if (!res.ok) return errorMessage(res);
-        toast.success("Paiement supprimé.");
+        toast.success(t("Paiement supprimé."));
         return null;
       }}
     />
@@ -130,15 +138,18 @@ export function MonthPayments({
   currency: string;
 }) {
   const [picked, setPicked] = useState<Payment | null>(null);
+  const { t } = useI18n();
   const money = (n: number) => formatMoney(n, currency);
   const paid = round(parts.reduce((s, p) => s + p.amountPaid, 0));
   const rest = round(due - paid);
   return (
     <section className="flex flex-col gap-2 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="text-sm font-semibold capitalize text-slate-800 dark:text-slate-100">Paiements · {monthLabel}</h2>
+        <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+          {t("Paiements")} · {monthLabel}
+        </h2>
         <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
-          {money(paid)} sur {money(due)}
+          {t("{paid} sur {due}", { paid: money(paid), due: money(due) })}
         </span>
       </div>
       <span className="flex h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
@@ -147,7 +158,9 @@ export function MonthPayments({
           style={{ width: `${Math.min(100, (paid / Math.max(due, 0.01)) * 100)}%` }}
         />
       </span>
-      {rest > 0.005 && <p className="text-[11px] font-medium text-amber-700 dark:text-amber-400">Reste {money(rest)} à payer ce mois-ci</p>}
+      {rest > 0.005 && (
+        <p className="text-[11px] font-medium text-amber-700 dark:text-amber-400">{t("Reste {amount} à payer ce mois-ci", { amount: money(rest) })}</p>
+      )}
       <ul className="-mx-1 overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-800">
         {parts.map((p) => (
           <li key={p.id} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
@@ -155,7 +168,7 @@ export function MonthPayments({
           </li>
         ))}
       </ul>
-      <p className="text-[11px] text-slate-400">Touche un paiement pour corriger son montant, espèces ou carte, ou le supprimer.</p>
+      <p className="text-[11px] text-slate-400">{t("Touche un paiement pour corriger son montant, espèces ou carte, ou le supprimer.")}</p>
       {picked && (
         <PaymentPartSheet
           expense={expense}

@@ -1,8 +1,10 @@
 // What this device keeps of someone's data: the tab snapshots (swipes), the
 // salary reminder and the pages the service worker cached. Forgotten on
 // Déconnexion and on the Connexion page, so the next account starts clean.
-// The theme stays (it's the device's).
-const KEPT_KEYS = new Set(["gx-theme"]);
+// The theme and the lock stay (they're the device's).
+import { THEME_STORAGE_KEY } from "./theme";
+
+const KEPT_KEYS = new Set([THEME_STORAGE_KEY, "gx-lock"]);
 
 export async function forgetDeviceData(): Promise<void> {
   try {

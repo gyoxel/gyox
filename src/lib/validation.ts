@@ -60,6 +60,10 @@ export const categoryInputSchema = z.object({
   emoji: z.string().trim().min(1, "Choisis un emoji.").max(16),
 });
 
+export const categoryBudgetSchema = z.object({
+  amount: z.number().positive("Indique un montant.").max(100_000_000),
+});
+
 // Accepts a partial payload for PATCH requests; merge with the existing
 // record then re-validate the merged result with expenseInputSchema.
 export const partialExpenseSchema = baseExpenseSchema.partial();

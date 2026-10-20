@@ -10,13 +10,14 @@ import { mutate } from "@/lib/use-refresh-data";
 import { formatMoney } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
 import { MethodIcon } from "@/components/method-icon";
+import { useT } from "@/lib/i18n/client";
 
 export interface DueDaretPayout {
   daretId: string;
   name: string;
   icon: string;
   payout: number;
-  /** "Octobre 2026": the turn's month. */
+  /** "Octobre 2026": the turn's month, in the device's language. */
   monthLabel: string;
 }
 
@@ -36,6 +37,7 @@ export function DueDaretPayouts({ items, currency }: { items: DueDaretPayout[]; 
 }
 
 function DaretPayoutRow({ item: d, currency, onDone }: { item: DueDaretPayout; currency: string; onDone: () => void }) {
+  const t = useT();
   const [choosing, setChoosing] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -44,7 +46,7 @@ function DaretPayoutRow({ item: d, currency, onDone }: { item: DueDaretPayout; c
     const res = await mutate({ method: "PATCH", path: `/api/darets/${d.daretId}`, body: { payoutMethod: method } });
     setBusy(false);
     if (!res.ok) return toast.error(await errorMessage(res));
-    toast.success(`Daret reçue ✅ ${formatMoney(d.payout, currency)} ajoutés à ton solde.`);
+    toast.success(t("Daret reçue ✅ {amount} ajoutés à ton solde.", { amount: formatMoney(d.payout, currency) }));
     onDone();
   }
 
@@ -54,23 +56,23 @@ function DaretPayoutRow({ item: d, currency, onDone }: { item: DueDaretPayout; c
         <span className="gx-tile flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg">{d.icon}</span>
         <span className="min-w-0">
           <span className="block truncate text-sm font-semibold text-slate-900 dark:text-white">
-            Daret · {d.name} · +{formatMoney(d.payout, currency)}
+            {t("Daret")} · {d.name} · +{formatMoney(d.payout, currency)}
           </span>
           <span className="block truncate text-[11.5px] leading-snug text-emerald-700 dark:text-emerald-300">
-            Ton tour · {d.monthLabel}
+            {t("Ton tour · {month}", { month: d.monthLabel })}
           </span>
         </span>
       </Link>
       {choosing ? (
         // How it came in: a tap on espèces or carte confirms it.
-        <span className="flex shrink-0 items-center gap-1" aria-label="Reçue comment ?">
+        <span className="flex shrink-0 items-center gap-1" aria-label={t("Reçue comment ?")}>
           {(["cash", "card"] as const).map((m) => (
             <button
               key={m}
               type="button"
               onClick={() => received(m)}
               disabled={busy}
-              aria-label={`Reçue en ${METHOD_META[m].label}`}
+              aria-label={t("Reçue en {method}", { method: t(METHOD_META[m].label) })}
               className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm transition-transform active:scale-90 dark:border-slate-700 dark:bg-slate-800"
             >
               <MethodIcon method={m} className="h-[11px]" />
@@ -80,7 +82,7 @@ function DaretPayoutRow({ item: d, currency, onDone }: { item: DueDaretPayout; c
             type="button"
             onClick={() => setChoosing(false)}
             disabled={busy}
-            aria-label="Annuler"
+            aria-label={t("Annuler")}
             className="flex h-9 w-7 items-center justify-center text-slate-400"
           >
             <X weight="bold" className="h-3.5 w-3.5" />
@@ -93,7 +95,7 @@ function DaretPayoutRow({ item: d, currency, onDone }: { item: DueDaretPayout; c
           className="gx-cta flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-transform active:scale-95"
         >
           <Check weight="bold" className="h-4 w-4" />
-          Reçue ?
+          {t("Reçue ?")}
         </button>
       )}
     </div>

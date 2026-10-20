@@ -4,7 +4,9 @@ import { useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CaretLeft, CaretRight } from "@phosphor-icons/react/ssr";
-import { addMonths, monthKey, monthLabelFr, type MonthId } from "@/lib/date";
+import { addMonths, monthKey, type MonthId } from "@/lib/date";
+import { monthLabel } from "@/lib/i18n/dates";
+import { useI18n } from "@/lib/i18n/client";
 import type { ReactNode } from "react";
 
 const SWIPE_THRESHOLD_PX = 40;
@@ -22,6 +24,7 @@ export function MonthSwitcher({
   caption?: ReactNode;
 }) {
   const router = useRouter();
+  const { lang, t } = useI18n();
   const searchParams = useSearchParams();
   const touchStartX = useRef<number | null>(null);
 
@@ -55,14 +58,14 @@ export function MonthSwitcher({
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      <Link href={prevHref} prefetch replace scroll={false} aria-label="Mois précédent" className={ARROW}>
+      <Link href={prevHref} prefetch replace scroll={false} aria-label={t("Mois précédent")} className={ARROW}>
         <CaretLeft weight="bold" className="h-4 w-4" />
       </Link>
       <div className="min-w-0 text-center">
-        <p className="text-[15px] font-semibold capitalize text-slate-900 dark:text-white">{monthLabelFr(month)}</p>
+        <p className="text-[15px] font-semibold capitalize text-slate-900 dark:text-white">{monthLabel(month, lang)}</p>
         {caption && <p className="text-[11px] text-slate-400">{caption}</p>}
       </div>
-      <Link href={nextHref} prefetch replace scroll={false} aria-label="Mois suivant" className={ARROW}>
+      <Link href={nextHref} prefetch replace scroll={false} aria-label={t("Mois suivant")} className={ARROW}>
         <CaretRight weight="bold" className="h-4 w-4" />
       </Link>
     </div>

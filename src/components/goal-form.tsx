@@ -5,7 +5,10 @@ import { useNavBack } from "@/lib/nav-history";
 import { Check, Plus, X } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { Goal, GoalIdea } from "@/lib/types";
-import { monthLabelFr, parseMonthKey } from "@/lib/date";
+import { parseMonthKey } from "@/lib/date";
+import { msg } from "@/lib/i18n";
+import { monthLabel } from "@/lib/i18n/dates";
+import { useI18n } from "@/lib/i18n/client";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { mutate } from "@/lib/use-refresh-data";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -27,14 +30,14 @@ export interface DaretOption {
 }
 
 const PRESETS: { emoji: string; name: string }[] = [
-  { emoji: "🚗", name: "Voiture" },
-  { emoji: "🏠", name: "Maison" },
-  { emoji: "✈️", name: "Voyage" },
-  { emoji: "🕋", name: "Omra" },
-  { emoji: "💍", name: "Mariage" },
-  { emoji: "📱", name: "Téléphone" },
-  { emoji: "🎓", name: "Études" },
-  { emoji: "🛟", name: "Épargne de secours" },
+  { emoji: "🚗", name: msg("Voiture") },
+  { emoji: "🏠", name: msg("Maison") },
+  { emoji: "✈️", name: msg("Voyage") },
+  { emoji: "🕋", name: msg("Omra") },
+  { emoji: "💍", name: msg("Mariage") },
+  { emoji: "📱", name: msg("Téléphone") },
+  { emoji: "🎓", name: msg("Études") },
+  { emoji: "🛟", name: msg("Épargne de secours") },
 ];
 
 /** Create or edit a goal: name & emoji (with quick presets), target, money
@@ -53,6 +56,7 @@ export function GoalForm({
   ideas?: GoalIdea[];
 }) {
   const nav = useNavBack();
+  const { lang, t } = useI18n();
   const [emoji, setEmoji] = useState(goal?.emoji ?? "🎯");
   const [name, setName] = useState(goal?.name ?? "");
   const [target, setTarget] = useState(toDecimalInput(goal?.targetAmount));
@@ -74,7 +78,7 @@ export function GoalForm({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ emoji: ideaEmoji.trim() || "🎯", name: ideaName.trim() }),
     });
-    if (!res.ok) return toast.error("Impossible d'ajouter l'idée.");
+    if (!res.ok) return toast.error(t("Impossible d'ajouter l'idée."));
     const idea: GoalIdea = await res.json();
     setIdeas((list) => [...list, idea]);
     setEmoji(idea.emoji);
@@ -92,7 +96,7 @@ export function GoalForm({
     const res = await fetch(`/api/goal-ideas/${idea.id}`, { method: "DELETE" });
     if (!res.ok) {
       setIdeas((list) => [...list, idea]);
-      toast.error("Suppression impossible.");
+      toast.error(t("Suppression impossible."));
     }
   }
 
@@ -108,8 +112,8 @@ export function GoalForm({
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!name.trim()) return setError("Donne un nom à l'objectif.");
-    if (targetValue <= 0) return setError("Indique le montant de l'objectif.");
+    if (!name.trim()) return setError(t("Donne un nom à l'objectif."));
+    if (targetValue <= 0) return setError(t("Indique le montant de l'objectif."));
     const payload = {
       name: name.trim(),
       emoji: emoji.trim() || "🎯",
@@ -126,10 +130,10 @@ export function GoalForm({
         body: payload,
       });
       if (!res.ok) {
-        setError("Enregistrement impossible. Vérifie les champs.");
+        setError(t("Enregistrement impossible. Vérifie les champs."));
         return;
       }
-      toast.success(goal ? "Objectif modifié." : "Objectif ajouté.");
+      toast.success(goal ? t("Objectif modifié.") : t("Objectif ajouté."));
       nav.back(goal ? `/goals/${goal.id}` : "/goals");
     });
   }
@@ -146,7 +150,7 @@ export function GoalForm({
         <div className="relative flex items-center gap-3">
           <input
             id="goal-emoji"
-            aria-label="Icône"
+            aria-label={t("Icône")}
             value={emoji}
             onChange={(e) => setEmoji(e.target.value)}
             maxLength={8}
@@ -154,7 +158,7 @@ export function GoalForm({
           />
           <div className="min-w-0 flex-1">
             <label htmlFor="goal-target" className="text-xs text-white/80">
-              Objectif à atteindre
+              {t("Objectif à atteindre")}
             </label>
             <div className="flex items-baseline gap-1.5">
               <input
@@ -175,7 +179,7 @@ export function GoalForm({
         {targetValue > 0 && (
           <div className="relative mt-4">
             <div className="flex items-center justify-between text-xs text-white/85">
-              <span>Épargne + darets</span>
+              <span>{t("Épargne + darets")}</span>
               <span className="font-semibold tabular-nums">
                 {formatMoney(projected, currency)} · {projectedPct}%
               </span>
@@ -188,14 +192,14 @@ export function GoalForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="goal-name">Nom</Label>
-        <Input id="goal-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex : Voiture" maxLength={60} />
+        <Label htmlFor="goal-name">{t("Nom")}</Label>
+        <Input id="goal-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("Ex : Voiture")} maxLength={60} />
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label>Idées</Label>
+        <Label>{t("Idées")}</Label>
         <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-          {[...PRESETS.map((p) => ({ ...p, idea: null as GoalIdea | null })), ...ideas.map((i) => ({ emoji: i.emoji, name: i.name, idea: i }))].map(
+          {[...PRESETS.map((p) => ({ emoji: p.emoji, name: t(p.name), idea: null as GoalIdea | null })), ...ideas.map((i) => ({ emoji: i.emoji, name: i.name, idea: i }))].map(
             (p) => (
               <span
                 key={p.idea?.id ?? p.name}
@@ -221,7 +225,7 @@ export function GoalForm({
                   <button
                     type="button"
                     onClick={() => setIdeaToDelete(p.idea)}
-                    aria-label={`Retirer l'idée ${p.name}`}
+                    aria-label={t("Retirer l'idée {name}", { name: p.name })}
                     className="flex h-8 w-7 items-center justify-center text-rose-500"
                   >
                     <X weight="bold" className="h-3.5 w-3.5" />
@@ -236,7 +240,7 @@ export function GoalForm({
             className="flex shrink-0 items-center gap-1.5 rounded-full border border-dashed border-slate-300 px-3.5 py-2 text-sm whitespace-nowrap text-slate-500 dark:border-slate-600 dark:text-slate-400"
           >
             <Plus weight="bold" className="h-4 w-4" />
-            Ajouter
+            {t("Ajouter")}
           </button>
         </div>
       </div>
@@ -244,8 +248,8 @@ export function GoalForm({
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
         <label className={row} htmlFor="goal-saved">
           <span>
-            <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Déjà épargné</span>
-            <span className="block text-[11px] text-slate-400">ce que tu as déjà de côté</span>
+            <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">{t("Déjà épargné")}</span>
+            <span className="block text-[11px] text-slate-400">{t("ce que tu as déjà de côté")}</span>
           </span>
           <input
             id="goal-saved"
@@ -254,14 +258,14 @@ export function GoalForm({
             autoComplete="off"
             value={saved}
             onChange={(e) => setSaved(cleanDecimalInput(e.target.value))}
-            placeholder="0 DH"
+            placeholder={t("0 DH")}
             className={rowInput}
           />
         </label>
         <label className={row} htmlFor="goal-monthly">
           <span>
-            <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Épargne / mois</span>
-            <span className="block text-[11px] text-slate-400">optionnel · donne la date d&apos;arrivée</span>
+            <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">{t("Épargne / mois")}</span>
+            <span className="block text-[11px] text-slate-400">{t("optionnel · donne la date d'arrivée")}</span>
           </span>
           <input
             id="goal-monthly"
@@ -270,24 +274,24 @@ export function GoalForm({
             autoComplete="off"
             value={monthly}
             onChange={(e) => setMonthly(cleanDecimalInput(e.target.value))}
-            placeholder="— DH"
+            placeholder={t("— DH")}
             className={rowInput}
           />
         </label>
         <label className={row} htmlFor="goal-deadline">
           <span>
-            <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Pour quand ?</span>
-            <span className="block text-[11px] text-slate-400">optionnel · combien par mois</span>
+            <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">{t("Pour quand ?")}</span>
+            <span className="block text-[11px] text-slate-400">{t("optionnel · combien par mois")}</span>
           </span>
           <input id="goal-deadline" type="month" value={deadline} onChange={(e) => setDeadline(e.target.value)} className={rowInput} />
         </label>
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label>Darets pour cet objectif</Label>
+        <Label>{t("Darets pour cet objectif")}</Label>
         {darets.length === 0 ? (
           <p className="rounded-xl border border-dashed border-slate-200 px-3 py-3 text-center text-sm text-slate-400 dark:border-slate-700">
-            Aucune daret pour le moment.
+            {t("Aucune daret pour le moment.")}
           </p>
         ) : (
           <div className="flex flex-col gap-2">
@@ -319,8 +323,8 @@ export function GoalForm({
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium text-slate-800 dark:text-slate-100">{d.name}</span>
                     <span className="block text-xs text-slate-500 dark:text-slate-400">
-                      Ton tour : {monthLabelFr(parseMonthKey(d.turnMonth))}
-                      {d.linkedTo && !checked && ` · liée à « ${d.linkedTo} »`}
+                      {t("Ton tour : {month}", { month: monthLabel(parseMonthKey(d.turnMonth), lang) })}
+                      {d.linkedTo && !checked && ` · ${t("liée à « {goal} »", { goal: d.linkedTo })}`}
                     </span>
                   </span>
                   <span className="text-sm font-semibold tabular-nums text-slate-900 dark:text-white">
@@ -331,61 +335,61 @@ export function GoalForm({
             })}
           </div>
         )}
-        <p className="text-xs text-slate-400">Une daret ne compte que pour un seul objectif.</p>
+        <p className="text-xs text-slate-400">{t("Une daret ne compte que pour un seul objectif.")}</p>
       </div>
 
       {error && <p className="text-sm text-rose-600">{error}</p>}
 
       <div className="flex gap-2">
         <Button type="button" variant="outline" className="flex-1" onClick={() => nav.back(goal ? `/goals/${goal.id}` : "/goals")}>
-          Annuler
+          {t("Annuler")}
         </Button>
         <Button
           type="submit"
           disabled={isPending}
           className="flex-1 gx-cta"
         >
-          {isPending ? "Enregistrement…" : goal ? "Enregistrer" : "Ajouter l'objectif"}
+          {isPending ? t("Enregistrement…") : goal ? t("Enregistrer") : t("Ajouter l'objectif")}
         </Button>
       </div>
 
       <ConfirmDialog
         open={ideaToDelete != null}
         onOpenChange={(open) => !open && setIdeaToDelete(null)}
-        title="Retirer cette idée ?"
-        description={ideaToDelete && <>« {ideaToDelete.emoji} {ideaToDelete.name} » ne sera plus proposée. Tes objectifs ne changent pas.</>}
-        confirmLabel="Retirer"
+        title={t("Retirer cette idée ?")}
+        description={ideaToDelete && t("« {name} » ne sera plus proposée. Tes objectifs ne changent pas.", { name: `${ideaToDelete.emoji} ${ideaToDelete.name}` })}
+        confirmLabel={t("Retirer")}
         onConfirm={() => ideaToDelete && removeIdea(ideaToDelete)}
       />
 
       <Dialog open={addingIdea} onOpenChange={setAddingIdea}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nouvelle idée</DialogTitle>
-            <DialogDescription>Elle restera dans la liste des idées pour tes prochains objectifs.</DialogDescription>
+            <DialogTitle>{t("Nouvelle idée")}</DialogTitle>
+            <DialogDescription>{t("Elle restera dans la liste des idées pour tes prochains objectifs.")}</DialogDescription>
           </DialogHeader>
           <div className="flex gap-3">
             <div className="flex w-20 flex-col gap-1.5">
-              <Label htmlFor="idea-emoji">Icône</Label>
+              <Label htmlFor="idea-emoji">{t("Icône")}</Label>
               <Input id="idea-emoji" value={ideaEmoji} onChange={(e) => setIdeaEmoji(e.target.value)} maxLength={8} className="text-center text-lg" />
             </div>
             <div className="flex flex-1 flex-col gap-1.5">
-              <Label htmlFor="idea-name">Nom</Label>
-              <Input id="idea-name" value={ideaName} onChange={(e) => setIdeaName(e.target.value)} placeholder="Ex: Moto" maxLength={40} />
+              <Label htmlFor="idea-name">{t("Nom")}</Label>
+              <Input id="idea-name" value={ideaName} onChange={(e) => setIdeaName(e.target.value)} placeholder={t("Ex: Moto")} maxLength={40} />
             </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setAddingIdea(false)}>
-              Annuler
+              {t("Annuler")}
             </Button>
             <Button type="button" onClick={saveIdea} disabled={!ideaName.trim()}>
-              Ajouter
+              {t("Ajouter")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {goal && <DeleteButton variant="full" {...goalDelete(goal)} />}
+      {goal && <DeleteButton variant="full" {...goalDelete(goal, t)} />}
     </form>
   );
 }
