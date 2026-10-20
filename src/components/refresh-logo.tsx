@@ -17,9 +17,10 @@ export function RefreshLogo() {
         setReloading(true);
         window.location.reload();
       }}
-      className="gx-cta flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-[15px] font-black tracking-tight ring-2 ring-white transition-transform active:scale-90 dark:ring-white/10"
+      className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-white transition-transform active:scale-90 dark:ring-white/10"
     >
-      <span className={cn(reloading && "animate-spin")}>GX</span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo-round-192.png" alt="" width={48} height={48} className={cn("h-full w-full", reloading && "animate-spin")} />
     </button>
   );
 }

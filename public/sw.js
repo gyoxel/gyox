@@ -1,4 +1,4 @@
-const CACHE_NAME = "budget-shell-v5";
+const CACHE_NAME = "budget-shell-v6";
 // Not "/": signed out it redirects to Connexion, and a page answered with a
 // redirected response fails to load (ERR_FAILED).
 const SHELL_ASSETS = ["/manifest.json"];

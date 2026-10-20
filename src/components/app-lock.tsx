@@ -61,9 +61,8 @@ export function AppLock() {
       aria-label={t("GX Salaire est verrouillé")}
       className="gx-login fixed inset-0 z-[300] flex-col items-center justify-center gap-6 px-8 text-center text-white"
     >
-      <span className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-white text-3xl font-black tracking-tight text-violet-700 shadow-[0_20px_40px_-16px_rgba(20,8,60,0.6)]">
-        GX
-      </span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo-192.png" alt="" width={80} height={80} className="h-20 w-20 drop-shadow-[0_20px_24px_rgba(20,8,60,0.45)]" />
       <div>
         <p className="text-xl font-extrabold tracking-tight">{t("GX Salaire est verrouillé")}</p>
         <p className="mt-1.5 text-sm text-white/80">{t("Ton empreinte, Face ID ou le code du téléphone.")}</p>

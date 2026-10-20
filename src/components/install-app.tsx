@@ -110,7 +110,7 @@ export function InstallAppCard({ className }: { className?: string }) {
   return (
     <div className={`gx-glass flex items-center gap-3 rounded-[22px] border py-2.5 pl-3 pr-2 ${className ?? ""}`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/icon-192.png" alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-xl" />
+      <img src="/logo-192.png" alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-xl" />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-semibold text-slate-900 dark:text-white">{t("Installer GX Salaire")}</span>
         <span className="block truncate text-[11.5px] text-slate-500 dark:text-slate-400">{t("Sur ton écran d'accueil")}</span>
