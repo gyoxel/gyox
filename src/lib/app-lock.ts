@@ -4,6 +4,8 @@
 // authenticator) whose id is remembered here. The fingerprint never leaves
 // the phone: it only answers "yes, it's the owner". Signing out keeps the
 // lock (it's the device's), so it can't be skipped by signing in again.
+// Only in the installed app (home screen): in Chrome or Safari the site
+// neither offers it nor asks for it.
 import { SIGNED_OUT_PAGES } from "./signed-out-pages";
 
 const LOCK_KEY = "gx-lock";
@@ -16,8 +18,24 @@ interface LockConfig {
   since: string;
 }
 
+// The installed app: opened from the home screen, not in a browser tab.
+const INSTALLED = `(matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: fullscreen)").matches||navigator.standalone===true)`;
+
 /** Locks the page before it shows, when the lock is on (in <head>). */
-export const LOCK_BOOT_SCRIPT = `(function(){try{if(!localStorage.getItem("${LOCK_KEY}"))return;if(${JSON.stringify(SIGNED_OUT_PAGES)}.indexOf(location.pathname)>=0)return;document.documentElement.classList.add("gx-locked")}catch(e){}})();`;
+export const LOCK_BOOT_SCRIPT = `(function(){try{if(!localStorage.getItem("${LOCK_KEY}"))return;if(!${INSTALLED})return;if(${JSON.stringify(SIGNED_OUT_PAGES)}.indexOf(location.pathname)>=0)return;document.documentElement.classList.add("gx-locked")}catch(e){}})();`;
+
+/** Opened as the installed app (home screen), not in Chrome / Safari. */
+export function installedApp(): boolean {
+  try {
+    return (
+      matchMedia("(display-mode: standalone)").matches ||
+      matchMedia("(display-mode: fullscreen)").matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true
+    );
+  } catch {
+    return false;
+  }
+}
 
 const toBase64Url = (bytes: ArrayBuffer) =>
   btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -48,8 +66,8 @@ export function subscribeLock(onChange: () => void) {
   return () => listeners.delete(onChange);
 }
 
-/** This page can be locked (not the signed-out ones). */
-export const lockablePage = () => !SIGNED_OUT_PAGES.includes(location.pathname);
+/** This page can be locked (the installed app, not the signed-out pages). */
+export const lockablePage = () => installedApp() && !SIGNED_OUT_PAGES.includes(location.pathname);
 
 /** Whether this device has a fingerprint / Face ID (or code) WebAuthn can use. */
 export async function lockSupported(): Promise<boolean> {

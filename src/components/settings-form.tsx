@@ -12,7 +12,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Switch } from "@/components/ui/switch";
 import { LANG_NAMES, SHOWN_LANGS, msg, type Lang } from "@/lib/i18n";
 import { setLang, useI18n, useT } from "@/lib/i18n/client";
-import { disableLock, enableLock, lockEnabled, lockSupported, subscribeLock } from "@/lib/app-lock";
+import { disableLock, enableLock, installedApp, lockEnabled, lockSupported, subscribeLock } from "@/lib/app-lock";
 
 const THEMES: { value: ThemeBase; label: string; icon: typeof Sun }[] = [
   { value: "system", label: msg("Système"), icon: Monitor },
@@ -286,10 +286,14 @@ function ThemePreview({ kind, simple }: { kind: ThemeBase; simple: boolean }) {
   );
 }
 
-/** Sécurité: lock the app on this device with its fingerprint / Face ID. */
+const noChange = () => () => {};
+
+/** Sécurité: lock the app on this device with its fingerprint / Face ID —
+ *  only in the installed app (not in Chrome or Safari). */
 function LockSetting({ account }: { account: LockAccount }) {
   const t = useT();
   const on = useSyncExternalStore(subscribeLock, lockEnabled, () => false);
+  const installed = useSyncExternalStore(noChange, installedApp, () => false);
   const [supported, setSupported] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -313,6 +317,7 @@ function LockSetting({ account }: { account: LockAccount }) {
     else toast.error(t("Pas activé : l'empreinte ou Face ID n'a pas été confirmé."));
   }
 
+  if (!installed) return null;
   return (
     <section className="flex flex-col gap-2">
       <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Sécurité")}</h2>
@@ -325,7 +330,7 @@ function LockSetting({ account }: { account: LockAccount }) {
           <span className="block text-xs text-slate-400">
             {supported === false && !on
               ? t("Pas disponible ici : active l'empreinte ou Face ID dans les réglages du téléphone.")
-              : t("Demandé à l'ouverture de l'app et après une minute ailleurs, sur ce téléphone.")}
+              : t("Demandé à l'ouverture de l'app installée et après une minute ailleurs, sur ce téléphone.")}
           </span>
         </span>
         <Switch

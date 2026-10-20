@@ -55,7 +55,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Régler ton salaire : montant, jour de paie, espèces ou carte."),
       msg("Choisir les raccourcis de l'accueil."),
       msg("Gérer tes catégories."),
-      msg("Verrouiller l'app avec l'empreinte ou Face ID de ce téléphone."),
+      msg("Verrouiller l'app installée avec l'empreinte ou Face ID de ce téléphone (pas dans Chrome ou Safari)."),
       msg("Exporter toutes tes données dans un fichier, ou les remplacer par un fichier exporté avant."),
     ],
   },
