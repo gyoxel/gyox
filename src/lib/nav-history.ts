@@ -177,6 +177,17 @@ function onLinkClick(router: Router, e: MouseEvent) {
   navigate(router, url.href, section);
 }
 
+/** Where back goes from a page when no in-app page came before it (the app
+ *  reopened on it, the history lost): the page it's opened from — the pages
+ *  of Paramètres back to Paramètres, Admin to Profil. Else Accueil. */
+const PARENTS: Record<string, string> = {
+  "/profil": "/settings",
+  "/salary": "/settings",
+  "/categories": "/settings",
+  "/admin": "/profil",
+};
+const parentOf = (path: string) => PARENTS[path] ?? "/";
+
 /** The installed app (home screen, Play Store): there, back on the
  *  history's first page would close it. */
 const installed = () =>
@@ -187,8 +198,9 @@ const LEAVE_MS = 2000;
 
 /**
  * On the history's first page of the installed app, the phone's back would
- * close it: from a section it goes to Accueil instead, and on Accueil the
- * first press only says to press again — a second one within 2 s leaves.
+ * close it: from a page it goes to the one it's opened from (Accueil for a
+ * section) instead, and on Accueil the first press only says to press
+ * again — a second one within 2 s leaves.
  */
 function guardFirstPage(router: Router): () => void {
   let watcher: ReturnType<typeof watchBack> = null;
@@ -196,7 +208,7 @@ function guardFirstPage(router: Router): () => void {
   const arm = () => {
     watcher = watchBack(() => {
       watcher = null;
-      if (location.pathname !== "/") return replaceWith(router, "/");
+      if (location.pathname !== "/") return replaceWith(router, parentOf(location.pathname));
       toast(currentT()("Appuie encore sur retour pour quitter"), { id: "leave", duration: LEAVE_MS });
       timer = setTimeout(arm, LEAVE_MS);
     });
@@ -252,8 +264,9 @@ function afterRouterSettles(go: () => void) {
 }
 
 /**
- * - `back(fallback)`: previous in-app page, or `fallback` (home by default)
- *   when this is the first page of the session.
+ * - `back(fallback)`: previous in-app page, or `fallback` (by default the
+ *   page it's opened from, else home) when this is the first page of the
+ *   session.
  * - `backTo(path)`: return to the latest `path` in the history (skipping the
  *   pages in between, e.g. a deleted item's page), or replace with it.
  * - `leave(gone, fallback)`: after a delete, back to the latest page that
@@ -267,10 +280,10 @@ export function useNavBack() {
     router.replace(path);
   }
   return {
-    back(fallback = "/") {
+    back(fallback?: string) {
       const s = read();
       if (s && s.pos > 0) history.back();
-      else replace(fallback);
+      else replace(fallback ?? parentOf(location.pathname));
     },
     backTo(path: string) {
       const s = read();

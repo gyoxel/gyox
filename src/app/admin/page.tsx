@@ -33,7 +33,7 @@ export default async function AdminPage() {
 
   return (
     <>
-      <PageHeader title={t("Admin")} back hideSettings info="admin" />
+      <PageHeader title={t("Admin")} back hideSettings />
       <main className="flex flex-col gap-4 px-4 py-5">
         <div className="rounded-3xl bg-gradient-to-br from-slate-700 via-slate-800 to-slate-950 px-5 py-4 text-white shadow-lg">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/70">{t("Comptes")}</p>

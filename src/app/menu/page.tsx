@@ -40,7 +40,7 @@ export default async function MenuPage() {
   const { t } = await getI18n();
   return (
     <>
-      <PageHeader title={t("Menu")} info="menu" hideSettings />
+      <PageHeader title={t("Menu")} hideSettings />
       {/* Each page here opens as a section: back from it is Accueil. */}
       <main data-nav="section" className="flex flex-col gap-5 px-4 py-4">
         {GROUPS.map(({ title, items }) => (

@@ -21,7 +21,7 @@ export default async function ProfilPage() {
   const name = account?.name || account?.email.split("@")[0] || "";
   return (
     <>
-      <PageHeader title={t("Profil")} back hideSettings info="profil" />
+      <PageHeader title={t("Profil")} back hideSettings />
       <main className="flex flex-col gap-5 px-4 py-5">
         {account ? (
           <>

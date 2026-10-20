@@ -36,44 +36,6 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Une mensualité payée en partie : le reste s'ajoute à la dernière mensualité."),
     ],
   },
-  menu: {
-    title: msg("Menu"),
-    summary: msg("Toutes les pages de l'application, rangées en trois groupes : ton compte, ton argent et l'organisation."),
-    points: [
-      msg("Ouvrir ton profil et les paramètres (langue, thème, sauvegarde)."),
-      msg("Aller au salaire, aux revenus, aux dépenses, aux dettes, au solde et à l'épargne."),
-      msg("Organiser avec les budgets, les darets, l'argent prêté, les objectifs et le calendrier."),
-      msg("Voir les statistiques et gérer tes catégories."),
-    ],
-  },
-  settings: {
-    title: msg("Paramètres"),
-    summary: msg("Les réglages de l'application sur ce téléphone et la sauvegarde de tes données."),
-    points: [
-      msg("Choisir la langue de l'application."),
-      msg("Choisir le thème (système, clair ou sombre) et le mode simple, plus doux pour les yeux."),
-      msg("Régler ton salaire : montant, jour de paie, espèces ou carte."),
-      msg("Choisir les raccourcis de l'accueil."),
-      msg("Gérer tes catégories."),
-      msg("Verrouiller l'app installée avec l'empreinte ou Face ID de ce téléphone (pas dans Chrome ou Safari)."),
-      msg("Exporter toutes tes données dans un fichier, ou les remplacer par un fichier exporté avant."),
-    ],
-  },
-  profil: {
-    title: msg("Profil"),
-    summary: msg("Ton compte : celui de Google avec lequel tu te connectes."),
-    points: [
-      msg("Voir ton nom, ton e-mail et depuis quand tu es inscrit."),
-      msg("Lire la politique de confidentialité et les conditions."),
-      msg("Te déconnecter de l'application."),
-      msg("Supprimer ton compte et toutes tes données, pour toujours (« Supprimer mon compte »)."),
-    ],
-  },
-  admin: {
-    title: msg("Admin"),
-    summary: msg("Réservé au propriétaire : la liste des comptes inscrits."),
-    points: [msg("Voir chaque compte : nom, e-mail, date d'inscription et dernière connexion.")],
-  },
   salary: {
     title: msg("Salaire"),
     summary: msg("Ton salaire du mois : combien, quel jour, sur quel compte, et ce que tu en as déjà pris en avance."),

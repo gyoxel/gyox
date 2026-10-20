@@ -14,7 +14,7 @@ export default async function SettingsPage() {
   const name = account?.name || account?.email.split("@")[0] || t("Mon compte");
   return (
     <>
-      <PageHeader title={t("Paramètres")} back hideSettings info="settings" />
+      <PageHeader title={t("Paramètres")} back hideSettings />
       <main className="flex flex-col gap-5 px-4 py-5">
         {/* The account: opens Profil (Déconnexion there). */}
         <Link
