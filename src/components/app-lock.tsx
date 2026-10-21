@@ -32,6 +32,9 @@ export function AppLock() {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    // A tab preloaded in a hidden frame never asks: its own ask would take
+    // the phone's prompt, and its yes would unlock only itself.
+    if (window.self !== window.top) return;
     if (root().classList.contains("gx-locked")) void ask();
     let hiddenAt = 0;
     const onVisibility = () => {

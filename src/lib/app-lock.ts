@@ -21,8 +21,10 @@ interface LockConfig {
 // The installed app: opened from the home screen, not in a browser tab.
 const INSTALLED = `(matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: fullscreen)").matches||navigator.standalone===true)`;
 
-/** Locks the page before it shows, when the lock is on (in <head>). */
-export const LOCK_BOOT_SCRIPT = `(function(){try{if(!localStorage.getItem("${LOCK_KEY}"))return;if(!${INSTALLED})return;if(${JSON.stringify(SIGNED_OUT_PAGES)}.indexOf(location.pathname)>=0)return;document.documentElement.classList.add("gx-locked")}catch(e){}})();`;
+/** Locks the page before it shows, when the lock is on (in <head>). Not
+ *  in a frame (the tabs preloaded by the swipe): the page around it is
+ *  the one locked, and asks. */
+export const LOCK_BOOT_SCRIPT = `(function(){try{if(window.self!==window.top)return;if(!localStorage.getItem("${LOCK_KEY}"))return;if(!${INSTALLED})return;if(${JSON.stringify(SIGNED_OUT_PAGES)}.indexOf(location.pathname)>=0)return;document.documentElement.classList.add("gx-locked")}catch(e){}})();`;
 
 /** Opened as the installed app (home screen), not in Chrome / Safari. */
 export function installedApp(): boolean {
@@ -66,8 +68,9 @@ export function subscribeLock(onChange: () => void) {
   return () => listeners.delete(onChange);
 }
 
-/** This page can be locked (the installed app, not the signed-out pages). */
-export const lockablePage = () => installedApp() && !SIGNED_OUT_PAGES.includes(location.pathname);
+/** This page can be locked (the installed app, not the signed-out pages,
+ *  not a frame inside the app). */
+export const lockablePage = () => window.self === window.top && installedApp() && !SIGNED_OUT_PAGES.includes(location.pathname);
 
 /** Whether this device has a fingerprint / Face ID (or code) WebAuthn can use. */
 export async function lockSupported(): Promise<boolean> {
