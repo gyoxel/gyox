@@ -41,8 +41,8 @@ export default async function MenuPage() {
   return (
     <>
       <PageHeader title={t("Menu")} hideSettings />
-      {/* Each page here opens as a section: back from it is Accueil. */}
-      <main data-nav="section" className="flex flex-col gap-5 px-4 py-4">
+      {/* Each page here opens on the Menu: back from it is the Menu, then Accueil. */}
+      <main className="flex flex-col gap-5 px-4 py-4">
         {GROUPS.map(({ title, items }) => (
           <section key={title} className="flex flex-col gap-2">
             <h2 className="px-1 text-[13px] font-semibold text-slate-500 dark:text-slate-400">{t(title)}</h2>
