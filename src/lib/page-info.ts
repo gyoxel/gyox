@@ -14,7 +14,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
   budget: {
     title: msg("Dépenses"),
     summary: msg(
-      "Toutes tes dépenses du mois (sauf les dettes) : ce que tu as déjà payé, ce qui reste à payer, rangé par catégorie.",
+      "Toutes tes dépenses du mois (sauf les dettes) : ce que tu as déjà payé, ce qui reste à payer, par date ou par catégorie.",
     ),
     points: [
       msg("Voir le total du mois, ce qui est payé et ce qui reste, avec le pourcentage."),
@@ -23,6 +23,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Ajouter une dépense avec le bouton + (une fois, chaque mois ou pendant X mois)."),
       msg("Toucher une dépense pour l'ouvrir : la payer, la modifier, corriger un paiement ou la supprimer."),
       msg("Voir le statut de chacune : payée (espèces ou carte), payée en partie, à payer ou à venir."),
+      msg("« Par date » : la dernière payée (ou modifiée) en haut ; son jour est écrit en petit sur la ligne au-dessus, une fois par jour."),
     ],
   },
   credits: {
@@ -66,6 +67,8 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Transférer de l'argent entre espèces, carte et épargne (retrait au guichet, versement…)."),
       msg("Ajuster un compte : indique ce que tu as vraiment, la différence est enregistrée."),
       msg("Toucher un compte pour filtrer l'historique."),
+      msg("Toucher « Entrées du mois » ou « Sorties du mois » : l'historique montre ce qui les fait, avec le même total en bas."),
+      msg("« hors total » : ne compte pas dans les entrées et sorties (un transfert, de l'argent prêté qui revient). « compté : … » : d'un prêt, seul ce qui n'est pas revenu compte."),
       msg("Filtrer l'historique : entrées ou sorties, et par catégorie (glisse pour toutes les voir)."),
       msg("Voir chaque entrée et sortie, jour par jour, et supprimer un transfert ou un ajustement."),
     ],
@@ -273,6 +276,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     points: [
       msg("Changer la cotisation, le nom ou le nombre de membres."),
       msg("Changer le premier mois ou ton tour."),
+      msg("Voir l'historique : chaque cotisation payée et la daret reçue, avec leur date."),
       msg("Supprimer la daret et ses cotisations."),
     ],
   },
@@ -355,6 +359,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     points: [
       msg("Voir les entrées, les sorties et ce qui reste en espèces et sur la carte, comparés au mois précédent."),
       msg("Voir ce qui a été mis de côté dans l'épargne."),
+      msg("Les ajustements du solde comptent : en plus, une entrée ; en moins, une sortie."),
       msg("Voir les dépenses par catégorie. Touche une catégorie pour son détail."),
       msg("Changer de mois avec ‹ ›. Il s'ouvre sur le mois en cours."),
       msg("Les premiers jours du mois, ce bilan apparaît aussi sur l'Accueil."),

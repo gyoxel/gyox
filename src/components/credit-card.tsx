@@ -45,7 +45,7 @@ export async function CreditCard({
   const pct = Math.max(0, Math.min(100, progress.percent));
 
   return (
-    <Link href={`/expenses/${expense.id}`} prefetch className="block">
+    <Link href={`/expenses/${expense.id}`} className="block">
       <div
         className={cn(
           "flex items-center gap-3 rounded-2xl border bg-white px-3.5 py-3 shadow-sm transition-transform active:scale-[0.98] dark:bg-slate-900",

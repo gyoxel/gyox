@@ -4,13 +4,14 @@ import { CaretRight, HandCoins } from "@phosphor-icons/react/ssr";
 
 import { loanState } from "@/lib/loans";
 import { todayMonth } from "@/lib/date";
-import { monthLabel } from "@/lib/i18n/dates";
+import { monthLabel, whenLabel } from "@/lib/i18n/dates";
 import { getI18n } from "@/lib/i18n/server";
 import { formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { HeaderAdd } from "@/components/header-add";
 import { AddLink } from "@/components/add-link";
 import { ReceiveRepayment } from "@/components/loan-repayments";
+import { DateDivider, dividersOf, lastDoneFirst } from "@/components/date-divider";
 
 export const dynamic = "force-dynamic";
 
@@ -20,9 +21,17 @@ export default async function LoansPage() {
   const monthLabelFr = (m: Parameters<typeof monthLabel>[0]) => monthLabel(m, lang);
   const money = (n: number) => formatMoney(n, settings.currency);
   const current = todayMonth();
+  // Given back last; in each, the last moved (lent, a repayment) on top,
+  // its day above it (once for the same day).
+  const lastAt = (loan: (typeof loans)[number]) => loan.repayments.map((r) => r.date).reduce((a, b) => (b > a ? b : a), loan.date);
   const rows = loans
-    .map((loan) => ({ loan, state: loanState(loan, current) }))
+    .map((loan) => ({ loan, state: loanState(loan, current), at: lastAt(loan) }))
+    .sort(lastDoneFirst((r) => r.at))
     .sort((a, b) => Number(a.state.done) - Number(b.state.done));
+  const dividers = dividersOf(
+    rows.map((r) => whenLabel(r.at, lang, t)),
+    "",
+  );
   const remaining = rows.reduce((s, r) => s + r.state.remaining, 0);
   const due = rows.reduce((s, r) => s + r.state.due.length, 0);
 
@@ -57,14 +66,13 @@ export default async function LoansPage() {
             </p>
           </div>
         ) : (
-          rows.map(({ loan, state }) => {
+          rows.map(({ loan, state }, i) => {
             const percent = state.toRepay > 0 ? Math.round((state.received / state.toRepay) * 100) : 0;
             const nextDue = state.due[0];
             return (
-              <div
-                key={loan.id}
-                className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
-              >
+              <div key={loan.id} className="flex flex-col gap-1.5">
+              {dividers[i] && <DateDivider as="div" label={dividers[i]} className="px-2 pt-0" />}
+              <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <Link href={`/prets/${loan.id}`} className="flex flex-col gap-2.5 px-4 pb-3 pt-4 active:bg-slate-50 dark:active:bg-slate-800/60">
                   <div className="flex items-center gap-3">
                     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl gx-tile text-xl">
@@ -111,6 +119,7 @@ export default async function LoansPage() {
                     />
                   </div>
                 )}
+              </div>
               </div>
             );
           })

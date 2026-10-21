@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Fingerprint } from "@phosphor-icons/react/ssr";
-import { LOCK_AFTER_MS, lockEnabled, lockablePage, unlockDevice } from "@/lib/app-lock";
+import { awayTooLong, lockEnabled, lockablePage, markSeen, unlockDevice } from "@/lib/app-lock";
 import { useT } from "@/lib/i18n/client";
 
 const root = () => document.documentElement;
@@ -16,7 +16,10 @@ async function ask(): Promise<boolean | null> {
   asking = true;
   const ok = await unlockDevice();
   asking = false;
-  if (ok) root().classList.remove("gx-locked");
+  if (ok) {
+    root().classList.remove("gx-locked");
+    markSeen();
+  }
   return ok;
 }
 
@@ -24,7 +27,8 @@ async function ask(): Promise<boolean | null> {
  * The lock screen, over everything while <html> has gx-locked (set before
  * the page shows by LOCK_BOOT_SCRIPT, and again after a minute away). It
  * asks for the fingerprint / Face ID at once; where the phone wants a tap
- * first (Safari), the button does it.
+ * first (Safari), the button does it. Unlocked, the moment the app is left
+ * (hidden, reloaded, closed) is kept: back within a minute, it stays open.
  */
 export function AppLock() {
   const t = useT();
@@ -36,18 +40,22 @@ export function AppLock() {
     // the phone's prompt, and its yes would unlock only itself.
     if (window.self !== window.top) return;
     if (root().classList.contains("gx-locked")) void ask();
-    let hiddenAt = 0;
+    // Only while unlocked: a locked page reloaded must still ask.
+    const leaving = () => {
+      if (!root().classList.contains("gx-locked")) markSeen();
+    };
     const onVisibility = () => {
-      if (document.visibilityState === "hidden") {
-        hiddenAt = Date.now();
-        return;
-      }
-      if (!hiddenAt || Date.now() - hiddenAt < LOCK_AFTER_MS || !lockEnabled() || !lockablePage()) return;
+      if (document.visibilityState === "hidden") return leaving();
+      if (!awayTooLong() || !lockEnabled() || !lockablePage()) return;
       root().classList.add("gx-locked");
       void ask();
     };
     document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", leaving);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", leaving);
+    };
   }, []);
 
   async function unlock() {

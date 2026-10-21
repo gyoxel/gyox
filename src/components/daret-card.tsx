@@ -8,7 +8,7 @@ import { mutate } from "@/lib/use-refresh-data";
 import { errorMessage } from "@/components/expense-editor";
 import type { DaretState } from "@/lib/daret";
 import { addMonths, monthKey } from "@/lib/date";
-import { formatDate, monthLabel, monthLabelShort } from "@/lib/i18n/dates";
+import { monthLabel, monthLabelShort } from "@/lib/i18n/dates";
 import { useI18n, useT } from "@/lib/i18n/client";
 import type { DaretWithExpense, PaymentMethod } from "@/lib/types";
 import { METHOD_META } from "@/lib/payment-method";
@@ -216,10 +216,6 @@ export function DaretCard({
             <p className="mt-1 flex items-center justify-between text-[11px] text-emerald-700/80 dark:text-teal-300/80">
               <span>
                 {t("Reçue en {method}", { method: t(METHOD_META[daret.payoutMethod!].label).toLowerCase() })}
-                {daret.payoutReceivedAt &&
-                  ` ${t("le {date}", {
-                    date: formatDate(new Date(daret.payoutReceivedAt), lang, { timeZone: "Africa/Casablanca", day: "2-digit", month: "2-digit" }),
-                  })}`}
               </span>
               <button type="button" onClick={() => setPayout(null)} disabled={busy} className="font-medium underline underline-offset-2">
                 {t("Annuler")}

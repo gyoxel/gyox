@@ -1,5 +1,6 @@
 import { getAllGoals, getAllPayments, getExpenseById, getSavingsMove, getSettings } from "@/lib/page-data";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
+import NotFound from "@/app/not-found";
 
 import { isMoveCounted } from "@/lib/savings";
 import { monthlyPlan } from "@/lib/monthly-plan";
@@ -16,7 +17,7 @@ export const dynamic = "force-dynamic";
 export default async function EditSavingsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [settings, move, payments, { t }] = await Promise.all([getSettings(), getSavingsMove(id), getAllPayments(), getI18n()]);
-  if (!move) notFound();
+  if (!move) return <NotFound />;
   if (move.kind === "goal") {
     // Given to a goal: changed from that goal's deposit.
     const goal = (await getAllGoals()).find((g) => g.deposits.some((d) => d.id === move.goalDepositId));

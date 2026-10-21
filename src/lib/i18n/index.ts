@@ -5,7 +5,6 @@
 // French. The language is the device's choice (Paramètres), kept in a
 // cookie so the server renders the pages in it.
 import { EN } from "./en";
-import { DAR } from "./dar";
 
 export const LANGS = ["fr", "en", "dar"] as const;
 export type Lang = (typeof LANGS)[number];
@@ -18,20 +17,22 @@ export const LANG_NAMES: Record<Lang, string> = { fr: "Français", en: "English"
 export const HTML_LANG: Record<Lang, string> = { fr: "fr", en: "en", dar: "ary-Latn" };
 
 /** The languages offered in Paramètres. Darija is ready (dar.ts) but kept
- *  hidden until its words are reviewed: add it back here to offer it. */
+ *  hidden until its words are reviewed: to offer it, add it back here and
+ *  its dictionary in DICTIONARIES (left out meanwhile: every page would
+ *  carry it for nothing). */
 export const SHOWN_LANGS: readonly Lang[] = ["fr", "en"];
 
 /** A language the app can be shown in now (a device left on a hidden one
  *  falls back to French). */
 export const isLang = (value: unknown): value is Lang => SHOWN_LANGS.includes(value as Lang);
 
-const DICTIONARIES: Record<Exclude<Lang, "fr">, Record<string, string>> = { en: EN, dar: DAR };
+const DICTIONARIES: Partial<Record<Exclude<Lang, "fr">, Record<string, string>>> = { en: EN };
 
 export type Vars = Record<string, string | number>;
 
 /** `text` (French, with {name} placeholders) in `lang`, `vars` filled in. */
 export function translate(lang: Lang, text: string, vars?: Vars): string {
-  const out = lang === "fr" ? text : (DICTIONARIES[lang][text] ?? text);
+  const out = lang === "fr" ? text : (DICTIONARIES[lang]?.[text] ?? text);
   return vars ? out.replace(/\{(\w+)\}/g, (all, key: string) => (key in vars ? String(vars[key]) : all)) : out;
 }
 

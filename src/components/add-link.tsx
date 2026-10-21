@@ -8,7 +8,6 @@ export function AddLink({ href, label, className }: { href: string; label: strin
   return (
     <Link
       href={href}
-      prefetch
       className={cn(
         "gx-pill flex items-center justify-center gap-2.5 rounded-full py-2.5 pl-3 pr-5 text-[15px] font-semibold text-violet-800 transition-transform active:scale-[0.99] dark:text-violet-100",
         className,

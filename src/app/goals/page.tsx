@@ -1,7 +1,9 @@
 import { getAllDarets, getAllGoals, getAllPayments, getSettings } from "@/lib/page-data";
 import { Target } from "@phosphor-icons/react/ssr";
 
-import { getGoalProgress } from "@/lib/goals";
+import { getGoalProgress, goalLastAt } from "@/lib/goals";
+import { whenLabel } from "@/lib/i18n/dates";
+import { DateDivider, withDividers } from "@/components/date-divider";
 import { todayMonth } from "@/lib/date";
 import { formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
@@ -13,7 +15,7 @@ import { getI18n } from "@/lib/i18n/server";
 export const dynamic = "force-dynamic";
 
 export default async function GoalsPage() {
-  const [settings, goals, darets, payments, { t }] = await Promise.all([
+  const [settings, goals, darets, payments, { lang, t }] = await Promise.all([
     getSettings(),
     getAllGoals(),
     getAllDarets(),
@@ -61,8 +63,13 @@ export default async function GoalsPage() {
             </p>
           </div>
         ) : (
-          rows.map(({ goal, progress }) => (
-            <GoalCard key={goal.id} goal={goal} progress={progress} currency={settings.currency} linkToDetail />
+          // The last given money on top, its day above it (once for the same
+          // day); nothing given yet: after, the last added first.
+          withDividers(rows, (r) => goalLastAt(r.goal, payments), (iso) => whenLabel(iso, lang, t), t("Sans date")).map(({ item: { goal, progress }, divider }) => (
+            <div key={goal.id} className="flex flex-col gap-1.5">
+              {divider && <DateDivider as="div" label={divider} className="px-2 pt-0" />}
+              <GoalCard goal={goal} progress={progress} currency={settings.currency} linkToDetail />
+            </div>
           ))
         )}
       </main>

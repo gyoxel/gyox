@@ -10,7 +10,7 @@ import { DepositSourcePicker } from "@/components/payment-method-picker";
 import type { GoalProgress } from "@/lib/goals";
 import { parseMonthKey, type MonthId } from "@/lib/date";
 import type { MonthlyPlan } from "@/lib/monthly-plan";
-import { formatDate, monthLabel, monthLabelShort } from "@/lib/i18n/dates";
+import { monthLabel, monthLabelShort, whenLabel } from "@/lib/i18n/dates";
 import { useI18n } from "@/lib/i18n/client";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput } from "@/lib/utils";
 import { mutate } from "@/lib/use-refresh-data";
@@ -262,7 +262,7 @@ export function GoalCard({
                             {row.plan.dueNow && <span className="ml-1 font-semibold text-amber-600">· {t("à cocher ce mois")}</span>}
                           </>
                         ) : (
-                          formatDate(new Date(`${row.deposit.date}T12:00:00`), lang, DEPOSIT_DATE)
+                          whenLabel(row.deposit.date, lang, t)
                         )}
                         {!row.plan && row.deposit.method && (
                           <>
@@ -479,8 +479,6 @@ function DepositDialog({
     </Dialog>
   );
 }
-
-const DEPOSIT_DATE: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" };
 
 function StepIcon({ children }: { children: React.ReactNode }) {
   return (

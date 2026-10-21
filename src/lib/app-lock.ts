@@ -1,5 +1,6 @@
 // Verrouillage: the app asks for the phone's fingerprint / Face ID (or its
-// code) before showing anything, when it's opened and after a minute away.
+// code) before showing anything, when it's opened and after a minute away
+// — not again on a reload or a quick return, like other apps.
 // Kept per device: a WebAuthn credential of the phone itself (platform
 // authenticator) whose id is remembered here. The fingerprint never leaves
 // the phone: it only answers "yes, it's the owner". Signing out keeps the
@@ -9,6 +10,9 @@
 import { SIGNED_OUT_PAGES } from "./signed-out-pages";
 
 const LOCK_KEY = "gx-lock";
+/** When the app was last seen unlocked (ms): within LOCK_AFTER_MS of it, a
+ *  reload or the app reopened doesn't ask again. */
+const SEEN_KEY = "gx-lock-seen";
 /** Away longer than this, the app locks again. */
 export const LOCK_AFTER_MS = 60_000;
 
@@ -24,7 +28,26 @@ const INSTALLED = `(matchMedia("(display-mode: standalone)").matches||matchMedia
 /** Locks the page before it shows, when the lock is on (in <head>). Not
  *  in a frame (the tabs preloaded by the swipe): the page around it is
  *  the one locked, and asks. */
-export const LOCK_BOOT_SCRIPT = `(function(){try{if(window.self!==window.top)return;if(!localStorage.getItem("${LOCK_KEY}"))return;if(!${INSTALLED})return;if(${JSON.stringify(SIGNED_OUT_PAGES)}.indexOf(location.pathname)>=0)return;document.documentElement.classList.add("gx-locked")}catch(e){}})();`;
+export const LOCK_BOOT_SCRIPT = `(function(){try{if(window.self!==window.top)return;if(!localStorage.getItem("${LOCK_KEY}"))return;if(!${INSTALLED})return;if(${JSON.stringify(SIGNED_OUT_PAGES)}.indexOf(location.pathname)>=0)return;var s=+localStorage.getItem("${SEEN_KEY}"),n=Date.now();if(s>0&&n>=s&&n-s<${LOCK_AFTER_MS})return;document.documentElement.classList.add("gx-locked")}catch(e){}})();`;
+
+/** The app is open and unlocked now (on unlocking, leaving, reloading). */
+export function markSeen() {
+  try {
+    localStorage.setItem(SEEN_KEY, String(Date.now()));
+  } catch {}
+}
+
+/** Away long enough (or never seen unlocked) to ask again. A time ahead
+ *  of now (the clock moved) asks too. */
+export function awayTooLong(): boolean {
+  try {
+    const seen = Number(localStorage.getItem(SEEN_KEY));
+    const now = Date.now();
+    return !(seen > 0) || now < seen || now - seen >= LOCK_AFTER_MS;
+  } catch {
+    return true;
+  }
+}
 
 /** Opened as the installed app (home screen), not in Chrome / Safari. */
 export function installedApp(): boolean {
@@ -101,6 +124,7 @@ export async function enableLock(account: { id: string; email: string; name: str
     })) as PublicKeyCredential | null;
     if (!credential) return false;
     localStorage.setItem(LOCK_KEY, JSON.stringify({ id: toBase64Url(credential.rawId), since: new Date().toISOString() } satisfies LockConfig));
+    markSeen();
     changed();
     return true;
   } catch {
@@ -111,6 +135,7 @@ export async function enableLock(account: { id: string; email: string; name: str
 export function disableLock() {
   try {
     localStorage.removeItem(LOCK_KEY);
+    localStorage.removeItem(SEEN_KEY);
   } catch {}
   document.documentElement.classList.remove("gx-locked");
   changed();

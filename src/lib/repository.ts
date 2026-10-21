@@ -602,6 +602,24 @@ export async function updatePaymentPart(
 }
 
 /**
+ * After an expense's amount changed (not a credit's): the payment of the
+ * month `monthKeyValue` follows. Paid there in full at the old amount, in
+ * one go, it stays paid in full at the new one; else the month's amount due
+ * becomes the new one (what's left to pay then reads the same everywhere).
+ * Other months keep what was paid.
+ */
+export async function paymentFollowsAmount(expenseId: string, monthKeyValue: string, oldAmount: number, newAmount: number): Promise<void> {
+  const where = { expenseId, monthKey: monthKeyValue, slotIndex: null };
+  const parts = await prisma.payment.findMany({ where });
+  if (parts.length === 0) return;
+  if (parts.length === 1 && Math.abs(parts[0].amountPaid - oldAmount) < 0.005) {
+    await prisma.payment.update({ where: { id: parts[0].id }, data: { amountPaid: newAmount, amountDue: newAmount } });
+  } else {
+    await prisma.payment.updateMany({ where, data: { amountDue: newAmount } });
+  }
+}
+
+/**
  * Removes one part of a month's payment (a mistake). The month's other parts
  * close up, the first staying part 0; a credit installment gone entirely
  * moves the later ones down one, so they stay 1, 2, 3…

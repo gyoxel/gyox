@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Manrope } from "next/font/google";
+import { Manrope } from "next/font/google";
 import { BottomNav } from "@/components/bottom-nav";
 import { AppToaster } from "@/components/app-toaster";
 import { NavHistoryTracker } from "@/lib/nav-history";
@@ -16,16 +16,6 @@ import { LOCK_BOOT_SCRIPT } from "@/lib/app-lock";
 import { AppLock } from "@/components/app-lock";
 import { THEME_COLOR_BOOT_SCRIPT } from "@/lib/page-theme";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 // The app's type, like the banking apps'.
 const manrope = Manrope({
@@ -72,7 +62,7 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const lang = await getLang();
   return (
-    <html lang={HTML_LANG[lang]} className={`${geistSans.variable} ${geistMono.variable} ${manrope.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang={HTML_LANG[lang]} className={`${manrope.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT + THEME_COLOR_BOOT_SCRIPT + LAUNCH_BOOT_SCRIPT + LOCK_BOOT_SCRIPT }} />
       </head>

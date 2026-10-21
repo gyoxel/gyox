@@ -79,3 +79,10 @@ export function todayDateStr(): string {
     d.getDate(),
   ).padStart(2, "0")}`;
 }
+
+const DAY_IN_MOROCCO = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Casablanca", year: "numeric", month: "2-digit", day: "2-digit" });
+
+/** "YYYY-MM-DD" of a moment in Moroccan time (a day alone stays as it is). */
+export function dayOf(iso: string): string {
+  return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : DAY_IN_MOROCCO.format(new Date(iso));
+}

@@ -59,3 +59,32 @@ export function formatDate(date: Date, lang: Lang, options: Intl.DateTimeFormatO
     out,
   );
 }
+
+const TIME_ZONE = "Africa/Casablanca";
+const DAY = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" });
+
+const WEEKDAY: Intl.DateTimeFormatOptions = { timeZone: TIME_ZONE, weekday: "long" };
+
+/**
+ * The day something was done, short enough to sit small beside it
+ * (Moroccan time), never the hour: "Aujourd'hui", "Hier", then within the
+ * week its day's name and date ("Lundi 19/10"), older the date alone
+ * ("14/10", "14/10/25" another year). Takes an ISO time or a day
+ * ("2026-10-12"); `t` translates the words.
+ */
+export function whenLabel(iso: string, lang: Lang, t: (text: string, vars?: Record<string, string>) => string, now = new Date()): string {
+  // A day alone: its noon, the same day in Morocco.
+  const date = new Date(/^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso}T12:00:00Z` : iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const day = DAY.format(date);
+  const today = DAY.format(now);
+  const daysAgo = Math.round((Date.parse(today) - Date.parse(day)) / 86_400_000);
+  if (daysAgo === 0) return t("Aujourd'hui");
+  if (daysAgo === 1) return t("Hier");
+  const short = `${day.slice(8, 10)}/${day.slice(5, 7)}${day.slice(0, 4) === today.slice(0, 4) ? "" : `/${day.slice(2, 4)}`}`;
+  if (daysAgo > 1 && daysAgo < 7) {
+    const name = formatDate(date, lang, WEEKDAY);
+    return `${name.charAt(0).toUpperCase()}${name.slice(1)} ${short}`;
+  }
+  return short;
+}

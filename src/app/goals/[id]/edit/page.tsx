@@ -1,5 +1,5 @@
 import { getAllDarets, getAllGoalIdeas, getAllGoals, getSettings } from "@/lib/page-data";
-import { notFound } from "next/navigation";
+import NotFound from "@/app/not-found";
 
 import { daretOptions } from "@/lib/goal-options";
 import { PageHeader } from "@/components/page-header";
@@ -20,7 +20,7 @@ export default async function EditGoalPage({ params }: { params: Promise<{ id: s
     getI18n(),
   ]);
   const goal = goals.find((g) => g.id === id);
-  if (!goal) notFound();
+  if (!goal) return <NotFound />;
   return (
     <>
       <PageHeader title={`${t("Modifier")} · ${goal.name}`} back info="goal-edit" action={<DeleteButton variant="icon" {...goalDelete(goal, t)} />} />

@@ -3,7 +3,10 @@ import { MagnifyingGlass } from "@phosphor-icons/react/ssr";
 import { PageHeader } from "@/components/page-header";
 import { getI18n } from "@/lib/i18n/server";
 
-/** A page that no longer exists (e.g. something just deleted). */
+/** A page that no longer exists (e.g. something just deleted). The pages
+ *  of one thing render it themselves when it's gone, rather than throwing a
+ *  404: deleting it re-renders the page being left, and a thrown 404 there
+ *  would land as an error on the page gone to. */
 export default async function NotFound() {
   const { t } = await getI18n();
   return (

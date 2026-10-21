@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import NotFound from "@/app/not-found";
 import { getAllCategories, getAllExpenses, getAllPayments, getSettings } from "@/lib/page-data";
 import { monthCost, spentByCategory } from "@/lib/category-budgets";
 import { getMonthSummary } from "@/lib/engine";
@@ -31,7 +31,7 @@ export default async function BudgetPage({ params, searchParams }: { params: Pro
     getI18n(),
   ]);
   const category = categories.find((c) => c.id === id);
-  if (!category?.budget) notFound();
+  if (!category?.budget) return <NotFound />;
   const current = todayMonth();
   const month = monthFromSearchParams(sp.month, current);
   const previous = addMonths(month, -1);

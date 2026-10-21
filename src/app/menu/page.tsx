@@ -51,7 +51,6 @@ export default async function MenuPage() {
                 <Link
                   key={href}
                   href={href}
-                  prefetch
                   className="flex items-center gap-3.5 border-t border-slate-100 px-4 py-3.5 first:border-t-0 active:bg-slate-50 dark:border-slate-800 dark:active:bg-slate-800"
                 >
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl gx-tile text-[var(--gx-tile-ink)]">

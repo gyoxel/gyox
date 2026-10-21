@@ -1,6 +1,6 @@
 import { getAllSalaryAdvances, getAllSalaryReceipts, getSettings } from "@/lib/page-data";
 import { parseMonthKey } from "@/lib/date";
-import { formatDate, monthLabel } from "@/lib/i18n/dates";
+import { formatDate, monthLabel, whenLabel } from "@/lib/i18n/dates";
 import { getI18n } from "@/lib/i18n/server";
 import { formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
@@ -10,7 +10,6 @@ import { MethodLabel } from "@/components/method-icon";
 export const dynamic = "force-dynamic";
 
 const TIME_ZONE = "Africa/Casablanca";
-const RECEIVED: Intl.DateTimeFormatOptions = { timeZone: TIME_ZONE, day: "numeric", month: "short" };
 
 /** Days until the next pay day (the clamped `payDay` of this or next month). */
 function nextPayDay(payDay: number): { date: Date; days: number } {
@@ -78,7 +77,7 @@ export default async function SalaryPage() {
                       {monthLabel(parseMonthKey(r.period), lang)}
                     </span>
                     <span className="block text-[11px] text-slate-400">
-                      {t("Reçu le {date}", { date: formatDate(new Date(r.createdAt), lang, RECEIVED) })} · <MethodLabel method={r.method} />
+                      {whenLabel(r.createdAt, lang, t)} · <MethodLabel method={r.method} />
                     </span>
                   </span>
                   <span className="text-sm font-semibold tabular-nums text-emerald-600">+{money(r.amount)}</span>

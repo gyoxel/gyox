@@ -14,24 +14,37 @@ const GO_PX = 70; // drag past this (or a quick flick) switches tab
 const SLIDE_MS = 200;
 
 /** Each tab's page title (its <h1>): a snapshot is only kept when it shows
- *  that title, so one tab can never be stored under another's name. */
+ *  that title, so one tab can never be stored under another's name.
+ *  Accueil's <h1> is the user's name: its header is recognised instead. */
 const TITLES: Record<string, string> = { "/": "GX Salaire", "/budget": msg("Dépenses"), "/credits": msg("Dettes"), "/menu": msg("Menu") };
+const isTab = (root: Element, path: string) =>
+  path === "/" ? root.querySelector("[data-home-header]") != null : root.querySelector("h1")?.textContent?.trim() === currentT()(TITLES[path]);
 
 /** Last seen look of each tab (its page's HTML), shown next to the current
  *  page while swiping so the neighbour is already there — no blank. Kept in
  *  localStorage too, so even the first swipe after a reload has them. */
 const STORE_KEY = "gx-tab-snapshots";
+/** When each was taken (ms), to know the stale ones. */
+const STORE_AT_KEY = "gx-tab-snapshots-at";
 const snapshots = new Map<string, string>();
+const takenAt = new Map<string, number>();
 /** Tabs snapshotted since this load (the stored ones may be older). */
 const fresh = new Set<string>();
 let restored = false;
+/** A neighbour's snapshot older than this is taken again in the background. */
+const STALE_MS = 30 * 60_000;
 
 function restoreSnapshots() {
   if (restored) return;
   restored = true;
   try {
     const saved = JSON.parse(localStorage.getItem(STORE_KEY) ?? "{}") as Record<string, unknown>;
-    for (const t of TABS) if (typeof saved[t] === "string" && !snapshots.has(t)) snapshots.set(t, saved[t] as string);
+    const at = JSON.parse(localStorage.getItem(STORE_AT_KEY) ?? "{}") as Record<string, unknown>;
+    for (const t of TABS) {
+      if (typeof saved[t] !== "string" || snapshots.has(t)) continue;
+      snapshots.set(t, saved[t] as string);
+      if (typeof at[t] === "number") takenAt.set(t, at[t] as number);
+    }
   } catch {
     // nothing saved or storage blocked: the tabs get snapshotted as they load
   }
@@ -39,9 +52,11 @@ function restoreSnapshots() {
 
 function saveSnapshot(path: string, html: string) {
   snapshots.set(path, html);
+  takenAt.set(path, Date.now());
   fresh.add(path);
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify(Object.fromEntries(snapshots)));
+    localStorage.setItem(STORE_AT_KEY, JSON.stringify(Object.fromEntries(takenAt)));
   } catch {
     // storage full or blocked: kept for this visit only
   }
@@ -52,7 +67,7 @@ function validSnapshot(root: Element | null | undefined, path: string): string |
   // that frame's window and would fail it)
   if (!root) return null;
   if (root.querySelector('[aria-busy="true"]')) return null; // still the loading skeleton
-  if (root.querySelector("h1")?.textContent?.trim() !== currentT()(TITLES[path])) return null;
+  if (!isTab(root, path)) return null;
   // Amounts shown with Accueil's eye are never kept (snapshots stay in storage).
   const copy = root.cloneNode(true) as Element;
   copy.querySelectorAll("[data-private]").forEach((el) => {
@@ -73,19 +88,25 @@ function placeholder(path: string): string {
   return `<div data-tone class="gx-header sticky top-0 z-30 flex h-[72px] items-center px-5 pb-2 pt-4 text-slate-900 dark:text-white"><h1 class="text-[25px] font-extrabold tracking-tight">${currentT()(TITLES[path] ?? "")}</h1></div><div class="flex flex-col gap-4 px-4 py-5">${block("h-28")}${block("h-20")}${block("h-14")}${block("h-14")}${block("h-14")}</div>`;
 }
 
-/** Loads the other tabs in a hidden frame, once per visit, to snapshot them
- *  (fresh data); the current tab's neighbours first. */
+/** Loads in a hidden frame the current tab's neighbours (the ones a swipe
+ *  shows) whose snapshot is missing or stale, one after the other. A frame
+ *  is a whole page — its data, its scripts — so only when needed: the tabs
+ *  visited keep their own snapshot fresh anyway. */
 let preloading = false;
 function preloadSnapshots() {
   if (preloading || window.self !== window.top) return;
-  preloading = true;
   const here = TABS.indexOf(window.location.pathname);
-  const missing = TABS.filter((t) => !fresh.has(t) && t !== window.location.pathname).sort(
-    (a, b) => Math.abs(TABS.indexOf(a) - here) - Math.abs(TABS.indexOf(b) - here),
+  const missing = [TABS[here - 1], TABS[here + 1]].filter(
+    (t): t is string => t != null && !fresh.has(t) && (!snapshots.has(t) || Date.now() - (takenAt.get(t) ?? 0) > STALE_MS),
   );
+  if (missing.length === 0) return;
+  preloading = true;
   const next = () => {
     const path = missing.shift();
-    if (!path) return;
+    if (!path) {
+      preloading = false;
+      return;
+    }
     const frame = document.createElement("iframe");
     frame.setAttribute("aria-hidden", "true");
     frame.tabIndex = -1;
@@ -173,7 +194,8 @@ export function TabSwipe() {
     if (!TABS.includes(pathname)) return;
     restoreSnapshots();
     const t1 = setTimeout(() => snapshotCurrent(pathname), 800);
-    const t2 = setTimeout(preloadSnapshots, 400);
+    // Once the page itself is settled (the launch, the lock).
+    const t2 = setTimeout(preloadSnapshots, 2500);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);

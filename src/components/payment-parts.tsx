@@ -11,11 +11,10 @@ import { errorMessage } from "@/components/expense-editor";
 import { AmountSheet } from "@/components/amount-sheet";
 import { MethodLabel } from "@/components/method-icon";
 import { localName, type T } from "@/lib/i18n";
-import { formatDate } from "@/lib/i18n/dates";
+import { whenLabel } from "@/lib/i18n/dates";
 import { useI18n } from "@/lib/i18n/client";
 
 const round = (n: number) => Math.round(n * 100) / 100;
-const WHEN: Intl.DateTimeFormatOptions = { timeZone: "Africa/Casablanca", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" };
 
 /** What paying `value` of a month does, `left` being still to pay of it. */
 export function explainPayment(expense: Expense, left: number, value: number, money: (n: number) => string, t: T): string {
@@ -37,14 +36,14 @@ export function explainPayment(expense: Expense, left: number, value: number, mo
 
 /** One payment of a month: when, cash / card, how much — tap to correct it. */
 export function PaymentPartRow({ payment, currency, onClick }: { payment: Payment; currency: string; onClick: () => void }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   return (
     <button
       type="button"
       onClick={onClick}
       className="flex w-full items-center gap-2 px-3 py-3 text-left text-sm active:bg-slate-50 dark:active:bg-slate-800"
     >
-      <span className="text-slate-500 dark:text-slate-400">{formatDate(new Date(payment.paidAt), lang, WHEN)}</span>
+      <span className="tabular-nums text-slate-500 dark:text-slate-400">{whenLabel(payment.paidAt, lang, t)}</span>
       {payment.method && (
         <span className="text-slate-500 dark:text-slate-400">
           <MethodLabel method={payment.method} />

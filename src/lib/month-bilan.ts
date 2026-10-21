@@ -2,7 +2,7 @@
 // cash and the card, what of it was put aside, and its biggest categories.
 // Pure (no DB access).
 import type { CategorySlice } from "./category-stats";
-import type { WalletSummary } from "./wallet";
+import { entryMonth, type WalletSummary } from "./wallet";
 
 export interface MonthBilanData {
   /** The month it's about: "YYYY-MM". */
@@ -33,7 +33,7 @@ export function buildMonthBilan(wallet: WalletSummary, slices: CategorySlice[], 
   const moneyOut = round(wallet.monthOut.cash + wallet.monthOut.card);
   let putAside = 0;
   for (const e of wallet.entries) {
-    if (e.kind !== "savings" || e.at.slice(0, 7) !== monthKey) continue;
+    if (e.kind !== "savings" || entryMonth(e) !== monthKey) continue;
     for (const l of e.lines) if (l.amount < 0) putAside -= l.amount;
   }
   if (moneyIn === 0 && moneyOut === 0 && slices.length === 0) return null;

@@ -56,7 +56,6 @@ export default async function ProfilPage() {
             {isAdmin(account.email) && (
               <Link
                 href="/admin"
-                prefetch
                 className="flex items-center gap-3.5 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm active:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:active:bg-slate-800"
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-slate-500 to-slate-700 text-white">

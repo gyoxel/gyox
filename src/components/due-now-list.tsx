@@ -6,10 +6,12 @@ import { flushPendingRefresh, mutate, trackMutation } from "@/lib/use-refresh-da
 import Link from "next/link";
 import { ArrowUUpLeft, CaretLeft, CaretRight, Check, Confetti, PencilSimple, Plus } from "@phosphor-icons/react/ssr";
 import { addMonths, monthKey as toMonthKey, type MonthId } from "@/lib/date";
-import { monthLabel, monthLabelShort } from "@/lib/i18n/dates";
+import { monthLabel, monthLabelShort, whenLabel } from "@/lib/i18n/dates";
 import { localName, type T } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/client";
-import { findPayment, getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, getMonthLedgerItems, lastPaidAt, type DisplayColor, type LedgerItem } from "@/lib/engine";
+import { Button } from "@/components/ui/button";
+import { DateDivider, dividersOf } from "@/components/date-divider";
+import { expenseActionAt, findPayment, getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, getMonthLedgerItems, lastPaidAt, type DisplayColor } from "@/lib/engine";
 import type { Expense, Payment, PaymentMethod } from "@/lib/types";
 import { toast } from "sonner";
 import { METHOD_META } from "@/lib/payment-method";
@@ -68,6 +70,9 @@ function animateReorder(rows: Map<string, HTMLElement>, update: () => void) {
   }
 }
 
+/** Paid rows shown before « Voir plus ». */
+const PAID_SHOWN = 5;
+
 /**
  * `payments` / `setPayments` are the Dashboard's local copy (see
  * HomeDashboard): every toggle updates them optimistically, so the list AND
@@ -95,6 +100,8 @@ export function DueNowList({
 }) {
   const { lang, t } = useI18n();
   const [viewMonth, setViewMonth] = useState<MonthId>(currentMonth);
+  // The paid ones: the last few, the rest on « Voir plus ».
+  const [allPaid, setAllPaid] = useState(false);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const touchStartX = useRef<number | null>(null);
   const rowRefs = useRef(new Map<string, HTMLElement>());
@@ -148,17 +155,25 @@ export function DueNowList({
   const emojiById = useMemo(() => new Map(Object.entries(categoryEmoji)), [categoryEmoji]);
   const items = useMemo(() => {
     const key = toMonthKey(viewMonth);
-    // To pay first, the last added on top (a rest: when it was left); then
-    // paid, the last ticked on top.
-    const order = (item: LedgerItem) =>
-      item.paid || item.rest ? lastPaidAt(item.expense.id, localPayments, key) : item.expense.createdAt;
+    // To pay first, then paid; in each, the last done (paid, edited) on
+    // top, those with nothing done after (the last added first). A debt's
+    // installment paid ahead, in an earlier month: the day it was paid.
+    const doneAt = (item: { expense: Expense; paid: boolean }) =>
+      expenseActionAt(item.expense, localPayments, key) || (item.paid ? lastPaidAt(item.expense.id, localPayments, key) : "");
     return getMonthLedgerItems(expenses, localPayments, viewMonth, currentMonth)
-      .map((item) => ({ ...item, color: getExpenseDisplayColor(item.expense) }))
-      .sort((a, b) => Number(a.paid) - Number(b.paid) || order(b).localeCompare(order(a)));
+      .map((item) => ({ ...item, color: getExpenseDisplayColor(item.expense), at: doneAt(item) }))
+      .sort(
+        (a, b) =>
+          Number(a.paid) - Number(b.paid) ||
+          Number(Boolean(b.at)) - Number(Boolean(a.at)) ||
+          b.at.localeCompare(a.at) ||
+          b.expense.createdAt.localeCompare(a.expense.createdAt),
+      );
   }, [expenses, localPayments, viewMonth, currentMonth]);
 
   function goMonth(next: MonthId) {
     setViewMonth(next);
+    setAllPaid(false);
   }
 
   function onTouchStart(e: React.TouchEvent) {
@@ -245,8 +260,20 @@ export function DueNowList({
   const left = items.filter((i) => !i.paid).reduce((s, i) => s + i.amount, 0);
   const paidTotal = items.filter((i) => i.paid).reduce((s, i) => s + i.amount, 0);
   const progress = left + paidTotal > 0 ? paidTotal / (left + paidTotal) : 0;
-  // Unpaid first, then paid: each group opens with its header.
+  // Unpaid first (all of them), then paid (the last ticked few, unless
+  // asked): each group opens with its header.
   const firstPaid = items.findIndex((i) => i.paid);
+  const shownItems = allPaid || firstPaid < 0 ? items : items.slice(0, firstPaid + PAID_SHOWN);
+  const morePaid = items.length - shownItems.length;
+  // The day something was done, over the line above it: once for rows of
+  // the same day, each group (to pay, paid) on its own.
+  const dividers = [
+    ...dividersOf(
+      shownItems.slice(0, firstPaid < 0 ? undefined : firstPaid).map((i) => (i.at ? whenLabel(i.at, lang, t) : "")),
+      t("Sans date"),
+    ),
+    ...(firstPaid < 0 ? [] : dividersOf(shownItems.slice(firstPaid).map((i) => (i.at ? whenLabel(i.at, lang, t) : "")), t("Sans date"))),
+  ];
 
   return (
     <div className="flex flex-col gap-3">
@@ -306,7 +333,7 @@ export function DueNowList({
         </div>
       ) : (
         <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          {items.map((item, index) => {
+          {shownItems.map((item, index) => {
             const { expense, amount, paid, rest, color } = item;
             const key = rowKey(item);
             const isPending = pendingIds.has(expense.id);
@@ -324,19 +351,19 @@ export function DueNowList({
                   total={formatMoney(paidTotal, currency)}
                 />
               ) : null;
+            const tint = paid ? "bg-emerald-50/40 dark:bg-emerald-950/10" : rest ? "bg-amber-50/50 dark:bg-amber-950/10" : "bg-white dark:bg-slate-900";
+            const divider = dividers[index];
             return (
               <Fragment key={key}>
               {header}
+              {divider && <DateDivider label={divider} className={tint} />}
               <li
                 key={key}
                 ref={(el) => {
                   if (el) rowRefs.current.set(key, el);
                   else rowRefs.current.delete(key);
                 }}
-                className={cn(
-                  "flex items-center border-t border-slate-100 pr-1.5 dark:border-slate-800",
-                  paid ? "bg-emerald-50/40 dark:bg-emerald-950/10" : rest ? "bg-amber-50/50 dark:bg-amber-950/10" : "bg-white dark:bg-slate-900",
-                )}
+                className={cn("flex items-center pr-1.5", !divider && "border-t border-slate-100 dark:border-slate-800", tint)}
               >
                 {/* Tapping the row opens the edit page; only the round
                     checkbox on the right toggles "payé". */}
@@ -476,6 +503,11 @@ export function DueNowList({
           })}
         </ul>
       )}
+      {morePaid > 0 && (
+        <Button type="button" variant="outline" onClick={() => setAllPaid(true)}>
+          {t("Voir plus")}
+        </Button>
+      )}
 
       {editing && (
         <EditPayment
@@ -502,7 +534,6 @@ export function DueNowList({
 
       <Link
         href="/expenses/new"
-        prefetch
         className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-rose-200 py-3 text-sm font-semibold text-rose-600 active:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:active:bg-rose-950/30"
       >
         <Plus weight="bold" className="h-4 w-4" />

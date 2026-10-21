@@ -25,7 +25,16 @@ const MAX_MEMBERS = 60;
  * the pot will be), the name, the number of members (− / +), the first
  * month (‹ ›) and the user's turn picked among the daret's months.
  */
-export function DaretForm({ currency, daret }: { currency: string; daret?: DaretWithExpense }) {
+export function DaretForm({
+  currency,
+  daret,
+  history,
+}: {
+  currency: string;
+  daret?: DaretWithExpense;
+  /** Editing: what happened in it (its contributions, the pot), above Supprimer. */
+  history?: React.ReactNode;
+}) {
   const isEdit = daret != null;
   const nav = useNavBack();
   const { lang, t } = useI18n();
@@ -194,6 +203,8 @@ export function DaretForm({ currency, daret }: { currency: string; daret?: Daret
           {isPending ? t("Enregistrement…") : isEdit ? t("Enregistrer") : t("Ajouter la daret")}
         </Button>
       </div>
+
+      {history}
 
       {isEdit && <DeleteButton variant="full" {...daretDelete(daret, t)} />}
     </form>

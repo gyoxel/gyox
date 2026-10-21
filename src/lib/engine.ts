@@ -5,6 +5,7 @@ import {
   type MonthId,
   addMonths,
   compareMonths,
+  dayOf,
   monthKey,
   monthLabelFr,
   monthOfDateStr,
@@ -619,6 +620,22 @@ export function getPaidThisMonth(expenses: Expense[], payments: Payment[], curre
     .filter((p) => activeIds.has(p.expenseId) && p.monthKey === key)
     .reduce((s, p) => s + p.amountPaid, 0);
   return round2(total);
+}
+
+/**
+ * When something was last done to an expense in month `key`: paid (or part
+ * of it) that month, or edited that month. "" when nothing — its creation
+ * doesn't count.
+ */
+export function expenseActionAt(expense: Expense, payments: Payment[], key: string): string {
+  let last = "";
+  for (const p of payments) {
+    if (p.expenseId !== expense.id || p.amountPaid <= 0 || p.paidAt <= last) continue;
+    // A credit's installments aren't tied to a month: the day they were paid is.
+    if (p.monthKey === key || (p.monthKey == null && dayOf(p.paidAt).startsWith(key))) last = p.paidAt;
+  }
+  const edited = expense.updatedAt > expense.createdAt && dayOf(expense.updatedAt).startsWith(key);
+  return edited && expense.updatedAt > last ? expense.updatedAt : last;
 }
 
 /**

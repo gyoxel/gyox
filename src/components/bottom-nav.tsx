@@ -43,18 +43,22 @@ const RING_R = 34;
 const RING_C = 2 * Math.PI * RING_R;
 
 /** A tab: its icon and name — the current one filled, in violet, over the
- *  bar's glass lens. */
+ *  bar's glass lens. Tapped again on its own page scrolled down, it goes
+ *  back to the top (like other apps); at the top, it opens afresh. */
 function NavLink({
   href,
   label,
   icon: Icon,
   active,
+  here,
   onNavigate,
 }: {
   href: string;
   label: string;
   icon: typeof House;
   active: boolean;
+  /** On this tab's own page (not one opened from it). */
+  here: boolean;
   onNavigate: (href: string) => void;
 }) {
   const t = useT();
@@ -63,7 +67,12 @@ function NavLink({
       href={href}
       prefetch
       data-nav="section"
-      onClick={() => !active && onNavigate(href)}
+      onClick={(e) => {
+        if (!active) return onNavigate(href);
+        if (!here || window.scrollY < 1) return;
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      }}
       aria-current={active ? "page" : undefined}
       className="relative z-10 flex flex-1 touch-manipulation select-none flex-col items-center justify-center gap-1 transition-transform active:scale-95"
     >
@@ -88,8 +97,10 @@ function NavLink({
   );
 }
 
-// Everything reachable from the bar, kept fully prefetched so it opens
-// instantly (re-prefetched after every data change, which purges the cache).
+// Everything reachable from the bar, kept prefetched so it opens at once
+// (re-prefetched after every data change, which purges the cache). Down to
+// their loading screen only: no database read until a page is opened — only
+// the bar's own tabs (their <Link prefetch>) are prefetched with their data.
 const PREFETCH_HREFS = [
   ...ITEMS.map((i) => i.href),
   "/settings",
@@ -269,7 +280,6 @@ function AppBar({ pathname }: { pathname: string }) {
                   <Link
                     key={href}
                     href={href}
-                    prefetch
                     role="menuitem"
                     tabIndex={open ? 0 : -1}
                     onClick={() => setOpen(false)}
@@ -352,7 +362,7 @@ function AppBar({ pathname }: { pathname: string }) {
               style={{ width: "calc((100% - 12px) / 4)", transform: `translateX(${Math.max(0, activeIndex) * 100}%)` }}
             />
             {ITEMS.map((item) => (
-              <NavLink key={item.href} {...item} active={isActive(item.href)} onNavigate={navigateTo} />
+              <NavLink key={item.href} {...item} active={isActive(item.href)} here={pathname === item.href} onNavigate={navigateTo} />
             ))}
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { getAllCategories, getAllDarets, getAllDayNotes, getAllExpenses, getAllGoals, getAllIncomes, getAllPayments, getAllSalaryAdvances, getIncomeCategories, getSettings } from "@/lib/page-data";
+import { getAllCategories, getAllDarets, getAllDayNotes, getAllExpenses, getAllGoals, getAllIncomes, getAllPayments, getAllSalaryAdvances, getAllWalletOps, getIncomeCategories, getSettings } from "@/lib/page-data";
 import { advancesOn } from "@/lib/salary";
 import { incomeCategory } from "@/lib/income";
 
@@ -31,7 +31,7 @@ const dueDayOf = (startDate: string) => Number(startDate.slice(8, 10)) || 1;
  * daret payout, goal reached, deadlines, next salary) and a free note per day.
  */
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
-  const [sp, settings, expenses, payments, categories, goals, darets, dayNotes, advances, incomes, incomeCategories, { lang, t }] = await Promise.all([
+  const [sp, settings, expenses, payments, categories, goals, darets, dayNotes, advances, incomes, incomeCategories, walletOps, { lang, t }] = await Promise.all([
     searchParams,
     getSettings(),
     getAllExpenses(),
@@ -43,6 +43,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     getAllSalaryAdvances(),
     getAllIncomes(),
     getIncomeCategories(),
+    getAllWalletOps(),
     getI18n(),
   ]);
   const monthLabelFr = (m: MonthId) => monthLabel(m, lang);
@@ -101,6 +102,19 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       amount: i.amount,
       at: i.date,
       method: i.method,
+    });
+  }
+  // An adjustment of the Solde: money found (in) or missing (out), unrecorded.
+  for (const o of walletOps) {
+    if (o.kind !== "adjust" || !o.toAccount || !near(o.createdAt) || o.amount === 0) continue;
+    events.push({
+      id: o.id,
+      kind: o.amount > 0 ? "in" : "out",
+      label: o.note || t("Ajustement du solde"),
+      icon: "✏️",
+      amount: Math.abs(o.amount),
+      at: o.createdAt,
+      method: o.toAccount,
     });
   }
   for (const a of advances) {
