@@ -1232,5 +1232,8 @@ export const EN: Record<string, string> = {
   "Le montant épargné ne peut pas être négatif.": "The saved amount can't be negative.",
   "La cotisation doit être positive.": "The contribution must be positive.",
   "Au moins 2 membres.": "At least 2 members.",
+  "40 caractères maximum.": "40 characters maximum.",
+  "60 membres maximum.": "60 members maximum.",
+  "Introuvable.": "Not found.",
   "Ton tour doit tomber pendant la durée de la daret.": "Your turn must fall within the daret's duration.",
 };

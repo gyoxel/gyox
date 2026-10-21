@@ -21,7 +21,7 @@ export async function HomeHeader({ name }: { name: string }) {
   const firstName = name.split(" ")[0];
 
   return (
-    <header data-tone className="relative z-10 px-5 pb-1 pt-4 text-slate-900 dark:text-white">
+    <header data-tone data-home-header className="relative z-10 px-5 pb-1 pt-4 text-slate-900 dark:text-white">
       <div className="flex h-12 items-center gap-3">
         <RefreshLogo />
         <div className="min-w-0 flex-1">
@@ -30,7 +30,6 @@ export async function HomeHeader({ name }: { name: string }) {
         </div>
         <Link
           href="/calendar"
-          prefetch
           aria-label={`${t("Calendrier")} · ${part({ weekday: "long", day: "numeric", month: "long" })}`}
           className={`${HEADER_BUTTON} flex-col gap-0 leading-none`}
         >
@@ -39,7 +38,7 @@ export async function HomeHeader({ name }: { name: string }) {
           </span>
           <span className="text-[15px] font-bold">{part({ day: "numeric" })}</span>
         </Link>
-        <Link href="/settings" prefetch data-nav="section" aria-label={t("Paramètres")} className={HEADER_BUTTON}>
+        <Link href="/settings" data-nav="section" aria-label={t("Paramètres")} className={HEADER_BUTTON}>
           <GearSix weight="bold" className="h-[19px] w-[19px]" />
         </Link>
       </div>

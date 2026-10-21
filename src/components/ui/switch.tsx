@@ -7,6 +7,7 @@ export function Switch({
   onCheckedChange,
   id,
   label,
+  "aria-label": ariaLabel,
   disabled,
   className,
 }: {
@@ -15,6 +16,7 @@ export function Switch({
   id?: string;
   /** Accessible name when there's no visible <label htmlFor>. */
   label?: string;
+  "aria-label"?: string;
   disabled?: boolean;
   className?: string;
 }) {
@@ -24,7 +26,7 @@ export function Switch({
       role="switch"
       id={id}
       aria-checked={checked}
-      aria-label={label}
+      aria-label={label ?? ariaLabel}
       disabled={disabled}
       onClick={() => onCheckedChange(!checked)}
       className={cn(

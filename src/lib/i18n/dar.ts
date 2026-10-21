@@ -1234,5 +1234,8 @@ export const DAR: Record<string, string> = {
   "Le montant épargné ne peut pas être négatif.": "Lmontant lmwffer ma ymknch ykoun na9s mn 0.",
   "La cotisation doit être positive.": "Cotisation khassha tkoun kbr mn 0.",
   "Au moins 2 membres.": "3la l'a9al 2 membres.",
+  "40 caractères maximum.": "40 7arf l'ktar.",
+  "60 membres maximum.": "60 3odw l'ktar.",
+  "Introuvable.": "Ma tl9ach.",
   "Ton tour doit tomber pendant la durée de la daret.": "Nobtk khassha tkoun f lmodda dyal daret.",
 };
