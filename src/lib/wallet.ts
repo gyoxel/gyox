@@ -5,6 +5,7 @@
 import { displayIcon } from "./category";
 import { daretPayout } from "./daret";
 import { incomeCategory } from "./income";
+import { loanRemaining, loanToRepay } from "./loans";
 import { savingsBalance } from "./savings";
 import { msg } from "./i18n";
 import type {
@@ -59,7 +60,9 @@ export interface WalletSummary {
   total: number;
   /** Épargne: put aside, outside the Solde. */
   savings: number;
-  /** In / out of each account during `month` ("YYYY-MM"), transfers excluded. */
+  /** In / out of each account during `month` ("YYYY-MM"), transfers
+   *  excluded; money lent only for what hasn't come back, what comes back
+   *  not as money in. */
   monthIn: Record<PaymentMethod, number>;
   monthOut: Record<PaymentMethod, number>;
   /** Newest first. */
@@ -106,6 +109,7 @@ export function buildWallet(input: {
   const entries: WalletEntry[] = [];
   // Expense / income id → the savings move or loan behind it.
   const source = new Map<string, { kind: EntryKind; href: string }>();
+  const loanExpenses = new Set<string>();
   for (const m of input.savingsMoves ?? []) {
     const link = { kind: "savings" as const, href: `/epargne/${m.id}` };
     if (m.expenseId) source.set(m.expenseId, link);
@@ -113,7 +117,10 @@ export function buildWallet(input: {
   }
   for (const l of input.loans ?? []) {
     const link = { kind: "loan" as const, href: `/prets/${l.id}` };
-    if (l.expenseId) source.set(l.expenseId, link);
+    if (l.expenseId) {
+      source.set(l.expenseId, link);
+      loanExpenses.add(l.expenseId);
+    }
     for (const r of l.repayments) if (r.incomeId) source.set(r.incomeId, link);
   }
 
@@ -167,7 +174,9 @@ export function buildWallet(input: {
   }
   for (const p of input.payments) {
     const e = byId.get(p.expenseId);
-    if (!e || !p.method || !countsInWallet(p, byId)) continue;
+    // A loan's money out comes from the loan itself (below): its expense
+    // may show less in Dépenses, or be gone once all is given back.
+    if (!e || !p.method || !countsInWallet(p, byId) || loanExpenses.has(e.id)) continue;
     entries.push({
       id: `payment-${p.id}`,
       kind: source.get(e.id)?.kind ?? (e.type === "credit" ? "credit" : "expense"),
@@ -176,6 +185,18 @@ export function buildWallet(input: {
       label: e.name,
       lines: [{ account: p.method, amount: -p.amountPaid }],
       href: source.get(e.id)?.href ?? `/expenses/${e.id}`,
+    });
+  }
+  for (const l of input.loans ?? []) {
+    if (!l.expenseId || !l.method) continue;
+    entries.push({
+      id: `loan-${l.id}`,
+      kind: "loan",
+      at: l.createdAt,
+      emoji: "💸",
+      label: `Argent prêté · ${l.name}`,
+      lines: [{ account: l.method, amount: -loanToRepay(l) }],
+      href: `/prets/${l.id}`,
     });
   }
   for (const g of input.goals ?? []) {
@@ -228,11 +249,16 @@ export function buildWallet(input: {
   for (const e of entries) {
     for (const l of e.lines) {
       balance[l.account] += l.amount;
-      if (e.kind !== "transfer" && e.kind !== "adjust" && e.at.slice(0, 7) === input.month) {
+      // Money lent and given back: not the month's in and out (below).
+      if (e.kind !== "transfer" && e.kind !== "adjust" && e.kind !== "loan" && e.at.slice(0, 7) === input.month) {
         if (l.amount > 0) monthIn[l.account] += l.amount;
         else monthOut[l.account] -= l.amount;
       }
     }
+  }
+  // Of a loan, the month it was lent: only what hasn't come back yet.
+  for (const l of input.loans ?? []) {
+    if (l.expenseId && l.method && l.date.slice(0, 7) === input.month) monthOut[l.method] += loanRemaining(l);
   }
   const r2 = (o: Record<PaymentMethod, number>) => ({
     cash: round(o.cash),

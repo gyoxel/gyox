@@ -1,6 +1,6 @@
 // Prêts: a loan's installments and where it stands. Pure (no DB access).
 import { addMonths, compareMonths, parseMonthKey, type MonthId } from "./date";
-import type { Loan, LoanRepayment } from "./types";
+import type { Expense, Loan, LoanRepayment, Payment } from "./types";
 
 const round = (n: number) => Math.round(n * 100) / 100;
 
@@ -38,6 +38,33 @@ export interface LoanState {
 
 export function loanToRepay(loan: Pick<Loan, "amount" | "priorRepaid">): number {
   return round(loan.amount - (loan.priorRepaid ?? 0));
+}
+
+/** Still out of your pocket: what was lent less everything given back. */
+export function loanRemaining(loan: Pick<Loan, "amount" | "priorRepaid" | "repayments">): number {
+  const received = loan.repayments.reduce((s, r) => s + r.amount, 0);
+  return round(Math.max(0, loanToRepay(loan) - received));
+}
+
+/**
+ * Money lent isn't spent, money given back isn't earned: what counts in the
+ * month's expenses is only what hasn't come back yet. The expenses and
+ * payments as Dépenses, Statistiques, the Calendrier and the bilan count
+ * them: a loan's expense (and its payment) is down to what's left to give
+ * back, and goes once it's all back. The Solde keeps the real movements
+ * (see buildWallet). Nothing stored changes.
+ */
+export function netOfLoans(expenses: Expense[], payments: Payment[], loans: Loan[]): { expenses: Expense[]; payments: Payment[] } {
+  const left = new Map<string, number>();
+  for (const l of loans) if (l.expenseId) left.set(l.expenseId, loanRemaining(l));
+  if (left.size === 0) return { expenses, payments };
+  const kept = (id: string) => (left.get(id) ?? 1) > 0.005;
+  return {
+    expenses: expenses.filter((e) => kept(e.id)).map((e) => (left.has(e.id) ? { ...e, amount: left.get(e.id)! } : e)),
+    payments: payments
+      .filter((p) => kept(p.expenseId))
+      .map((p) => (left.has(p.expenseId) ? { ...p, amountDue: left.get(p.expenseId)!, amountPaid: left.get(p.expenseId)! } : p)),
+  };
 }
 
 const MAX_SLOTS = 600;
@@ -96,7 +123,7 @@ export function loanState(loan: Loan, current: MonthId): LoanState {
   return {
     toRepay,
     received,
-    remaining: round(Math.max(0, toRepay - received)),
+    remaining: loanRemaining(loan),
     slots,
     due: open.filter((s) => compareMonths(s.month, current) <= 0),
     next: open[0] ?? null,

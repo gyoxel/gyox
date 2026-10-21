@@ -51,7 +51,8 @@ export default async function IncomesPage() {
     badge?: string;
   };
   const rows: Row[] = [
-    ...incomes.map((i) => ({
+    // Money lent and given back isn't income: it's in « Argent prêté ».
+    ...incomes.filter((i) => i.category !== "pret").map((i) => ({
       id: i.id,
       href: `/incomes/${i.id}`,
       emoji: incomeCategory(i.category, incomeCategories).emoji,
@@ -65,11 +66,9 @@ export default async function IncomesPage() {
         ? t("Dette")
         : i.category === "epargne"
           ? t("Épargne")
-          : i.category === "pret"
-            ? t("Argent prêté")
-            : i.category === "budget"
-              ? t("Budget")
-              : undefined,
+          : i.category === "budget"
+            ? t("Budget")
+            : undefined,
     })),
     ...darets
       .filter((d) => d.payoutMethod && d.payoutReceivedAt)

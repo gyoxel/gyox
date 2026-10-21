@@ -113,6 +113,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Prêter de l'argent avec le bouton + : il peut sortir de ton solde (dans tes dépenses)."),
       msg("Confirmer un remboursement reçu (« Reçu ? ») : il revient dans ton solde."),
       msg("Toucher un prêt pour voir chaque mois, corriger un remboursement ou le modifier."),
+      msg("Ce qui t'est rendu ne compte pas comme un revenu : il sort de tes dépenses du mois du prêt. Seul ce qui n'est pas encore revenu compte (bilan, statistiques)."),
     ],
   },
   pret: {
@@ -354,7 +355,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Voir les entrées, les sorties et ce qui reste en espèces et sur la carte, comparés au mois précédent."),
       msg("Voir ce qui a été mis de côté dans l'épargne."),
       msg("Voir les dépenses par catégorie. Touche une catégorie pour son détail."),
-      msg("Changer de mois avec ‹ ›. Il s'ouvre sur le mois qui vient de finir."),
+      msg("Changer de mois avec ‹ ›. Il s'ouvre sur le mois en cours."),
       msg("Les premiers jours du mois, ce bilan apparaît aussi sur l'Accueil."),
     ],
   },
