@@ -1,11 +1,13 @@
+import { Fragment } from "react";
 import { getAllSalaryAdvances, getAllSalaryReceipts, getSettings } from "@/lib/page-data";
 import { parseMonthKey } from "@/lib/date";
 import { formatDate, monthLabel, whenLabel } from "@/lib/i18n/dates";
 import { getI18n } from "@/lib/i18n/server";
-import { formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { SalaryPanel } from "@/components/countdown-next-salary";
 import { MethodLabel } from "@/components/method-icon";
+import { DateDivider, dividersOf } from "@/components/date-divider";
+import { cn, formatMoney } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +31,12 @@ function nextPayDay(payDay: number): { date: Date; days: number } {
 export default async function SalaryPage() {
   const [settings, advances, receipts, { lang, t }] = await Promise.all([getSettings(), getAllSalaryAdvances(), getAllSalaryReceipts(), getI18n()]);
   const money = (n: number) => formatMoney(n, settings.currency);
+  // The last received on top, the day it came over the line above it (once for the same day).
+  const lastReceived = [...receipts].reverse();
+  const receivedOn = dividersOf(
+    lastReceived.map((r) => whenLabel(r.createdAt, lang, t)),
+    "",
+  );
   const next = nextPayDay(settings.payDay);
   const nextLabel = formatDate(next.date, lang, { weekday: "long", day: "numeric", month: "long" });
 
@@ -67,8 +75,10 @@ export default async function SalaryPage() {
           <section className="flex flex-col gap-2">
             <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Salaires reçus")}</h2>
             <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              {[...receipts].reverse().map((r) => (
-                <li key={r.id} className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 first:border-t-0 dark:border-slate-800">
+              {lastReceived.map((r, i) => (
+                <Fragment key={r.id}>
+                {receivedOn[i] && <DateDivider label={receivedOn[i]} />}
+                <li className={cn("flex items-center gap-3 px-4 py-3", !receivedOn[i] && "border-t border-slate-100 first:border-t-0 dark:border-slate-800")}>
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl gx-tile text-base">
                     💼
                   </span>
@@ -77,11 +87,12 @@ export default async function SalaryPage() {
                       {monthLabel(parseMonthKey(r.period), lang)}
                     </span>
                     <span className="block text-[11px] text-slate-400">
-                      {whenLabel(r.createdAt, lang, t)} · <MethodLabel method={r.method} />
+                      <MethodLabel method={r.method} />
                     </span>
                   </span>
                   <span className="text-sm font-semibold tabular-nums text-emerald-600">+{money(r.amount)}</span>
                 </li>
+                </Fragment>
               ))}
             </ul>
           </section>

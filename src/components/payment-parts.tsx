@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { PencilSimple } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { Expense, Payment, PaymentMethod } from "@/lib/types";
@@ -10,6 +10,7 @@ import { formatMoney } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
 import { AmountSheet } from "@/components/amount-sheet";
 import { MethodLabel } from "@/components/method-icon";
+import { DateDivider, dividersOf } from "@/components/date-divider";
 import { localName, type T } from "@/lib/i18n";
 import { whenLabel } from "@/lib/i18n/dates";
 import { useI18n } from "@/lib/i18n/client";
@@ -34,16 +35,36 @@ export function explainPayment(expense: Expense, left: number, value: number, mo
   return t("Ce mois est réglé ✓");
 }
 
-/** One payment of a month: when, cash / card, how much — tap to correct it. */
-export function PaymentPartRow({ payment, currency, onClick }: { payment: Payment; currency: string; onClick: () => void }) {
+/** A month's payments, each under the day it was paid (over the line above
+ *  it, once for the same day) — tap one to correct it. */
+export function PaymentPartList({ parts, currency, onPick, className }: { parts: Payment[]; currency: string; onPick: (payment: Payment) => void; className?: string }) {
   const { lang, t } = useI18n();
+  const days = dividersOf(
+    parts.map((p) => whenLabel(p.paidAt, lang, t)),
+    "",
+  );
+  return (
+    <ul className={className}>
+      {parts.map((p, i) => (
+        <Fragment key={p.id}>
+          {days[i] && <DateDivider label={days[i]} className="px-3" />}
+          <li className={days[i] ? undefined : "border-t border-slate-100 first:border-t-0 dark:border-slate-800"}>
+            <PaymentPartRow payment={p} currency={currency} onClick={() => onPick(p)} />
+          </li>
+        </Fragment>
+      ))}
+    </ul>
+  );
+}
+
+/** One payment of a month: cash / card, how much — tap to correct it. */
+function PaymentPartRow({ payment, currency, onClick }: { payment: Payment; currency: string; onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className="flex w-full items-center gap-2 px-3 py-3 text-left text-sm active:bg-slate-50 dark:active:bg-slate-800"
     >
-      <span className="tabular-nums text-slate-500 dark:text-slate-400">{whenLabel(payment.paidAt, lang, t)}</span>
       {payment.method && (
         <span className="text-slate-500 dark:text-slate-400">
           <MethodLabel method={payment.method} />
@@ -160,13 +181,7 @@ export function MonthPayments({
       {rest > 0.005 && (
         <p className="text-[11px] font-medium text-amber-700 dark:text-amber-400">{t("Reste {amount} à payer ce mois-ci", { amount: money(rest) })}</p>
       )}
-      <ul className="-mx-1 overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-800">
-        {parts.map((p) => (
-          <li key={p.id} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
-            <PaymentPartRow payment={p} currency={currency} onClick={() => setPicked(p)} />
-          </li>
-        ))}
-      </ul>
+      <PaymentPartList parts={parts} currency={currency} onPick={setPicked} className="-mx-1 overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-800" />
       <p className="text-[11px] text-slate-400">{t("Touche un paiement pour corriger son montant, espèces ou carte, ou le supprimer.")}</p>
       {picked && (
         <PaymentPartSheet

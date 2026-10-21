@@ -1,5 +1,6 @@
 import { getLoan, getSettings } from "@/lib/page-data";
 import NotFound from "@/app/not-found";
+import { Fragment } from "react";
 import Link from "next/link";
 import { Check, Clock, PencilSimple } from "@phosphor-icons/react/ssr";
 
@@ -7,7 +8,7 @@ import { loanState, type LoanSlot } from "@/lib/loans";
 import { loanDelete } from "@/lib/delete-specs";
 import { compareMonths, todayMonth } from "@/lib/date";
 import type { T } from "@/lib/i18n";
-import { monthLabel } from "@/lib/i18n/dates";
+import { monthLabel, whenLabel } from "@/lib/i18n/dates";
 import { getI18n } from "@/lib/i18n/server";
 import { cn, formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
@@ -15,6 +16,7 @@ import { DeleteButton } from "@/components/delete-button";
 import { ReceiveRepayment, RepaymentRow } from "@/components/loan-repayments";
 import { Button } from "@/components/ui/button";
 import { MethodLabel } from "@/components/method-icon";
+import { DateDivider, dividersOf } from "@/components/date-divider";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +70,11 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
             {state.slots.map((s) => {
               const isDue = s.open && compareMonths(s.month, current) <= 0;
               const full = !s.open && s.received > 0 && s.received >= s.amount - 0.005;
+              // Each repayment under the day it came, over the line above it (once for the same day).
+              const days = dividersOf(
+                s.repayments.map((r) => whenLabel(r.date, lang, t)),
+                "",
+              );
               return (
                 <li key={s.slot} className="flex items-start gap-3 border-t border-slate-100 px-4 py-3 first:border-t-0 dark:border-slate-800">
                   <span
@@ -111,17 +118,19 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
                     )}
                     {s.repayments.length > 0 && (
                       <span className="-mx-2 mt-1 block">
-                        {s.repayments.map((r) => (
-                          <RepaymentRow
-                            key={r.id}
-                            repayment={r}
-                            loanId={loan.id}
-                            slot={s.slot}
-                            name={loan.name}
-                            monthLabel={monthLabelFr(s.month)}
-                            expected={s.amount}
-                            received={s.received}
-                          />
+                        {s.repayments.map((r, i) => (
+                          <Fragment key={r.id}>
+                            {days[i] && <DateDivider as="span" label={days[i]} className="px-2 pt-1.5" />}
+                            <RepaymentRow
+                              repayment={r}
+                              loanId={loan.id}
+                              slot={s.slot}
+                              name={loan.name}
+                              monthLabel={monthLabelFr(s.month)}
+                              expected={s.amount}
+                              received={s.received}
+                            />
+                          </Fragment>
                         ))}
                       </span>
                     )}

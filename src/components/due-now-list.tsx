@@ -20,7 +20,7 @@ import { insufficientMessage } from "@/lib/balance-message";
 import { formatMoney, cn } from "@/lib/utils";
 import { ColorDot } from "@/components/color-dot";
 import { AmountSheet } from "@/components/amount-sheet";
-import { explainPayment, PaymentPartRow, PaymentPartSheet } from "@/components/payment-parts";
+import { explainPayment, PaymentPartList, PaymentPartSheet } from "@/components/payment-parts";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { displayIcon } from "@/lib/category";
 import { MethodIcon, MethodLabel } from "@/components/method-icon";
@@ -683,13 +683,7 @@ function EditPayment({
             {expense.icon ?? "🧾"} {localName(expense.name, t)} · {label} · {t("{paid} payés sur {due}", { paid: money(paid), due: money(due) })}
           </DialogDescription>
         </DialogHeader>
-        <ul className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
-          {parts.map((p) => (
-            <li key={p.id} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
-              <PaymentPartRow payment={p} currency={currency} onClick={() => setPicked(p)} />
-            </li>
-          ))}
-        </ul>
+        <PaymentPartList parts={parts} currency={currency} onPick={setPicked} className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800" />
         <p className="text-center text-[11px] text-slate-400">{t("Touche un paiement pour changer son montant, espèces ou carte, ou le supprimer.")}</p>
       </DialogContent>
     </Dialog>

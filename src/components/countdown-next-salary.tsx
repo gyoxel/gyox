@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore, useTransition } from "react";
+import { Fragment, useState, useSyncExternalStore, useTransition } from "react";
 import { CaretRight, Check, HandCoins, Money, Trash, X } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import { errorMessage } from "@/components/expense-editor";
@@ -15,6 +15,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SalaryForm } from "@/components/salary-form";
 import { MethodIcon } from "@/components/method-icon";
+import { DateDivider, dividersOf } from "@/components/date-divider";
 import { useRevealedBalance } from "@/lib/reveal-balance";
 import type { Lang } from "@/lib/i18n";
 import { formatDate, monthName, whenLabel } from "@/lib/i18n/dates";
@@ -475,6 +476,12 @@ export function SalaryPanel({
   const advancePeriod = state.phase === "counting" ? state.nextPeriod : state.period;
   const periodAdvances = advances.filter((a) => a.period === advancePeriod);
   const advancedTotal = periodAdvances.reduce((s, a) => s + a.amount, 0);
+  // The last on top, the day it came over the line above it (once for the same day).
+  const lastAdvances = [...periodAdvances].reverse();
+  const advancedOn = dividersOf(
+    lastAdvances.map((a) => whenLabel(a.date, lang, t)),
+    "",
+  );
   const money = (n: number) => formatMoney(n, settings.currency);
 
   function addAdvance() {
@@ -582,12 +589,14 @@ export function SalaryPanel({
           </p>
           {periodAdvances.length > 0 && (
             <ul className="flex flex-col gap-1 border-t border-amber-200/70 pt-2 text-sm dark:border-amber-900/60">
-              {[...periodAdvances].reverse().map((a) => (
-                <li key={a.id} className="flex items-center gap-2">
+              {lastAdvances.map((a, i) => (
+                <Fragment key={a.id}>
+                {advancedOn[i] && <DateDivider label={advancedOn[i]} className="px-0 pt-1" lineClassName="bg-amber-200/70 dark:bg-amber-900/60" />}
+                <li className="flex items-center gap-2">
                   <span className="flex-1 text-slate-700 dark:text-slate-200">
                     {money(a.amount)}
-                    <span className="ml-1.5 text-[11px] text-slate-400">
-                      {whenLabel(a.date, lang, t)} · <MethodIcon method={a.method} />
+                    <span className="ml-1.5 text-[11px]">
+                      <MethodIcon method={a.method} />
                     </span>
                   </span>
                   <button
@@ -599,6 +608,7 @@ export function SalaryPanel({
                     <Trash weight="bold" className="h-4 w-4" />
                   </button>
                 </li>
+                </Fragment>
               ))}
               <li className="text-[11px] text-slate-500 dark:text-slate-400">
                 {t("Salaire {of} restant :", { of: ofMonth(advancePeriod, lang) })}{" "}
