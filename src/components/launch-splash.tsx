@@ -64,7 +64,8 @@ export function LaunchSplash() {
         ))}
       </div>
       <div className="gx-splash-logo">
-        <span>GX</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo-512.png" alt="" width={240} height={240} />
       </div>
       <p className="gx-splash-name">GX Salaire</p>
       <div className="gx-splash-bar">

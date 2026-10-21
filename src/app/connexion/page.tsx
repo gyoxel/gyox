@@ -39,9 +39,8 @@ export default async function ConnexionPage({ searchParams }: PageProps<"/connex
       <ForgetOnMount />
       <LoginBackdrop />
       <div className="relative flex flex-col items-center text-center">
-        <span className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-white text-3xl font-black tracking-tight text-violet-700 shadow-[0_20px_40px_-16px_rgba(20,8,60,0.6),inset_0_-3px_8px_rgba(91,33,182,0.12)]">
-          GX
-        </span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo-192.png" alt="GX" width={80} height={80} className="h-20 w-20 drop-shadow-[0_20px_24px_rgba(20,8,60,0.45)]" />
         <h1 className="mt-5 text-3xl font-extrabold tracking-tight">
           GX <span className="font-semibold text-white/85">Salaire</span>
         </h1>
