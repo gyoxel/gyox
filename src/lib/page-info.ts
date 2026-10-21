@@ -66,6 +66,8 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Transférer de l'argent entre espèces, carte et épargne (retrait au guichet, versement…)."),
       msg("Ajuster un compte : indique ce que tu as vraiment, la différence est enregistrée."),
       msg("Toucher un compte pour filtrer l'historique."),
+      msg("Toucher « Entrées du mois » ou « Sorties du mois » : l'historique montre ce qui les fait, avec le même total en bas."),
+      msg("« hors total » : ne compte pas dans les entrées et sorties (un transfert, de l'argent prêté qui revient). « compté : … » : d'un prêt, seul ce qui n'est pas revenu compte."),
       msg("Filtrer l'historique : entrées ou sorties, et par catégorie (glisse pour toutes les voir)."),
       msg("Voir chaque entrée et sortie, jour par jour, et supprimer un transfert ou un ajustement."),
     ],
@@ -355,6 +357,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     points: [
       msg("Voir les entrées, les sorties et ce qui reste en espèces et sur la carte, comparés au mois précédent."),
       msg("Voir ce qui a été mis de côté dans l'épargne."),
+      msg("Les ajustements du solde comptent : en plus, une entrée ; en moins, une sortie."),
       msg("Voir les dépenses par catégorie. Touche une catégorie pour son détail."),
       msg("Changer de mois avec ‹ ›. Il s'ouvre sur le mois en cours."),
       msg("Les premiers jours du mois, ce bilan apparaît aussi sur l'Accueil."),

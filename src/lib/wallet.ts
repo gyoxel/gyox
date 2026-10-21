@@ -55,6 +55,12 @@ export interface WalletEntry {
   opId?: string;
   /** Its category, to filter the history. */
   group: EntryGroup;
+  /** What it counts in the month's money in (+) / out (−), on its account
+   *  (lines[0]): all of it, but nothing for a transfer (money only moved)
+   *  nor for money lent coming back (not earned), and of money lent only
+   *  what hasn't come back yet. An adjustment counts: money found was money
+   *  in, money missing was money out, unrecorded. */
+  counted: number;
 }
 
 /** An entry's category: the user's own (an expense's, an income's), or
@@ -71,7 +77,8 @@ export interface EntryGroup {
 
 const appGroup = (key: keyof typeof GROUPS): EntryGroup => ({ key, label: GROUPS[key].label, own: false, emoji: GROUPS[key].emoji });
 const SALARY_GROUP: EntryGroup = { key: "salary", label: msg("Salaire"), own: false, emoji: "💼" };
-const INTERNAL_GROUP: EntryGroup = { key: "internal", label: msg("Transferts et ajustements"), own: false, emoji: "🔁" };
+const TRANSFER_GROUP: EntryGroup = { key: "transfer", label: msg("Transferts"), own: false, emoji: "🔁" };
+const ADJUST_GROUP: EntryGroup = { key: "adjust", label: msg("Ajustements"), own: false, emoji: "✏️" };
 
 export interface WalletSummary {
   balance: Record<PaymentMethod, number>;
@@ -79,9 +86,8 @@ export interface WalletSummary {
   total: number;
   /** Épargne: put aside, outside the Solde. */
   savings: number;
-  /** In / out of each account during `month` ("YYYY-MM"), transfers
-   *  excluded; money lent only for what hasn't come back, what comes back
-   *  not as money in. */
+  /** In / out of each account during `month` ("YYYY-MM"): what the
+   *  entries of that month count (see WalletEntry.counted). */
   monthIn: Record<PaymentMethod, number>;
   monthOut: Record<PaymentMethod, number>;
   /** Newest first. */
@@ -89,6 +95,11 @@ export interface WalletSummary {
 }
 
 const round = (n: number) => Math.round(n * 100) / 100;
+
+const MONTH_OF = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Casablanca", year: "numeric", month: "2-digit" });
+/** The month ("YYYY-MM") an entry falls in, in Moroccan time (as the
+ *  history's days are). */
+export const entryMonth = (entry: Pick<WalletEntry, "at">) => MONTH_OF.format(new Date(entry.at));
 const MONTHS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
 const periodLabel = (period: string) => `${MONTHS[Number(period.slice(5, 7)) - 1]} ${period.slice(0, 4)}`;
 
@@ -127,7 +138,7 @@ export function buildWallet(input: {
   month: string;
 }): WalletSummary {
   const byId = new Map(input.expenses.map((e) => [e.id, e]));
-  const entries: WalletEntry[] = [];
+  const entries: Omit<WalletEntry, "counted">[] = [];
   // Expense / income id → the savings move or loan behind it.
   const source = new Map<string, { kind: EntryKind; href: string; group: EntryGroup }>();
   const loanExpenses = new Set<string>();
@@ -288,28 +299,27 @@ export function buildWallet(input: {
           ]
         : [{ account: o.toAccount, amount: o.amount }],
       opId: o.id,
-      group: INTERNAL_GROUP,
+      group: transfer ? TRANSFER_GROUP : ADJUST_GROUP,
     });
   }
 
-  entries.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+  // Of money lent, what still counts (what hasn't come back).
+  const lentLeft = new Map((input.loans ?? []).map((l) => [`loan-${l.id}`, -loanRemaining(l)]));
+  const all: WalletEntry[] = entries
+    .map((e) => ({
+      ...e,
+      counted: e.kind === "transfer" ? 0 : e.kind === "loan" ? (lentLeft.get(e.id) ?? 0) : e.lines[0].amount,
+    }))
+    .sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
 
   const balance = { cash: 0, card: 0 };
   const monthIn = { cash: 0, card: 0 };
   const monthOut = { cash: 0, card: 0 };
-  for (const e of entries) {
-    for (const l of e.lines) {
-      balance[l.account] += l.amount;
-      // Money lent and given back: not the month's in and out (below).
-      if (e.kind !== "transfer" && e.kind !== "adjust" && e.kind !== "loan" && e.at.slice(0, 7) === input.month) {
-        if (l.amount > 0) monthIn[l.account] += l.amount;
-        else monthOut[l.account] -= l.amount;
-      }
-    }
-  }
-  // Of a loan, the month it was lent: only what hasn't come back yet.
-  for (const l of input.loans ?? []) {
-    if (l.expenseId && l.method && l.date.slice(0, 7) === input.month) monthOut[l.method] += loanRemaining(l);
+  for (const e of all) {
+    for (const l of e.lines) balance[l.account] += l.amount;
+    if (e.counted === 0 || entryMonth(e) !== input.month) continue;
+    if (e.counted > 0) monthIn[e.lines[0].account] += e.counted;
+    else monthOut[e.lines[0].account] -= e.counted;
   }
   const r2 = (o: Record<PaymentMethod, number>) => ({
     cash: round(o.cash),
@@ -321,6 +331,6 @@ export function buildWallet(input: {
     savings: savingsBalance(input.savingsMoves ?? [], input.payments),
     monthIn: r2(monthIn),
     monthOut: r2(monthOut),
-    entries,
+    entries: all,
   };
 }

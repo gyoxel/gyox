@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, ArrowsLeftRight, CaretRight, PencilSimpleLine, Trash } from "@phosphor-icons/react/ssr";
+import { ArrowDown, ArrowUp, ArrowsLeftRight, CalendarBlank, CaretRight, PencilSimpleLine, Trash, X } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { PaymentMethod } from "@/lib/types";
-import type { EntryGroup, WalletEntry, WalletSummary } from "@/lib/wallet";
+import { entryMonth, type EntryGroup, type WalletEntry, type WalletSummary } from "@/lib/wallet";
 import { METHOD_META } from "@/lib/payment-method";
 import { mutate } from "@/lib/use-refresh-data";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MethodIcon, MethodLabel } from "@/components/method-icon";
 import { categoryName, localName, msg, type Lang, type T } from "@/lib/i18n";
-import { formatDate, monthLabelShort } from "@/lib/i18n/dates";
+import { formatDate, monthLabel, monthLabelShort } from "@/lib/i18n/dates";
 import { parseMonthKey } from "@/lib/date";
 import { useI18n } from "@/lib/i18n/client";
 
@@ -67,6 +67,11 @@ function shownAmount(entry: WalletEntry, account: PaymentMethod | "all"): number
 
 const groupLabel = (g: EntryGroup, t: T) => (g.own ? categoryName(g.label, t) : t(g.label));
 
+/** What an entry counts in the month's money in / out on the account shown
+ *  (its own account; nothing elsewhere). */
+const countedOn = (entry: WalletEntry, account: PaymentMethod | "all") =>
+  account === "all" || entry.lines[0].account === account ? entry.counted : 0;
+
 function dayTitle(iso: string, todayKey: string, yesterdayKey: string, lang: Lang, t: T): string {
   const key = DAY_KEY.format(new Date(iso));
   if (key === todayKey) return t("Aujourd'hui");
@@ -97,7 +102,10 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
   const [filter, setFilter] = useState<PaymentMethod | "all">("all");
   const [direction, setDirection] = useState<Direction>("all");
   const [group, setGroup] = useState<string | null>(null);
+  /** Only this month's movements (from « Entrées / Sorties du mois »). */
+  const [thisMonth, setThisMonth] = useState(false);
   const [shown, setShown] = useState(PAGE);
+  const historyRef = useRef<HTMLElement>(null);
   const [transferOpen, setTransferOpen] = useState(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [toDelete, setToDelete] = useState<WalletEntry | null>(null);
@@ -106,8 +114,11 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
   const monthInTotal = wallet.monthIn.cash + wallet.monthIn.card;
   const monthOutTotal = wallet.monthOut.cash + wallet.monthOut.card;
 
-  // The history: by account, then money in / out, then category.
-  const onAccount = wallet.entries.filter((e) => filter === "all" || e.lines.some((l) => l.account === filter));
+  // The history: by account (and this month), then money in / out, then category.
+  const month = entryMonth({ at: new Date().toISOString() });
+  const onAccount = wallet.entries.filter(
+    (e) => (filter === "all" || e.lines.some((l) => l.account === filter)) && (!thisMonth || entryMonth(e) === month),
+  );
   const inDirection =
     direction === "all"
       ? onAccount
@@ -123,13 +134,14 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
   if (picked && !chips.has(picked.key)) chips.set(picked.key, { group: picked, count: 0 });
   const chipList = [...chips.values()].sort((a, b) => b.count - a.count || groupLabel(a.group, t).localeCompare(groupLabel(b.group, t)));
   const list = group ? inDirection.filter((e) => e.group.key === group) : inDirection;
-  const filtered = direction !== "all" || group != null;
+  const filtered = direction !== "all" || group != null || thisMonth;
+  // What they count (as the month's Entrées / Sorties do).
   let sumIn = 0;
   let sumOut = 0;
   for (const e of list) {
-    const amount = shownAmount(e, filter);
-    if (amount > 0) sumIn += amount;
-    else sumOut -= amount;
+    const counted = countedOn(e, filter);
+    if (counted > 0) sumIn += counted;
+    else sumOut -= counted;
   }
   const visible = list.slice(0, shown);
   const now = new Date();
@@ -145,6 +157,17 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
   function refilter(change: () => void) {
     change();
     setShown(PAGE);
+  }
+
+  /** « Entrées / Sorties du mois »: the history shows what makes them. */
+  function showMonth(d: "in" | "out") {
+    refilter(() => {
+      setFilter("all");
+      setDirection(d);
+      setGroup(null);
+      setThisMonth(true);
+    });
+    requestAnimationFrame(() => historyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
 
   function remove(entry: WalletEntry) {
@@ -169,22 +192,29 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
           {money(wallet.total)}
         </p>
         <div className="mt-4 grid grid-cols-2 divide-x divide-white/15 rounded-2xl bg-white/10 py-2.5">
-          <div className="flex flex-col items-center gap-0.5">
+          {/* Each opens the history on what makes it. */}
+          <button type="button" onClick={() => showMonth("in")} className="flex flex-col items-center gap-0.5 active:opacity-70">
             <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-white/60">
               <ArrowDown weight="bold" className="h-3 w-3 text-emerald-300" />
               {t("Entrées du mois")}
             </span>
-            <span className="text-sm font-bold tabular-nums text-emerald-300">{monthInTotal > 0 && "+"}
-              {money(monthInTotal)}</span>
-          </div>
-          <div className="flex flex-col items-center gap-0.5">
+            <span className="flex items-center gap-0.5 text-sm font-bold tabular-nums text-emerald-300">
+              {monthInTotal > 0 && "+"}
+              {money(monthInTotal)}
+              <CaretRight weight="bold" className="h-3 w-3 text-white/50" />
+            </span>
+          </button>
+          <button type="button" onClick={() => showMonth("out")} className="flex flex-col items-center gap-0.5 active:opacity-70">
             <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-white/60">
               <ArrowUp weight="bold" className="h-3 w-3 text-rose-300" />
               {t("Sorties du mois")}
             </span>
-            <span className="text-sm font-bold tabular-nums text-rose-300">{monthOutTotal > 0 && "−"}
-              {money(monthOutTotal)}</span>
-          </div>
+            <span className="flex items-center gap-0.5 text-sm font-bold tabular-nums text-rose-300">
+              {monthOutTotal > 0 && "−"}
+              {money(monthOutTotal)}
+              <CaretRight weight="bold" className="h-3 w-3 text-white/50" />
+            </span>
+          </button>
         </div>
       </div>
 
@@ -275,7 +305,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
       </section>
 
       {/* History */}
-      <section className="flex flex-col gap-3">
+      <section ref={historyRef} className="flex scroll-mt-24 flex-col gap-3">
         <div className="flex items-center justify-between gap-2 px-1">
           <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Historique")}</h2>
           <div
@@ -356,9 +386,21 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
             )}
 
             {/* What the filters keep */}
-            {filtered && list.length > 0 && (
-              <p className="flex flex-wrap items-center gap-x-2 px-1 text-xs text-slate-500 dark:text-slate-400">
-                <span>{list.length === 1 ? t("1 mouvement") : t("{n} mouvements", { n: list.length })}</span>
+            {(thisMonth || (filtered && list.length > 0)) && (
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 px-1 text-xs text-slate-500 dark:text-slate-400">
+                {thisMonth && (
+                  <button
+                    type="button"
+                    onClick={() => refilter(() => setThisMonth(false))}
+                    aria-label={t("Voir tous les mois")}
+                    className="flex items-center gap-1 rounded-full bg-violet-600/10 px-2 py-0.5 font-semibold capitalize text-violet-700 dark:text-violet-300"
+                  >
+                    <CalendarBlank weight="bold" className="h-3 w-3" />
+                    {monthLabel(parseMonthKey(month), lang)}
+                    <X weight="bold" className="h-3 w-3" />
+                  </button>
+                )}
+                {list.length > 0 && <span>{list.length === 1 ? t("1 mouvement") : t("{n} mouvements", { n: list.length })}</span>}
                 {sumIn > 0 && <span className="font-semibold tabular-nums text-emerald-600">+{money(sumIn)}</span>}
                 {sumOut > 0 && <span className="font-semibold tabular-nums text-rose-600">−{money(sumOut)}</span>}
               </p>
@@ -433,6 +475,16 @@ function EntryRow({
   // A transfer shows as moving money; filtered on one account, its change there.
   const line = filter === "all" ? entry.lines[entry.lines.length - 1] : entry.lines.find((l) => l.account === filter)!;
   const amount = transfer && filter === "all" ? Math.abs(line.amount) : line.amount;
+  // Moved but not (all) in the month's Entrées / Sorties: said so.
+  const counted = countedOn(entry, filter);
+  const note =
+    transfer && filter === "all"
+      ? null
+      : counted === 0
+        ? t("hors total")
+        : Math.abs(counted - line.amount) > 0.005
+          ? t("compté : {amount}", { amount: money(Math.abs(counted)) })
+          : null;
   const accounts = transfer ? (
     <>
       <MethodIcon method={entry.lines[0].account} /> → <MethodIcon method={entry.lines[1].account} />
@@ -459,6 +511,11 @@ function EntryRow({
         <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{entryLabel(entry, lang, t)}</span>
         <span className="block text-[11px] tabular-nums text-slate-400">
           {formatDate(new Date(entry.at), lang, TIME)} · {accounts}
+          {note && (
+            <span className="ml-1.5 whitespace-nowrap rounded-full bg-amber-100 px-1.5 py-px text-[10px] font-semibold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+              {note}
+            </span>
+          )}
         </span>
       </span>
       <span
