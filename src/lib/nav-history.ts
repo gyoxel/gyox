@@ -9,10 +9,11 @@
 //
 // The history also keeps how pages were opened, so the phone's back goes
 // back to the page one came in from, up to Accueil: Paramètres → Profil →
-// Admin, back → Profil → Paramètres → Accueil. A section opened from the
-// bar's tabs, the Menu or the header's Paramètres stands right after Accueil
-// instead of stacking on the page it was opened from: back from it is
-// Accueil. On Accueil, back asks for a second press before leaving the app.
+// Admin, back → Profil → Paramètres → Accueil; Menu → Solde, back → Menu →
+// Accueil. A section opened from the bar's tabs or the header's Paramètres
+// stands right after Accueil instead of stacking on the page it was opened
+// from: back from it is Accueil. On Accueil, back asks for a second press
+// before leaving the app.
 import { useCallback, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -101,7 +102,8 @@ type Router = ReturnType<typeof useRouter>;
 type Plan = { kind: "push" } | { kind: "replace" } | { kind: "hop"; to: number; replace: boolean };
 
 /** Links opening a section rather than something inside the page they're
- *  on: the bar's tabs, the Menu's pages, the header's Paramètres. */
+ *  on: the bar's tabs, the header's Paramètres. (The Menu's pages stack on
+ *  the Menu.) */
 const SECTION_LINK = "[data-nav='section']";
 
 /**
@@ -179,8 +181,11 @@ function onLinkClick(router: Router, e: MouseEvent) {
 
 /** Where back goes from a page when no in-app page came before it (the app
  *  reopened on it, the history lost): the page it's opened from — the pages
- *  of Paramètres back to Paramètres, Admin to Profil. Else Accueil. */
+ *  of Paramètres back to Paramètres, Admin to Profil, the Menu's own pages
+ *  to the Menu. Else Accueil (the bar's tabs too). */
+const MENU_PAGES = ["/incomes", "/solde", "/epargne", "/budgets", "/daret", "/prets", "/goals", "/calendar", "/stats", "/bilan"];
 const PARENTS: Record<string, string> = {
+  ...Object.fromEntries(MENU_PAGES.map((p) => [p, "/menu"])),
   "/profil": "/settings",
   "/salary": "/settings",
   "/categories": "/settings",
