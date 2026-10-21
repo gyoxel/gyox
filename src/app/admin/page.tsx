@@ -16,8 +16,6 @@ const when = (iso: string | null, lang: Lang) =>
         day: "numeric",
         month: "short",
         year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
         timeZone: "Africa/Casablanca",
       })
     : "—";

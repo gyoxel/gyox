@@ -6,7 +6,7 @@ import { ArrowDownLeft, ArrowUpRight, Bank, CaretRight } from "@phosphor-icons/r
 import type { PaymentMethod, SavingsMove } from "@/lib/types";
 import type { MonthlyPlan } from "@/lib/monthly-plan";
 import { monthKey, parseMonthKey, todayMonth } from "@/lib/date";
-import { doneAt, monthLabel, whenLabel } from "@/lib/i18n/dates";
+import { monthLabel, whenLabel } from "@/lib/i18n/dates";
 import { useI18n } from "@/lib/i18n/client";
 import { cn, formatMoney } from "@/lib/utils";
 import { TransferDialog, type Account } from "@/components/transfer-dialog";
@@ -22,8 +22,6 @@ interface Row {
   key: string;
   move: Move;
   date: string;
-  /** When it was done, for its small time (see whenLabel). */
-  at: string;
   amount: number;
   method: PaymentMethod;
   counted: boolean;
@@ -39,12 +37,11 @@ function historyRows(moves: Move[]): Row[] {
             move: m,
             // Ticked in its month: that day; later on: its month.
             date: p.paidAt.startsWith(p.monthKey) ? p.paidAt.slice(0, 10) : `${p.monthKey}-01`,
-            at: p.paidAt.startsWith(p.monthKey) ? p.paidAt : `${p.monthKey}-01`,
             amount: p.amount,
             method: p.method ?? m.method,
             counted: true,
           }))
-        : [{ key: m.id, move: m, date: m.date, at: doneAt(m.date, m.createdAt), amount: m.amount, method: m.method, counted: m.counted }],
+        : [{ key: m.id, move: m, date: m.date, amount: m.amount, method: m.method, counted: m.counted }],
     )
     .sort((a, b) => b.date.localeCompare(a.date));
 }
@@ -174,7 +171,7 @@ export function EpargneView({
             <section key={m} className="flex flex-col gap-2">
               <h2 className="px-1 text-sm font-semibold capitalize text-slate-600 dark:text-slate-300">{monthLabel(parseMonthKey(m), lang)}</h2>
               <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                {list.map(({ key, move: x, at, amount, method, counted }) => (
+                {list.map(({ key, move: x, date, amount, method, counted }) => (
                   <li key={key} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
                     <Link href={x.href} className="flex items-center gap-3 px-4 py-3 active:bg-slate-50 dark:active:bg-slate-800/60">
                       <span
@@ -203,7 +200,7 @@ export function EpargneView({
                           )}
                         </span>
                         <span className="block text-[11px] text-slate-400">
-                          {whenLabel(at, lang, t)} ·{" "}
+                          {whenLabel(date, lang, t)} ·{" "}
                           {x.kind === "existing"
                             ? t("Déjà épargné · hors solde")
                             : x.kind === "in"

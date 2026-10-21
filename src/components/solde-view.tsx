@@ -19,20 +19,9 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MethodIcon, MethodLabel } from "@/components/method-icon";
 import { categoryName, localName, msg, type Lang, type T } from "@/lib/i18n";
-import { formatDate, monthLabel, monthLabelShort } from "@/lib/i18n/dates";
+import { monthLabel, monthLabelShort, whenLabel } from "@/lib/i18n/dates";
 import { parseMonthKey } from "@/lib/date";
 import { useI18n } from "@/lib/i18n/client";
-
-const TIME_ZONE = "Africa/Casablanca";
-const DAY_KEY = new Intl.DateTimeFormat("en-CA", {
-  timeZone: TIME_ZONE,
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
-const DAY_TITLE: Intl.DateTimeFormatOptions = { timeZone: TIME_ZONE, weekday: "long", day: "numeric", month: "long" };
-const DAY_TITLE_YEAR: Intl.DateTimeFormatOptions = { timeZone: TIME_ZONE, day: "numeric", month: "long", year: "numeric" };
-const TIME: Intl.DateTimeFormatOptions = { timeZone: TIME_ZONE, hour: "2-digit", minute: "2-digit" };
 
 const ACCOUNTS: {
   key: PaymentMethod;
@@ -72,14 +61,6 @@ const groupLabel = (g: EntryGroup, t: T) => (g.own ? categoryName(g.label, t) : 
 const countedOn = (entry: WalletEntry, account: PaymentMethod | "all") =>
   account === "all" || entry.lines[0].account === account ? entry.counted : 0;
 
-function dayTitle(iso: string, todayKey: string, yesterdayKey: string, lang: Lang, t: T): string {
-  const key = DAY_KEY.format(new Date(iso));
-  if (key === todayKey) return t("Aujourd'hui");
-  if (key === yesterdayKey) return t("Hier");
-  const d = new Date(iso);
-  const label = formatDate(d, lang, key.slice(0, 4) === todayKey.slice(0, 4) ? DAY_TITLE : DAY_TITLE_YEAR);
-  return label.charAt(0).toUpperCase() + label.slice(1);
-}
 
 /** An entry's name in the device's language (the app's own wording; a
  *  name typed by the user stays as typed). */
@@ -145,11 +126,9 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
   }
   const visible = list.slice(0, shown);
   const now = new Date();
-  const todayKey = DAY_KEY.format(now);
-  const yesterdayKey = DAY_KEY.format(new Date(now.getTime() - 86_400_000));
   const groups: { title: string; items: WalletEntry[] }[] = [];
   for (const e of visible) {
-    const title = dayTitle(e.at, todayKey, yesterdayKey, lang, t);
+    const title = whenLabel(e.at, lang, t, now);
     if (groups.at(-1)?.title !== title) groups.push({ title, items: [] });
     groups.at(-1)!.items.push(e);
   }
@@ -510,7 +489,7 @@ function EntryRow({
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{entryLabel(entry, lang, t)}</span>
         <span className="block text-[11px] tabular-nums text-slate-400">
-          {formatDate(new Date(entry.at), lang, TIME)} · {accounts}
+          {accounts}
           {note && (
             <span className="ml-1.5 whitespace-nowrap rounded-full bg-amber-100 px-1.5 py-px text-[10px] font-semibold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
               {note}

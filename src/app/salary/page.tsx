@@ -77,7 +77,7 @@ export default async function SalaryPage() {
                       {monthLabel(parseMonthKey(r.period), lang)}
                     </span>
                     <span className="block text-[11px] text-slate-400">
-                      {t("Reçu")} {whenLabel(r.createdAt, lang, t)} · <MethodLabel method={r.method} />
+                      {whenLabel(r.createdAt, lang, t)} · <MethodLabel method={r.method} />
                     </span>
                   </span>
                   <span className="text-sm font-semibold tabular-nums text-emerald-600">+{money(r.amount)}</span>

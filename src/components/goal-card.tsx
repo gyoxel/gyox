@@ -10,7 +10,7 @@ import { DepositSourcePicker } from "@/components/payment-method-picker";
 import type { GoalProgress } from "@/lib/goals";
 import { parseMonthKey, type MonthId } from "@/lib/date";
 import type { MonthlyPlan } from "@/lib/monthly-plan";
-import { doneAt, monthLabel, monthLabelShort, whenLabel } from "@/lib/i18n/dates";
+import { monthLabel, monthLabelShort, whenLabel } from "@/lib/i18n/dates";
 import { useI18n } from "@/lib/i18n/client";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput } from "@/lib/utils";
 import { mutate } from "@/lib/use-refresh-data";
@@ -116,7 +116,7 @@ export function GoalCard({
   const p = progress;
   const money = (n: number) => formatMoney(n, currency);
   // When it last moved: its last deposit, else when it was added.
-  const lastAt = goal.deposits.map((d) => doneAt(d.date, d.createdAt)).reduce((a, b) => (b > a ? b : a), goal.createdAt);
+  const lastAt = goal.deposits.map((d) => d.date).reduce((a, b) => (b > a ? b : a), goal.createdAt);
 
   if (linkToDetail) {
     return (
@@ -265,7 +265,7 @@ export function GoalCard({
                             {row.plan.dueNow && <span className="ml-1 font-semibold text-amber-600">· {t("à cocher ce mois")}</span>}
                           </>
                         ) : (
-                          whenLabel(doneAt(row.deposit.date, row.deposit.createdAt), lang, t)
+                          whenLabel(row.deposit.date, lang, t)
                         )}
                         {!row.plan && row.deposit.method && (
                           <>

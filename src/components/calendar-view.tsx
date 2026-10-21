@@ -38,7 +38,6 @@ export interface CalendarInfo {
 // payment made just after midnight lands on the right day everywhere.
 const TIME_ZONE = "Africa/Casablanca";
 const DAY_KEY = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" });
-const TIME: Intl.DateTimeFormatOptions = { timeZone: TIME_ZONE, hour: "2-digit", minute: "2-digit" };
 const DAY_TITLE: Intl.DateTimeFormatOptions = { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" };
 const SWIPE_PX = 40;
 const WEEKDAYS: Record<Lang, string[]> = {
@@ -263,7 +262,6 @@ export function CalendarView({
                   <span className="text-lg leading-none">{e.icon}</span>
                   <span className="flex min-w-0 flex-1 items-baseline gap-2">
                     <span className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">{e.label}</span>
-                    {e.at.length > 10 && <span className="shrink-0 text-[11px] text-slate-400">{formatDate(new Date(e.at), lang, TIME)}</span>}
                     {e.method && (
                       <span className="shrink-0 text-[11px]" title={t(METHOD_META[e.method].label)}>
                         <MethodIcon method={e.method} />

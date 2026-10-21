@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CalendarBlank, CaretRight, Check, Clock, Tag } from "@phosphor-icons/react/ssr";
 
 import { monthFromSearchParams, monthKey, todayMonth } from "@/lib/date";
-import { formatDate, monthLabel, monthLabelShort, whenLabel } from "@/lib/i18n/dates";
+import { monthLabel, monthLabelShort, whenLabel } from "@/lib/i18n/dates";
 import { categoryName, localName } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
 import { findPayment, getEffectiveEndMonth, getMonthPaymentStatus, getMonthSummary, lastPaidAt } from "@/lib/engine";
@@ -31,9 +31,6 @@ interface Row {
   /** "Chaque mois", "Jusqu'à juin 2027", "Une fois". */
   kind: string;
 }
-
-const TIME_ZONE = "Africa/Casablanca";
-const DAY_KEY = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" });
 
 /**
  * Dépenses (credits live on the Crédits page): the month's total, what's
@@ -99,16 +96,9 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
 
   // By date: day by day, the last done on top.
   const now = new Date();
-  const dayTitle = (iso: string) => {
-    const d = DAY_KEY.format(new Date(iso));
-    if (d === DAY_KEY.format(now)) return t("Aujourd'hui");
-    if (d === DAY_KEY.format(new Date(now.getTime() - 86_400_000))) return t("Hier");
-    const label = formatDate(new Date(iso), lang, { timeZone: TIME_ZONE, weekday: "long", day: "numeric", month: "long" });
-    return label.charAt(0).toUpperCase() + label.slice(1);
-  };
   const days: { title: string; list: Row[] }[] = [];
   for (const r of [...rows].sort((a, b) => order(b).localeCompare(order(a)))) {
-    const title = dayTitle(order(r));
+    const title = whenLabel(order(r), lang, t, now);
     if (days.at(-1)?.title !== title) days.push({ title, list: [] });
     days.at(-1)!.list.push(r);
   }
@@ -127,7 +117,8 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
     })
     .filter((g) => g.list.length > 0);
 
-  // One expense: its name, what it is and when it was done (small), its amount and status.
+  // One expense: its name, what it is and the day it was done (small; not
+  // by date, its day being the title), its amount and status.
   const row = (r: Row) => {
     const isPaid = r.status === "paid";
     const partly = !isPaid && r.paid > 0.005;
@@ -156,7 +147,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
             </span>
             <span className="flex min-w-0 gap-1 text-[11px] text-slate-400">
               <span className="truncate">{partly ? t("{paid} payés sur {due}", { paid: money(r.paid), due: money(r.amount) }) : r.kind}</span>
-              <span className="shrink-0 tabular-nums">· {whenLabel(order(r), lang, t, now)}</span>
+              {!byDate && <span className="shrink-0 tabular-nums">· {whenLabel(order(r), lang, t, now)}</span>}
             </span>
           </span>
           <span className="flex shrink-0 flex-col items-end gap-1">

@@ -276,7 +276,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     points: [
       msg("Changer la cotisation, le nom ou le nombre de membres."),
       msg("Changer le premier mois ou ton tour."),
-      msg("Voir l'historique : chaque cotisation payée et la daret reçue, avec leur jour et leur heure."),
+      msg("Voir l'historique : chaque cotisation payée et la daret reçue, avec leur date."),
       msg("Supprimer la daret et ses cotisations."),
     ],
   },

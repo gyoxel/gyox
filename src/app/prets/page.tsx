@@ -4,7 +4,7 @@ import { CaretRight, HandCoins } from "@phosphor-icons/react/ssr";
 
 import { loanState } from "@/lib/loans";
 import { todayMonth } from "@/lib/date";
-import { doneAt, monthLabel, whenLabel } from "@/lib/i18n/dates";
+import { monthLabel, whenLabel } from "@/lib/i18n/dates";
 import { getI18n } from "@/lib/i18n/server";
 import { formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
@@ -28,7 +28,7 @@ export default async function LoansPage() {
   // Small, when it last moved: its last repayment, else the day it was lent.
   const now = new Date();
   const lastAt = (loan: (typeof loans)[number]) =>
-    loan.repayments.map((r) => doneAt(r.date, r.createdAt)).reduce((a, b) => (b > a ? b : a), doneAt(loan.date, loan.createdAt));
+    loan.repayments.map((r) => r.date).reduce((a, b) => (b > a ? b : a), loan.date);
 
   return (
     <>
