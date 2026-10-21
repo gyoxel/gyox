@@ -90,7 +90,9 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     });
   }
   for (const i of incomes) {
-    if (!i.date.startsWith(key)) continue;
+    // Money lent and given back: the day it was lent counts only what
+    // hasn't come back.
+    if (!i.date.startsWith(key) || i.category === "pret") continue;
     events.push({
       id: i.id,
       kind: "in",

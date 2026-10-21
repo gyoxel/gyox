@@ -24,6 +24,7 @@ import {
   mapSettings,
 } from "./repository";
 import { mapLoan, mapRepayment } from "./loans-repo";
+import { netOfLoans } from "./loans";
 import { mapMove } from "./savings-repo";
 import type {
   Category,
@@ -90,16 +91,22 @@ async function readAll(userId: string): Promise<Record<string, Row[]>> {
 const snapshot = cache(async () => mapAll(await readAll(await requireUserId())));
 
 function mapAll(t: Record<string, Row[]>) {
-  const expenses: Expense[] = t.expenses.map((r) => mapExpense(r as Parameters<typeof mapExpense>[0]));
-  const expenseById = new Map(expenses.map((e) => [e.id, e]));
+  const stored: Expense[] = t.expenses.map((r) => mapExpense(r as Parameters<typeof mapExpense>[0]));
+  // An expense opened by its id is as stored (a loan's too).
+  const expenseById = new Map(stored.map((e) => [e.id, e]));
   const deposits = t.goalDeposits;
   const repayments = t.loanRepayments;
+  const loans = t.loans.map((l) =>
+    mapLoan({ ...(l as Parameters<typeof mapLoan>[0]), repayments: repayments.filter((r) => r.loanId === l.id) as never }),
+  );
+  // Money lent counts only until it comes back.
+  const { expenses, payments } = netOfLoans(stored, t.payments.map((r) => mapPayment(r as Parameters<typeof mapPayment>[0])), loans);
 
   return {
     settings: t.settings[0] ? mapSettings(t.settings[0] as Parameters<typeof mapSettings>[0]) : null,
     expenses,
     expenseById,
-    payments: t.payments.map((r) => mapPayment(r as Parameters<typeof mapPayment>[0])),
+    payments,
     darets: t.darets
       .filter((d) => expenseById.has(d.expenseId))
       .map((d) => ({ ...mapDaret(d as Parameters<typeof mapDaret>[0]), expense: expenseById.get(d.expenseId)! }) as DaretWithExpense),
@@ -123,9 +130,7 @@ function mapAll(t: Record<string, Row[]>) {
     incomes: t.incomes.map((r) => mapIncome(r as Parameters<typeof mapIncome>[0])),
     incomeCategories: t.incomeCategories.map(({ id, name, emoji, position }) => ({ id, name, emoji, position }) as Category),
     savingsMoves: t.savingsMoves.map((r) => mapMove(r as Parameters<typeof mapMove>[0])),
-    loans: t.loans.map((l) =>
-      mapLoan({ ...(l as Parameters<typeof mapLoan>[0]), repayments: repayments.filter((r) => r.loanId === l.id) as never }),
-    ),
+    loans,
     loanRepayments: repayments.map((r) => mapRepayment(r as Parameters<typeof mapRepayment>[0])),
   };
 }

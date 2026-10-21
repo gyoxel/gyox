@@ -18,8 +18,8 @@ export const dynamic = "force-dynamic";
 /**
  * Bilan du mois (Menu): any month's money in and out of cash and the card,
  * what's left, what was put aside, each against the month before, and where
- * it went by category. Opens on the month just over — the one Accueil sums
- * up the first days of a month.
+ * it went by category. Opens on the current month (the first days of a
+ * month, Accueil links to the one just over).
  */
 export default async function BilanPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const [sp, settings, expenses, payments, categories, darets, savingsMoves, goals, loans, { lang, t }] = await Promise.all([
@@ -35,7 +35,7 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
     getI18n(),
   ]);
   const current = todayMonth();
-  const month = monthFromSearchParams(sp.month, addMonths(current, -1));
+  const month = monthFromSearchParams(sp.month, current);
   const previous = addMonths(month, -1);
   const key = monthKey(month);
   const [wallet, previousWallet] = await Promise.all([getWallet(month), getWallet(previous)]);
