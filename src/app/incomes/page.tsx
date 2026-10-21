@@ -6,7 +6,7 @@ import { daretPayout } from "@/lib/daret";
 import { incomeCategory, incomesIn } from "@/lib/income";
 
 import { monthKey, parseMonthKey, todayMonth } from "@/lib/date";
-import { monthLabel } from "@/lib/i18n/dates";
+import { doneAt, monthLabel, whenLabel } from "@/lib/i18n/dates";
 import { categoryName, localName } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
 import { formatMoney } from "@/lib/utils";
@@ -86,6 +86,9 @@ export default async function IncomesPage() {
       })),
   ].sort((a, b) => b.date.localeCompare(a.date) || b.at.localeCompare(a.at));
   const months = [...new Set(rows.map((r) => r.date.slice(0, 7)))];
+  // Small, when it came: the time it was added (on its own day), else its day.
+  const now = new Date();
+  const when = (r: Row) => whenLabel(doneAt(r.date, r.at), lang, t, now);
 
   return (
     <>
@@ -131,7 +134,7 @@ export default async function IncomesPage() {
                             )}
                           </span>
                           <span className="block text-[11px] text-slate-400">
-                            {r.sub} · {r.date.slice(8, 10)}/{r.date.slice(5, 7)} · <MethodLabel method={r.method} />
+                            {r.sub} · {when(r)} · <MethodLabel method={r.method} />
                           </span>
                         </span>
                         <span className="text-sm font-semibold tabular-nums text-emerald-600">+{money(r.amount)}</span>

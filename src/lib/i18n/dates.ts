@@ -59,3 +59,36 @@ export function formatDate(date: Date, lang: Lang, options: Intl.DateTimeFormatO
     out,
   );
 }
+
+const TIME_ZONE = "Africa/Casablanca";
+const DAY = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" });
+
+/**
+ * When something was done, short enough to sit small beside it (Moroccan
+ * time): "09:40" today, "hier 23:15", "12 oct. 14:05" this year, else
+ * "12 oct. 2025". A day without a time ("2026-10-12"): "Aujourd'hui",
+ * "Hier", "12 oct.". `t` translates the words.
+ */
+export function whenLabel(iso: string, lang: Lang, t: (text: string, vars?: Record<string, string>) => string, now = new Date()): string {
+  const dayOnly = /^\d{4}-\d{2}-\d{2}$/.test(iso);
+  // A day alone: its noon, the same day in Morocco.
+  const date = new Date(dayOnly ? `${iso}T12:00:00Z` : iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const day = DAY.format(date);
+  const time = dayOnly ? "" : formatDate(date, lang, { timeZone: TIME_ZONE, hour: "2-digit", minute: "2-digit" });
+  if (day === DAY.format(now)) return time || t("Aujourd'hui");
+  if (day === DAY.format(new Date(now.getTime() - 86_400_000))) return time ? t("hier {time}", { time }) : t("Hier");
+  const sameYear = day.slice(0, 4) === DAY.format(now).slice(0, 4);
+  const short = (d: Intl.DateTimeFormatOptions) => formatDate(date, lang, { timeZone: TIME_ZONE, ...d }).replace(/\.$/, "");
+  return sameYear ? `${short({ day: "numeric", month: "short" })} ${time}`.trim() : short({ day: "numeric", month: "short", year: "numeric" });
+}
+
+/**
+ * When something done on a day picked in a form happened, for whenLabel:
+ * the moment it was saved when that's the same day (Moroccan time), else
+ * the day alone.
+ */
+export function doneAt(day: string, createdAt: string): string {
+  const saved = new Date(createdAt);
+  return !Number.isNaN(saved.getTime()) && DAY.format(saved) === day ? createdAt : day;
+}

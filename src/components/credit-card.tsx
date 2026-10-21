@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { CaretRight } from "@phosphor-icons/react/ssr";
 import type { Expense, Payment } from "@/lib/types";
-import { getCreditDisplayProgress, getCreditEndMonth, getCreditRealState } from "@/lib/engine";
+import { getCreditDisplayProgress, getCreditEndMonth, getCreditRealState, lastPaidAt } from "@/lib/engine";
 import { compareMonths, monthsBetween, todayMonth } from "@/lib/date";
-import { monthLabelShort } from "@/lib/i18n/dates";
+import { monthLabelShort, whenLabel } from "@/lib/i18n/dates";
 import { localName } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
 import { cn, formatMoney } from "@/lib/utils";
@@ -39,6 +39,8 @@ export async function CreditCard({
   const late = state.isOverdue && state.pendingAmount > 0;
   const monthsLeft = endMonth && compareMonths(endMonth, current) >= 0 ? monthsBetween(current, endMonth) + 1 : 0;
   const money = (n: number) => formatMoney(n, currency);
+  // When it last moved: its last installment paid, else when it was added.
+  const lastAt = lastPaidAt(expense.id, payments, "") || expense.createdAt;
 
   const r = (RING - STROKE) / 2;
   const circumference = 2 * Math.PI * r;
@@ -85,15 +87,18 @@ export async function CreditCard({
               </span>
             )}
           </div>
-          <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-            <span className="font-medium text-slate-700 dark:text-slate-300">{money(expense.amount)}</span>
-            {t("/mois")}
-            {endMonth && (
-              <>
-                {" "}
-                · {t("fin {month}", { month: monthLabelShort(endMonth, lang).toLowerCase().replace(/ 20(\d\d)$/, " $1") })}
-              </>
-            )}
+          <p className="flex min-w-0 gap-1 text-xs text-slate-500 dark:text-slate-400">
+            <span className="truncate">
+              <span className="font-medium text-slate-700 dark:text-slate-300">{money(expense.amount)}</span>
+              {t("/mois")}
+              {endMonth && (
+                <>
+                  {" "}
+                  · {t("fin {month}", { month: monthLabelShort(endMonth, lang).toLowerCase().replace(/ 20(\d\d)$/, " $1") })}
+                </>
+              )}
+            </span>
+            <span className="shrink-0 text-[11px] tabular-nums text-slate-400">· {whenLabel(lastAt, lang, t)}</span>
           </p>
           {!done && (
             <p className="mt-0.5 text-[11px] font-medium text-blue-600 dark:text-sky-400">

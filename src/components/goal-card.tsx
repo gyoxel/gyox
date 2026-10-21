@@ -10,7 +10,7 @@ import { DepositSourcePicker } from "@/components/payment-method-picker";
 import type { GoalProgress } from "@/lib/goals";
 import { parseMonthKey, type MonthId } from "@/lib/date";
 import type { MonthlyPlan } from "@/lib/monthly-plan";
-import { formatDate, monthLabel, monthLabelShort } from "@/lib/i18n/dates";
+import { doneAt, monthLabel, monthLabelShort, whenLabel } from "@/lib/i18n/dates";
 import { useI18n } from "@/lib/i18n/client";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput } from "@/lib/utils";
 import { mutate } from "@/lib/use-refresh-data";
@@ -115,6 +115,8 @@ export function GoalCard({
   const monthLabelShortFr = (m: MonthId) => monthLabelShort(m, lang);
   const p = progress;
   const money = (n: number) => formatMoney(n, currency);
+  // When it last moved: its last deposit, else when it was added.
+  const lastAt = goal.deposits.map((d) => doneAt(d.date, d.createdAt)).reduce((a, b) => (b > a ? b : a), goal.createdAt);
 
   if (linkToDetail) {
     return (
@@ -132,6 +134,7 @@ export function GoalCard({
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               <b className="font-semibold text-slate-800 dark:text-slate-100">{money(p.reachedNow)}</b> / {money(p.target)}
+              <span className="text-[11px] tabular-nums text-slate-400"> · {whenLabel(lastAt, lang, t)}</span>
             </p>
             {p.percentProjected > p.percentNow ? (
               <p className="mt-0.5 text-[11px] text-orange-600 dark:text-amber-400">{t("Avec tes darets : {percent}%", { percent: p.percentProjected })}</p>
@@ -262,7 +265,7 @@ export function GoalCard({
                             {row.plan.dueNow && <span className="ml-1 font-semibold text-amber-600">· {t("à cocher ce mois")}</span>}
                           </>
                         ) : (
-                          formatDate(new Date(`${row.deposit.date}T12:00:00`), lang, DEPOSIT_DATE)
+                          whenLabel(doneAt(row.deposit.date, row.deposit.createdAt), lang, t)
                         )}
                         {!row.plan && row.deposit.method && (
                           <>
@@ -479,8 +482,6 @@ function DepositDialog({
     </Dialog>
   );
 }
-
-const DEPOSIT_DATE: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" };
 
 function StepIcon({ children }: { children: React.ReactNode }) {
   return (

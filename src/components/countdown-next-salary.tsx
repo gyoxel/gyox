@@ -17,7 +17,7 @@ import { SalaryForm } from "@/components/salary-form";
 import { MethodIcon } from "@/components/method-icon";
 import { useRevealedBalance } from "@/lib/reveal-balance";
 import type { Lang } from "@/lib/i18n";
-import { formatDate, monthName } from "@/lib/i18n/dates";
+import { doneAt, formatDate, monthName, whenLabel } from "@/lib/i18n/dates";
 import { currentT, useI18n, useT } from "@/lib/i18n/client";
 
 /**
@@ -587,7 +587,7 @@ export function SalaryPanel({
                   <span className="flex-1 text-slate-700 dark:text-slate-200">
                     {money(a.amount)}
                     <span className="ml-1.5 text-[11px] text-slate-400">
-                      {t("le {date}", { date: `${a.date.slice(8, 10)}/${a.date.slice(5, 7)}` })} · <MethodIcon method={a.method} />
+                      {whenLabel(doneAt(a.date, a.createdAt), lang, t)} · <MethodIcon method={a.method} />
                     </span>
                   </span>
                   <button

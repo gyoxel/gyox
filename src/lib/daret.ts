@@ -73,3 +73,13 @@ export function getDaretState(daret: DaretWithExpense, payments: Payment[], curr
     turnStatus: cmpTurn < 0 ? "upcoming" : cmpTurn === 0 ? "now" : "received",
   };
 }
+
+/**
+ * When a daret last moved: its last contribution paid or its pot received;
+ * until then, when it was added.
+ */
+export function daretLastAt(daret: DaretWithExpense, payments: Payment[]): string {
+  let last = daret.payoutReceivedAt ?? "";
+  for (const p of payments) if (p.expenseId === daret.expenseId && p.amountPaid > 0 && p.paidAt > last) last = p.paidAt;
+  return last || daret.createdAt;
+}

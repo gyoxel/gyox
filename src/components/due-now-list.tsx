@@ -6,7 +6,7 @@ import { flushPendingRefresh, mutate, trackMutation } from "@/lib/use-refresh-da
 import Link from "next/link";
 import { ArrowUUpLeft, CaretLeft, CaretRight, Check, Confetti, PencilSimple, Plus } from "@phosphor-icons/react/ssr";
 import { addMonths, monthKey as toMonthKey, type MonthId } from "@/lib/date";
-import { monthLabel, monthLabelShort } from "@/lib/i18n/dates";
+import { monthLabel, monthLabelShort, whenLabel } from "@/lib/i18n/dates";
 import { localName, type T } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/client";
 import { findPayment, getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, getMonthLedgerItems, lastPaidAt, type DisplayColor, type LedgerItem } from "@/lib/engine";
@@ -68,6 +68,9 @@ function animateReorder(rows: Map<string, HTMLElement>, update: () => void) {
   }
 }
 
+/** Paid rows shown before « Voir plus ». */
+const PAID_SHOWN = 5;
+
 /**
  * `payments` / `setPayments` are the Dashboard's local copy (see
  * HomeDashboard): every toggle updates them optimistically, so the list AND
@@ -95,6 +98,8 @@ export function DueNowList({
 }) {
   const { lang, t } = useI18n();
   const [viewMonth, setViewMonth] = useState<MonthId>(currentMonth);
+  // The paid ones: the last few, the rest on « Voir plus ».
+  const [allPaid, setAllPaid] = useState(false);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const touchStartX = useRef<number | null>(null);
   const rowRefs = useRef(new Map<string, HTMLElement>());
@@ -159,6 +164,7 @@ export function DueNowList({
 
   function goMonth(next: MonthId) {
     setViewMonth(next);
+    setAllPaid(false);
   }
 
   function onTouchStart(e: React.TouchEvent) {
@@ -245,8 +251,15 @@ export function DueNowList({
   const left = items.filter((i) => !i.paid).reduce((s, i) => s + i.amount, 0);
   const paidTotal = items.filter((i) => i.paid).reduce((s, i) => s + i.amount, 0);
   const progress = left + paidTotal > 0 ? paidTotal / (left + paidTotal) : 0;
-  // Unpaid first, then paid: each group opens with its header.
+  // Unpaid first (all of them), then paid (the last ticked few, unless
+  // asked): each group opens with its header.
   const firstPaid = items.findIndex((i) => i.paid);
+  const shownItems = allPaid || firstPaid < 0 ? items : items.slice(0, firstPaid + PAID_SHOWN);
+  const morePaid = items.length - shownItems.length;
+  /** When it was done, small: paid (or part of it), the last payment; to
+   *  pay, when it was added. */
+  const whenDone = (item: LedgerItem) =>
+    item.paid || item.rest ? lastPaidAt(item.expense.id, localPayments, toMonthKey(viewMonth)) : item.expense.createdAt;
 
   return (
     <div className="flex flex-col gap-3">
@@ -306,7 +319,7 @@ export function DueNowList({
         </div>
       ) : (
         <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          {items.map((item, index) => {
+          {shownItems.map((item, index) => {
             const { expense, amount, paid, rest, color } = item;
             const key = rowKey(item);
             const isPending = pendingIds.has(expense.id);
@@ -382,14 +395,17 @@ export function DueNowList({
                           : kindOf(expense)}
                     </span>
                   </span>
-                  <span
-                    className={cn(
-                      "shrink-0 text-sm font-bold tabular-nums",
-                      rest ? "text-amber-600 dark:text-amber-400" : "text-rose-600",
-                      paid && "font-semibold text-slate-400 line-through dark:text-slate-500",
-                    )}
-                  >
-                    {formatMoney(amount, currency)}
+                  <span className="flex shrink-0 flex-col items-end">
+                    <span
+                      className={cn(
+                        "text-sm font-bold tabular-nums",
+                        rest ? "text-amber-600 dark:text-amber-400" : "text-rose-600",
+                        paid && "font-semibold text-slate-400 line-through dark:text-slate-500",
+                      )}
+                    >
+                      {formatMoney(amount, currency)}
+                    </span>
+                    <span className="text-[10px] tabular-nums text-slate-400">{whenLabel(whenDone(item), lang, t)}</span>
                   </span>
                 </Link>
                 {choosingId === key && paid ? (
@@ -475,6 +491,15 @@ export function DueNowList({
             );
           })}
         </ul>
+      )}
+      {(morePaid > 0 || (allPaid && paidCount > PAID_SHOWN)) && (
+        <button
+          type="button"
+          onClick={() => setAllPaid((v) => !v)}
+          className="-mt-1 self-center rounded-full px-4 py-1.5 text-xs font-semibold text-violet-700 active:bg-violet-500/10 dark:text-violet-300"
+        >
+          {allPaid ? t("Voir moins") : t("Voir les {n} autres payées", { n: morePaid })}
+        </button>
       )}
 
       {editing && (

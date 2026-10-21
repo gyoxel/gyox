@@ -1,5 +1,5 @@
 import { getAllDarets, getAllPayments, getSettings } from "@/lib/page-data";
-import { getDaretState } from "@/lib/daret";
+import { daretLastAt, getDaretState } from "@/lib/daret";
 import { compareMonths, monthKey, todayMonth } from "@/lib/date";
 import { monthLabel } from "@/lib/i18n/dates";
 import { getI18n } from "@/lib/i18n/server";
@@ -80,6 +80,7 @@ export default async function DaretPage() {
               currency={settings.currency}
               currentMonthKey={monthKey(current)}
               daysToTurn={state.turnStatus === "upcoming" ? daysUntil(state.turn.year, state.turn.month) : null}
+              lastAt={daretLastAt(daret, payments)}
             />
           ))
         )}

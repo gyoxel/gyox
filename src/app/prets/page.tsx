@@ -4,7 +4,7 @@ import { CaretRight, HandCoins } from "@phosphor-icons/react/ssr";
 
 import { loanState } from "@/lib/loans";
 import { todayMonth } from "@/lib/date";
-import { monthLabel } from "@/lib/i18n/dates";
+import { doneAt, monthLabel, whenLabel } from "@/lib/i18n/dates";
 import { getI18n } from "@/lib/i18n/server";
 import { formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
@@ -25,6 +25,10 @@ export default async function LoansPage() {
     .sort((a, b) => Number(a.state.done) - Number(b.state.done));
   const remaining = rows.reduce((s, r) => s + r.state.remaining, 0);
   const due = rows.reduce((s, r) => s + r.state.due.length, 0);
+  // Small, when it last moved: its last repayment, else the day it was lent.
+  const now = new Date();
+  const lastAt = (loan: (typeof loans)[number]) =>
+    loan.repayments.map((r) => doneAt(r.date, r.createdAt)).reduce((a, b) => (b > a ? b : a), doneAt(loan.date, loan.createdAt));
 
   return (
     <>
@@ -72,8 +76,11 @@ export default async function LoansPage() {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-base font-semibold text-slate-900 dark:text-white">{loan.name}</span>
-                      <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
-                        {t("{amount} prêtés", { amount: money(loan.amount) })} · {loan.months} × {money(loan.monthly)}
+                      <span className="flex min-w-0 gap-1 text-xs text-slate-500 dark:text-slate-400">
+                        <span className="truncate">
+                          {t("{amount} prêtés", { amount: money(loan.amount) })} · {loan.months} × {money(loan.monthly)}
+                        </span>
+                        <span className="shrink-0 text-[11px] tabular-nums text-slate-400">· {whenLabel(lastAt(loan), lang, t, now)}</span>
                       </span>
                     </span>
                     <span className="text-right">

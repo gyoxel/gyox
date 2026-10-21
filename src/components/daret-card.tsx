@@ -8,7 +8,7 @@ import { mutate } from "@/lib/use-refresh-data";
 import { errorMessage } from "@/components/expense-editor";
 import type { DaretState } from "@/lib/daret";
 import { addMonths, monthKey } from "@/lib/date";
-import { formatDate, monthLabel, monthLabelShort } from "@/lib/i18n/dates";
+import { monthLabel, monthLabelShort, whenLabel } from "@/lib/i18n/dates";
 import { useI18n, useT } from "@/lib/i18n/client";
 import type { DaretWithExpense, PaymentMethod } from "@/lib/types";
 import { METHOD_META } from "@/lib/payment-method";
@@ -29,6 +29,7 @@ export function DaretCard({
   currency,
   currentMonthKey,
   daysToTurn,
+  lastAt,
 }: {
   daret: DaretWithExpense;
   state: DaretState;
@@ -36,6 +37,8 @@ export function DaretCard({
   currentMonthKey: string;
   /** Days from today until the 1st of the turn month (only when upcoming). */
   daysToTurn: number | null;
+  /** When it last moved (a contribution, the pot), else when it was added. */
+  lastAt: string;
 }) {
   const { lang, t } = useI18n();
   const [paid, setPaid] = useState(state.paidThisMonth);
@@ -105,6 +108,7 @@ export function DaretCard({
           <p className="truncate text-xs text-slate-500 dark:text-slate-400">
             <b className="font-semibold text-slate-700 dark:text-slate-200">{money(daret.expense.amount)}</b>
             {t("/mois")} · {t("{n} mbr.", { n: daret.members })}
+            <span className="text-[11px] text-slate-400"> · {whenLabel(lastAt, lang, t)}</span>
           </p>
         </div>
         <span
@@ -216,10 +220,7 @@ export function DaretCard({
             <p className="mt-1 flex items-center justify-between text-[11px] text-emerald-700/80 dark:text-teal-300/80">
               <span>
                 {t("Reçue en {method}", { method: t(METHOD_META[daret.payoutMethod!].label).toLowerCase() })}
-                {daret.payoutReceivedAt &&
-                  ` ${t("le {date}", {
-                    date: formatDate(new Date(daret.payoutReceivedAt), lang, { timeZone: "Africa/Casablanca", day: "2-digit", month: "2-digit" }),
-                  })}`}
+                {daret.payoutReceivedAt && ` · ${whenLabel(daret.payoutReceivedAt, lang, t)}`}
               </span>
               <button type="button" onClick={() => setPayout(null)} disabled={busy} className="font-medium underline underline-offset-2">
                 {t("Annuler")}

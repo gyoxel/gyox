@@ -330,7 +330,7 @@ function LockSetting({ account }: { account: LockAccount }) {
           <span className="block text-xs text-slate-400">
             {supported === false && !on
               ? t("Pas disponible ici : active l'empreinte ou Face ID dans les réglages du téléphone.")
-              : t("Demandé à l'ouverture de l'app installée et après une minute ailleurs, sur ce téléphone.")}
+              : t("Demandé dans l'app installée quand tu y reviens après plus d'une minute (pas en actualisant), sur ce téléphone.")}
           </span>
         </span>
         <Switch
