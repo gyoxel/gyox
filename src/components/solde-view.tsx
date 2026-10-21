@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowDown, ArrowUp, ArrowsLeftRight, CaretRight, PencilSimpleLine, Trash } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { PaymentMethod } from "@/lib/types";
-import type { WalletEntry, WalletSummary } from "@/lib/wallet";
+import type { EntryGroup, WalletEntry, WalletSummary } from "@/lib/wallet";
 import { METHOD_META } from "@/lib/payment-method";
 import { mutate } from "@/lib/use-refresh-data";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MethodIcon, MethodLabel } from "@/components/method-icon";
-import { localName, msg, type Lang, type T } from "@/lib/i18n";
+import { categoryName, localName, msg, type Lang, type T } from "@/lib/i18n";
 import { formatDate, monthLabelShort } from "@/lib/i18n/dates";
 import { parseMonthKey } from "@/lib/date";
 import { useI18n } from "@/lib/i18n/client";
@@ -56,6 +56,17 @@ const ACCOUNTS: {
 
 const PAGE = 40;
 
+type Direction = "all" | "in" | "out";
+
+/** What an entry moves on the account shown: on both, its net (a transfer
+ *  moves nothing in or out). */
+function shownAmount(entry: WalletEntry, account: PaymentMethod | "all"): number {
+  if (account === "all") return entry.lines.reduce((s, l) => s + l.amount, 0);
+  return entry.lines.find((l) => l.account === account)?.amount ?? 0;
+}
+
+const groupLabel = (g: EntryGroup, t: T) => (g.own ? categoryName(g.label, t) : t(g.label));
+
 function dayTitle(iso: string, todayKey: string, yesterdayKey: string, lang: Lang, t: T): string {
   const key = DAY_KEY.format(new Date(iso));
   if (key === todayKey) return t("Aujourd'hui");
@@ -77,12 +88,15 @@ function entryLabel(entry: WalletEntry, lang: Lang, t: T): string {
 /**
  * Solde: total, cash and card (each with this month's in / out), transfer
  * between them or adjust one to its real amount, then the history of every
- * movement with its date, time and account.
+ * movement with its date, time and account — filtered by account, money in
+ * or out, and category.
  */
 export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currency: string }) {
   const { lang, t } = useI18n();
   const money = (n: number) => formatMoney(n, currency);
   const [filter, setFilter] = useState<PaymentMethod | "all">("all");
+  const [direction, setDirection] = useState<Direction>("all");
+  const [group, setGroup] = useState<string | null>(null);
   const [shown, setShown] = useState(PAGE);
   const [transferOpen, setTransferOpen] = useState(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
@@ -92,7 +106,31 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
   const monthInTotal = wallet.monthIn.cash + wallet.monthIn.card;
   const monthOutTotal = wallet.monthOut.cash + wallet.monthOut.card;
 
-  const list = wallet.entries.filter((e) => filter === "all" || e.lines.some((l) => l.account === filter));
+  // The history: by account, then money in / out, then category.
+  const onAccount = wallet.entries.filter((e) => filter === "all" || e.lines.some((l) => l.account === filter));
+  const inDirection =
+    direction === "all"
+      ? onAccount
+      : onAccount.filter((e) => (direction === "in" ? shownAmount(e, filter) > 0 : shownAmount(e, filter) < 0));
+  // The categories there, the most used first (the one picked stays, even with nothing).
+  const chips = new Map<string, { group: EntryGroup; count: number }>();
+  for (const e of inDirection) {
+    const chip = chips.get(e.group.key) ?? { group: e.group, count: 0 };
+    chip.count++;
+    chips.set(e.group.key, chip);
+  }
+  const picked = group ? wallet.entries.find((e) => e.group.key === group)?.group : undefined;
+  if (picked && !chips.has(picked.key)) chips.set(picked.key, { group: picked, count: 0 });
+  const chipList = [...chips.values()].sort((a, b) => b.count - a.count || groupLabel(a.group, t).localeCompare(groupLabel(b.group, t)));
+  const list = group ? inDirection.filter((e) => e.group.key === group) : inDirection;
+  const filtered = direction !== "all" || group != null;
+  let sumIn = 0;
+  let sumOut = 0;
+  for (const e of list) {
+    const amount = shownAmount(e, filter);
+    if (amount > 0) sumIn += amount;
+    else sumOut -= amount;
+  }
   const visible = list.slice(0, shown);
   const now = new Date();
   const todayKey = DAY_KEY.format(now);
@@ -102,6 +140,11 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
     const title = dayTitle(e.at, todayKey, yesterdayKey, lang, t);
     if (groups.at(-1)?.title !== title) groups.push({ title, items: [] });
     groups.at(-1)!.items.push(e);
+  }
+
+  function refilter(change: () => void) {
+    change();
+    setShown(PAGE);
   }
 
   function remove(entry: WalletEntry) {
@@ -170,10 +213,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
             <button
               key={a.key}
               type="button"
-              onClick={() => {
-                setFilter(active ? "all" : a.key);
-                setShown(PAGE);
-              }}
+              onClick={() => refilter(() => setFilter(active ? "all" : a.key))}
               aria-pressed={active}
               className={cn(
                 "rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-left shadow-sm transition-transform active:scale-[0.99] dark:border-slate-800 dark:bg-slate-900",
@@ -250,10 +290,7 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
                 type="button"
                 role="radio"
                 aria-checked={filter === f}
-                onClick={() => {
-                  setFilter(f);
-                  setShown(PAGE);
-                }}
+                onClick={() => refilter(() => setFilter(f))}
                 className={cn(
                   "rounded-full px-2.5 py-1 text-xs font-medium text-slate-500 transition-colors dark:text-slate-400",
                   filter === f && "bg-white text-slate-900 shadow-sm dark:bg-slate-950 dark:text-white",
@@ -265,10 +302,77 @@ export function SoldeView({ wallet, currency }: { wallet: WalletSummary; currenc
           </div>
         </div>
 
+        {wallet.entries.length > 0 && (
+          <>
+            {/* Money in / out */}
+            <div role="radiogroup" aria-label={t("Entrées ou sorties")} className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1 dark:bg-slate-800">
+              {(["all", "in", "out"] as const).map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  role="radio"
+                  aria-checked={direction === d}
+                  onClick={() => refilter(() => setDirection(d))}
+                  className={cn(
+                    "flex items-center justify-center gap-1 rounded-xl py-2 text-sm font-medium text-slate-500 transition-colors dark:text-slate-400",
+                    direction === d && "bg-white text-slate-900 shadow-sm dark:bg-slate-950 dark:text-white",
+                  )}
+                >
+                  {d === "in" && <ArrowDown weight="bold" className="h-3.5 w-3.5 text-emerald-600" />}
+                  {d === "out" && <ArrowUp weight="bold" className="h-3.5 w-3.5 text-rose-600" />}
+                  {d === "all" ? t("Tout") : d === "in" ? t("Entrées") : t("Sorties")}
+                </button>
+              ))}
+            </div>
+
+            {/* Categories: swipe sideways */}
+            {chipList.length > 0 && (
+              <div
+                role="radiogroup"
+                aria-label={t("Filtrer par catégorie")}
+                className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto overscroll-x-contain px-4 pb-1"
+              >
+                {[{ key: null, emoji: null, label: t("Toutes"), count: null }, ...chipList.map((c) => ({ key: c.group.key, emoji: c.group.emoji, label: groupLabel(c.group, t), count: c.count }))].map(
+                  (c) => (
+                    <button
+                      key={c.key ?? "all"}
+                      type="button"
+                      role="radio"
+                      aria-checked={group === c.key}
+                      onClick={() => refilter(() => setGroup(c.key))}
+                      className={cn(
+                        "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] whitespace-nowrap",
+                        group === c.key
+                          ? "border-violet-600 bg-violet-600/10 font-semibold text-violet-700 dark:text-violet-300"
+                          : "border-slate-200 bg-white text-slate-600 active:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
+                      )}
+                    >
+                      {c.emoji && <span className="text-base leading-none">{c.emoji}</span>}
+                      {c.label}
+                      {c.count != null && <span className="text-[11px] font-normal tabular-nums text-slate-400">{c.count}</span>}
+                    </button>
+                  ),
+                )}
+              </div>
+            )}
+
+            {/* What the filters keep */}
+            {filtered && list.length > 0 && (
+              <p className="flex flex-wrap items-center gap-x-2 px-1 text-xs text-slate-500 dark:text-slate-400">
+                <span>{list.length === 1 ? t("1 mouvement") : t("{n} mouvements", { n: list.length })}</span>
+                {sumIn > 0 && <span className="font-semibold tabular-nums text-emerald-600">+{money(sumIn)}</span>}
+                {sumOut > 0 && <span className="font-semibold tabular-nums text-rose-600">−{money(sumOut)}</span>}
+              </p>
+            )}
+          </>
+        )}
+
         {list.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-slate-200 px-4 py-7 text-center text-sm text-slate-400 dark:border-slate-700">
             {wallet.entries.length === 0 ? (
               t("Rien encore. Commence par « Ajuster » : indique ce que tu as en espèces et sur ta carte. Ensuite chaque salaire, revenu, daret et dépense payée s'ajoute ici.")
+            ) : filtered ? (
+              t("Aucun mouvement avec ces filtres.")
             ) : (
               t("Aucun mouvement sur ce compte.")
             )}

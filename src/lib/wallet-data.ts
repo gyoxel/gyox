@@ -33,6 +33,7 @@ export async function getWallet(month = todayMonth()): Promise<WalletSummary> {
     savingsMoves,
     loans,
     incomeCategories,
+    categories,
     categoryEmoji: new Map(categories.map((c) => [c.id, c.emoji])),
     month: monthKey(month),
   });
