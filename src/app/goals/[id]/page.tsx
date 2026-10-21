@@ -1,6 +1,6 @@
 import { getAllDarets, getAllExpenses, getAllPayments, getGoalById, getSettings } from "@/lib/page-data";
 import { monthlyPlan } from "@/lib/monthly-plan";
-import { notFound } from "next/navigation";
+import NotFound from "@/app/not-found";
 import { getWallet } from "@/lib/wallet-data";
 
 import { getGoalProgress, isDepositPaid, type GoalSimBase } from "@/lib/goals";
@@ -28,7 +28,7 @@ export default async function GoalDetailPage({ params }: { params: Promise<{ id:
     getAllExpenses(),
     getI18n(),
   ]);
-  if (!goal) notFound();
+  if (!goal) return <NotFound />;
   const current = todayMonth();
   const expenseById = new Map(expenses.map((e) => [e.id, e]));
   const plans = Object.fromEntries(

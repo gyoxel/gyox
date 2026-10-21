@@ -1,7 +1,7 @@
 import { getAllPayments, getExpenseById, getGoalById, getGoalDeposit, getSettings } from "@/lib/page-data";
 import { monthlyPlan } from "@/lib/monthly-plan";
 import { todayMonth } from "@/lib/date";
-import { notFound } from "next/navigation";
+import NotFound from "@/app/not-found";
 
 import { PageHeader } from "@/components/page-header";
 import { DepositEditor } from "@/components/deposit-editor";
@@ -21,7 +21,7 @@ export default async function EditDepositPage({ params }: { params: Promise<{ id
     getAllPayments(),
     getI18n(),
   ]);
-  if (!goal || !deposit) notFound();
+  if (!goal || !deposit) return <NotFound />;
   const payment = deposit.expenseId ? payments.find((p) => p.expenseId === deposit.expenseId && p.amountPaid > 0) : undefined;
   const expense = deposit.monthly && deposit.expenseId ? await getExpenseById(deposit.expenseId) : null;
   const plan = expense ? monthlyPlan(expense, payments, todayMonth()) : null;

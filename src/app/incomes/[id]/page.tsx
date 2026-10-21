@@ -1,7 +1,7 @@
 import { getAllExpenses, getIncomeById, getIncomeCategories, getLoanOfIncome, getSavingsMoveOfIncome } from "@/lib/page-data";
 import { localName } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
-import { notFound } from "next/navigation";
+import NotFound from "@/app/not-found";
 
 import { PageHeader } from "@/components/page-header";
 import { IncomeEditor } from "@/components/income-editor";
@@ -25,7 +25,7 @@ export default async function EditIncomePage({ params }: { params: Promise<{ id:
     getIncomeCategories(),
     getI18n(),
   ]);
-  if (!income) notFound();
+  if (!income) return <NotFound />;
   const received = <MethodLabel method={income.method} />;
   if (move) {
     return (

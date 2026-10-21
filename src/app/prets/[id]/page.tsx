@@ -1,5 +1,5 @@
 import { getLoan, getSettings } from "@/lib/page-data";
-import { notFound } from "next/navigation";
+import NotFound from "@/app/not-found";
 import Link from "next/link";
 import { Check, Clock, PencilSimple } from "@phosphor-icons/react/ssr";
 
@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 export default async function LoanPage({ params }: { params: Promise<{ id: string }> }) {
   const [settings, loan, { lang, t }] = await Promise.all([getSettings(), getLoan((await params).id), getI18n()]);
   const monthLabelFr = (m: Parameters<typeof monthLabel>[0]) => monthLabel(m, lang);
-  if (!loan) notFound();
+  if (!loan) return <NotFound />;
   const money = (n: number) => formatMoney(n, settings.currency);
   const current = todayMonth();
   const state = loanState(loan, current);

@@ -1,6 +1,6 @@
 import { getAllPayments, getDaretById, getSettings } from "@/lib/page-data";
 import { Fragment } from "react";
-import { notFound } from "next/navigation";
+import NotFound from "@/app/not-found";
 
 import { PageHeader } from "@/components/page-header";
 import { DaretForm } from "@/components/daret-form";
@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 export default async function EditDaretPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [settings, daret, payments, { lang, t }] = await Promise.all([getSettings(), getDaretById(id), getAllPayments(), getI18n()]);
-  if (!daret) notFound();
+  if (!daret) return <NotFound />;
   const money = (n: number) => formatMoney(n, settings.currency);
   const now = new Date();
 

@@ -1,5 +1,6 @@
 import { getAllCategories, getAllExpenses, getAllPayments, getDaretOfExpense, getDepositOfExpense, getLoanOfExpense, getSavingsMoveOfExpense, getSettings } from "@/lib/page-data";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
+import NotFound from "@/app/not-found";
 import Link from "next/link";
 import { PencilSimple } from "@phosphor-icons/react/ssr";
 
@@ -42,7 +43,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
   if (!expense) {
     // Money lent and all given back: no longer in Dépenses, the loan stays.
     if (linkedLoan) redirect(`/prets/${linkedLoan.id}`);
-    notFound();
+    return <NotFound />;
   }
 
   // Put aside every month (Épargne, a goal): what counts here is this month.
