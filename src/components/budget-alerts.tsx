@@ -25,7 +25,6 @@ export function BudgetAlerts({ items }: { items: BudgetAlert[] }) {
   return (
     <Link
       href="/budgets"
-      prefetch
       aria-label={t("Budgets à surveiller")}
       className="gx-glass flex flex-col gap-2.5 rounded-[22px] border p-3.5 active:opacity-80"
     >

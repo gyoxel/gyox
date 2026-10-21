@@ -19,7 +19,6 @@ export default async function SettingsPage() {
         {/* The account: opens Profil (Déconnexion there). */}
         <Link
           href="/profil"
-          prefetch
           className="relative block overflow-hidden rounded-3xl bg-gradient-to-br from-slate-700 via-slate-800 to-slate-950 px-5 py-4 text-white shadow-lg ring-1 ring-white/5 transition-transform active:scale-[0.98]"
         >
           <span aria-hidden className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/5" />

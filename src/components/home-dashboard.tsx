@@ -173,7 +173,7 @@ export function HomeDashboard({
           the first thing on Accueil. Once shown, the whole card opens the
           Solde; hidden (the dots), it doesn't. */}
       {revealed ? (
-        <Link href="/solde" prefetch className={cn(BALANCE_CARD, "transition-transform active:scale-[0.99]")}>
+        <Link href="/solde" className={cn(BALANCE_CARD, "transition-transform active:scale-[0.99]")}>
           {balanceCard}
         </Link>
       ) : (
@@ -193,7 +193,7 @@ export function HomeDashboard({
           );
           const className = "flex flex-col items-center gap-1.5 transition-transform active:scale-95";
           return href ? (
-            <Link key={label} href={href} prefetch className={className}>
+            <Link key={label} href={href} className={className}>
               {look}
             </Link>
           ) : (

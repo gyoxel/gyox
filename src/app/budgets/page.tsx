@@ -94,7 +94,6 @@ export default async function BudgetsPage({ searchParams }: { searchParams: Prom
                   <li key={r.category.id}>
                     <Link
                       href={`/budgets/${r.category.id}${query}`}
-                      prefetch
                       className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm active:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:active:bg-slate-800/60"
                     >
                       <span className="flex items-center gap-3">

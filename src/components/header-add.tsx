@@ -14,7 +14,7 @@ export function HeaderAdd({ href, label: given }: { href?: string; label?: strin
   const label = given ?? t("Ajouter");
   if (href) {
     return (
-      <Link href={href} prefetch aria-label={label} className={HEADER_BUTTON}>
+      <Link href={href} aria-label={label} className={HEADER_BUTTON}>
         <Plus weight="bold" className="h-5 w-5" />
       </Link>
     );

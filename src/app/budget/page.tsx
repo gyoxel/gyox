@@ -166,7 +166,6 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
                     <li key={r.expense.id} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
                       <Link
                         href={`/expenses/${r.expense.id}`}
-                        prefetch
                         className="flex items-center gap-3 px-3.5 py-3 active:bg-slate-50 dark:active:bg-slate-800/60"
                       >
                         <span

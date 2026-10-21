@@ -502,7 +502,6 @@ export function DueNowList({
 
       <Link
         href="/expenses/new"
-        prefetch
         className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-rose-200 py-3 text-sm font-semibold text-rose-600 active:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:active:bg-rose-950/30"
       >
         <Plus weight="bold" className="h-4 w-4" />

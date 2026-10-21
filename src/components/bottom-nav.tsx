@@ -88,8 +88,10 @@ function NavLink({
   );
 }
 
-// Everything reachable from the bar, kept fully prefetched so it opens
-// instantly (re-prefetched after every data change, which purges the cache).
+// Everything reachable from the bar, kept prefetched so it opens at once
+// (re-prefetched after every data change, which purges the cache). Down to
+// their loading screen only: no database read until a page is opened — only
+// the bar's own tabs (their <Link prefetch>) are prefetched with their data.
 const PREFETCH_HREFS = [
   ...ITEMS.map((i) => i.href),
   "/settings",
@@ -269,7 +271,6 @@ function AppBar({ pathname }: { pathname: string }) {
                   <Link
                     key={href}
                     href={href}
-                    prefetch
                     role="menuitem"
                     tabIndex={open ? 0 : -1}
                     onClick={() => setOpen(false)}
