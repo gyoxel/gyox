@@ -988,7 +988,7 @@ export const DAR: Record<string, string> = {
   "Argent emprunté": "Flous mtsllfin",
   "Reste de budget": "Lbaqi dyal budget",
   "Appuie encore sur retour pour quitter": "Wrrek 3awtani 3la rjou3 bach tkhrej",
-  "Toutes tes dépenses du mois (sauf les dettes) : ce que tu as déjà payé, ce qui reste à payer, rangé par catégorie.": "Ga3 masarif dyal chhar (bla ddyoun): chno khllesti deja w chno bqa, mrttbin 3la 7sab nnou3.",
+  "Toutes tes dépenses du mois (sauf les dettes) : ce que tu as déjà payé, ce qui reste à payer, par date ou par catégorie.": "Ga3 masarif dyal chhar (bla ddyoun): chno khllesti deja w chno bqa, 3la 7sab nhar wla 3la 7sab nnou3.",
   "Voir le total du mois, ce qui est payé et ce qui reste, avec le pourcentage.": "Chouf lmjmou3 dyal chhar, chno tkhlles w chno bqa, m3a pourcentage.",
   "Une catégorie qui a un budget montre ce qui en est dépensé, en vert, orange ou rouge.": "Nou3 li 3ndo budget kayban chhal tsref mno, b lkhdar, bortoqali wla l7mer.",
   "Changer de mois avec ‹ › pour voir les mois passés ou à venir.": "Bddel chhar b ‹ › bach tchouf chhour li fato wla jayin.",

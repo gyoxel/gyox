@@ -986,7 +986,7 @@ export const EN: Record<string, string> = {
   "Argent emprunté": "Borrowed money",
   "Reste de budget": "Budget leftover",
   "Appuie encore sur retour pour quitter": "Press back again to exit",
-  "Toutes tes dépenses du mois (sauf les dettes) : ce que tu as déjà payé, ce qui reste à payer, rangé par catégorie.": "All your expenses for the month (except debts): what you've already paid and what's left to pay, sorted by category.",
+  "Toutes tes dépenses du mois (sauf les dettes) : ce que tu as déjà payé, ce qui reste à payer, par date ou par catégorie.": "All your expenses for the month (except debts): what you've already paid and what's left to pay, by date or by category.",
   "Voir le total du mois, ce qui est payé et ce qui reste, avec le pourcentage.": "See the month's total, what's paid and what's left, with the percentage.",
   "Une catégorie qui a un budget montre ce qui en est dépensé, en vert, orange ou rouge.": "A category with a budget shows how much of it is spent, in green, orange or red.",
   "Changer de mois avec ‹ › pour voir les mois passés ou à venir.": "Change month with ‹ › to see past or upcoming months.",

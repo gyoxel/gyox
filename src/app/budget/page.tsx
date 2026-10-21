@@ -36,10 +36,10 @@ interface Row {
 
 /**
  * Dépenses (credits live on the Crédits page): the month's total, what's
- * paid and what's left, then every expense — by category (against its
- * budget, if it has one) or by date (the last done on top, day by day) —
- * each with its status (paid — cash or card — or to pay) and, small, when
- * it was done. Tapping one opens it.
+ * paid and what's left, then every expense — by date (the default: the last
+ * done on top, its day on the line above) or by category (against its
+ * budget, if it has one) — each with its status (paid — cash or card — or
+ * to pay). Tapping one opens it.
  */
 export default async function BudgetPage({ searchParams }: { searchParams: Promise<{ month?: string; view?: string }> }) {
   const [sp, settings, expenses, payments, categories, { lang, t }] = await Promise.all([
@@ -91,8 +91,9 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
   const paidCount = rows.filter((r) => r.status === "paid").length;
   const percent = total > 0 ? Math.round((paid / total) * 100) : 0;
 
-  const byDate = sp.view === "date";
-  const viewHref = (date: boolean) => `/budget?month=${key}${date ? "&view=date" : ""}`;
+  // By date unless asked by category.
+  const byDate = sp.view !== "category";
+  const viewHref = (date: boolean) => `/budget?month=${key}${date ? "" : "&view=category"}`;
 
   // The last done (paid, edited) this month on top, the day over the line
   // above it (once for the same day); nothing done yet: after, the last
@@ -227,13 +228,13 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
 
         {rows.length > 0 && (
           <nav aria-label={t("Affichage des dépenses")} className="-mt-1 grid grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1 dark:bg-slate-800">
-            <Link href={viewHref(false)} replace scroll={false} aria-current={!byDate ? "page" : undefined} className={viewTab(false)}>
-              <Tag weight={!byDate ? "fill" : "bold"} className="h-3.5 w-3.5 text-violet-600 dark:text-violet-300" />
-              {t("Par catégorie")}
-            </Link>
             <Link href={viewHref(true)} replace scroll={false} aria-current={byDate ? "page" : undefined} className={viewTab(true)}>
               <CalendarBlank weight={byDate ? "fill" : "bold"} className="h-3.5 w-3.5 text-violet-600 dark:text-violet-300" />
               {t("Par date")}
+            </Link>
+            <Link href={viewHref(false)} replace scroll={false} aria-current={!byDate ? "page" : undefined} className={viewTab(false)}>
+              <Tag weight={!byDate ? "fill" : "bold"} className="h-3.5 w-3.5 text-violet-600 dark:text-violet-300" />
+              {t("Par catégorie")}
             </Link>
           </nav>
         )}

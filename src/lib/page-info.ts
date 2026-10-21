@@ -14,7 +14,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
   budget: {
     title: msg("Dépenses"),
     summary: msg(
-      "Toutes tes dépenses du mois (sauf les dettes) : ce que tu as déjà payé, ce qui reste à payer, rangé par catégorie.",
+      "Toutes tes dépenses du mois (sauf les dettes) : ce que tu as déjà payé, ce qui reste à payer, par date ou par catégorie.",
     ),
     points: [
       msg("Voir le total du mois, ce qui est payé et ce qui reste, avec le pourcentage."),
