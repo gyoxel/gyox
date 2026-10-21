@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { deleteExpense, getDaretOfExpense, pagesGoneWithExpenses, getDepositOfExpense, getExpenseById, updateExpense } from "@/lib/repository";
+import { deleteExpense, getDaretOfExpense, pagesGoneWithExpenses, getDepositOfExpense, getExpenseById, paymentFollowsAmount, updateExpense } from "@/lib/repository";
+import { amountLocked } from "@/lib/pay-expense";
+import { monthKey, monthOfDateStr, todayMonth } from "@/lib/date";
 import { getSavingsMoveOfExpense } from "@/lib/savings-repo";
 import { getLoanOfExpense } from "@/lib/loans-repo";
 import { expenseInputSchema, partialExpenseSchema } from "@/lib/validation";
@@ -34,6 +36,12 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
   }
 
   const updated = await updateExpense(id, fullParsed.data);
+  // A new amount: the month the form shows follows it (a one-time expense's
+  // own month, else this one) — paid in full, it stays paid in full.
+  if (updated && existing.type !== "credit" && Math.abs(updated.amount - existing.amount) > 0.005 && !(await amountLocked(id))) {
+    const month = existing.frequency === "one-time" ? monthKey(monthOfDateStr(existing.startDate)) : monthKey(todayMonth());
+    await paymentFollowsAmount(id, month, existing.amount, updated.amount);
+  }
   return NextResponse.json(updated);
 });
 
