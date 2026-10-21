@@ -11,7 +11,7 @@ import { localName, type T } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 import { DateDivider, dividersOf } from "@/components/date-divider";
-import { expenseActionAt, findPayment, getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, getMonthLedgerItems, type DisplayColor } from "@/lib/engine";
+import { expenseActionAt, findPayment, getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, getMonthLedgerItems, lastPaidAt, type DisplayColor } from "@/lib/engine";
 import type { Expense, Payment, PaymentMethod } from "@/lib/types";
 import { toast } from "sonner";
 import { METHOD_META } from "@/lib/payment-method";
@@ -156,9 +156,12 @@ export function DueNowList({
   const items = useMemo(() => {
     const key = toMonthKey(viewMonth);
     // To pay first, then paid; in each, the last done (paid, edited) on
-    // top, those with nothing done after (the last added first).
+    // top, those with nothing done after (the last added first). A debt's
+    // installment paid ahead, in an earlier month: the day it was paid.
+    const doneAt = (item: { expense: Expense; paid: boolean }) =>
+      expenseActionAt(item.expense, localPayments, key) || (item.paid ? lastPaidAt(item.expense.id, localPayments, key) : "");
     return getMonthLedgerItems(expenses, localPayments, viewMonth, currentMonth)
-      .map((item) => ({ ...item, color: getExpenseDisplayColor(item.expense), at: expenseActionAt(item.expense, localPayments, key) }))
+      .map((item) => ({ ...item, color: getExpenseDisplayColor(item.expense), at: doneAt(item) }))
       .sort(
         (a, b) =>
           Number(a.paid) - Number(b.paid) ||

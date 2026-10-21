@@ -61,7 +61,6 @@ const groupLabel = (g: EntryGroup, t: T) => (g.own ? categoryName(g.label, t) : 
 const countedOn = (entry: WalletEntry, account: PaymentMethod | "all") =>
   account === "all" || entry.lines[0].account === account ? entry.counted : 0;
 
-
 /** An entry's name in the device's language (the app's own wording; a
  *  name typed by the user stays as typed). */
 function entryLabel(entry: WalletEntry, lang: Lang, t: T): string {
