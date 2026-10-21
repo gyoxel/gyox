@@ -1,4 +1,5 @@
 import { getAllDarets, getAllIncomes, getIncomeCategories, getSettings } from "@/lib/page-data";
+import { Fragment } from "react";
 import Link from "next/link";
 import { CaretRight } from "@phosphor-icons/react/ssr";
 
@@ -9,12 +10,13 @@ import { monthKey, parseMonthKey, todayMonth } from "@/lib/date";
 import { monthLabel, whenLabel } from "@/lib/i18n/dates";
 import { categoryName, localName } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
-import { formatMoney } from "@/lib/utils";
+import { cn, formatMoney } from "@/lib/utils";
 import type { Income } from "@/lib/types";
 import { PageHeader } from "@/components/page-header";
 import { HeaderAdd } from "@/components/header-add";
 import { AddLink } from "@/components/add-link";
 import { MethodLabel } from "@/components/method-icon";
+import { DateDivider, dividersOf } from "@/components/date-divider";
 
 export const dynamic = "force-dynamic";
 
@@ -86,9 +88,8 @@ export default async function IncomesPage() {
       })),
   ].sort((a, b) => b.date.localeCompare(a.date) || b.at.localeCompare(a.at));
   const months = [...new Set(rows.map((r) => r.date.slice(0, 7)))];
-  // Small, the day it came.
+  // The day it came, over the line above it (once for the same day).
   const now = new Date();
-  const when = (r: Row) => whenLabel(r.date, lang, t, now);
 
   return (
     <>
@@ -111,6 +112,10 @@ export default async function IncomesPage() {
         ) : (
           months.map((m) => {
             const list = rows.filter((r) => r.date.startsWith(m));
+            const dividers = dividersOf(
+              list.map((r) => whenLabel(r.date, lang, t, now)),
+              "",
+            );
             return (
               <section key={m} className="flex flex-col gap-2">
                 <h2 className="flex items-center justify-between px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">
@@ -118,8 +123,10 @@ export default async function IncomesPage() {
                   <span className="tabular-nums text-emerald-600">+{money(list.reduce((sum, r) => sum + r.amount, 0))}</span>
                 </h2>
                 <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                  {list.map((r) => (
-                    <li key={r.id} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
+                  {list.map((r, i) => (
+                    <Fragment key={r.id}>
+                    {dividers[i] && <DateDivider label={dividers[i]} />}
+                    <li className={cn(!dividers[i] && "border-t border-slate-100 first:border-t-0 dark:border-slate-800")}>
                       <Link href={r.href} className="flex items-center gap-3 px-4 py-3 active:bg-slate-50 dark:active:bg-slate-800/60">
                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl gx-tile text-lg">
                           {r.emoji}
@@ -134,13 +141,14 @@ export default async function IncomesPage() {
                             )}
                           </span>
                           <span className="block text-[11px] text-slate-400">
-                            {r.sub} · {when(r)} · <MethodLabel method={r.method} />
+                            {r.sub} · <MethodLabel method={r.method} />
                           </span>
                         </span>
                         <span className="text-sm font-semibold tabular-nums text-emerald-600">+{money(r.amount)}</span>
                         <CaretRight weight="bold" className="h-4 w-4 text-slate-300" />
                       </Link>
                     </li>
+                    </Fragment>
                   ))}
                 </ul>
               </section>

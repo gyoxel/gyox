@@ -1,13 +1,14 @@
 import { getAllDarets, getAllPayments, getSettings } from "@/lib/page-data";
 import { daretLastAt, getDaretState } from "@/lib/daret";
 import { compareMonths, monthKey, todayMonth } from "@/lib/date";
-import { monthLabel } from "@/lib/i18n/dates";
+import { monthLabel, whenLabel } from "@/lib/i18n/dates";
 import { getI18n } from "@/lib/i18n/server";
 import { formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { HeaderAdd } from "@/components/header-add";
 import { AddLink } from "@/components/add-link";
 import { DaretCard } from "@/components/daret-card";
+import { DateDivider, withDividers } from "@/components/date-divider";
 
 export const dynamic = "force-dynamic";
 
@@ -72,16 +73,19 @@ export default async function DaretPage() {
             <p className="text-xs text-slate-400">{t("Ajoute ta première daret : cotisation, membres et ton tour.")}</p>
           </div>
         ) : (
-          items.map(({ daret, state }) => (
-            <DaretCard
-              key={daret.id}
-              daret={daret}
-              state={state}
-              currency={settings.currency}
-              currentMonthKey={monthKey(current)}
-              daysToTurn={state.turnStatus === "upcoming" ? daysUntil(state.turn.year, state.turn.month) : null}
-              lastAt={daretLastAt(daret, payments)}
-            />
+          // The last done (a contribution, the pot, an edit) on top, its day
+          // above it (once for the same day); nothing done yet: after.
+          withDividers(items, (i) => daretLastAt(i.daret, payments), (iso) => whenLabel(iso, lang, t), t("Sans date")).map(({ item: { daret, state }, divider }) => (
+            <div key={daret.id} className="flex flex-col gap-1.5">
+              {divider && <DateDivider as="div" label={divider} className="px-2 pt-0" />}
+              <DaretCard
+                daret={daret}
+                state={state}
+                currency={settings.currency}
+                currentMonthKey={monthKey(current)}
+                daysToTurn={state.turnStatus === "upcoming" ? daysUntil(state.turn.year, state.turn.month) : null}
+              />
+            </div>
           ))
         )}
       </main>

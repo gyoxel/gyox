@@ -115,8 +115,6 @@ export function GoalCard({
   const monthLabelShortFr = (m: MonthId) => monthLabelShort(m, lang);
   const p = progress;
   const money = (n: number) => formatMoney(n, currency);
-  // When it last moved: its last deposit, else when it was added.
-  const lastAt = goal.deposits.map((d) => d.date).reduce((a, b) => (b > a ? b : a), goal.createdAt);
 
   if (linkToDetail) {
     return (
@@ -134,7 +132,6 @@ export function GoalCard({
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               <b className="font-semibold text-slate-800 dark:text-slate-100">{money(p.reachedNow)}</b> / {money(p.target)}
-              <span className="text-[11px] tabular-nums text-slate-400"> · {whenLabel(lastAt, lang, t)}</span>
             </p>
             {p.percentProjected > p.percentNow ? (
               <p className="mt-0.5 text-[11px] text-orange-600 dark:text-amber-400">{t("Avec tes darets : {percent}%", { percent: p.percentProjected })}</p>

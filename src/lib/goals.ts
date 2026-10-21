@@ -54,6 +54,21 @@ export function isDepositPaid(deposit: GoalDeposit, payments: Payment[]): boolea
   return !deposit.expenseId || payments.some((p) => p.expenseId === deposit.expenseId && p.amountPaid > 0);
 }
 
+/** When money last went to a goal: its last deposit paid (for one made
+ *  every month, the last month ticked); "" when none. */
+export function goalLastAt(goal: Goal, payments: Payment[]): string {
+  let last = "";
+  for (const d of goal.deposits) {
+    const at = d.monthly
+      ? payments.filter((p) => p.expenseId === d.expenseId && p.amountPaid > 0).reduce((a, p) => (p.paidAt > a ? p.paidAt : a), "")
+      : isDepositPaid(d, payments)
+        ? d.date
+        : "";
+    if (at > last) last = at;
+  }
+  return last;
+}
+
 /** What a deposit brings the goal: its amount once paid — every month, each
  *  month ticked. */
 export function depositTotal(deposit: GoalDeposit, payments: Payment[]): number {

@@ -10,7 +10,8 @@ import { monthLabel, monthLabelShort, whenLabel } from "@/lib/i18n/dates";
 import { localName, type T } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
-import { findPayment, getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, getMonthLedgerItems, lastPaidAt, type DisplayColor, type LedgerItem } from "@/lib/engine";
+import { DateDivider, dividersOf } from "@/components/date-divider";
+import { expenseActionAt, findPayment, getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, getMonthLedgerItems, type DisplayColor } from "@/lib/engine";
 import type { Expense, Payment, PaymentMethod } from "@/lib/types";
 import { toast } from "sonner";
 import { METHOD_META } from "@/lib/payment-method";
@@ -154,13 +155,17 @@ export function DueNowList({
   const emojiById = useMemo(() => new Map(Object.entries(categoryEmoji)), [categoryEmoji]);
   const items = useMemo(() => {
     const key = toMonthKey(viewMonth);
-    // To pay first, the last added on top (a rest: when it was left); then
-    // paid, the last ticked on top.
-    const order = (item: LedgerItem) =>
-      item.paid || item.rest ? lastPaidAt(item.expense.id, localPayments, key) : item.expense.createdAt;
+    // To pay first, then paid; in each, the last done (paid, edited) on
+    // top, those with nothing done after (the last added first).
     return getMonthLedgerItems(expenses, localPayments, viewMonth, currentMonth)
-      .map((item) => ({ ...item, color: getExpenseDisplayColor(item.expense) }))
-      .sort((a, b) => Number(a.paid) - Number(b.paid) || order(b).localeCompare(order(a)));
+      .map((item) => ({ ...item, color: getExpenseDisplayColor(item.expense), at: expenseActionAt(item.expense, localPayments, key) }))
+      .sort(
+        (a, b) =>
+          Number(a.paid) - Number(b.paid) ||
+          Number(Boolean(b.at)) - Number(Boolean(a.at)) ||
+          b.at.localeCompare(a.at) ||
+          b.expense.createdAt.localeCompare(a.expense.createdAt),
+      );
   }, [expenses, localPayments, viewMonth, currentMonth]);
 
   function goMonth(next: MonthId) {
@@ -257,10 +262,15 @@ export function DueNowList({
   const firstPaid = items.findIndex((i) => i.paid);
   const shownItems = allPaid || firstPaid < 0 ? items : items.slice(0, firstPaid + PAID_SHOWN);
   const morePaid = items.length - shownItems.length;
-  /** When it was done, small: paid (or part of it), the last payment; to
-   *  pay, when it was added. */
-  const whenDone = (item: LedgerItem) =>
-    item.paid || item.rest ? lastPaidAt(item.expense.id, localPayments, toMonthKey(viewMonth)) : item.expense.createdAt;
+  // The day something was done, over the line above it: once for rows of
+  // the same day, each group (to pay, paid) on its own.
+  const dividers = [
+    ...dividersOf(
+      shownItems.slice(0, firstPaid < 0 ? undefined : firstPaid).map((i) => (i.at ? whenLabel(i.at, lang, t) : "")),
+      t("Sans date"),
+    ),
+    ...(firstPaid < 0 ? [] : dividersOf(shownItems.slice(firstPaid).map((i) => (i.at ? whenLabel(i.at, lang, t) : "")), t("Sans date"))),
+  ];
 
   return (
     <div className="flex flex-col gap-3">
@@ -338,19 +348,19 @@ export function DueNowList({
                   total={formatMoney(paidTotal, currency)}
                 />
               ) : null;
+            const tint = paid ? "bg-emerald-50/40 dark:bg-emerald-950/10" : rest ? "bg-amber-50/50 dark:bg-amber-950/10" : "bg-white dark:bg-slate-900";
+            const divider = dividers[index];
             return (
               <Fragment key={key}>
               {header}
+              {divider && <DateDivider label={divider} className={tint} />}
               <li
                 key={key}
                 ref={(el) => {
                   if (el) rowRefs.current.set(key, el);
                   else rowRefs.current.delete(key);
                 }}
-                className={cn(
-                  "flex items-center border-t border-slate-100 pr-1.5 dark:border-slate-800",
-                  paid ? "bg-emerald-50/40 dark:bg-emerald-950/10" : rest ? "bg-amber-50/50 dark:bg-amber-950/10" : "bg-white dark:bg-slate-900",
-                )}
+                className={cn("flex items-center pr-1.5", !divider && "border-t border-slate-100 dark:border-slate-800", tint)}
               >
                 {/* Tapping the row opens the edit page; only the round
                     checkbox on the right toggles "payé". */}
@@ -396,17 +406,14 @@ export function DueNowList({
                           : kindOf(expense)}
                     </span>
                   </span>
-                  <span className="flex shrink-0 flex-col items-end">
-                    <span
-                      className={cn(
-                        "text-sm font-bold tabular-nums",
-                        rest ? "text-amber-600 dark:text-amber-400" : "text-rose-600",
-                        paid && "font-semibold text-slate-400 line-through dark:text-slate-500",
-                      )}
-                    >
-                      {formatMoney(amount, currency)}
-                    </span>
-                    <span className="text-[10px] tabular-nums text-slate-400">{whenLabel(whenDone(item), lang, t)}</span>
+                  <span
+                    className={cn(
+                      "shrink-0 text-sm font-bold tabular-nums",
+                      rest ? "text-amber-600 dark:text-amber-400" : "text-rose-600",
+                      paid && "font-semibold text-slate-400 line-through dark:text-slate-500",
+                    )}
+                  >
+                    {formatMoney(amount, currency)}
                   </span>
                 </Link>
                 {choosingId === key && paid ? (
@@ -493,9 +500,9 @@ export function DueNowList({
           })}
         </ul>
       )}
-      {(morePaid > 0 || (allPaid && paidCount > PAID_SHOWN)) && (
-        <Button type="button" variant="outline" onClick={() => setAllPaid((v) => !v)}>
-          {allPaid ? t("Voir moins") : t("Voir plus")}
+      {morePaid > 0 && (
+        <Button type="button" variant="outline" onClick={() => setAllPaid(true)}>
+          {t("Voir plus")}
         </Button>
       )}
 

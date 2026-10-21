@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowDownLeft, ArrowUpRight, Bank, CaretRight } from "@phosphor-icons/react/ssr";
 import type { PaymentMethod, SavingsMove } from "@/lib/types";
@@ -14,6 +14,7 @@ import { ExistingSavingsDialog } from "@/components/existing-savings-dialog";
 import { HEADER_ADD_EVENT } from "@/components/header-add";
 import { Button } from "@/components/ui/button";
 import { MethodIcon } from "@/components/method-icon";
+import { DateDivider, withDividers } from "@/components/date-divider";
 
 type Move = SavingsMove & { counted: boolean; href: string; plan: MonthlyPlan | null };
 
@@ -166,13 +167,22 @@ export function EpargneView({
         </p>
       ) : (
         months.map((m) => {
-          const list = rows.filter((r) => r.date.startsWith(m));
+          // The day money moved, over the line above it (once for the same
+          // day); what didn't move (not paid, already saved) after, undated.
+          const list = withDividers(
+            rows.filter((r) => r.date.startsWith(m)),
+            (r) => (r.counted && r.move.kind !== "existing" ? r.date : ""),
+            (day) => whenLabel(day, lang, t),
+            t("Sans date"),
+          );
           return (
             <section key={m} className="flex flex-col gap-2">
               <h2 className="px-1 text-sm font-semibold capitalize text-slate-600 dark:text-slate-300">{monthLabel(parseMonthKey(m), lang)}</h2>
               <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                {list.map(({ key, move: x, date, amount, method, counted }) => (
-                  <li key={key} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
+                {list.map(({ item: { key, move: x, amount, method, counted }, divider }) => (
+                  <Fragment key={key}>
+                  {divider && <DateDivider label={divider} />}
+                  <li className={cn(!divider && "border-t border-slate-100 first:border-t-0 dark:border-slate-800")}>
                     <Link href={x.href} className="flex items-center gap-3 px-4 py-3 active:bg-slate-50 dark:active:bg-slate-800/60">
                       <span
                         className={cn(
@@ -200,7 +210,6 @@ export function EpargneView({
                           )}
                         </span>
                         <span className="block text-[11px] text-slate-400">
-                          {whenLabel(date, lang, t)} ·{" "}
                           {x.kind === "existing"
                             ? t("Déjà épargné · hors solde")
                             : x.kind === "in"
@@ -226,6 +235,7 @@ export function EpargneView({
                       <CaretRight weight="bold" className="h-4 w-4 text-slate-300" />
                     </Link>
                   </li>
+                  </Fragment>
                 ))}
               </ul>
             </section>

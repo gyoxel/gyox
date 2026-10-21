@@ -1,13 +1,15 @@
 import { getAllCategories, getAllExpenses, getAllPayments, getSettings } from "@/lib/page-data";
 import Link from "next/link";
+import { Fragment } from "react";
 import { CalendarBlank, CaretRight, Check, Clock, Tag } from "@phosphor-icons/react/ssr";
 
 import { monthFromSearchParams, monthKey, todayMonth } from "@/lib/date";
 import { monthLabel, monthLabelShort, whenLabel } from "@/lib/i18n/dates";
 import { categoryName, localName } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
-import { findPayment, getEffectiveEndMonth, getMonthPaymentStatus, getMonthSummary, lastPaidAt } from "@/lib/engine";
+import { expenseActionAt, findPayment, getEffectiveEndMonth, getMonthPaymentStatus, getMonthSummary } from "@/lib/engine";
 import { MonthSwitcher } from "@/components/month-switcher";
+import { DateDivider, withDividers } from "@/components/date-divider";
 import { PageHeader } from "@/components/page-header";
 import { HeaderAdd } from "@/components/header-add";
 import { AddLink } from "@/components/add-link";
@@ -89,19 +91,16 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
   const paidCount = rows.filter((r) => r.status === "paid").length;
   const percent = total > 0 ? Math.round((paid / total) * 100) : 0;
 
-  // When it was done: paid (or part of it), its last payment; else added.
-  const order = (r: Row) => (r.paid > 0.005 || r.status === "paid" ? lastPaidAt(r.expense.id, payments, key) || r.expense.createdAt : r.expense.createdAt);
   const byDate = sp.view === "date";
   const viewHref = (date: boolean) => `/budget?month=${key}${date ? "&view=date" : ""}`;
 
-  // By date: day by day, the last done on top.
+  // The last done (paid, edited) this month on top, the day over the line
+  // above it (once for the same day); nothing done yet: after, the last
+  // added first, without a day.
   const now = new Date();
-  const days: { title: string; list: Row[] }[] = [];
-  for (const r of [...rows].sort((a, b) => order(b).localeCompare(order(a)))) {
-    const title = whenLabel(order(r), lang, t, now);
-    if (days.at(-1)?.title !== title) days.push({ title, list: [] });
-    days.at(-1)!.list.push(r);
-  }
+  const newestFirst = [...rows].sort((a, b) => b.expense.createdAt.localeCompare(a.expense.createdAt));
+  const dated = (list: Row[]) =>
+    withDividers(list, (r) => expenseActionAt(r.expense, payments, key), (iso) => whenLabel(iso, lang, t, now), t("Sans date"));
 
   // Grouped by category, in the categories' own order; uncategorized last.
   const groups = [
@@ -109,21 +108,20 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
     { id: null as string | null, label: t("Sans catégorie"), emoji: "🏷️", budget: null },
   ]
     .map((g) => {
-      const list = rows
-        .filter((r) => (g.id ? r.expense.categoryId === g.id : !r.expense.categoryId || !categoryEmoji.has(r.expense.categoryId)))
-        // The last added or ticked paid on top.
-        .sort((a, b) => order(b).localeCompare(order(a)));
+      const list = newestFirst.filter((r) => (g.id ? r.expense.categoryId === g.id : !r.expense.categoryId || !categoryEmoji.has(r.expense.categoryId)));
       return { ...g, list, subtotal: list.reduce((s, r) => s + r.amount, 0) };
     })
     .filter((g) => g.list.length > 0);
 
-  // One expense: its name, what it is and the day it was done (small; not
-  // by date, its day being the title), its amount and status.
-  const row = (r: Row) => {
+  // One expense (under the day it was done, when it starts one): its name,
+  // what it is, its amount and status.
+  const row = ({ item: r, divider }: { item: Row; divider: string | null }) => {
     const isPaid = r.status === "paid";
     const partly = !isPaid && r.paid > 0.005;
     return (
-      <li key={r.expense.id} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
+      <Fragment key={r.expense.id}>
+      {divider && <DateDivider label={divider} />}
+      <li className={cn(!divider && "border-t border-slate-100 first:border-t-0 dark:border-slate-800")}>
         <Link
           href={`/expenses/${r.expense.id}`}
           className="flex items-center gap-3 px-3.5 py-3 active:bg-slate-50 dark:active:bg-slate-800/60"
@@ -145,9 +143,8 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
             >
               {localName(r.expense.name, t)}
             </span>
-            <span className="flex min-w-0 gap-1 text-[11px] text-slate-400">
-              <span className="truncate">{partly ? t("{paid} payés sur {due}", { paid: money(r.paid), due: money(r.amount) }) : r.kind}</span>
-              {!byDate && <span className="shrink-0 tabular-nums">· {whenLabel(order(r), lang, t, now)}</span>}
+            <span className="block truncate text-[11px] text-slate-400">
+              {partly ? t("{paid} payés sur {due}", { paid: money(r.paid), due: money(r.amount) }) : r.kind}
             </span>
           </span>
           <span className="flex shrink-0 flex-col items-end gap-1">
@@ -187,6 +184,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
           <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300" />
         </Link>
       </li>
+      </Fragment>
     );
   };
   const viewTab = (date: boolean) =>
@@ -245,14 +243,9 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
             {t("Aucune dépense prévue pour ce mois.")}
           </p>
         ) : byDate ? (
-          days.map((d) => (
-            <section key={d.title} className="flex flex-col gap-2">
-              <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{d.title}</h2>
-              <ul className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                {d.list.map(row)}
-              </ul>
-            </section>
-          ))
+          <ul className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            {dated(newestFirst).map(row)}
+          </ul>
         ) : (
           groups.map((g) => (
             <section key={g.id ?? "none"} className="flex flex-col gap-2">
@@ -272,7 +265,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
               </h2>
               {g.budget && <BudgetBar spent={g.subtotal} budget={g.budget} className="-mt-0.5 mx-1 h-1.5" />}
               <ul className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                {g.list.map(row)}
+                {dated(g.list).map(row)}
               </ul>
             </section>
           ))

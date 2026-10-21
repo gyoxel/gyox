@@ -23,7 +23,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Ajouter une dépense avec le bouton + (une fois, chaque mois ou pendant X mois)."),
       msg("Toucher une dépense pour l'ouvrir : la payer, la modifier, corriger un paiement ou la supprimer."),
       msg("Voir le statut de chacune : payée (espèces ou carte), payée en partie, à payer ou à venir."),
-      msg("« Par date » : les dépenses jour par jour, la dernière payée ou ajoutée en haut ; sous chacune, en petit, quand."),
+      msg("« Par date » : la dernière payée (ou modifiée) en haut ; son jour est écrit en petit sur la ligne au-dessus, une fois par jour."),
     ],
   },
   credits: {
