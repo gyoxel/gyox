@@ -5,9 +5,20 @@ import { cn } from "@/lib/utils";
  * done that day, until the next one. Small; written once for rows of the
  * same day.
  */
-export function DateDivider({ label, as: Tag = "li", className }: { label: string; as?: "li" | "div"; className?: string }) {
-  // Between cards, on the page: a line a little darker to be seen.
-  const line = cn("h-px flex-1", Tag === "li" ? "bg-slate-100 dark:bg-slate-800" : "bg-slate-200 dark:bg-slate-700");
+export function DateDivider({
+  label,
+  as: Tag = "li",
+  className,
+  lineClassName,
+}: {
+  label: string;
+  as?: "li" | "div" | "span";
+  className?: string;
+  /** The line's colour where it sits on another (a tinted box). */
+  lineClassName?: string;
+}) {
+  // Between cards ("div"), on the page: a line a little darker to be seen.
+  const line = cn("h-px flex-1", lineClassName ?? (Tag === "div" ? "bg-slate-200 dark:bg-slate-700" : "bg-slate-100 dark:bg-slate-800"));
   return (
     <Tag className={cn("flex items-center gap-2 px-4 pb-0.5 pt-2", className)}>
       <span aria-hidden className={line} />

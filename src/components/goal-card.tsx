@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import Link from "next/link";
 import { CaretRight, Check, ClockCountdown, PencilSimple, Plus, Sparkle, Target, TrendUp } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MethodIcon } from "@/components/method-icon";
+import { DateDivider, dividersOf, lastDoneFirst } from "@/components/date-divider";
 import { MonthlyToggle } from "@/components/monthly-toggle";
 
 /** Progress ring around the goal's emoji: solid = in hand, light = with darets. */
@@ -168,17 +169,24 @@ export function GoalCard({
   // the goal reaches after it; not paid ones stay listed but don't count.
   type Row =
     | { kind: "step"; key: string; step: GoalProgress["steps"][number] }
-    | { kind: "deposit"; key: string; deposit: Goal["deposits"][number]; paid: boolean; amount: number; plan: MonthlyPlan | null; percent: number };
+    | { kind: "deposit"; key: string; deposit: Goal["deposits"][number]; paid: boolean; amount: number; plan: MonthlyPlan | null; percent: number; at: string };
   const stepRow = (step: GoalProgress["steps"][number], i: number): Row => ({ kind: "step", key: `step-${i}`, step });
-  const depositRows = [...goal.deposits].reverse().reduce<{ rows: Row[]; reached: number }>(
-    (acc, d) => {
+  // When money went in: a deposit paid, its day; one every month, the last
+  // month ticked; not paid, nothing.
+  const deposits = goal.deposits
+    .map((d) => {
       const paid = depositsPaid?.[d.id] ?? true;
       const plan = depositPlans[d.id] ?? null;
+      return { d, paid, plan, at: plan ? (plan.paid.at(-1)?.paidAt ?? "") : paid ? d.date : "" };
+    })
+    .sort(lastDoneFirst((x) => x.at));
+  const depositRows = [...deposits].reverse().reduce<{ rows: Row[]; reached: number }>(
+    (acc, { d, paid, plan, at }) => {
       // Every month: all its months ticked.
       const amount = plan ? plan.total : d.amount;
       const reached = acc.reached + (paid ? amount : 0);
       const percent = p.target > 0 ? Math.min(100, Math.round((reached / p.target) * 100)) : 0;
-      return { rows: [...acc.rows, { kind: "deposit", key: `deposit-${d.id}`, deposit: d, paid, amount, plan, percent }], reached };
+      return { rows: [...acc.rows, { kind: "deposit", key: `deposit-${d.id}`, deposit: d, paid, amount, plan, percent, at }], reached };
     },
     { rows: [], reached: goal.savedAmount },
   ).rows.reverse(); // the last one on top
@@ -187,6 +195,11 @@ export function GoalCard({
     ...depositRows,
     ...p.steps.map(stepRow).filter((r) => r.kind === "step" && r.step.kind === "daret"),
   ];
+  // The day money went in, over the line above it (once for the same day).
+  const days = dividersOf(
+    stepRows.map((r) => (r.kind === "deposit" && r.at ? whenLabel(r.at, lang, t) : "")),
+    t("Sans date"),
+  );
 
   return (
     <>
@@ -237,9 +250,11 @@ export function GoalCard({
         <section className="flex flex-col gap-2">
           <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Étapes et versements")}</h2>
           <ol className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            {stepRows.map((row) =>
-              row.kind === "deposit" ? (
-                <li key={row.key} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
+            {stepRows.map((row, i) => (
+              <Fragment key={row.key}>
+              {days[i] && <DateDivider label={days[i]} />}
+              {row.kind === "deposit" ? (
+                <li className={cn(!days[i] && "border-t border-slate-100 first:border-t-0 dark:border-slate-800")}>
                   <Link
                     href={`/goals/${goal.id}/deposits/${row.deposit.id}`}
                     className="flex items-center gap-3 px-4 py-3 text-sm active:bg-slate-50 dark:active:bg-slate-800/60"
@@ -262,16 +277,14 @@ export function GoalCard({
                             {row.plan.dueNow && <span className="ml-1 font-semibold text-amber-600">· {t("à cocher ce mois")}</span>}
                           </>
                         ) : (
-                          whenLabel(row.deposit.date, lang, t)
+                          row.deposit.method && (
+                            <>
+                              <MethodIcon method={row.deposit.method} />
+                              {row.deposit.method === "savings" ? ` ${t("Épargne")}` : ""}
+                            </>
+                          )
                         )}
-                        {!row.plan && row.deposit.method && (
-                          <>
-                            {" "}
-                            · <MethodIcon method={row.deposit.method} />
-                            {row.deposit.method === "savings" ? ` ${t("Épargne")}` : ""}
-                          </>
-                        )}
-                        {!row.paid && <span className="ml-1 font-semibold text-rose-500">· {t("Non payé")}</span>}
+                        {!row.paid && <span className="ml-1 font-semibold text-rose-500">{row.deposit.method || row.plan ? "· " : ""}{t("Non payé")}</span>}
                       </span>
                     </span>
                     <span className="text-right">
@@ -293,7 +306,7 @@ export function GoalCard({
                   </Link>
                 </li>
               ) : (
-                <li key={row.key} className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm first:border-t-0 dark:border-slate-800">
+                <li className={cn("flex items-center gap-3 px-4 py-3 text-sm", !days[i] && "border-t border-slate-100 first:border-t-0 dark:border-slate-800")}>
                   <StepIcon>{row.step.kind === "saved" ? "💰" : "🤝🏻"}</StepIcon>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium text-slate-800 dark:text-slate-100">{row.step.kind === "saved" ? t(row.step.label) : row.step.label}</span>
@@ -312,8 +325,9 @@ export function GoalCard({
                     </span>
                   </span>
                 </li>
-              ),
-            )}
+              )}
+              </Fragment>
+            ))}
           </ol>
         </section>
       )}

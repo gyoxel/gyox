@@ -11,7 +11,6 @@ import { errorMessage } from "@/components/expense-editor";
 import { AmountSheet } from "@/components/amount-sheet";
 import { MethodLabel } from "@/components/method-icon";
 import type { T } from "@/lib/i18n";
-import { whenLabel } from "@/lib/i18n/dates";
 import { useI18n, useT } from "@/lib/i18n/client";
 
 const round = (n: number) => Math.round(n * 100) / 100;
@@ -87,7 +86,7 @@ export function ReceiveRepayment({ variant = "full", ...info }: MonthInfo & { va
 
 /** One repayment of a month: tap to change it (amount, cash / card) or delete it. */
 export function RepaymentRow({ repayment, ...info }: MonthInfo & { repayment: LoanRepayment }) {
-  const { lang, t } = useI18n();
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const others = round(info.received - repayment.amount);
   const path = `/api/loans/${info.loanId}/repayments/${repayment.id}`;
@@ -98,7 +97,6 @@ export function RepaymentRow({ repayment, ...info }: MonthInfo & { repayment: Lo
         onClick={() => setOpen(true)}
         className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs active:bg-slate-100 dark:active:bg-slate-800"
       >
-        <span className="tabular-nums text-slate-500 dark:text-slate-400">{whenLabel(repayment.date, lang, t)}</span>
         <span className="text-slate-500 dark:text-slate-400">
           <MethodLabel method={repayment.method} />
         </span>
