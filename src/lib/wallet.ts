@@ -4,6 +4,7 @@
 // and adjustments to the real amount. Pure (no DB access).
 import { displayIcon } from "./category";
 import { daretPayout } from "./daret";
+import { GROUPS } from "./category-stats";
 import { incomeCategory } from "./income";
 import { loanRemaining, loanToRepay } from "./loans";
 import { savingsBalance } from "./savings";
@@ -52,7 +53,25 @@ export interface WalletEntry {
   href?: string;
   /** Transfers / adjustments can be deleted from the history. */
   opId?: string;
+  /** Its category, to filter the history. */
+  group: EntryGroup;
 }
+
+/** An entry's category: the user's own (an expense's, an income's), or
+ *  what the app made it from (Salaire, Épargne, Dettes…). */
+export interface EntryGroup {
+  /** A category's id (an income category's: "in:" + it), or the app's group. */
+  key: string;
+  /** The user's category name, or (`own` false) the app's French word, to
+   *  translate where it's shown. */
+  label: string;
+  own: boolean;
+  emoji: string;
+}
+
+const appGroup = (key: keyof typeof GROUPS): EntryGroup => ({ key, label: GROUPS[key].label, own: false, emoji: GROUPS[key].emoji });
+const SALARY_GROUP: EntryGroup = { key: "salary", label: msg("Salaire"), own: false, emoji: "💼" };
+const INTERNAL_GROUP: EntryGroup = { key: "internal", label: msg("Transferts et ajustements"), own: false, emoji: "🔁" };
 
 export interface WalletSummary {
   balance: Record<PaymentMethod, number>;
@@ -102,27 +121,51 @@ export function buildWallet(input: {
   loans?: Loan[];
   /** For the incomes' emoji (the user's own categories). */
   incomeCategories?: Category[];
+  /** The expenses' categories, for the history's filter. */
+  categories?: Category[];
   categoryEmoji: Map<string, string>;
   month: string;
 }): WalletSummary {
   const byId = new Map(input.expenses.map((e) => [e.id, e]));
   const entries: WalletEntry[] = [];
   // Expense / income id → the savings move or loan behind it.
-  const source = new Map<string, { kind: EntryKind; href: string }>();
+  const source = new Map<string, { kind: EntryKind; href: string; group: EntryGroup }>();
   const loanExpenses = new Set<string>();
   for (const m of input.savingsMoves ?? []) {
-    const link = { kind: "savings" as const, href: `/epargne/${m.id}` };
+    const link = { kind: "savings" as const, href: `/epargne/${m.id}`, group: appGroup("savings") };
     if (m.expenseId) source.set(m.expenseId, link);
     if (m.incomeId) source.set(m.incomeId, link);
   }
   for (const l of input.loans ?? []) {
-    const link = { kind: "loan" as const, href: `/prets/${l.id}` };
+    const link = { kind: "loan" as const, href: `/prets/${l.id}`, group: appGroup("loans") };
     if (l.expenseId) {
       source.set(l.expenseId, link);
       loanExpenses.add(l.expenseId);
     }
     for (const r of l.repayments) if (r.incomeId) source.set(r.incomeId, link);
   }
+  // An expense's category; the ones the app makes, by what made them.
+  const madeBy = new Map<string, keyof typeof GROUPS>();
+  for (const g of input.goals ?? []) for (const d of g.deposits) if (d.expenseId) madeBy.set(d.expenseId, "savings");
+  for (const d of input.darets) madeBy.set(d.expenseId, "darets");
+  const categories = new Map((input.categories ?? []).map((c) => [c.id, c]));
+  const expenseGroup = (e: Expense): EntryGroup => {
+    const made = source.get(e.id)?.group ?? (madeBy.has(e.id) ? appGroup(madeBy.get(e.id)!) : null);
+    if (made) return made;
+    if (e.type === "credit") return appGroup("debts");
+    const c = e.categoryId ? categories.get(e.categoryId) : undefined;
+    return c ? { key: c.id, label: c.name, own: true, emoji: c.emoji } : appGroup("none");
+  };
+  const incomeGroup = (i: Income): EntryGroup => {
+    const made = source.get(i.id)?.group;
+    if (made) return made;
+    // Money borrowed (a debt's), taken back from the savings, a loan given back.
+    if (i.expenseId || i.category === "credit") return appGroup("debts");
+    if (i.category === "epargne") return appGroup("savings");
+    if (i.category === "pret") return appGroup("loans");
+    const c = incomeCategory(i.category, input.incomeCategories);
+    return { key: `in:${c.key}`, label: c.label, own: !c.system, emoji: c.emoji };
+  };
 
   for (const r of input.receipts) {
     entries.push({
@@ -134,6 +177,7 @@ export function buildWallet(input: {
       say: { text: msg("Salaire {period}"), period: r.period },
       lines: [{ account: r.method, amount: r.amount }],
       href: "/salary",
+      group: SALARY_GROUP,
     });
   }
   for (const a of input.advances) {
@@ -146,6 +190,7 @@ export function buildWallet(input: {
       say: { text: msg("Avance sur salaire {period}"), period: a.period },
       lines: [{ account: a.method, amount: a.amount }],
       href: "/salary",
+      group: SALARY_GROUP,
     });
   }
   for (const i of input.incomes) {
@@ -157,6 +202,7 @@ export function buildWallet(input: {
       label: i.name,
       lines: [{ account: i.method, amount: i.amount }],
       href: source.get(i.id)?.href ?? `/incomes/${i.id}`,
+      group: incomeGroup(i),
     });
   }
   for (const d of input.darets) {
@@ -170,6 +216,7 @@ export function buildWallet(input: {
       say: { text: msg("Daret reçue · {name}"), vars: { name: d.expense.name } },
       lines: [{ account: d.payoutMethod, amount: daretPayout(d) }],
       href: "/daret",
+      group: appGroup("darets"),
     });
   }
   for (const p of input.payments) {
@@ -185,6 +232,7 @@ export function buildWallet(input: {
       label: e.name,
       lines: [{ account: p.method, amount: -p.amountPaid }],
       href: source.get(e.id)?.href ?? `/expenses/${e.id}`,
+      group: expenseGroup(e),
     });
   }
   for (const l of input.loans ?? []) {
@@ -197,6 +245,7 @@ export function buildWallet(input: {
       label: `Argent prêté · ${l.name}`,
       lines: [{ account: l.method, amount: -loanToRepay(l) }],
       href: `/prets/${l.id}`,
+      group: appGroup("loans"),
     });
   }
   for (const g of input.goals ?? []) {
@@ -213,6 +262,7 @@ export function buildWallet(input: {
         say: { text: msg("Versement · {name}"), vars: { name: g.name } },
         lines: [{ account: d.method, amount: -d.amount }],
         href: `/goals/${g.id}`,
+        group: appGroup("savings"),
       });
     }
   }
@@ -238,6 +288,7 @@ export function buildWallet(input: {
           ]
         : [{ account: o.toAccount, amount: o.amount }],
       opId: o.id,
+      group: INTERNAL_GROUP,
     });
   }
 

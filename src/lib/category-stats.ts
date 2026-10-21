@@ -24,7 +24,9 @@ export interface CategorySlice {
   items: { id: string; name: string; icon: string; amount: number }[];
 }
 
-const GROUPS = {
+/** What the app makes itself, grouped by what made it (also the Solde's
+ *  history filter). */
+export const GROUPS = {
   savings: { label: msg("Épargne"), emoji: "🐷" },
   darets: { label: msg("Darets"), emoji: "🤝🏻" },
   debts: { label: msg("Dettes"), emoji: "🏦" },

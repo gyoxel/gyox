@@ -66,6 +66,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Transférer de l'argent entre espèces, carte et épargne (retrait au guichet, versement…)."),
       msg("Ajuster un compte : indique ce que tu as vraiment, la différence est enregistrée."),
       msg("Toucher un compte pour filtrer l'historique."),
+      msg("Filtrer l'historique : entrées ou sorties, et par catégorie (glisse pour toutes les voir)."),
       msg("Voir chaque entrée et sortie, jour par jour, et supprimer un transfert ou un ajustement."),
     ],
   },
