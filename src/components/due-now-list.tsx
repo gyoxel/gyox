@@ -9,6 +9,7 @@ import { addMonths, monthKey as toMonthKey, type MonthId } from "@/lib/date";
 import { monthLabel, monthLabelShort, whenLabel } from "@/lib/i18n/dates";
 import { localName, type T } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/client";
+import { Button } from "@/components/ui/button";
 import { findPayment, getCreditRealState, getEffectiveEndMonth, getExpenseDisplayColor, getMonthLedgerItems, lastPaidAt, type DisplayColor, type LedgerItem } from "@/lib/engine";
 import type { Expense, Payment, PaymentMethod } from "@/lib/types";
 import { toast } from "sonner";
@@ -493,13 +494,9 @@ export function DueNowList({
         </ul>
       )}
       {(morePaid > 0 || (allPaid && paidCount > PAID_SHOWN)) && (
-        <button
-          type="button"
-          onClick={() => setAllPaid((v) => !v)}
-          className="-mt-1 self-center rounded-full px-4 py-1.5 text-xs font-semibold text-violet-700 active:bg-violet-500/10 dark:text-violet-300"
-        >
-          {allPaid ? t("Voir moins") : t("Voir les {n} autres payées", { n: morePaid })}
-        </button>
+        <Button type="button" variant="outline" onClick={() => setAllPaid((v) => !v)}>
+          {allPaid ? t("Voir moins") : t("Voir plus")}
+        </Button>
       )}
 
       {editing && (

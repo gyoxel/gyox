@@ -874,7 +874,6 @@ export const DAR: Record<string, string> = {
   "Les ajustements du solde comptent : en plus, une entrée ; en moins, une sortie.": "L'ajustements dyal l'solde kayt7ssbo: zyada hiya entrée, n9ss hiya sortie.",
   "Voir plus": "Chouf kter",
   "Voir moins": "Chouf 9el",
-  "Voir les {n} autres payées": "Chouf {n} lkhrin mkhlsin",
   "Supprimer ce transfert ?": "Tms7 had transfert?",
   "Supprimer cet ajustement ?": "Tms7 had tas7i7?",
   "« {name} » sera supprimé et le solde recalculé.": "« {name} » ghadi ytms7 w solde yt7seb mn jdid.",

@@ -872,7 +872,6 @@ export const EN: Record<string, string> = {
   "Les ajustements du solde comptent : en plus, une entrée ; en moins, une sortie.": "Balance adjustments count: more is money in, less is money out.",
   "Voir plus": "See more",
   "Voir moins": "See less",
-  "Voir les {n} autres payées": "See the {n} other paid",
   "Supprimer ce transfert ?": "Delete this transfer?",
   "Supprimer cet ajustement ?": "Delete this adjustment?",
   "« {name} » sera supprimé et le solde recalculé.": "\"{name}\" will be deleted and the balance recalculated.",
