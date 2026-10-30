@@ -44,7 +44,7 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
   const [mode, setMode] = useState<Mode>(isEdit ? "monthly" : "months");
   const [monthly, setMonthly] = useState(toDecimalInput(loan?.monthly ?? null));
   const [months, setMonths] = useState(loan ? String(loan.months) : "");
-  const [start, setStart] = useState(loan ? parseMonthKey(loan.startMonth) : addMonths(todayMonth(), 1));
+  const [start, setStart] = useState(loan ? parseMonthKey(loan.startMonth) : todayMonth());
   const [note, setNote] = useState(loan?.note ?? "");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
