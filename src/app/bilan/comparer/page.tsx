@@ -13,11 +13,15 @@ export const dynamic = "force-dynamic";
 
 const ARROW =
   "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 active:bg-slate-100 dark:text-slate-400 dark:active:bg-slate-800";
-// Of two amounts, the higher reads light red, the lower light green.
-const HIGHER = "bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300";
-const LOWER = "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300";
-const SAME = "bg-slate-50 text-slate-600 dark:bg-slate-800 dark:text-slate-300";
-const toneOf = (value: number, other: number) => (value > other ? HIGHER : value < other ? LOWER : SAME);
+// Of two amounts, the higher reads red, the lower green: a category's in
+// its text alone, the totals as a whole light box.
+const TEXT = { higher: "text-rose-600 dark:text-rose-400", lower: "text-emerald-600 dark:text-emerald-400", same: "text-slate-600 dark:text-slate-300" };
+const BOX = {
+  higher: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
+  lower: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+  same: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+};
+const toneOf = (value: number, other: number) => (value > other ? "higher" : value < other ? "lower" : "same");
 const round = (n: number) => Math.round(n * 100) / 100;
 
 /**
@@ -131,7 +135,7 @@ function MonthPicker({ label, prev, next, t }: { label: string; prev: string; ne
 
 function Amount({ value, other, money }: { value: number; other: number; money: (n: number) => string }) {
   return (
-    <span className={cn("w-[5.75rem] shrink-0 truncate rounded-lg px-1 py-1.5 text-center font-semibold tabular-nums", toneOf(value, other))}>
+    <span className={cn("w-[5.75rem] shrink-0 truncate px-1 py-1.5 text-center font-semibold tabular-nums", TEXT[toneOf(value, other)])}>
       {money(value)}
     </span>
   );
@@ -140,7 +144,7 @@ function Amount({ value, other, money }: { value: number; other: number; money: 
 /** A month's total, in a box with its name: red for the month that spent more, green for the other. */
 function TotalBox({ label, value, other, money }: { label: string; value: number; other: number; money: (n: number) => string }) {
   return (
-    <span className={cn("flex w-[5.75rem] shrink-0 flex-col items-center rounded-xl px-1 py-1.5 ring-1 ring-inset ring-current/20", toneOf(value, other))}>
+    <span className={cn("flex w-[5.75rem] shrink-0 flex-col items-center rounded-xl px-1 py-1.5 ring-1 ring-inset ring-current/20", BOX[toneOf(value, other)])}>
       <span className="text-[10.5px] font-semibold">{label}</span>
       <span className="max-w-full truncate text-[13px] font-bold tabular-nums">{money(value)}</span>
     </span>
