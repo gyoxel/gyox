@@ -5,7 +5,7 @@
 // catégorie". Pure (no DB access).
 import { addMonths, dayOf, monthKey, type MonthId } from "./date";
 import { displayIcon } from "./category";
-import { msg } from "./i18n";
+import { categoryName, msg, type T } from "./i18n";
 import type { Category, DaretWithExpense, Expense, Goal, Loan, Payment, SavingsMove } from "./types";
 
 export interface CategorySlice {
@@ -21,6 +21,11 @@ export interface CategorySlice {
   previous: number;
   /** What it's made of, the largest first. */
   items: { id: string; name: string; icon: string; amount: number }[];
+}
+
+/** A slice's name in the device's language (the user's own names as typed). */
+export function sliceLabel(slice: CategorySlice, t: T): string {
+  return slice.own ? categoryName(slice.label, t) : t(slice.label);
 }
 
 /** What the app makes itself, grouped by what made it (also the Solde's

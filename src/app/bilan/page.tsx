@@ -12,6 +12,7 @@ import { formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { MonthSwitcher } from "@/components/month-switcher";
 import { CategoryBars } from "@/components/category-bars";
+import { CompareLink } from "@/components/compare-link";
 
 export const dynamic = "force-dynamic";
 
@@ -84,7 +85,8 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
             {/* Where it went */}
             <section className="flex flex-col gap-2.5">
               <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Où est allé ton argent")}</h2>
-              <CategoryBars key={key} slices={slices} currency={settings.currency} previousLabel={previousLabel} budgets={budgetsById(categories)} />
+              <CategoryBars key={key} slices={slices} currency={settings.currency} budgets={budgetsById(categories)} />
+              <CompareLink month={month} />
             </section>
 
             <Link

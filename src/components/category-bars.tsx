@@ -5,14 +5,10 @@ import { ArrowDown, ArrowUp, CaretDown } from "@phosphor-icons/react/ssr";
 import type { CategorySlice } from "@/lib/category-stats";
 import { budgetLevel, budgetPercent } from "@/lib/category-budgets";
 import { LEVEL_TEXT } from "@/components/budget-bar";
-import { categoryName, localName, type T } from "@/lib/i18n";
+import { sliceLabel } from "@/lib/category-stats";
+import { localName } from "@/lib/i18n";
 import { useT } from "@/lib/i18n/client";
 import { cn, formatMoney } from "@/lib/utils";
-
-/** A slice's name in the device's language (the user's own names as typed). */
-export function sliceLabel(slice: CategorySlice, t: T): string {
-  return slice.own ? categoryName(slice.label, t) : t(slice.label);
-}
 
 /** Up or down against the month before: more spent reads red, less green
  *  (always with its arrow, never the colour alone). */
@@ -42,19 +38,17 @@ export function SliceChange({ amount, previous, className }: { amount: number; p
 
 /**
  * Statistiques → Par catégorie: one bar per category (the largest is the
- * full width), its amount, its share of the month and how it moved since
- * the month before, and how much of its budget that is when it has one.
- * Tapping one shows what it's made of.
+ * full width), its amount, its share of the month, and how much of its
+ * budget that is when it has one — this month alone (comparing two months
+ * is the Bilan's « Comparer deux mois »). Tapping one shows what it's made of.
  */
 export function CategoryBars({
   slices,
   currency,
-  previousLabel,
   budgets = {},
 }: {
   slices: CategorySlice[];
   currency: string;
-  previousLabel: string;
   /** Category id → its budget. */
   budgets?: Record<string, number>;
 }) {
@@ -74,7 +68,6 @@ export function CategoryBars({
 
   return (
     <div className="flex flex-col gap-1 rounded-3xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <p className="px-3 pb-1 pt-2 text-[11px] text-slate-400">{t("Comparé à {month}", { month: previousLabel })}</p>
       {slices.map((s) => {
         const expanded = open === s.key;
         const share = total > 0 ? Math.round((s.amount / total) * 100) : 0;
@@ -90,7 +83,6 @@ export function CategoryBars({
               <span className="flex items-center gap-2 text-sm">
                 <span className="text-base leading-none">{s.emoji}</span>
                 <span className="min-w-0 flex-1 truncate font-medium text-slate-800 dark:text-slate-100">{sliceLabel(s, t)}</span>
-                <SliceChange amount={s.amount} previous={s.previous} />
                 <span className="font-semibold tabular-nums text-slate-900 dark:text-white">{money(s.amount)}</span>
                 <CaretDown weight="bold" className={cn("h-3.5 w-3.5 shrink-0 text-slate-300 transition-transform", expanded && "rotate-180")} />
               </span>
@@ -118,11 +110,6 @@ export function CategoryBars({
                     <span className="tabular-nums text-slate-700 dark:text-slate-200">{money(item.amount)}</span>
                   </li>
                 ))}
-                {s.previous > 0 && (
-                  <li className="mt-0.5 text-[11px] text-slate-400">
-                    {t("{month} : {amount}", { month: previousLabel, amount: money(s.previous) })}
-                  </li>
-                )}
               </ul>
             )}
           </div>

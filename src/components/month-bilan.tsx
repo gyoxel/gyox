@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { CaretRight, ChartBar, X } from "@phosphor-icons/react/ssr";
 import { BILAN_COOKIE, type MonthBilanData } from "@/lib/month-bilan";
-import { SliceChange, sliceLabel } from "@/components/category-bars";
+import { SliceChange } from "@/components/category-bars";
+import { sliceLabel } from "@/lib/category-stats";
 import { useT } from "@/lib/i18n/client";
 import { cn, formatMoney } from "@/lib/utils";
 

@@ -2,6 +2,7 @@ import { getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllInco
 import { budgetsById } from "@/lib/category-budgets";
 import { categoryBreakdown } from "@/lib/category-stats";
 import { CategoryBars } from "@/components/category-bars";
+import { CompareLink } from "@/components/compare-link";
 import Link from "next/link";
 import { Sparkle } from "@phosphor-icons/react/ssr";
 
@@ -135,7 +136,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           </div>
         </section>
 
-        {/* Where it goes: each category of the viewed month, against the one before */}
+        {/* Where it goes: each category of the viewed month (comparing two: its own page) */}
         <section className="flex flex-col gap-2.5">
           <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">
             {t("Par catégorie")} · {monthLabel(viewMonth, lang)}
@@ -144,9 +145,9 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
             key={monthKey(viewMonth)}
             slices={slices}
             currency={currency}
-            previousLabel={monthLabel(addMonths(viewMonth, -1), lang)}
             budgets={budgetsById(categories)}
           />
+          <CompareLink month={viewMonth} />
         </section>
 
         {transition && (
