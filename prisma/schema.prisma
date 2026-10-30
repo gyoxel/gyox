@@ -447,6 +447,10 @@ model Loan {
   note        String?
   expenseId   String? @unique
   createdAt   String
+  /// "YYYY-MM-DD" it was given up on (what's left won't come back): it
+  /// expects nothing anymore, and what's left stays spent. Null: still
+  /// expected.
+  writtenOffAt String?
 
   expense    Expense?        @relation(fields: [expenseId], references: [id], onDelete: Cascade)
   repayments LoanRepayment[]

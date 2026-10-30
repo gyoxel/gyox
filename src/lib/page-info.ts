@@ -32,7 +32,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     points: [
       msg("Voir le total qui reste à rembourser et ce que tu paies chaque mois."),
       msg("Suivre la frise mois par mois : combien tu paies, et le mois où chaque dette se termine."),
-      msg("Ajouter une dette avec le bouton + : le total, le nombre de mois ou le montant par mois."),
+      msg("Ajouter une dette avec le bouton + : le total, puis le nombre de mois, le montant par mois ou « En une fois » (un mois au choix)."),
       msg("Toucher une dette pour payer sa mensualité, la modifier ou la supprimer."),
       msg("Une mensualité payée en partie : le reste s'ajoute à la dernière mensualité."),
     ],
@@ -128,6 +128,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Pour un mois arrivé : « J'ai reçu » enregistre combien on t'a rendu, et comment."),
       msg("Reçu moins que prévu : le reste passe au mois suivant. Plus : les mois suivants attendent moins."),
       msg("Toucher un remboursement pour corriger son montant, espèces ou carte, ou le supprimer."),
+      msg("« Je ne le récupérerai pas » : ce qui reste ne reviendra pas. Plus rien n'est attendu, et ça reste compté comme sorti le mois du prêt. On peut annuler."),
       msg("Modifier ou supprimer le prêt."),
     ],
   },
@@ -182,7 +183,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     summary: msg("Une nouvelle dette : le total à rembourser et comment tu le rembourses chaque mois."),
     points: [
       msg("Indiquer le total de la dette et à qui (banque, une personne…)."),
-      msg("Choisir le nombre de mois ou le montant par mois : la date de fin est calculée. Ni l'un ni l'autre : toute la dette sur ce mois."),
+      msg("Choisir le nombre de mois, le montant par mois ou « En une fois » (toute la dette dans un mois au choix) : la date de fin est calculée. Rien de choisi : toute la dette sur ce mois."),
       msg("Ajouter un montant déjà remboursé avant de la noter ici."),
       msg("Si tu viens de recevoir cet argent, l'ajouter à ton solde (espèces ou carte)."),
       msg("Dire si la mensualité de ce mois est déjà payée."),
@@ -234,7 +235,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Indiquer le montant prêté et à qui."),
       msg("Ajouter un montant déjà rendu avant de le noter ici."),
       msg("Dire si l'argent sort de ton solde (espèces ou carte) : il s'ajoute alors à tes dépenses."),
-      msg("Choisir le montant par mois ou le nombre de mois, et le premier mois de remboursement."),
+      msg("Choisir le nombre de mois, le montant par mois ou « En une fois », et le mois du (premier) remboursement. Rien de choisi : tout rendu en une fois ce mois-là."),
     ],
   },
 

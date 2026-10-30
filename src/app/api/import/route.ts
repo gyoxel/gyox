@@ -178,6 +178,7 @@ const backupSchema = z.object({
         note: z.string().nullable(),
         expenseId: z.string().nullable(),
         createdAt: z.string(),
+        writtenOffAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
       }),
     )
     .optional(),

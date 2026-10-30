@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CaretLeft, CaretRight, ClockCountdown, Coins, Plus, X } from "@phosphor-icons/react/ssr";
+import { CalendarCheck, CaretLeft, CaretRight, ClockCountdown, Coins, Plus, X } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { Loan, PaymentMethod } from "@/lib/types";
 import { addMonths, monthKey, parseMonthKey, todayDateStr, todayMonth } from "@/lib/date";
@@ -21,7 +21,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-type Mode = "monthly" | "months";
+// « once »: all of it back in one month (the one picked below).
+type Mode = "monthly" | "months" | "once";
 const MONTH_STEPS = [1, 2, 3, 4, 6, 10, 12];
 
 /**
@@ -43,7 +44,7 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
   const [mode, setMode] = useState<Mode>(isEdit ? "monthly" : "months");
   const [monthly, setMonthly] = useState(toDecimalInput(loan?.monthly ?? null));
   const [months, setMonths] = useState(loan ? String(loan.months) : "");
-  const [start, setStart] = useState(loan ? parseMonthKey(loan.startMonth) : addMonths(todayMonth(), 1));
+  const [start, setStart] = useState(loan ? parseMonthKey(loan.startMonth) : todayMonth());
   const [note, setNote] = useState(loan?.note ?? "");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -53,13 +54,23 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
   const priorValue = priorOpen ? parseDecimalInput(prior) : 0;
   const toRepay = Math.max(0, Math.round((amountValue - priorValue) * 100) / 100);
   const monthsValue = Math.floor(Number(months) || 0);
+  // Neither a number of months nor an amount per month: all of it back at
+  // once, in the month picked below (as « En une fois »).
+  const nothingSet = mode !== "once" && !(mode === "months" ? months : monthly).trim();
   const monthlyValue =
-    mode === "monthly" ? parseDecimalInput(monthly) : toRepay > 0 && monthsValue > 0 ? monthlyFor(toRepay, monthsValue) : 0;
+    mode === "once" || nothingSet
+      ? toRepay
+      : mode === "monthly"
+        ? parseDecimalInput(monthly)
+        : toRepay > 0 && monthsValue > 0
+          ? monthlyFor(toRepay, monthsValue)
+          : 0;
   const plan = planFor(toRepay, monthlyValue);
 
   function switchMode(next: Mode) {
-    if (next === "months" && plan) setMonths(String(plan.count));
-    if (next === "monthly" && monthlyValue > 0) setMonthly(toDecimalInput(monthlyValue));
+    const carry = !nothingSet && mode !== "once";
+    if (carry && next === "months" && plan) setMonths(String(plan.count));
+    if (carry && next === "monthly" && monthlyValue > 0) setMonthly(toDecimalInput(monthlyValue));
     setMode(next);
   }
 
@@ -195,22 +206,29 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
                 {t("Dernier remboursement (le reste) : {amount}", { amount: money(plan.last) })}
               </p>
             )}
+            {plan.count === 1 && (mode === "once" || nothingSet) && (
+              <p className="col-span-3 text-[11px] text-slate-500 dark:text-slate-400">
+                {t("Tout rendu en une fois, en {month}.", { month: monthLabel(start, lang) })}
+              </p>
+            )}
           </div>
         ) : (
           <p className="text-xs text-slate-400">{t("Indique le montant, puis combien par mois ou en combien de mois.")}</p>
         )}
 
-        <div role="radiogroup" aria-label={t("Mode de remboursement")} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+        <div role="radiogroup" aria-label={t("Mode de remboursement")} className="grid grid-cols-3 gap-2">
           <ModeButton selected={mode === "months"} onClick={() => switchMode("months")} icon={ClockCountdown}>
             {t("Nombre de mois")}
           </ModeButton>
-          <span className="text-xs font-semibold uppercase text-slate-400">{t("ou")}</span>
           <ModeButton selected={mode === "monthly"} onClick={() => switchMode("monthly")} icon={Coins}>
             {t("Par mois")}
           </ModeButton>
+          <ModeButton selected={mode === "once"} onClick={() => switchMode("once")} icon={CalendarCheck}>
+            {t("En une fois")}
+          </ModeButton>
         </div>
 
-        {mode === "monthly" ? (
+        {mode === "once" ? null : mode === "monthly" ? (
           <div className="flex items-center gap-2">
             <Input
               aria-label={t("Montant par mois (DH)")}
@@ -267,7 +285,9 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
         )}
 
         <div className="flex items-center justify-between gap-2">
-          <span className="text-sm text-slate-600 dark:text-slate-300">{t("Premier remboursement")}</span>
+          <span className="text-sm text-slate-600 dark:text-slate-300">
+            {mode === "once" || plan?.count === 1 ? t("Mois du remboursement") : t("Premier remboursement")}
+          </span>
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -331,7 +351,7 @@ function ModeButton({
       aria-checked={selected}
       onClick={onClick}
       className={cn(
-        "flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-2 text-[13px] font-medium transition-colors duration-200",
+        "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl border px-1.5 py-1.5 text-center text-[12.5px] font-medium leading-tight transition-colors duration-200",
         selected
           ? "gx-cta border-transparent"
           : "border-slate-200 bg-white text-slate-600 active:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",

@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, Clock, ClockCountdown, Coins, Plus, Sparkle, X } from "@phosphor-icons/react/ssr";
+import { CalendarCheck, CaretLeft, CaretRight, Check, Clock, ClockCountdown, Coins, Plus, Sparkle, X } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { Expense, PaymentMethod } from "@/lib/types";
-import { addMonths, monthKey, monthOfDateStr, todayDateStr } from "@/lib/date";
-import { monthLabelShort } from "@/lib/i18n/dates";
+import { addMonths, compareMonths, monthKey, monthOfDateStr, todayDateStr, todayMonth, type MonthId } from "@/lib/date";
+import { monthLabel, monthLabelShort } from "@/lib/i18n/dates";
 import { useI18n, useT } from "@/lib/i18n/client";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
 import { useNavBack } from "@/lib/nav-history";
@@ -23,7 +23,8 @@ const MAX_MONTHS = 600;
 const MONTH_STEPS = [3, 6, 10, 12, 18, 24, 36];
 const AMOUNT_STEPS = [200, 500, 1000, 1500, 2000, 3000, 5000];
 
-type Mode = "monthly" | "months";
+// « once »: all of it in one month, picked (a new debt only).
+type Mode = "monthly" | "months" | "once";
 
 /** Schedule of a credit: number of installments, end month, last one. */
 function schedule(total: number, monthly: number, startDate: string) {
@@ -34,9 +35,10 @@ function schedule(total: number, monthly: number, startDate: string) {
 }
 
 /**
- * Ajouter / modifier un crédit: the total on top, then either the amount
- * per month or the number of months (one computes the other), suggestions
- * for both, and a live summary (installments, end, last payment).
+ * Ajouter / modifier un crédit: the total on top, then the number of months,
+ * the amount per month (one computes the other) or — a new one — all of it
+ * in one month to pick, suggestions, and a live summary (installments, end,
+ * last payment).
  */
 export function CreditEditor({
   expense,
@@ -49,7 +51,7 @@ export function CreditEditor({
   const isEdit = expense != null;
   const nav = useNavBack();
   const { lang, t } = useI18n();
-  const startDate = expense?.startDate ?? todayDateStr();
+  const today = todayDateStr();
 
   // The credit's full amount; what's already repaid comes off it.
   const [total, setTotal] = useState(
@@ -64,6 +66,8 @@ export function CreditEditor({
       ? String(Math.ceil(expense.creditInitialAmount / expense.amount - 1e-9))
       : "";
   const [months, setMonths] = useState(initialMonths);
+  // « En une fois »: the month it's all repaid in (this one, or later).
+  const [onceMonth, setOnceMonth] = useState<MonthId>(todayMonth());
   const [alreadyPaid, setAlreadyPaid] = useState(isEdit ? (paymentStatus?.paid ?? false) : false);
   const [method, setMethod] = useState<PaymentMethod>(paymentStatus?.method ?? "cash");
   const [notes, setNotes] = useState(expense?.notes ?? "");
@@ -83,9 +87,14 @@ export function CreditEditor({
   const monthsValue = Math.floor(Number(months) || 0);
   // Neither a number of months nor an amount per month: all of it on one
   // month, this one.
-  const nothingSet = !(mode === "months" ? months : monthly).trim();
+  const nothingSet = mode !== "once" && !(mode === "months" ? months : monthly).trim();
+  // Its first month: a debt repaid in one later month starts then (on its
+  // 1st); else today, or as saved.
+  const startDate =
+    expense?.startDate ??
+    (mode === "once" && compareMonths(onceMonth, monthOfDateStr(today)) > 0 ? `${monthKey(onceMonth)}-01` : today);
   // The amount per month actually saved: typed, or derived from the months.
-  const monthlyValue = nothingSet
+  const monthlyValue = nothingSet || mode === "once"
     ? totalValue
     : mode === "monthly"
       ? parseDecimalInput(monthly)
@@ -108,8 +117,9 @@ export function CreditEditor({
   function switchMode(next: Mode) {
     // Carry the current plan over so switching never loses what was typed
     // (nothing typed: nothing to carry, it stays one month).
-    if (!nothingSet && next === "months" && plan) setMonths(String(plan.count));
-    if (!nothingSet && next === "monthly" && monthlyValue > 0) setMonthly(toDecimalInput(monthlyValue));
+    const carry = !nothingSet && mode !== "once";
+    if (carry && next === "months" && plan) setMonths(String(plan.count));
+    if (carry && next === "monthly" && monthlyValue > 0) setMonthly(toDecimalInput(monthlyValue));
     setMode(next);
   }
 
@@ -200,7 +210,7 @@ export function CreditEditor({
                 name: t("Dette · {name}", { name: name.trim() }),
                 amount: totalValue,
                 category: "credit",
-                date: todayDateStr(),
+                date: today,
                 method: receivedMethod,
                 notes: null,
               }
@@ -326,9 +336,14 @@ export function CreditEditor({
           <div className="grid grid-cols-3 gap-2 rounded-xl bg-sky-50 p-3 text-center dark:bg-sky-950/40">
             <Stat label={t("Durée")} value={t("{n} mois", { n: plan.count })} highlight={mode === "monthly"} />
             <Stat label={t("Par mois")} value={money(monthlyValue)} highlight={mode === "months"} />
-            <Stat label={t("Fin")} value={monthLabelShort(plan.end, lang)} />
+            <Stat label={t("Fin")} value={monthLabelShort(plan.end, lang)} highlight={mode === "once"} />
             {nothingSet && (
               <p className="col-span-3 text-[11px] text-slate-500 dark:text-slate-400">{t("Ni durée ni montant par mois : toute la dette sur ce mois.")}</p>
+            )}
+            {mode === "once" && (
+              <p className="col-span-3 text-[11px] text-slate-500 dark:text-slate-400">
+                {t("Toute la dette en une fois, en {month}.", { month: monthLabel(onceMonth, lang) })}
+              </p>
             )}
             {plan.last !== monthlyValue && (
               <p className="col-span-3 text-[11px] text-slate-500 dark:text-slate-400">
@@ -350,17 +365,28 @@ export function CreditEditor({
           <p className="text-xs text-slate-400">{t("Indique le total, puis le nombre de mois ou le montant par mois.")}</p>
         )}
 
-        <div role="radiogroup" aria-label={t("Mode de remboursement")} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+        <div role="radiogroup" aria-label={t("Mode de remboursement")} className={cn("grid gap-2", isEdit ? "grid-cols-2" : "grid-cols-3")}>
           <ModeButton selected={mode === "months"} onClick={() => switchMode("months")} icon={ClockCountdown}>
             {t("Nombre de mois")}
           </ModeButton>
-          <span className="text-xs font-semibold uppercase text-slate-400">{t("ou")}</span>
           <ModeButton selected={mode === "monthly"} onClick={() => switchMode("monthly")} icon={Coins}>
             {t("Par mois")}
           </ModeButton>
+          {!isEdit && (
+            <ModeButton selected={mode === "once"} onClick={() => switchMode("once")} icon={CalendarCheck}>
+              {t("En une fois")}
+            </ModeButton>
+          )}
         </div>
 
-        {mode === "monthly" ? (
+        {mode === "once" ? (
+          <MonthPick
+            label={t("Mois du remboursement")}
+            month={onceMonth}
+            onChange={setOnceMonth}
+            min={monthOfDateStr(today)}
+          />
+        ) : mode === "monthly" ? (
           <div className="flex items-center gap-2">
             <Input
               id="monthly"
@@ -518,6 +544,37 @@ export function CreditEditor({
   );
 }
 
+/** ‹ month › to pick the month a debt or a loan is repaid in, not before `min`. */
+export function MonthPick({ label, month, onChange, min }: { label: string; month: MonthId; onChange: (m: MonthId) => void; min?: MonthId }) {
+  const { lang, t } = useI18n();
+  const atMin = min != null && compareMonths(month, min) <= 0;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-sm text-slate-600 dark:text-slate-300">{label}</span>
+      <div className="flex items-center justify-between gap-1 rounded-xl border border-slate-200 p-1 dark:border-slate-700">
+        <button
+          type="button"
+          aria-label={t("Mois précédent")}
+          disabled={atMin}
+          onClick={() => onChange(addMonths(month, -1))}
+          className="flex h-8 w-8 items-center justify-center rounded-lg active:bg-slate-100 disabled:opacity-30 dark:active:bg-slate-800"
+        >
+          <CaretLeft weight="bold" className="h-4 w-4" />
+        </button>
+        <span className="text-center text-sm font-semibold capitalize text-slate-800 dark:text-slate-100">{monthLabel(month, lang)}</span>
+        <button
+          type="button"
+          aria-label={t("Mois suivant")}
+          onClick={() => onChange(addMonths(month, 1))}
+          className="flex h-8 w-8 items-center justify-center rounded-lg active:bg-slate-100 dark:active:bg-slate-800"
+        >
+          <CaretRight weight="bold" className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ModeButton({
   selected,
   onClick,
@@ -536,7 +593,7 @@ function ModeButton({
       aria-checked={selected}
       onClick={onClick}
       className={cn(
-        "flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-2 text-[13px] font-medium transition-colors duration-200",
+        "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl border px-1.5 py-1.5 text-center text-[12.5px] font-medium leading-tight transition-colors duration-200",
         selected
           ? "gx-cta border-transparent"
           : "border-slate-200 bg-white text-slate-600 active:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",

@@ -14,6 +14,7 @@ import { cn, formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { DeleteButton } from "@/components/delete-button";
 import { ReceiveRepayment, RepaymentRow } from "@/components/loan-repayments";
+import { LoanGiveUp } from "@/components/loan-give-up";
 import { Button } from "@/components/ui/button";
 import { MethodLabel } from "@/components/method-icon";
 import { DateDivider, dividersOf } from "@/components/date-divider";
@@ -38,13 +39,16 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-amber-700 px-5 pb-4 pt-5 text-white shadow-lg shadow-orange-600/20 dark:shadow-none">
           <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
           <p className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">
-            {state.done ? t("Tout est rendu ✓") : t("Reste à te rendre")}
+            {state.done ? t("Tout est rendu ✓") : state.givenUp ? t("Abandonné · ne reviendra pas") : t("Reste à te rendre")}
           </p>
-          <p className="relative mt-1 text-4xl font-bold tabular-nums">{money(state.remaining)}</p>
+          <p className={cn("relative mt-1 text-4xl font-bold tabular-nums", state.givenUp && "line-through decoration-white/60")}>{money(state.remaining)}</p>
           <p className="relative text-sm text-white/85">
             {t("sur {amount}", { amount: money(state.toRepay) })}
             {loan.priorRepaid ? ` ${t("({amount} déjà rendus avant)", { amount: money(loan.priorRepaid) })}` : ""}
           </p>
+          {state.givenUp && loan.writtenOffAt && (
+            <p className="relative text-xs text-white/80">{t("Abandonné : {day}", { day: whenLabel(loan.writtenOffAt, lang, t) })}</p>
+          )}
           <div className="relative mt-3 h-2.5 overflow-hidden rounded-full bg-white/25">
             <div className="h-full rounded-full bg-white" style={{ width: `${percent}%` }} />
           </div>
@@ -134,7 +138,7 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
                         ))}
                       </span>
                     )}
-                    {slotNote(s, money, t) && (
+                    {!state.givenUp && slotNote(s, money, t) && (
                       <span className="mt-0.5 block text-[11px] font-medium text-amber-700 dark:text-amber-400">{slotNote(s, money, t)}</span>
                     )}
                     {isDue ? (
@@ -156,7 +160,13 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
               );
             })}
           </ul>
+          {state.givenUp && state.slots.length === 0 && (
+            <p className="rounded-2xl border border-dashed border-slate-200 px-3 py-4 text-center text-sm text-slate-400 dark:border-slate-700">
+              {t("Rien n'est revenu.")}
+            </p>
+          )}
           {loan.note && <p className="px-1 text-xs text-slate-500 dark:text-slate-400">📝 {loan.note}</p>}
+          {!state.done && <LoanGiveUp loanId={loan.id} name={loan.name} remaining={state.remaining} givenUp={state.givenUp} />}
         </section>
 
         <Button asChild className="gx-cta">
