@@ -1257,4 +1257,5 @@ export const DAR: Record<string, string> = {
   "Voir où est passé ton argent (ce qui a été payé, pas ce qui reste à payer), catégorie par catégorie (et la part de son budget, si elle en a un). Touche une catégorie pour son détail.": "Chouf fin mchaw flousek (li tkhlles, machi li ba9i khassek tkhlles), catégorie b catégorie (w ch7al mn l'budget dyalha, ila 3endha). Brek 3la catégorie bach tchouf détail dyalha.",
   "Comparaison": "Mo9arana",
   "Toucher « Comparaison » : à la même place, ce mois à côté d'un autre, catégorie par catégorie — le plus élevé en rouge, le plus bas en vert, et le total de chaque mois. Les deux mois se changent avec leurs ‹ ›.": "Brek 3la « Mo9arana »: f nefs l'blassa, had chhar 7da chhar akhor, catégorie b catégorie — lktar b l7mer, l9ell b lkhdar, w total dyal kol chhar. Joj chhour kaytbddlo b ‹ › dyalhom.",
+  "Rien de payé ce mois-ci.": "Walou ma tkhlles had chhar.",
 };

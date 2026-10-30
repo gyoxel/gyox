@@ -46,9 +46,12 @@ export function CategoryBars({
   slices,
   currency,
   budgets = {},
+  empty,
 }: {
   slices: CategorySlice[];
   currency: string;
+  /** Said when nothing was paid (default: just that). */
+  empty?: string;
   /** Category id → its budget. */
   budgets?: Record<string, number>;
 }) {
@@ -61,7 +64,7 @@ export function CategoryBars({
   if (slices.length === 0) {
     return (
       <p className="rounded-2xl border border-dashed border-slate-200 px-3 py-6 text-center text-sm text-slate-400 dark:border-slate-700">
-        {t("Aucune dépense prévue pour ce mois.")}
+        {empty ?? t("Rien de payé ce mois-ci.")}
       </p>
     );
   }

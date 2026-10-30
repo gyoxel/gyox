@@ -1255,4 +1255,5 @@ export const EN: Record<string, string> = {
   "Voir où est passé ton argent (ce qui a été payé, pas ce qui reste à payer), catégorie par catégorie (et la part de son budget, si elle en a un). Touche une catégorie pour son détail.": "See where your money went (what was paid, not what's still to pay), category by category (and the share of its budget, if it has one). Tap a category for its details.",
   "Comparaison": "Comparison",
   "Toucher « Comparaison » : à la même place, ce mois à côté d'un autre, catégorie par catégorie — le plus élevé en rouge, le plus bas en vert, et le total de chaque mois. Les deux mois se changent avec leurs ‹ ›.": "Tap « Comparison »: in the same place, this month beside another, category by category — the higher in red, the lower in green, and each month's total. Both months change with their ‹ ›.",
+  "Rien de payé ce mois-ci.": "Nothing paid this month.",
 };

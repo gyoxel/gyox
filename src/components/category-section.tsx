@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowsLeftRight, CaretLeft, CaretRight } from "@phosphor-icons/react/ssr";
 import { sliceLabel, type CategoryComparison, type CategorySlice } from "@/lib/category-stats";
@@ -26,7 +26,8 @@ const toneOf = (value: number, other: number) => (value > other ? "higher" : val
  * Bilan → « Où est allé ton argent », Statistiques → « Par catégorie »: the
  * month's categories or, « Comparaison » tapped, in the same place, that
  * month beside another — each changed with its own ‹ › (the second one is
- * `?vs=`, the first the page's month).
+ * `?vs=`, the first the page's month). `picker`, the page's own month
+ * switcher, goes under the title with the list (the comparison has its own).
  */
 export function CategorySection({
   title,
@@ -34,7 +35,9 @@ export function CategorySection({
   month,
   vs,
   comparing,
+  picker,
   slices,
+  empty,
   comparison,
   currency,
   budgets,
@@ -45,7 +48,10 @@ export function CategorySection({
   vs: MonthId;
   /** Opened on the comparison (a month picked in it). */
   comparing: boolean;
+  picker?: ReactNode;
   slices: CategorySlice[];
+  /** Said instead of the list when it's empty. */
+  empty?: string;
   comparison: CategoryComparison;
   currency: string;
   /** Category id → its budget. */
@@ -75,7 +81,10 @@ export function CategorySection({
       {open ? (
         <Comparison basePath={basePath} month={month} vs={vs} comparison={comparison} currency={currency} />
       ) : (
-        <CategoryBars key={monthKey(month)} slices={slices} currency={currency} budgets={budgets} />
+        <>
+          {picker}
+          <CategoryBars key={monthKey(month)} slices={slices} currency={currency} budgets={budgets} empty={empty} />
+        </>
       )}
     </section>
   );
