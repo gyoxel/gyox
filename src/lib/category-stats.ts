@@ -112,3 +112,27 @@ export function categoryBreakdown(input: CategoryStatsInput, month: MonthId): Ca
     })
     .sort((a, b) => b.amount - a.amount);
 }
+
+export interface CategoryComparison {
+  /** Every group paid in either month, the largest first. */
+  rows: { slice: CategorySlice; a: number; b: number }[];
+  totalA: number;
+  totalB: number;
+}
+
+/** Two months' groups side by side (Bilan / Statistiques → Comparaison). */
+export function categoryComparison(input: CategoryStatsInput, a: MonthId, b: MonthId): CategoryComparison {
+  const rows = new Map<string, CategoryComparison["rows"][number]>();
+  for (const s of categoryBreakdown(input, a)) rows.set(s.key, { slice: s, a: s.amount, b: 0 });
+  for (const s of categoryBreakdown(input, b)) {
+    const row = rows.get(s.key);
+    if (row) row.b = s.amount;
+    else rows.set(s.key, { slice: s, a: 0, b: s.amount });
+  }
+  const list = [...rows.values()].sort((x, y) => Math.max(y.a, y.b) - Math.max(x.a, x.b));
+  return {
+    rows: list,
+    totalA: round(list.reduce((sum, r) => sum + r.a, 0)),
+    totalB: round(list.reduce((sum, r) => sum + r.b, 0)),
+  };
+}

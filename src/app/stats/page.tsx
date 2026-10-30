@@ -1,8 +1,7 @@
 import { getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllIncomes, getAllLoans, getAllPayments, getAllSalaryAdvances, getAllSavingsMoves, getSettings } from "@/lib/page-data";
 import { budgetsById } from "@/lib/category-budgets";
-import { categoryBreakdown } from "@/lib/category-stats";
-import { CategoryBars } from "@/components/category-bars";
-import { CompareLink } from "@/components/compare-link";
+import { categoryBreakdown, categoryComparison } from "@/lib/category-stats";
+import { CategorySection } from "@/components/category-section";
 import Link from "next/link";
 import { Sparkle } from "@phosphor-icons/react/ssr";
 
@@ -36,7 +35,7 @@ const SEGMENTS: { color: DisplayColor; label: string }[] = [
  * budget of any month (month switcher), when the credits end, and the
  * forecast for the coming months.
  */
-export default async function StatsPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
+export default async function StatsPage({ searchParams }: { searchParams: Promise<{ month?: string; vs?: string }> }) {
   const [sp, settings, expenses, payments, categories, advances, incomes, wallet, { lang, t }, darets, savingsMoves, goals, loans] = await Promise.all([
     searchParams,
     getSettings(),
@@ -79,7 +78,9 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
       .sort((a, b) => b.amount - a.amount);
     return { color, label: t(label), amount: Math.round(items.reduce((s, i) => s + i.amount, 0) * 100) / 100, items };
   });
-  const slices = categoryBreakdown({ expenses, payments, categories, darets, savingsMoves, goals, loans }, viewMonth);
+  const statsInput = { expenses, payments, categories, darets, savingsMoves, goals, loans };
+  const slices = categoryBreakdown(statsInput, viewMonth);
+  const vs = monthFromSearchParams(sp.vs, addMonths(viewMonth, -1));
   const forecast = getForecast(expenses, settings.salary, currentMonth, FORECAST_MONTHS);
 
   // The moment credits and temporary obligations are all over.
@@ -136,19 +137,18 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           </div>
         </section>
 
-        {/* Where it goes: each category of the viewed month (comparing two: its own page) */}
-        <section className="flex flex-col gap-2.5">
-          <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">
-            {t("Par catégorie")} · {monthLabel(viewMonth, lang)}
-          </h2>
-          <CategoryBars
-            key={monthKey(viewMonth)}
-            slices={slices}
-            currency={currency}
-            budgets={budgetsById(categories)}
-          />
-          <CompareLink month={viewMonth} />
-        </section>
+        {/* Where it goes: each category of the viewed month, or beside another */}
+        <CategorySection
+          title={`${t("Par catégorie")} · ${monthLabel(viewMonth, lang)}`}
+          basePath="/stats"
+          month={viewMonth}
+          vs={vs}
+          comparing={sp.vs != null}
+          slices={slices}
+          comparison={categoryComparison(statsInput, viewMonth, vs)}
+          currency={currency}
+          budgets={budgetsById(categories)}
+        />
 
         {transition && (
           <div className="flex gap-3 rounded-3xl bg-gradient-to-br from-emerald-50 to-teal-50 px-4 py-3.5 dark:from-emerald-950/40 dark:to-teal-950/40">

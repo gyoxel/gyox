@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUp, CaretRight } from "@phosphor-icons/react/ssr";
 import { getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllLoans, getAllPayments, getAllSavingsMoves, getSettings } from "@/lib/page-data";
 import { addMonths, compareMonths, monthFromSearchParams, monthKey, todayMonth } from "@/lib/date";
 import { budgetsById } from "@/lib/category-budgets";
-import { categoryBreakdown } from "@/lib/category-stats";
+import { categoryBreakdown, categoryComparison } from "@/lib/category-stats";
 import { buildMonthBilan } from "@/lib/month-bilan";
 import { getWallet } from "@/lib/wallet-data";
 import { monthLabel } from "@/lib/i18n/dates";
@@ -11,8 +11,7 @@ import { getI18n } from "@/lib/i18n/server";
 import { formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { MonthSwitcher } from "@/components/month-switcher";
-import { CategoryBars } from "@/components/category-bars";
-import { CompareLink } from "@/components/compare-link";
+import { CategorySection } from "@/components/category-section";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +21,7 @@ export const dynamic = "force-dynamic";
  * it went by category. Opens on the current month (the first days of a
  * month, Accueil links to the one just over).
  */
-export default async function BilanPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
+export default async function BilanPage({ searchParams }: { searchParams: Promise<{ month?: string; vs?: string }> }) {
   const [sp, settings, expenses, payments, categories, darets, savingsMoves, goals, loans, { lang, t }] = await Promise.all([
     searchParams,
     getSettings(),
@@ -40,7 +39,9 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
   const previous = addMonths(month, -1);
   const key = monthKey(month);
   const [wallet, previousWallet] = await Promise.all([getWallet(month), getWallet(previous)]);
-  const slices = categoryBreakdown({ expenses, payments, categories, darets, savingsMoves, goals, loans }, month);
+  const input = { expenses, payments, categories, darets, savingsMoves, goals, loans };
+  const slices = categoryBreakdown(input, month);
+  const vs = monthFromSearchParams(sp.vs, previous);
   const bilan = buildMonthBilan(wallet, slices, key, monthLabel(month, lang));
   const before = buildMonthBilan(previousWallet, [], monthKey(previous), "");
   const money = (n: number) => formatMoney(n, settings.currency);
@@ -82,12 +83,18 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
               )}
             </div>
 
-            {/* Where it went */}
-            <section className="flex flex-col gap-2.5">
-              <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Où est allé ton argent")}</h2>
-              <CategoryBars key={key} slices={slices} currency={settings.currency} budgets={budgetsById(categories)} />
-              <CompareLink month={month} />
-            </section>
+            {/* Where it went, or beside another month */}
+            <CategorySection
+              title={t("Où est allé ton argent")}
+              basePath="/bilan"
+              month={month}
+              vs={vs}
+              comparing={sp.vs != null}
+              slices={slices}
+              comparison={categoryComparison(input, month, vs)}
+              currency={settings.currency}
+              budgets={budgetsById(categories)}
+            />
 
             <Link
               href={`/stats?month=${key}`}

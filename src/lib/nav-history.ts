@@ -190,7 +190,6 @@ const PARENTS: Record<string, string> = {
   "/salary": "/settings",
   "/categories": "/settings",
   "/admin": "/profil",
-  "/bilan/comparer": "/bilan",
 };
 const parentOf = (path: string) => PARENTS[path] ?? "/";
 

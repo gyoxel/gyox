@@ -39,8 +39,8 @@ export function SliceChange({ amount, previous, className }: { amount: number; p
 /**
  * Statistiques → Par catégorie: one bar per category (the largest is the
  * full width), its amount, its share of the month, and how much of its
- * budget that is when it has one — this month alone (comparing two months
- * is the Bilan's « Comparer deux mois »). Tapping one shows what it's made of.
+ * budget that is when it has one — this month alone (beside another:
+ * CategorySection's « Comparaison »). Tapping one shows what it's made of.
  */
 export function CategoryBars({
   slices,
