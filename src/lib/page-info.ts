@@ -128,6 +128,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Pour un mois arrivé : « J'ai reçu » enregistre combien on t'a rendu, et comment."),
       msg("Reçu moins que prévu : le reste passe au mois suivant. Plus : les mois suivants attendent moins."),
       msg("Toucher un remboursement pour corriger son montant, espèces ou carte, ou le supprimer."),
+      msg("« Je ne le récupérerai pas » : ce qui reste ne reviendra pas. Plus rien n'est attendu, et ça reste compté comme sorti le mois du prêt. On peut annuler."),
       msg("Modifier ou supprimer le prêt."),
     ],
   },

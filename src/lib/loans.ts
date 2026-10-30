@@ -33,6 +33,8 @@ export interface LoanState {
   /** First month still expecting something. */
   next: LoanSlot | null;
   done: boolean;
+  /** Given up: what's left won't come back, nothing is expected anymore. */
+  givenUp: boolean;
   endMonth: MonthId;
 }
 
@@ -117,7 +119,10 @@ export function loanSlots(loan: Loan, current: MonthId): LoanSlot[] {
 
 export function loanState(loan: Loan, current: MonthId): LoanState {
   const toRepay = loanToRepay(loan);
-  const slots = loanSlots(loan, current);
+  const givenUp = loan.writtenOffAt != null;
+  // Given up: only the months something came back for, none expecting more.
+  const all = loanSlots(loan, current);
+  const slots = givenUp ? all.filter((s) => s.received > 0).map((s) => ({ ...s, open: false, left: 0 })) : all;
   const received = round(loan.repayments.reduce((s, r) => s + r.amount, 0));
   const open = slots.filter((s) => s.open);
   return {
@@ -128,6 +133,7 @@ export function loanState(loan: Loan, current: MonthId): LoanState {
     due: open.filter((s) => compareMonths(s.month, current) <= 0),
     next: open[0] ?? null,
     done: open.length === 0 && received >= toRepay - 0.005,
+    givenUp,
     endMonth: slots.at(-1)?.month ?? parseMonthKey(loan.startMonth),
   };
 }

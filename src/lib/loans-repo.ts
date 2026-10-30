@@ -36,10 +36,12 @@ export function mapLoan(row: {
   note: string | null;
   expenseId: string | null;
   createdAt: string;
+  writtenOffAt?: string | null;
   repayments: RepaymentRow[];
 }): Loan {
   return {
     ...row,
+    writtenOffAt: row.writtenOffAt ?? null,
     method: row.method === "cash" || row.method === "card" ? row.method : null,
     repayments: row.repayments.map(mapRepayment).sort((a, b) => a.slot - b.slot),
   };
@@ -111,6 +113,12 @@ export async function getLoan(id: string): Promise<Loan | null> {
 export async function getLoanOfExpense(expenseId: string): Promise<Loan | null> {
   const row = await prisma.loan.findUnique({ where: { expenseId }, include });
   return row ? mapLoan(row) : null;
+}
+
+/** Given up on `day` (null: expected again). False when there's no such loan. */
+export async function setLoanWrittenOff(id: string, day: string | null): Promise<boolean> {
+  const { count } = await prisma.loan.updateMany({ where: { id }, data: { writtenOffAt: day } });
+  return count > 0;
 }
 
 /** The loan an income is a repayment of. */

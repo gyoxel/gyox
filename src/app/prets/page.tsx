@@ -27,12 +27,13 @@ export default async function LoansPage() {
   const rows = loans
     .map((loan) => ({ loan, state: loanState(loan, current), at: lastAt(loan) }))
     .sort(lastDoneFirst((r) => r.at))
-    .sort((a, b) => Number(a.state.done) - Number(b.state.done));
+    .sort((a, b) => Number(a.state.done || a.state.givenUp) - Number(b.state.done || b.state.givenUp));
   const dividers = dividersOf(
     rows.map((r) => whenLabel(r.at, lang, t)),
     "",
   );
-  const remaining = rows.reduce((s, r) => s + r.state.remaining, 0);
+  // Given up: not to get back anymore.
+  const remaining = rows.reduce((s, r) => s + (r.state.givenUp ? 0 : r.state.remaining), 0);
   const due = rows.reduce((s, r) => s + r.state.due.length, 0);
 
   return (
@@ -46,7 +47,7 @@ export default async function LoansPage() {
           <div className="relative mt-3 grid grid-cols-2 gap-2">
             <div className="rounded-2xl bg-white/15 px-3 py-2">
               <p className="text-[10px] uppercase tracking-wide text-white/75">{t("En cours")}</p>
-              <p className="text-sm font-bold tabular-nums">{rows.filter((r) => !r.state.done).length}</p>
+              <p className="text-sm font-bold tabular-nums">{rows.filter((r) => !r.state.done && !r.state.givenUp).length}</p>
             </div>
             <div className="rounded-2xl bg-white/15 px-3 py-2">
               <p className="text-[10px] uppercase tracking-wide text-white/75">{t("À recevoir maintenant")}</p>
@@ -86,9 +87,9 @@ export default async function LoansPage() {
                     </span>
                     <span className="text-right">
                       <span className="block text-sm font-bold tabular-nums text-amber-700 dark:text-amber-400">
-                        {state.done ? t("Rendu ✓") : money(state.remaining)}
+                        {state.done ? t("Rendu ✓") : state.givenUp ? <s className="text-slate-400">{money(state.remaining)}</s> : money(state.remaining)}
                       </span>
-                      {!state.done && <span className="block text-[10px] text-slate-400">{t("reste")}</span>}
+                      {!state.done && <span className="block text-[10px] text-slate-400">{state.givenUp ? t("abandonné") : t("reste")}</span>}
                     </span>
                     <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300" />
                   </div>

@@ -19,6 +19,9 @@ export const POST = withBalanceGuard(async function post(req: NextRequest, { par
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const id = (await params).id;
   const amount = parsed.data.amount != null ? Math.round(parsed.data.amount * 100) / 100 : undefined;
+  if ((await getLoan(id))?.writtenOffAt) {
+    return NextResponse.json({ error: "Ce prêt est abandonné : annule l'abandon pour recevoir un remboursement." }, { status: 400 });
+  }
   if (amount != null) {
     const loan = await getLoan(id);
     const remaining = loan ? loanState(loan, todayMonth()).remaining : 0;

@@ -326,5 +326,7 @@ export interface Loan {
   /** The paid expense it shows as in Dépenses. */
   expenseId: string | null;
   createdAt: string;
+  /** Day it was given up on: what's left won't come back (stays spent). */
+  writtenOffAt?: string | null;
   repayments: LoanRepayment[];
 }
