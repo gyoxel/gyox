@@ -24,12 +24,12 @@ export default async function CreditsPage() {
   ]);
   const categoryEmoji = new Map(categories.map((c) => [c.id, c.emoji]));
   // Finished credits last; in each, the last done (an installment paid,
-  // an edit) on top, its day above it (once for the same day); nothing done
+  // its amount changed) on top, its day above it (once for the same day); nothing done
   // yet: after, the last added first.
   const current = todayMonth();
   const lastAt = (e: (typeof expenses)[number]) => {
     const paid = lastPaidAt(e.id, payments, "");
-    return e.updatedAt > e.createdAt && e.updatedAt > paid ? e.updatedAt : paid;
+    return e.amountChangedAt && e.amountChangedAt > paid ? e.amountChangedAt : paid;
   };
   const credits = expenses
     .filter((e) => e.type === "credit")

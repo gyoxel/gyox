@@ -23,7 +23,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Ajouter une dépense avec le bouton + (une fois, chaque mois ou pendant X mois)."),
       msg("Toucher une dépense pour l'ouvrir : la payer, la modifier, corriger un paiement ou la supprimer."),
       msg("Voir le statut de chacune : payée (espèces ou carte), payée en partie, à payer ou à venir."),
-      msg("« Par date » : la dernière payée (ou modifiée) en haut ; son jour est écrit en petit sur la ligne au-dessus, une fois par jour."),
+      msg("« Par date » : la dernière payée (ou dont le montant a changé) en haut ; son jour est écrit en petit sur la ligne au-dessus, une fois par jour."),
     ],
   },
   credits: {
@@ -32,7 +32,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     points: [
       msg("Voir le total qui reste à rembourser et ce que tu paies chaque mois."),
       msg("Suivre la frise mois par mois : combien tu paies, et le mois où chaque dette se termine."),
-      msg("Ajouter une dette avec le bouton + : le total, le montant par mois ou le nombre de mois."),
+      msg("Ajouter une dette avec le bouton + : le total, le nombre de mois ou le montant par mois."),
       msg("Toucher une dette pour payer sa mensualité, la modifier ou la supprimer."),
       msg("Une mensualité payée en partie : le reste s'ajoute à la dernière mensualité."),
     ],
@@ -182,7 +182,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     summary: msg("Une nouvelle dette : le total à rembourser et comment tu le rembourses chaque mois."),
     points: [
       msg("Indiquer le total de la dette et à qui (banque, une personne…)."),
-      msg("Choisir le montant par mois ou le nombre de mois : la date de fin est calculée."),
+      msg("Choisir le nombre de mois ou le montant par mois : la date de fin est calculée. Ni l'un ni l'autre : toute la dette sur ce mois."),
       msg("Ajouter un montant déjà remboursé avant de la noter ici."),
       msg("Si tu viens de recevoir cet argent, l'ajouter à ton solde (espèces ou carte)."),
       msg("Dire si la mensualité de ce mois est déjà payée."),
@@ -256,7 +256,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     points: [
       msg("Payer la mensualité du mois, en une fois ou en partie (espèces ou carte)."),
       msg("Toucher un paiement pour le corriger ou le supprimer."),
-      msg("Changer le total, le montant déjà remboursé, le montant par mois ou le nombre de mois."),
+      msg("Changer le total, le montant déjà remboursé, le nombre de mois ou le montant par mois."),
       msg("Voir le reste à rembourser et le mois de fin."),
       msg("Supprimer la dette avec la poubelle."),
     ],
@@ -339,7 +339,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Voir la part de ton salaire déjà dépensée ce mois-ci, et ce qui est disponible."),
       msg("Voir la répartition du budget d'un mois : permanentes, dettes et dépenses. Touche une part pour le détail."),
       msg("Voir le mois où tes dettes et obligations temporaires seront terminées."),
-      msg("Voir où va ton argent, catégorie par catégorie, comparé au mois précédent (et à son budget, si elle en a un). Touche une catégorie pour son détail."),
+      msg("Voir où est passé ton argent (ce qui a été payé, pas ce qui reste à payer), catégorie par catégorie, comparé au mois précédent (et à son budget, si elle en a un). Touche une catégorie pour son détail."),
       msg("Voir les prévisions des prochains mois : dépenses face au salaire. Touche un mois pour l'ouvrir."),
     ],
   },
@@ -360,7 +360,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Voir les entrées, les sorties et ce qui reste en espèces et sur la carte, comparés au mois précédent."),
       msg("Voir ce qui a été mis de côté dans l'épargne."),
       msg("Les ajustements du solde comptent : en plus, une entrée ; en moins, une sortie."),
-      msg("Voir les dépenses par catégorie. Touche une catégorie pour son détail."),
+      msg("Voir les dépenses payées par catégorie (pas celles encore à payer). Touche une catégorie pour son détail."),
       msg("Changer de mois avec ‹ ›. Il s'ouvre sur le mois en cours."),
       msg("Les premiers jours du mois, ce bilan apparaît aussi sur l'Accueil."),
     ],

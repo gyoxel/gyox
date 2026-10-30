@@ -6,6 +6,7 @@
 import { randomUUID } from "crypto";
 import { prisma } from "./prisma";
 import { stopMonthlyExpense } from "./monthly-repo";
+import { amountChange } from "./amount-change";
 import type { PaymentMethod, SavingsMove } from "./types";
 
 export function mapMove(row: {
@@ -143,7 +144,7 @@ export async function updateSavingsMove(
     const [, row] = await prisma.$transaction([
       prisma.expense.update({
         where: { id: move.expenseId },
-        data: { name: expenseName(input.note), amount: input.amount, notes: input.note, updatedAt: now },
+        data: { name: expenseName(input.note), amount: input.amount, notes: input.note, updatedAt: now, ...amountChange(move.amount, input.amount, now) },
       }),
       prisma.savingsMove.update({ where: { id }, data: { amount: input.amount, note: input.note } }),
     ]);
@@ -153,7 +154,7 @@ export async function updateSavingsMove(
     await prisma.$transaction([
       prisma.expense.update({
         where: { id: move.expenseId },
-        data: { name: expenseName(input.note), amount: input.amount, notes: input.note, startDate: input.date, updatedAt: now },
+        data: { name: expenseName(input.note), amount: input.amount, notes: input.note, startDate: input.date, updatedAt: now, ...amountChange(move.amount, input.amount, now) },
       }),
       prisma.payment.updateMany({
         where: { expenseId: move.expenseId },

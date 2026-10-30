@@ -56,7 +56,8 @@ export function CreditEditor({
     toDecimalInput(expense ? Math.round(((expense.creditInitialAmount ?? 0) + (expense.creditPriorPaid ?? 0)) * 100) / 100 || null : null),
   );
   const [name, setName] = useState(expense?.name ?? "");
-  const [mode, setMode] = useState<Mode>("monthly");
+  // The number of months first; editing, the amount saved (exactly as it is).
+  const [mode, setMode] = useState<Mode>(isEdit ? "monthly" : "months");
   const [monthly, setMonthly] = useState(toDecimalInput(expense?.amount ?? null));
   const initialMonths =
     expense?.creditInitialAmount && expense.amount > 0
@@ -80,9 +81,17 @@ export function CreditEditor({
   // Still to repay: the plan, suggestions and limits all work on this.
   const totalValue = Math.max(0, Math.round((fullTotal - priorValue) * 100) / 100);
   const monthsValue = Math.floor(Number(months) || 0);
+  // Neither a number of months nor an amount per month: all of it on one
+  // month, this one.
+  const nothingSet = !(mode === "months" ? months : monthly).trim();
   // The amount per month actually saved: typed, or derived from the months.
-  const monthlyValue =
-    mode === "monthly" ? parseDecimalInput(monthly) : totalValue > 0 && monthsValue > 0 ? monthlyFor(totalValue, monthsValue) : 0;
+  const monthlyValue = nothingSet
+    ? totalValue
+    : mode === "monthly"
+      ? parseDecimalInput(monthly)
+      : totalValue > 0 && monthsValue > 0
+        ? monthlyFor(totalValue, monthsValue)
+        : 0;
   const plan = schedule(totalValue, monthlyValue, startDate);
   const money = (n: number) => formatMoney(n);
 
@@ -97,9 +106,10 @@ export function CreditEditor({
     setMonths(String(Math.ceil(totalValue / n - 1e-9)));
   }
   function switchMode(next: Mode) {
-    // Carry the current plan over so switching never loses what was typed.
-    if (next === "months" && plan) setMonths(String(plan.count));
-    if (next === "monthly" && monthlyValue > 0) setMonthly(toDecimalInput(monthlyValue));
+    // Carry the current plan over so switching never loses what was typed
+    // (nothing typed: nothing to carry, it stays one month).
+    if (!nothingSet && next === "months" && plan) setMonths(String(plan.count));
+    if (!nothingSet && next === "monthly" && monthlyValue > 0) setMonthly(toDecimalInput(monthlyValue));
     setMode(next);
   }
 
@@ -138,7 +148,7 @@ export function CreditEditor({
     if (!(fullTotal > 0)) return setError(t("Indique le montant total de la dette."));
     if (!(totalValue > 0)) return setError(t("Le montant déjà remboursé doit être inférieur au total."));
     if (!name.trim()) return setError(t("Indique un nom."));
-    if (mode === "months" && (monthsValue < 1 || monthsValue > MAX_MONTHS)) return setError(t("Indique le nombre de mois."));
+    if (!nothingSet && mode === "months" && (monthsValue < 1 || monthsValue > MAX_MONTHS)) return setError(t("Indique le nombre de mois."));
     if (!(monthlyValue > 0)) return setError(t("Indique le montant par mois."));
     // (An older credit saved that way keeps it until its plan is changed.)
     const planChanged = !isEdit || monthlyValue !== expense.amount || totalValue !== expense.creditInitialAmount;
@@ -314,9 +324,12 @@ export function CreditEditor({
         {/* Live result, on top */}
         {plan ? (
           <div className="grid grid-cols-3 gap-2 rounded-xl bg-sky-50 p-3 text-center dark:bg-sky-950/40">
-            <Stat label={t("Par mois")} value={money(monthlyValue)} highlight={mode === "months"} />
             <Stat label={t("Durée")} value={t("{n} mois", { n: plan.count })} highlight={mode === "monthly"} />
+            <Stat label={t("Par mois")} value={money(monthlyValue)} highlight={mode === "months"} />
             <Stat label={t("Fin")} value={monthLabelShort(plan.end, lang)} />
+            {nothingSet && (
+              <p className="col-span-3 text-[11px] text-slate-500 dark:text-slate-400">{t("Ni durée ni montant par mois : toute la dette sur ce mois.")}</p>
+            )}
             {plan.last !== monthlyValue && (
               <p className="col-span-3 text-[11px] text-slate-500 dark:text-slate-400">
                 {mode === "months" && plan.count > monthsValue ? (
@@ -334,16 +347,16 @@ export function CreditEditor({
             )}
           </div>
         ) : (
-          <p className="text-xs text-slate-400">{t("Indique le total, puis le montant par mois ou le nombre de mois.")}</p>
+          <p className="text-xs text-slate-400">{t("Indique le total, puis le nombre de mois ou le montant par mois.")}</p>
         )}
 
         <div role="radiogroup" aria-label={t("Mode de remboursement")} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-          <ModeButton selected={mode === "monthly"} onClick={() => switchMode("monthly")} icon={Coins}>
-            {t("Par mois")}
-          </ModeButton>
-          <span className="text-xs font-semibold uppercase text-slate-400">{t("ou")}</span>
           <ModeButton selected={mode === "months"} onClick={() => switchMode("months")} icon={ClockCountdown}>
             {t("Nombre de mois")}
+          </ModeButton>
+          <span className="text-xs font-semibold uppercase text-slate-400">{t("ou")}</span>
+          <ModeButton selected={mode === "monthly"} onClick={() => switchMode("monthly")} icon={Coins}>
+            {t("Par mois")}
           </ModeButton>
         </div>
 

@@ -1,11 +1,10 @@
-// Where the money goes: a month's expenses grouped by category, against
-// the month before. Expenses the app makes itself are grouped by what made
-// them (Épargne, Darets, Dettes, Argent prêté) rather than lost in
-// "Sans catégorie". Amounts as Dépenses shows them. Pure (no DB access).
-import { addMonths, todayMonth, type MonthId } from "./date";
-import { getMonthSummary } from "./engine";
+// Where the money went: what a month's expenses really cost — what was paid
+// for them, not what was planned — grouped by category, against the month
+// before. Expenses the app makes itself are grouped by what made them
+// (Épargne, Darets, Dettes, Argent prêté) rather than lost in "Sans
+// catégorie". Pure (no DB access).
+import { addMonths, dayOf, monthKey, type MonthId } from "./date";
 import { displayIcon } from "./category";
-import { monthCost } from "./category-budgets";
 import { msg } from "./i18n";
 import type { Category, DaretWithExpense, Expense, Goal, Loan, Payment, SavingsMove } from "./types";
 
@@ -64,17 +63,28 @@ export function categoryBreakdown(input: CategoryStatsInput, month: MonthId): Ca
     return "none";
   };
 
-  const current = todayMonth();
+  const byId = new Map(input.expenses.map((e) => [e.id, e]));
   const totals = (m: MonthId) => {
+    const key = monthKey(m);
+    // Paid for the month (a debt's installment: paid during it). Nothing
+    // ticked, nothing counted: an expense to pay, a debt not repaid yet.
+    const paid = new Map<string, number>();
+    for (const p of input.payments) {
+      if (!(p.amountPaid > 0) || !byId.has(p.expenseId)) continue;
+      if (p.monthKey === key || (p.monthKey == null && dayOf(p.paidAt).startsWith(key))) paid.set(p.expenseId, (paid.get(p.expenseId) ?? 0) + p.amountPaid);
+    }
     const out = new Map<string, { amount: number; items: CategorySlice["items"] }>();
-    for (const o of getMonthSummary(input.expenses, m, 0).occurrences) {
-      const amount = monthCost(o.expense, o.amount, m, input.payments, current);
+    for (const [id, total] of paid) {
+      const expense = byId.get(id)!;
+      // Money lent: only what hasn't come back (its expense's amount, as
+      // the Solde counts it).
+      const amount = round(made.get(id) === "loans" ? Math.min(total, expense.amount) : total);
       if (!(amount > 0)) continue;
-      const key = keyOf(o.expense);
-      const slot = out.get(key) ?? { amount: 0, items: [] };
+      const group = keyOf(expense);
+      const slot = out.get(group) ?? { amount: 0, items: [] };
       slot.amount += amount;
-      slot.items.push({ id: o.expense.id, name: o.expense.name, icon: displayIcon(o.expense, emojiById), amount });
-      out.set(key, slot);
+      slot.items.push({ id, name: expense.name, icon: displayIcon(expense, emojiById), amount });
+      out.set(group, slot);
     }
     return out;
   };

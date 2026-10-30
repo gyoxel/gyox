@@ -5,6 +5,7 @@ import { randomUUID } from "crypto";
 import { prisma } from "./prisma";
 import { todayDateStr, todayMonth } from "./date";
 import { loanSlots, loanToRepay } from "./loans";
+import { amountChange } from "./amount-change";
 import type { Loan, LoanRepayment, PaymentMethod } from "./types";
 
 type RepaymentRow = {
@@ -143,7 +144,14 @@ export async function updateLoan(id: string, input: LoanInput): Promise<Loan | n
     await prisma.$transaction([
       prisma.expense.update({
         where: { id: loan.expenseId },
-        data: { name: expenseName(input.name), amount: loanToRepay(input), notes: input.note, startDate: input.date, updatedAt: now },
+        data: {
+          name: expenseName(input.name),
+          amount: loanToRepay(input),
+          notes: input.note,
+          startDate: input.date,
+          updatedAt: now,
+          ...amountChange(loan.amount - (loan.priorRepaid ?? 0), input.amount - (input.priorRepaid ?? 0), now),
+        },
       }),
       prisma.payment.updateMany({
         where: { expenseId: loan.expenseId },

@@ -42,6 +42,9 @@ model Expense {
   monthAmounts        Json?
   createdAt           String
   updatedAt           String
+  /// When its amount was last changed (not its name, account…): an edit
+  /// dates it only then. Null: unchanged since added.
+  amountChangedAt     String?
 
   category       Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   payments       Payment[]
