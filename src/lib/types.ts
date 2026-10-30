@@ -38,6 +38,9 @@ export interface Expense {
   monthAmounts: Record<string, number> | null;
   createdAt: string;
   updatedAt: string;
+  /** When its amount was last changed: an edit dates it only then (not a
+   *  new name, account or category). Null: unchanged since added. */
+  amountChangedAt?: string | null;
 }
 
 export interface Category {
@@ -51,7 +54,7 @@ export interface Category {
   budget?: number | null;
 }
 
-export type ExpenseInput = Omit<Expense, "id" | "createdAt" | "updatedAt" | "monthAmounts">;
+export type ExpenseInput = Omit<Expense, "id" | "createdAt" | "updatedAt" | "amountChangedAt" | "monthAmounts">;
 
 export interface Settings {
   salary: number;

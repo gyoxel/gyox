@@ -7,6 +7,7 @@ import { getAllSavingsMoves } from "./savings-repo";
 import { getAllLoanRepayments, getAllLoans } from "./loans-repo";
 import { getIncomeCategories } from "./income-categories-repo";
 import { stopMonthlyExpense } from "./monthly-repo";
+import { amountChange } from "./amount-change";
 import type { Category, Daret, DaretWithExpense, Expense, ExpenseInput, Payment, Settings, Goal, GoalDeposit, GoalIdea, DayNote, DepositSource, SalaryAdvance, Income, PaymentMethod, SalaryReceipt, WalletOp, SavingsMove, Loan, LoanRepayment } from "./types";
 
 /** Names the app gave before Crédits / Prêts became Dettes / Argent prêté
@@ -42,6 +43,7 @@ export function mapExpense(row: {
   monthAmounts?: unknown;
   createdAt: string;
   updatedAt: string;
+  amountChangedAt?: string | null;
 }): Expense {
   return {
     id: row.id,
@@ -62,6 +64,7 @@ export function mapExpense(row: {
     monthAmounts: asMonthAmounts(row.monthAmounts),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+    amountChangedAt: row.amountChangedAt ?? null,
   };
 }
 
@@ -128,6 +131,13 @@ export async function updateExpense(
   if (input.categoryId !== undefined && input.categoryId !== existing.categoryId) {
     merged.categoryId = await ownCategoryId(input.categoryId);
   }
+  const now = new Date().toISOString();
+  // A debt's total counts as its amount too.
+  const changed = {
+    ...amountChange(existing.amount, merged.amount, now),
+    ...amountChange(existing.creditInitialAmount, merged.creditInitialAmount, now),
+    ...amountChange(existing.creditPriorPaid, merged.creditPriorPaid, now),
+  };
   const row = await prisma.expense.update({
     where: { id },
     data: {
@@ -145,7 +155,8 @@ export async function updateExpense(
       linkedExpenseId: merged.linkedExpenseId ?? null,
       icon: merged.icon ?? null,
       categoryId: merged.categoryId ?? null,
-      updatedAt: new Date().toISOString(),
+      updatedAt: now,
+      ...changed,
     },
   });
   return mapExpense(row);
@@ -370,6 +381,7 @@ export async function importData(backup: BackupData): Promise<void> {
         monthAmounts: asMonthAmounts(e.monthAmounts) ?? Prisma.DbNull,
         createdAt: e.createdAt ?? new Date().toISOString(),
         updatedAt: e.updatedAt ?? new Date().toISOString(),
+        amountChangedAt: e.amountChangedAt ?? null,
       })),
     }),
     // (Deleting the expenses removed their payments.)
@@ -723,8 +735,9 @@ export async function updateDaret(
   id: string,
   input: { name: string; amount: number; members: number; startDate: string; endDate: string; turnMonth: string },
 ): Promise<DaretWithExpense | null> {
-  const daret = await prisma.daret.findUnique({ where: { id } });
+  const daret = await prisma.daret.findUnique({ where: { id }, include: { expense: { select: { amount: true } } } });
   if (!daret) return null;
+  const now = new Date().toISOString();
   const [expense, updated] = await prisma.$transaction([
     prisma.expense.update({
       where: { id: daret.expenseId },
@@ -733,7 +746,8 @@ export async function updateDaret(
         amount: input.amount,
         startDate: input.startDate,
         endDate: input.endDate,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
+        ...amountChange(daret.expense.amount, input.amount, now),
       },
     }),
     prisma.daret.update({ where: { id }, data: { members: input.members, turnMonth: input.turnMonth } }),
@@ -1056,7 +1070,7 @@ export async function updateGoalDeposit(
     const [, row] = await prisma.$transaction([
       prisma.expense.update({
         where: { id: deposit.expenseId },
-        data: { amount: input.amount, notes: name !== "Versement" ? name : null, updatedAt: now },
+        data: { amount: input.amount, notes: name !== "Versement" ? name : null, updatedAt: now, ...amountChange(deposit.amount, input.amount, now) },
       }),
       prisma.goalDeposit.update({ where: { id: depositId }, data: { name, amount: input.amount } }),
     ]);
@@ -1077,7 +1091,7 @@ export async function updateGoalDeposit(
     const monthKeyValue = deposit.date.slice(0, 7);
     const expenseUpdate = prisma.expense.update({
       where: { id: expenseId },
-      data: { amount: input.amount, notes: name !== "Versement" ? name : null, updatedAt: now },
+      data: { amount: input.amount, notes: name !== "Versement" ? name : null, updatedAt: now, ...amountChange(deposit.amount, input.amount, now) },
     });
     if (input.paid && input.method) {
       await prisma.$transaction([
