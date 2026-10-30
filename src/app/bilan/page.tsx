@@ -8,7 +8,7 @@ import { buildMonthBilan } from "@/lib/month-bilan";
 import { getWallet } from "@/lib/wallet-data";
 import { monthLabel } from "@/lib/i18n/dates";
 import { getI18n } from "@/lib/i18n/server";
-import { formatMoney } from "@/lib/utils";
+import { cn, formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { MonthSwitcher } from "@/components/month-switcher";
 import { CategorySection } from "@/components/category-section";
@@ -72,9 +72,11 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
             <Flow label={t("Entrées")} value={bilan ? `+${money(bilan.moneyIn)}` : NONE} now={bilan?.moneyIn} before={before?.moneyIn ?? 0} vs={previousLabel} t={t} />
             <Flow label={t("Sorties")} value={bilan ? `−${money(bilan.moneyOut)}` : NONE} now={bilan?.moneyOut} before={before?.moneyOut ?? 0} vs={previousLabel} t={t} />
           </div>
-          {bilan && bilan.putAside > 0 && (
-            <p className="relative mt-2 text-xs text-white/85">🐷 {t("Dont {amount} mis de côté", { amount: money(bilan.putAside) })}</p>
-          )}
+          {/* Always there (hidden when nothing was put aside): the card keeps
+              its height from month to month, the page doesn't jump */}
+          <p className={cn("relative mt-2 text-xs text-white/85", !(bilan && bilan.putAside > 0) && "invisible")} aria-hidden={!(bilan && bilan.putAside > 0)}>
+            🐷 {t("Dont {amount} mis de côté", { amount: money(bilan?.putAside ?? 0) })}
+          </p>
         </div>
 
         {/* Where it went — the month picked under its title — or beside another month */}
@@ -112,7 +114,7 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
 }
 
 /** Entrées / Sorties on the hero card, with how it moved since the month
- *  before (`now` unset: a month with nothing, no line under it). */
+ *  before (`now` unset: a month with nothing, no line). */
 function Flow({ label, value, now, before, vs, t }: { label: string; value: string; now?: number; before: number; vs: string; t: (text: string, vars?: Record<string, string | number>) => string }) {
   const pct = now != null && before > 0 ? Math.round(((now - before) / before) * 100) : null;
   const Arrow = pct != null && pct < 0 ? ArrowDown : ArrowUp;
@@ -120,16 +122,15 @@ function Flow({ label, value, now, before, vs, t }: { label: string; value: stri
     <div className="rounded-2xl bg-white/15 px-3 py-2">
       <p className="text-[10px] uppercase tracking-wide text-white/75">{label}</p>
       <p className="text-sm font-bold tabular-nums">{value}</p>
-      <p className="mt-0.5 flex items-center gap-0.5 text-[10.5px] text-white/75">
-        {now == null ? (
-          "\u00a0"
-        ) : pct == null ? (
+      <p className="mt-0.5 h-[2lh] text-[10.5px] text-white/75">
+        {/* Two lines high whatever it says (or nothing): the card keeps its height */}
+        {now == null ? null : pct == null ? (
           t("rien en {month}", { month: vs })
         ) : pct === 0 ? (
           t("comme en {month}", { month: vs })
         ) : (
           <>
-            <Arrow weight="bold" className="h-3 w-3" />
+            <Arrow weight="bold" className="mr-0.5 inline h-3 w-3 align-[-2px]" />
             {t("{pct}% par rapport à {month}", { pct: `${pct > 0 ? "+" : "−"}${Math.abs(pct)}`, month: vs })}
           </>
         )}
