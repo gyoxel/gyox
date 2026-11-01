@@ -368,6 +368,18 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Les premiers jours du mois, ce bilan apparaît aussi sur l'Accueil."),
     ],
   },
+  personnes: {
+    title: msg("Personnes"),
+    summary: msg("Les personnes à qui tu prêtes et de qui tu empruntes : leurs noms sont proposés quand tu ajoutes une dette ou un prêt."),
+    points: [
+      msg("Ajouter quelqu'un avec son nom."),
+      msg("Toucher un nom (ou ✎) pour le renommer."),
+      msg("Monter ou descendre quelqu'un avec les flèches : c'est l'ordre proposé."),
+      msg("Retirer quelqu'un : il n'est plus proposé."),
+      msg("Renommer ou retirer ne change aucune dette ni aucun prêt."),
+      msg("Un nom nouveau, saisi pour une dette ou un prêt, s'ajoute tout seul."),
+    ],
+  },
   categories: {
     title: msg("Catégories"),
     summary: msg("Les catégories qui rangent tes dépenses et tes revenus."),

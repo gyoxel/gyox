@@ -5,6 +5,7 @@ import { DEFAULT_CATEGORIES } from "./default-categories";
 import { defaultSettings } from "./user-defaults";
 import { getAllSavingsMoves } from "./savings-repo";
 import { getAllLoanRepayments, getAllLoans } from "./loans-repo";
+import { getPeople, type Person } from "./people-repo";
 import { getIncomeCategories } from "./income-categories-repo";
 import { stopMonthlyExpense } from "./monthly-repo";
 import { amountChange } from "./amount-change";
@@ -259,6 +260,7 @@ export interface BackupData {
   incomeCategories?: Category[];
   loans?: (Omit<Loan, "repayments"> & { repayments?: undefined })[];
   loanRepayments?: LoanRepayment[];
+  people?: Person[];
 }
 
 export async function exportData(): Promise<BackupData> {
@@ -291,6 +293,7 @@ export async function exportData(): Promise<BackupData> {
     incomeCategories: await getIncomeCategories(),
     loans: (await getAllLoans()).map((loan) => ({ ...loan, repayments: undefined })),
     loanRepayments: await getAllLoanRepayments(),
+    people: await getPeople(),
   };
 }
 
@@ -304,7 +307,7 @@ function withFreshIds(data: BackupData): BackupData {
   const ids = new Map<string, string>();
   const own = (rows: { id: string }[] | undefined) => rows?.forEach((r) => ids.set(r.id, randomUUID()));
   [data.expenses, data.payments, data.darets, data.categories, data.goals, data.goalDeposits, data.goalIdeas, data.salaryAdvances,
-    data.incomes, data.salaryReceipts, data.walletOps, data.savingsMoves, data.loans, data.loanRepayments].forEach(own);
+    data.incomes, data.salaryReceipts, data.walletOps, data.savingsMoves, data.loans, data.loanRepayments, data.people].forEach(own);
   const id = (value: string) => ids.get(value) ?? value;
   const ref = <T extends string | null | undefined>(value: T): T => (value ? (id(value) as T) : value);
   return {
@@ -329,6 +332,7 @@ function withFreshIds(data: BackupData): BackupData {
     })),
     loans: data.loans?.map((l) => ({ ...l, id: id(l.id), expenseId: ref(l.expenseId) })),
     loanRepayments: data.loanRepayments?.map((r) => ({ ...r, id: id(r.id), loanId: id(r.loanId), incomeId: ref(r.incomeId) })),
+    people: data.people?.map((p) => ({ ...p, id: id(p.id) })),
   };
 }
 
@@ -460,6 +464,12 @@ export async function importData(backup: BackupData): Promise<void> {
               .filter((r) => loanIds.has(r.loanId))
               .map((r) => ({ ...r, incomeId: known(r.incomeId, incomeIds) })),
           }),
+        ]
+      : []),
+    ...(data.people
+      ? [
+          prisma.person.deleteMany({}),
+          prisma.person.createMany({ data: data.people.map((p) => ({ ...p, createdAt: new Date().toISOString() })) }),
         ]
       : []),
     prisma.settings.updateMany({ data: data.settings }),

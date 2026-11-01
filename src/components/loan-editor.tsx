@@ -15,6 +15,7 @@ import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput }
 import { errorMessage, keepAboveKeyboard } from "@/components/expense-editor";
 import { DeleteButton } from "@/components/delete-button";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
+import { PersonSuggestions } from "@/components/person-suggestions";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +32,7 @@ const MONTH_STEPS = [1, 2, 3, 4, 6, 10, 12];
  * Dépenses), and how it comes back (per month or in how many months, from
  * which month). Each installment is then confirmed received on its page.
  */
-export function LoanEditor({ loan }: { loan?: Loan }) {
+export function LoanEditor({ loan, people = [] }: { loan?: Loan; /** Personnes, offered under the name. */ people?: string[] }) {
   const isEdit = loan != null;
   const nav = useNavBack();
   const { lang, t } = useI18n();
@@ -129,6 +130,7 @@ export function LoanEditor({ loan }: { loan?: Loan }) {
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="name">{t("Nom")}</Label>
         <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("À qui : Karim, Sara, Youssef…")} maxLength={60} />
+        <PersonSuggestions people={people} value={name} onPick={setName} />
       </div>
 
       {priorOpen ? (

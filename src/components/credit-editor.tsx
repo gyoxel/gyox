@@ -13,6 +13,7 @@ import { monthlyFor } from "@/lib/plan";
 import { mutate, mutateAll } from "@/lib/use-refresh-data";
 import { errorMessage, keepAboveKeyboard, paymentStatusCall, type PaymentStatusInit } from "@/components/expense-editor";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
+import { PersonSuggestions } from "@/components/person-suggestions";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,10 +44,13 @@ function schedule(total: number, monthly: number, startDate: string) {
 export function CreditEditor({
   expense,
   paymentStatus,
+  people = [],
 }: {
   /** Present when editing. */
   expense?: Expense;
   paymentStatus?: PaymentStatusInit | null;
+  /** Personnes, offered under the name. */
+  people?: string[];
 }) {
   const isEdit = expense != null;
   const nav = useNavBack();
@@ -253,6 +257,7 @@ export function CreditEditor({
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="name">{t("Nom")}</Label>
         <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("Ex : Karim, Sara, Youssef…")} />
+        <PersonSuggestions people={people} value={name} onPick={setName} />
       </div>
 
       {/* Already repaid before it was added here */}

@@ -19,6 +19,7 @@ import { PageHeader } from "@/components/page-header";
 
 import { ExpenseEditor, type PaymentStatusInit, type RecurrenceInit } from "@/components/expense-editor";
 import { CreditEditor } from "@/components/credit-editor";
+import { getPeople } from "@/lib/people-repo";
 import { MonthPayments } from "@/components/payment-parts";
 import { formatMoney } from "@/lib/utils";
 import type { Expense, Payment, PaymentMethod } from "@/lib/types";
@@ -213,6 +214,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
           <CreditEditor
             expense={expense}
             paymentStatus={paymentStatus}
+            people={(await getPeople()).map((p) => p.name)}
           />
         ) : (
           <ExpenseEditor

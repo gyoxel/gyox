@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rememberPerson } from "@/lib/people-repo";
 import { z } from "zod";
 import { createExpense, createIncome, getAllExpenses } from "@/lib/repository";
 import { payExpense } from "@/lib/pay-expense";
@@ -26,6 +27,7 @@ export const POST = withBalanceGuard(async function post(req: NextRequest) {
   const extras = extrasSchema.safeParse(body);
   if (!extras.success) return NextResponse.json({ error: extras.error.flatten() }, { status: 400 });
   const expense = await createExpense(parsed.data);
+  if (expense.type === "credit") await rememberPerson(expense.name);
   const problems: string[] = [];
   if (extras.data.income) {
     try {

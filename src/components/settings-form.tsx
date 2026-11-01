@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { mutate, useRefreshData } from "@/lib/use-refresh-data";
 import Link from "next/link";
-import { CaretRight, DownloadSimple, Fingerprint, Leaf, Money, Monitor, Moon, Sun, Tag, UploadSimple } from "@phosphor-icons/react/ssr";
+import { CaretRight, DownloadSimple, Fingerprint, Leaf, Money, Monitor, Moon, Sun, Tag, UploadSimple, UsersThree } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { Settings } from "@/lib/types";
 import { THEME_STORAGE_KEY, applyTheme, composeTheme, parseTheme, type ThemeBase, type ThemeChoice } from "@/lib/theme";
@@ -182,6 +182,16 @@ export function SettingsForm({ settings, account }: { settings: Settings; accoun
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">{t("Catégories")}</span>
               <span className="block text-xs text-slate-400">{t("Ajouter, renommer, ordonner")}</span>
+            </span>
+            <CaretRight weight="bold" className="h-4 w-4 text-slate-300" />
+          </Link>
+          <Link href="/personnes" className={rowClass}>
+            <RowIcon className="from-amber-400 to-orange-600">
+              <UsersThree weight="bold" className="h-4 w-4" />
+            </RowIcon>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">{t("Personnes")}</span>
+              <span className="block text-xs text-slate-400">{t("À qui tu prêtes, de qui tu empruntes")}</span>
             </span>
             <CaretRight weight="bold" className="h-4 w-4 text-slate-300" />
           </Link>

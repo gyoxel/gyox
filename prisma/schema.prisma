@@ -491,6 +491,25 @@ model LoanRepayment {
   @@map("loan_repayments")
 }
 
+/// Someone money is lent to or borrowed from: offered under the name of a
+/// debt or a loan. Only a list of names — renaming or removing one changes
+/// no debt or loan.
+model Person {
+  id        String @default(uuid())
+  name      String
+  /// Display order, ascending.
+  position  Int
+  createdAt String
+
+  /// Whose it is (see lib/user-scope.ts: every query is scoped to the
+  /// signed-in user).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, id])
+  @@map("people")
+}
+
 /// Someone signed in with Google. Everything else belongs to one user.
 model User {
   id          String  @id @default(uuid())
@@ -522,6 +541,7 @@ model User {
   savingsMoves     SavingsMove[]
   loans            Loan[]
   loanRepayments   LoanRepayment[]
+  people           Person[]
 
   @@map("users")
 }
