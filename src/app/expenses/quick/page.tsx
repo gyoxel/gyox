@@ -30,7 +30,7 @@ export default async function QuickExpensePage() {
       <main className="px-4 py-5">
         <QuickExpense
           categories={categories}
-          spent={Object.fromEntries(spentByCategory(expenses, payments, current, current))}
+          spent={Object.fromEntries(spentByCategory(expenses, payments, current))}
           balance={wallet.balance}
           currency={settings.currency}
           lastCategoryId={last.categoryId}

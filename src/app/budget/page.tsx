@@ -110,7 +110,13 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
   ]
     .map((g) => {
       const list = newestFirst.filter((r) => (g.id ? r.expense.categoryId === g.id : !r.expense.categoryId || !categoryEmoji.has(r.expense.categoryId)));
-      return { ...g, list, subtotal: list.reduce((s, r) => s + r.amount, 0) };
+      return {
+        ...g,
+        list,
+        subtotal: list.reduce((s, r) => s + r.amount, 0),
+        // Against its budget: only what was paid.
+        spent: list.reduce((s, r) => s + (r.status === "paid" ? r.amount : r.paid), 0),
+      };
     })
     .filter((g) => g.list.length > 0);
 
@@ -257,14 +263,14 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
                 </span>
                 {g.budget ? (
                   <Link href={`/budgets/${g.id}?month=${key}`} className="tabular-nums active:opacity-70">
-                    <span className={LEVEL_TEXT[budgetLevel(g.subtotal, g.budget)]}>{money(g.subtotal)}</span>
+                    <span className={LEVEL_TEXT[budgetLevel(g.spent, g.budget)]}>{money(g.spent)}</span>
                     <span className="font-medium text-slate-400"> / {money(g.budget)}</span>
                   </Link>
                 ) : (
                   <span className="tabular-nums text-slate-400">{money(g.subtotal)}</span>
                 )}
               </h2>
-              {g.budget && <BudgetBar spent={g.subtotal} budget={g.budget} className="-mt-0.5 mx-1 h-1.5" />}
+              {g.budget && <BudgetBar spent={g.spent} budget={g.budget} className="-mt-0.5 mx-1 h-1.5" />}
               <ul className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 {dated(g.list).map(row)}
               </ul>

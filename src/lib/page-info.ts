@@ -89,7 +89,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
   budgets: {
     title: msg("Budgets"),
     summary: msg(
-      "Le maximum à dépenser dans une catégorie chaque mois (Alimentation 2 000 DH…). Rien ne sort de ton solde : tes dépenses de la catégorie s'additionnent.",
+      "Le maximum à dépenser dans une catégorie chaque mois (Alimentation 2 000 DH…). Rien ne sort de ton solde : ce que tu as payé dans la catégorie s'additionne (une dépense pas encore cochée ne compte pas).",
     ),
     points: [
       msg("Voir ce qui reste de chaque budget ce mois-ci, ou de combien il est dépassé."),
@@ -224,7 +224,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     summary: msg("Le maximum à dépenser dans une catégorie chaque mois."),
     points: [
       msg("Indiquer le montant et choisir la catégorie."),
-      msg("Voir ce que tu y dépenses ce mois-ci et le mois d'avant, pour choisir le montant."),
+      msg("Voir ce que tu y as payé ce mois-ci et le mois d'avant, pour choisir le montant."),
       msg("Une catégorie qui a déjà un budget : son montant est remplacé."),
     ],
   },
@@ -283,7 +283,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
   },
   "budget-edit": {
     title: msg("Budget"),
-    summary: msg("Le budget d'une catégorie : son montant, ce qui en est dépensé et les dépenses qui le font."),
+    summary: msg("Le budget d'une catégorie : son montant, ce qui en est payé et ses dépenses (celles pas encore payées ne comptent pas)."),
     points: [
       msg("Changer le montant : il compte pour tous les mois."),
       msg("Toucher une dépense pour l'ouvrir."),

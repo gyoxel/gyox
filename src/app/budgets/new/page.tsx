@@ -28,8 +28,8 @@ export default async function NewBudgetPage({ searchParams }: { searchParams: Pr
         <BudgetForm
           categories={categories}
           preselected={preselected}
-          spent={Object.fromEntries(spentByCategory(expenses, payments, current, current))}
-          previous={Object.fromEntries(spentByCategory(expenses, payments, previous, current))}
+          spent={Object.fromEntries(spentByCategory(expenses, payments, current))}
+          previous={Object.fromEntries(spentByCategory(expenses, payments, previous))}
           spentLabel={t("Ce mois-ci")}
           previousLabel={monthLabel(previous, lang)}
           currency={settings.currency}

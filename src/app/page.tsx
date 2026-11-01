@@ -33,7 +33,7 @@ export default async function HomePage() {
   const categoryEmoji = Object.fromEntries(categories.map((c) => [c.id, c.emoji]));
   const currentMonth = todayMonth();
   const bilan = await monthBilan(categories, expenses, payments, darets, loans, lang);
-  const budgetAlerts = categoryBudgets(categories, expenses, payments, currentMonth, currentMonth).flatMap((b): BudgetAlert[] =>
+  const budgetAlerts = categoryBudgets(categories, expenses, payments, currentMonth).flatMap((b): BudgetAlert[] =>
     b.level === "ok"
       ? []
       : [{ id: b.category.id, name: b.category.name, emoji: b.category.emoji, percent: budgetPercent(b.spent, b.budget), level: b.level }],
