@@ -1299,4 +1299,12 @@ export const DAR: Record<string, string> = {
   "{n} prêts": "{n} slef",
   "Maintenir un nom et le glisser pour changer l'ordre : c'est l'ordre proposé.": "Chedd 3la smiya w jerrha bach tbeddel l'ordre: hadak houwa l'ordre li kayban.",
   "Maintiens un nom et glisse-le pour changer l'ordre.": "Chedd 3la smiya w jerrha bach tbeddel l'ordre.",
+  "Plusieurs dettes au même nom (Yassine…) : regroupées, avec ce qui reste en tout ; chacune dessous, avec sa note (diesel, vacances…) ou sa date. Pareil sur l'Accueil et dans les statistiques.": "Ktar mn dette b nefs smiya (Yassine…): mjem3in, m3a ch7al b9a f total; kol wa7da ta7t, b la note dyalha (diesel, vacances…) wla date dyalha. Nefs chi f l'Accueil w f les statistiques.",
+  "Plusieurs prêts au même nom : regroupés, avec ce qui reste en tout ; chacun dessous, avec sa note ou sa date. Pareil sur l'Accueil et dans les statistiques.": "Ktar mn slef b nefs smiya: mjem3in, m3a ch7al b9a f total; kol wa7d ta7t, b la note dyalo wla date dyalo. Nefs chi f l'Accueil w f les statistiques.",
+  "Dette du {date}": "Dette dyal {date}",
+  "Prêt du {date}": "Slef dyal {date}",
+  "restant en tout": "ba9i f total",
+  "reste en tout": "ba9i f total",
+  "{n} prêts à recevoir": "{n} slef khassek tchedd",
+  "{n} dettes · dernières mensualités": "{n} dettes · akhir mensualités",
 };

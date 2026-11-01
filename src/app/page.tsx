@@ -46,6 +46,8 @@ export default async function HomePage() {
       expected: s.amount,
       received: s.received,
       monthLabel: monthLabel(s.month, lang),
+      note: loan.note?.trim() || null,
+      date: loan.date,
     })),
   );
 

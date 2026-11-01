@@ -22,12 +22,15 @@ export async function CreditCard({
   payments,
   currency,
   icon,
+  title,
 }: {
   expense: Expense;
   payments: Payment[];
   currency: string;
   color?: DisplayColor;
   icon: string;
+  /** In place of its name (in a person's group: what it was for). */
+  title?: string;
 }) {
   const { lang, t } = await getI18n();
   const current = todayMonth();
@@ -73,7 +76,7 @@ export async function CreditCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <h3 className="truncate text-[15px] font-semibold text-slate-900 dark:text-white">{localName(expense.name, t)}</h3>
+            <h3 className="truncate text-[15px] font-semibold text-slate-900 dark:text-white">{title ?? localName(expense.name, t)}</h3>
             {late && (
               <span className="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-950 dark:text-rose-300">
                 {t("En retard")}

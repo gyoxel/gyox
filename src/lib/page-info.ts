@@ -33,6 +33,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Voir le total qui reste à rembourser et ce que tu paies chaque mois."),
       msg("Suivre la frise mois par mois : combien tu paies, et le mois où chaque dette se termine."),
       msg("Ajouter une dette avec le bouton + : le total, puis le nombre de mois, le montant par mois ou « En une fois » (un mois au choix)."),
+      msg("Plusieurs dettes au même nom (Yassine…) : regroupées, avec ce qui reste en tout ; chacune dessous, avec sa note (diesel, vacances…) ou sa date. Pareil sur l'Accueil et dans les statistiques."),
       msg("Toucher une dette pour payer sa mensualité, la modifier ou la supprimer."),
       msg("Une mensualité payée en partie : le reste s'ajoute à la dernière mensualité."),
     ],
@@ -118,6 +119,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Confirmer un remboursement reçu (« Reçu ? ») : il revient dans ton solde."),
       msg("Toucher un prêt pour voir chaque mois, corriger un remboursement ou le modifier."),
       msg("Ce qui t'est rendu ne compte pas comme un revenu : il sort de tes dépenses du mois du prêt. Seul ce qui n'est pas encore revenu compte (bilan, statistiques)."),
+      msg("Plusieurs prêts au même nom : regroupés, avec ce qui reste en tout ; chacun dessous, avec sa note ou sa date. Pareil sur l'Accueil et dans les statistiques."),
     ],
   },
   pret: {

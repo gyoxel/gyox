@@ -1297,4 +1297,12 @@ export const EN: Record<string, string> = {
   "{n} prêts": "{n} loans",
   "Maintenir un nom et le glisser pour changer l'ordre : c'est l'ordre proposé.": "Hold a name and drag it to change the order: that's the order suggested.",
   "Maintiens un nom et glisse-le pour changer l'ordre.": "Hold a name and drag it to change the order.",
+  "Plusieurs dettes au même nom (Yassine…) : regroupées, avec ce qui reste en tout ; chacune dessous, avec sa note (diesel, vacances…) ou sa date. Pareil sur l'Accueil et dans les statistiques.": "Several debts under the same name (Yassine…): grouped, with what's left in all; each under it, with its note (diesel, holidays…) or its date. Same on Accueil and in the statistics.",
+  "Plusieurs prêts au même nom : regroupés, avec ce qui reste en tout ; chacun dessous, avec sa note ou sa date. Pareil sur l'Accueil et dans les statistiques.": "Several loans under the same name: grouped, with what's left in all; each under it, with its note or its date. Same on Accueil and in the statistics.",
+  "Dette du {date}": "Debt of {date}",
+  "Prêt du {date}": "Loan of {date}",
+  "restant en tout": "left in all",
+  "reste en tout": "left in all",
+  "{n} prêts à recevoir": "{n} loans to receive",
+  "{n} dettes · dernières mensualités": "{n} debts · last installments",
 };

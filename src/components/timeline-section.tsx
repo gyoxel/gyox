@@ -4,6 +4,7 @@ import { monthLabel, monthShortName } from "@/lib/i18n/dates";
 import { getI18n } from "@/lib/i18n/server";
 import { getDaretState } from "@/lib/daret";
 import { findPayment, getCreditDisplayProgress, getCreditRealState, projectCreditSchedule } from "@/lib/engine";
+import { personKey } from "@/lib/person-groups";
 import { cn, formatMoney } from "@/lib/utils";
 import { displayIcon } from "@/lib/category";
 import { CreditStairs, type StairMonth } from "@/components/credit-stairs";
@@ -41,6 +42,10 @@ interface Milestone {
   income?: boolean;
   /** A credit's last installment: what's left to pay after it follows. */
   creditEnd?: boolean;
+  /** The credit's installment, to add up the same person's. */
+  value?: number;
+  /** Debts of the same person ending that month. */
+  count?: number;
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -152,6 +157,7 @@ export async function TimelineSection({
         detail: done ? t("Remboursé ✓") : t("Dernière mensualité"),
         amount: money(p.months.get(p.last)!),
         creditEnd: true,
+        value: p.months.get(p.last)!,
       });
     }
   }
@@ -182,7 +188,14 @@ export async function TimelineSection({
   const groups: { key: string; items: Milestone[] }[] = [];
   for (const m of milestones) {
     const group = groups.at(-1);
-    if (group?.key === m.key) group.items.push(m);
+    // Debts of the same person ending the same month: one line, their total.
+    const same = group?.key === m.key && m.creditEnd ? group.items.find((o) => o.creditEnd && personKey(o.title) === personKey(m.title)) : undefined;
+    if (same) {
+      same.value = round2((same.value ?? 0) + (m.value ?? 0));
+      same.amount = money(same.value);
+      same.count = (same.count ?? 1) + 1;
+      same.detail = t("{n} dettes · dernières mensualités", { n: same.count });
+    } else if (group?.key === m.key) group.items.push(m);
     else groups.push({ key: m.key, items: [m] });
   }
 
