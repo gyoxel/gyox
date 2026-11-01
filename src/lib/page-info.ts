@@ -374,7 +374,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     points: [
       msg("Ajouter quelqu'un avec son nom."),
       msg("Toucher un nom (ou ✎) pour le renommer."),
-      msg("Monter ou descendre quelqu'un avec les flèches : c'est l'ordre proposé."),
+      msg("Maintenir un nom et le glisser pour changer l'ordre : c'est l'ordre proposé."),
       msg("Retirer quelqu'un : il n'est plus proposé."),
       msg("Renommer ou retirer ne change aucune dette ni aucun prêt."),
       msg("Un nom nouveau, saisi pour une dette ou un prêt, s'ajoute tout seul."),

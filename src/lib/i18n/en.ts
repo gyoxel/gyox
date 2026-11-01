@@ -1281,8 +1281,6 @@ export const EN: Record<string, string> = {
   "Nouvelle personne": "New person",
   "Personne pour le moment : ajoute quelqu'un, ou il sera ajouté avec ta prochaine dette ou ton prochain prêt.": "Nobody yet: add someone, or they'll be added with your next debt or loan.",
   "Renommer {name}": "Rename {name}",
-  "Monter {name}": "Move {name} up",
-  "Descendre {name}": "Move {name} down",
   "Retirer {name}": "Remove {name}",
   "Ces noms sont proposés sous le nom d'une dette ou d'un prêt. Les renommer ou les retirer ne change aucune dette ni aucun prêt.": "These names are suggested under a debt's or a loan's name. Renaming or removing them changes no debt or loan.",
   "Retirer {name} ?": "Remove {name}?",
@@ -1290,7 +1288,6 @@ export const EN: Record<string, string> = {
   "Les personnes à qui tu prêtes et de qui tu empruntes : leurs noms sont proposés quand tu ajoutes une dette ou un prêt.": "The people you lend to and borrow from: their names are suggested when you add a debt or a loan.",
   "Ajouter quelqu'un avec son nom.": "Add someone by name.",
   "Toucher un nom (ou ✎) pour le renommer.": "Tap a name (or ✎) to rename it.",
-  "Monter ou descendre quelqu'un avec les flèches : c'est l'ordre proposé.": "Move someone up or down with the arrows: that's the order suggested.",
   "Retirer quelqu'un : il n'est plus proposé.": "Remove someone: they're no longer suggested.",
   "Renommer ou retirer ne change aucune dette ni aucun prêt.": "Renaming or removing changes no debt or loan.",
   "Un nom nouveau, saisi pour une dette ou un prêt, s'ajoute tout seul.": "A new name typed for a debt or a loan is added on its own.",
@@ -1298,4 +1295,6 @@ export const EN: Record<string, string> = {
   "{n} dettes": "{n} debts",
   "1 prêt": "1 loan",
   "{n} prêts": "{n} loans",
+  "Maintenir un nom et le glisser pour changer l'ordre : c'est l'ordre proposé.": "Hold a name and drag it to change the order: that's the order suggested.",
+  "Maintiens un nom et glisse-le pour changer l'ordre.": "Hold a name and drag it to change the order.",
 };

@@ -1283,8 +1283,6 @@ export const DAR: Record<string, string> = {
   "Nouvelle personne": "Chi wa7d jdid",
   "Personne pour le moment : ajoute quelqu'un, ou il sera ajouté avec ta prochaine dette ou ton prochain prêt.": "Mazal ta wa7d: zid chi wa7d, wla ghadi yzad m3a dette wla slef jay.",
   "Renommer {name}": "Beddel smiyat {name}",
-  "Monter {name}": "Tle3 {name}",
-  "Descendre {name}": "Nezzel {name}",
   "Retirer {name}": "7iyed {name}",
   "Ces noms sont proposés sous le nom d'une dette ou d'un prêt. Les renommer ou les retirer ne change aucune dette ni aucun prêt.": "Had smiyat kaybano ta7t smiya d dette wla slef. Ila beddelti wla 7iyedti chi wa7d, ta dette ta slef ma kaytbeddel.",
   "Retirer {name} ?": "N7iyed {name}?",
@@ -1292,7 +1290,6 @@ export const DAR: Record<string, string> = {
   "Les personnes à qui tu prêtes et de qui tu empruntes : leurs noms sont proposés quand tu ajoutes une dette ou un prêt.": "Nass li katsallefhom w li katsallef menhom: smiyathom kaybano mlli tzid dette wla slef.",
   "Ajouter quelqu'un avec son nom.": "Zid chi wa7d b smito.",
   "Toucher un nom (ou ✎) pour le renommer.": "Brek 3la smiya (wla ✎) bach tbeddelha.",
-  "Monter ou descendre quelqu'un avec les flèches : c'est l'ordre proposé.": "Tle3 wla nezzel chi wa7d b les flèches: hadak houwa l'ordre li kayban.",
   "Retirer quelqu'un : il n'est plus proposé.": "7iyed chi wa7d: ma b9ach kayban.",
   "Renommer ou retirer ne change aucune dette ni aucun prêt.": "Tbeddel wla t7iyed ma kaybeddel ta dette ta slef.",
   "Un nom nouveau, saisi pour une dette ou un prêt, s'ajoute tout seul.": "Smiya jdida li ktebti f dette wla slef katzad bo7dha.",
@@ -1300,4 +1297,6 @@ export const DAR: Record<string, string> = {
   "{n} dettes": "{n} dettes",
   "1 prêt": "1 slef",
   "{n} prêts": "{n} slef",
+  "Maintenir un nom et le glisser pour changer l'ordre : c'est l'ordre proposé.": "Chedd 3la smiya w jerrha bach tbeddel l'ordre: hadak houwa l'ordre li kayban.",
+  "Maintiens un nom et glisse-le pour changer l'ordre.": "Chedd 3la smiya w jerrha bach tbeddel l'ordre.",
 };

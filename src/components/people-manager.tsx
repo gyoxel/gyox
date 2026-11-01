@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Check, PencilSimple, Plus, Trash, X } from "@phosphor-icons/react/ssr";
+import { Check, DotsSixVertical, PencilSimple, Plus, Trash, X } from "@phosphor-icons/react/ssr";
 import { useT } from "@/lib/i18n/client";
 import { mutate } from "@/lib/use-refresh-data";
+import { cn } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
@@ -21,8 +22,9 @@ interface Row {
 const ICON = "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 active:bg-slate-100 disabled:opacity-25 dark:active:bg-slate-800";
 
 /**
- * Personnes: add someone, rename (✎), move up / down (saved at once), remove
- * (asked first). Only the list of names: no debt or loan changes.
+ * Personnes: add someone, rename (✎), hold one and drag it to reorder (saved
+ * once dropped, as in Catégories), remove (asked first). Only the list of
+ * names: no debt or loan changes.
  */
 export function PeopleManager({ people }: { people: Row[] }) {
   const t = useT();
@@ -54,12 +56,102 @@ export function PeopleManager({ people }: { people: Row[] }) {
     });
   }
 
-  function move(index: number, by: -1 | 1) {
-    const ids = rows.map((p) => p.id);
-    const [id] = ids.splice(index, 1);
-    ids.splice(index + by, 0, id);
+  // ---- Hold a row, drag it up or down, let go: the others slide out of its way. ----
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const press = useRef<{ id: string; startY: number; lastY: number; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const dragging = useRef<string | null>(null);
+  const justDragged = useRef(false);
+  const rowRefs = useRef(new Map<string, HTMLLIElement>());
+  const prevRects = useRef<Map<string, DOMRect> | null>(null);
+  const idsRef = useRef<string[]>([]);
+  const rowIds = rows.map((p) => p.id).join();
+  useLayoutEffect(() => {
+    idsRef.current = rowIds ? rowIds.split(",") : [];
+  }, [rowIds]);
+
+  // While dragging, the page must not scroll under the finger.
+  useEffect(() => {
+    const block = (e: TouchEvent) => {
+      if (dragging.current) e.preventDefault();
+    };
+    document.addEventListener("touchmove", block, { passive: false });
+    return () => document.removeEventListener("touchmove", block);
+  }, []);
+
+  // The rows that moved slide from their old place to the new one.
+  useLayoutEffect(() => {
+    const before = prevRects.current;
+    prevRects.current = null;
+    if (!before) return;
+    for (const [id, el] of rowRefs.current) {
+      const old = before.get(id);
+      if (!old || id === dragging.current) continue;
+      const dy = old.top - el.getBoundingClientRect().top;
+      if (Math.abs(dy) >= 1) el.animate([{ translate: `0 ${dy}px` }, { translate: "0 0" }], { duration: 200, easing: "cubic-bezier(0.2, 0, 0, 1)" });
+    }
+  }, [order]);
+
+  function onPointerDown(e: React.PointerEvent<HTMLLIElement>, id: string) {
+    if ((e.pointerType === "mouse" && e.button !== 0) || editing || pending) return;
+    if ((e.target as Element).closest("button:not([data-row]), input")) return;
+    justDragged.current = false;
+    if (e.pointerType === "mouse") e.currentTarget.setPointerCapture(e.pointerId);
+    const timer = setTimeout(() => {
+      if (!press.current) return;
+      dragging.current = id;
+      setDraggingId(id);
+      navigator.vibrate?.(15);
+    }, 320);
+    press.current = { id, startY: e.clientY, lastY: e.clientY, timer };
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    const p = press.current;
+    if (!p) return;
+    p.lastY = e.clientY;
+    if (!dragging.current) {
+      // Moved before the hold: a scroll, not a drag.
+      if (Math.abs(e.clientY - p.startY) > 8) cancelPress();
+      return;
+    }
+    const id = dragging.current;
+    const el = rowRefs.current.get(id);
+    if (el) el.style.translate = "0 0";
+    // The row under the finger (its middle half), by the rows' own places.
+    let over: string | null = null;
+    for (const [rid, r] of rowRefs.current) {
+      const box = r.getBoundingClientRect();
+      if (e.clientY > box.top + box.height * 0.25 && e.clientY < box.bottom - box.height * 0.25) over = rid;
+    }
+    if (!over || over === id) return;
+    const ids = [...idsRef.current];
+    const from = ids.indexOf(id);
+    const to = ids.indexOf(over);
+    if (from < 0 || to < 0) return;
+    prevRects.current = new Map([...rowRefs.current].map(([rid, r]) => [rid, r.getBoundingClientRect()]));
+    ids.splice(from, 1);
+    ids.splice(to, 0, id);
+    idsRef.current = ids;
     setOrder(ids);
-    run({ method: "PUT", path: "/api/people/order", body: { ids } });
+  }
+
+  function endPress() {
+    const id = dragging.current;
+    if (press.current) clearTimeout(press.current.timer);
+    press.current = null;
+    if (!id) return;
+    justDragged.current = true;
+    dragging.current = null;
+    setDraggingId(null);
+    const ids = idsRef.current;
+    if (ids.join() !== people.map((p) => p.id).join()) run({ method: "PUT", path: "/api/people/order", body: { ids } });
+  }
+
+  function cancelPress() {
+    if (press.current) clearTimeout(press.current.timer);
+    press.current = null;
+    dragging.current = null;
+    setDraggingId(null);
   }
 
   function saveName() {
@@ -93,8 +185,25 @@ export function PeopleManager({ people }: { people: Row[] }) {
         </p>
       ) : (
         <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          {rows.map((p, i) => (
-            <li key={p.id} className="flex items-center gap-1 border-t border-slate-100 py-1.5 pl-4 pr-1.5 first:border-t-0 dark:border-slate-800">
+          {rows.map((p) => (
+            <li
+              key={p.id}
+              ref={(el) => {
+                if (el) rowRefs.current.set(p.id, el);
+                else rowRefs.current.delete(p.id);
+              }}
+              onPointerDown={(e) => onPointerDown(e, p.id)}
+              onPointerMove={onPointerMove}
+              onPointerUp={endPress}
+              onPointerCancel={cancelPress}
+              onContextMenu={(e) => e.preventDefault()}
+              className={cn(
+                "relative flex select-none items-center gap-1 border-t border-slate-100 bg-white py-1.5 pl-2 pr-1.5 first:border-t-0 [-webkit-touch-callout:none] dark:border-slate-800 dark:bg-slate-900",
+                draggingId === p.id && "z-10 scale-[1.02] rounded-2xl shadow-lg ring-2 ring-[var(--gx-brand-400)]",
+                draggingId && draggingId !== p.id && "opacity-80",
+              )}
+            >
+              <DotsSixVertical weight="bold" aria-hidden className="h-4 w-4 shrink-0 text-slate-300" />
               {editing?.id === p.id ? (
                 <>
                   <Input
@@ -118,18 +227,17 @@ export function PeopleManager({ people }: { people: Row[] }) {
                 </>
               ) : (
                 <>
-                  <button type="button" onClick={() => setEditing({ id: p.id, name: p.name })} className="min-w-0 flex-1 py-1 text-left">
+                  <button
+                    type="button"
+                    data-row
+                    onClick={() => !justDragged.current && setEditing({ id: p.id, name: p.name })}
+                    className="min-w-0 flex-1 py-1 pl-1 text-left"
+                  >
                     <span className="block truncate text-sm font-medium text-slate-800 dark:text-slate-100">{p.name}</span>
                     <span className="block truncate text-[11px] text-slate-400">{usedLabel(p)}</span>
                   </button>
                   <button type="button" onClick={() => setEditing({ id: p.id, name: p.name })} aria-label={t("Renommer {name}", { name: p.name })} className={ICON}>
                     <PencilSimple weight="bold" className="h-4 w-4" />
-                  </button>
-                  <button type="button" onClick={() => move(i, -1)} disabled={i === 0 || pending} aria-label={t("Monter {name}", { name: p.name })} className={ICON}>
-                    <ArrowUp weight="bold" className="h-4 w-4" />
-                  </button>
-                  <button type="button" onClick={() => move(i, 1)} disabled={i === rows.length - 1 || pending} aria-label={t("Descendre {name}", { name: p.name })} className={ICON}>
-                    <ArrowDown weight="bold" className="h-4 w-4" />
                   </button>
                   <button type="button" onClick={() => setRemoving(p)} aria-label={t("Retirer {name}", { name: p.name })} className={`${ICON} hover:text-rose-500`}>
                     <Trash weight="bold" className="h-4 w-4" />
@@ -140,6 +248,7 @@ export function PeopleManager({ people }: { people: Row[] }) {
           ))}
         </ul>
       )}
+      {rows.length > 1 && <p className="-mt-2 px-1 text-xs text-slate-500 dark:text-slate-400">{t("Maintiens un nom et glisse-le pour changer l'ordre.")}</p>}
       <p className="px-1 text-xs text-slate-500 dark:text-slate-400">
         {t("Ces noms sont proposés sous le nom d'une dette ou d'un prêt. Les renommer ou les retirer ne change aucune dette ni aucun prêt.")}
       </p>
