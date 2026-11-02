@@ -66,9 +66,14 @@ export default async function CreditsPage() {
     <>
       <PageHeader title={t("Dettes")} info="credits" action={<HeaderAdd href="/expenses/new?type=credit" label={t("Ajouter une dette")} />} />
       <main className="flex flex-col gap-5 px-4 py-5">
-        <TimelineSection expenses={expenses} darets={darets} payments={payments} currency={settings.currency} categoryEmoji={categoryEmoji} />
-
-        <AddLink href="/expenses/new?type=credit" label={t("Ajouter une dette")} className="mt-1" />
+        <TimelineSection
+          expenses={expenses}
+          darets={darets}
+          payments={payments}
+          currency={settings.currency}
+          categoryEmoji={categoryEmoji}
+          add={<AddLink href="/expenses/new?type=credit" label={t("Ajouter une dette")} />}
+        />
 
         <h2 className="-mb-2 flex items-baseline justify-between px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">
           <span>{t("Dettes")}</span>

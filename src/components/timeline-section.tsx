@@ -63,12 +63,16 @@ export async function TimelineSection({
   payments,
   currency,
   categoryEmoji,
+  add,
 }: {
   expenses: Expense[];
   darets: DaretWithExpense[];
   payments: Payment[];
   currency: string;
   categoryEmoji: ReadonlyMap<string, string>;
+  /** « Ajouter une dette », between the summary and « Chaque mois » (shown
+   *  alone when there's nothing to show). */
+  add?: React.ReactNode;
 }) {
   const { lang, t } = await getI18n();
   const current = todayMonth();
@@ -102,7 +106,7 @@ export async function TimelineSection({
     .filter((p) => p.months.size > 0);
 
   const daretStates = darets.filter((d) => d.expense.active).map((daret) => ({ daret, state: getDaretState(daret, payments, current) }));
-  if (plans.length === 0 && !daretStates.some(({ state }) => compareMonths(state.end, current) >= 0)) return null;
+  if (plans.length === 0 && !daretStates.some(({ state }) => compareMonths(state.end, current) >= 0)) return add ?? null;
 
   // Month by month, from this one to the last installment.
   const totals = new Map<string, number>();
@@ -208,8 +212,6 @@ export async function TimelineSection({
 
   return (
     <section className="flex flex-col gap-2.5">
-      <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Timeline")}</h2>
-
       {freeAt && (
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-500 to-violet-700 px-5 pb-4 pt-5 text-white">
           <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
@@ -238,6 +240,8 @@ export async function TimelineSection({
           </div>
         </div>
       )}
+
+      {add}
 
       {stairs.length > 0 && (
         <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
