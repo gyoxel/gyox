@@ -45,6 +45,7 @@ export function mapExpense(row: {
   createdAt: string;
   updatedAt: string;
   amountChangedAt?: string | null;
+  person?: string | null;
 }): Expense {
   return {
     id: row.id,
@@ -62,6 +63,7 @@ export function mapExpense(row: {
     linkedExpenseId: row.linkedExpenseId,
     icon: currentIcon(row.name, row.icon),
     categoryId: row.categoryId,
+    person: row.person ?? null,
     monthAmounts: asMonthAmounts(row.monthAmounts),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -115,6 +117,7 @@ export async function createExpense(input: ExpenseInput): Promise<Expense> {
       linkedExpenseId: input.linkedExpenseId ?? null,
       icon: input.icon ?? null,
       categoryId: input.categoryId ?? null,
+      person: input.person?.trim() || null,
       createdAt: now,
       updatedAt: now,
     },
@@ -156,6 +159,7 @@ export async function updateExpense(
       linkedExpenseId: merged.linkedExpenseId ?? null,
       icon: merged.icon ?? null,
       categoryId: merged.categoryId ?? null,
+      person: merged.person?.trim() || null,
       updatedAt: now,
       ...changed,
     },
@@ -386,6 +390,7 @@ export async function importData(backup: BackupData): Promise<void> {
         createdAt: e.createdAt ?? new Date().toISOString(),
         updatedAt: e.updatedAt ?? new Date().toISOString(),
         amountChangedAt: e.amountChangedAt ?? null,
+        person: e.person ?? null,
       })),
     }),
     // (Deleting the expenses removed their payments.)

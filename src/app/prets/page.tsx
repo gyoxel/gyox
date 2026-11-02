@@ -4,7 +4,7 @@ import { CaretRight, HandCoins } from "@phosphor-icons/react/ssr";
 
 import { loanState } from "@/lib/loans";
 import { todayMonth } from "@/lib/date";
-import { byPerson } from "@/lib/person-groups";
+import { byPerson, personOf } from "@/lib/person-groups";
 import { monthLabel, whenLabel } from "@/lib/i18n/dates";
 import { getI18n } from "@/lib/i18n/server";
 import { formatMoney } from "@/lib/utils";
@@ -31,7 +31,7 @@ export default async function LoansPage() {
     .sort((a, b) => Number(a.state.done || a.state.givenUp) - Number(b.state.done || b.state.givenUp));
   // Several loans to the same person: together (what's left of all, each
   // under it), where the first of them comes.
-  const groups = byPerson(rows, (r) => r.loan.name);
+  const groups = byPerson(rows, (r) => personOf(r.loan));
   const dividers = dividersOf(
     groups.map((g) => whenLabel(g.map((r) => r.at).reduce((a, b) => (b > a ? b : a)), lang, t)),
     "",
@@ -131,12 +131,12 @@ export default async function LoansPage() {
             <div key={members[0].loan.id} className="flex flex-col gap-1.5">
               {dividers[i] && <DateDivider as="div" label={dividers[i]} className="px-2 pt-0" />}
               {members.length === 1 ? (
-                card(members[0])
+                card(members[0], members[0].loan.person ? `${members[0].loan.person} · ${members[0].loan.name}` : undefined)
               ) : (
                 <section className="flex flex-col gap-2 rounded-3xl border border-amber-200 bg-amber-50/50 p-2 dark:border-amber-900/60 dark:bg-amber-950/20">
                   <div className="flex items-center justify-between gap-2 px-2 pt-1">
                     <span className="min-w-0">
-                      <span className="block truncate text-[15px] font-bold text-slate-900 dark:text-white">{members[0].loan.name}</span>
+                      <span className="block truncate text-[15px] font-bold text-slate-900 dark:text-white">{personOf(members[0].loan)}</span>
                       <span className="block text-[11px] text-slate-500 dark:text-slate-400">
                         {t("{n} prêts", { n: members.length })} · {t("{amount} prêtés", { amount: money(members.reduce((s, m) => s + m.loan.amount, 0)) })}
                       </span>
@@ -148,7 +148,7 @@ export default async function LoansPage() {
                       <span className="block text-[10px] uppercase tracking-wide text-slate-400">{t("reste en tout")}</span>
                     </span>
                   </div>
-                  {members.map((m) => card(m, m.loan.note?.trim() || t("Prêt du {date}", { date: whenLabel(m.loan.date, lang, t) })))}
+                  {members.map((m) => card(m, m.loan.person ? m.loan.name : m.loan.note?.trim() || t("Prêt du {date}", { date: whenLabel(m.loan.date, lang, t) })))}
                 </section>
               )}
             </div>

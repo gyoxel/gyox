@@ -2,6 +2,7 @@ import { getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllInco
 import { budgetsById } from "@/lib/category-budgets";
 import { categoryBreakdown, categoryComparison } from "@/lib/category-stats";
 import { CategorySection } from "@/components/category-section";
+import { byPerson, personOf } from "@/lib/person-groups";
 import Link from "next/link";
 import { Sparkle } from "@phosphor-icons/react/ssr";
 
@@ -72,9 +73,17 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
     salaryForMonth(settings.salary, advances, monthKey(viewMonth)) + incomesIn(incomes, monthKey(viewMonth)),
   );
   const segments: DonutSegment[] = SEGMENTS.map(({ color, label }) => {
-    const items = summary.occurrences
-      .filter((o) => getExpenseDisplayColor(o.expense) === color)
-      .map((o) => ({ id: o.expense.id, name: o.expense.name, icon: displayIcon(o.expense, categoryEmoji), amount: o.amount }))
+    // Debts of the same person: one line, their total.
+    const items = byPerson(
+      summary.occurrences.filter((o) => getExpenseDisplayColor(o.expense) === color),
+      (o) => (o.expense.type === "credit" ? `credit:${personOf(o.expense)}` : `id:${o.expense.id}`),
+    )
+      .map((g) => ({
+        id: g[0].expense.id,
+        name: g[0].expense.type === "credit" ? personOf(g[0].expense) : g[0].expense.name,
+        icon: displayIcon(g[0].expense, categoryEmoji),
+        amount: Math.round(g.reduce((s, o) => s + o.amount, 0) * 100) / 100,
+      }))
       .sort((a, b) => b.amount - a.amount);
     return { color, label: t(label), amount: Math.round(items.reduce((s, i) => s + i.amount, 0) * 100) / 100, items };
   });

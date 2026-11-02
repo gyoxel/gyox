@@ -27,7 +27,7 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
       { status: 400 },
     );
   }
-  await rememberPerson(input.name);
+  if (input.person) await rememberPerson(input.person);
   return NextResponse.json(await updateLoan(id, input));
 });
 

@@ -24,7 +24,7 @@ import { explainPayment, PaymentPartList, PaymentPartSheet } from "@/components/
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { displayIcon } from "@/lib/category";
 import { MethodIcon, MethodLabel } from "@/components/method-icon";
-import { personKey } from "@/lib/person-groups";
+import { personKey, personOf } from "@/lib/person-groups";
 
 const SWIPE_THRESHOLD_PX = 40;
 
@@ -170,28 +170,27 @@ export function DueNowList({
           b.at.localeCompare(a.at) ||
           b.expense.createdAt.localeCompare(a.expense.createdAt),
       );
-    // Several debts to the same person this month: one row (their total),
-    // each of them under it — together, where the first of them comes; on
-    // the paid side only once all are paid.
+    // Several debts to the same person on one side (to pay, or paid): one
+    // row (their total), each of them under it — together, where the first
+    // of them comes.
+    const groupKey = (item: (typeof list)[number]) => (item.expense.type === "credit" ? `${personKey(personOf(item.expense))}:${item.paid}` : null);
     const debtsOf = new Map<string, typeof list>();
     for (const item of list) {
-      if (item.expense.type !== "credit") continue;
-      const k = personKey(item.expense.name);
-      debtsOf.set(k, [...(debtsOf.get(k) ?? []), item]);
+      const k = groupKey(item);
+      if (k) debtsOf.set(k, [...(debtsOf.get(k) ?? []), item]);
     }
     const out: ((typeof list)[number] & { group: string | null; section: boolean })[] = [];
     const placed = new Set<string>();
     for (const item of list) {
-      const members = item.expense.type === "credit" ? debtsOf.get(personKey(item.expense.name)) : undefined;
-      if (!members || members.length < 2) {
+      const k = groupKey(item);
+      const members = k ? debtsOf.get(k) : undefined;
+      if (!k || !members || members.length < 2) {
         out.push({ ...item, group: null, section: item.paid });
         continue;
       }
-      const k = personKey(item.expense.name);
       if (placed.has(k)) continue;
       placed.add(k);
-      const allPaid = members.every((m) => m.paid);
-      for (const m of members) out.push({ ...m, group: k, section: allPaid });
+      for (const m of members) out.push({ ...m, group: k, section: item.paid });
     }
     return out;
   }, [expenses, localPayments, viewMonth, currentMonth]);
@@ -387,7 +386,7 @@ export function DueNowList({
             const personRow = firstOfGroup ? (
               <PersonRow
                 key={`p-${group}`}
-                name={localName(expense.name, t)}
+                name={localName(personOf(expense), t)}
                 icon={displayIcon(expense, emojiById)}
                 count={members.length}
                 paidCount={members.filter((m) => m.paid).length}
@@ -452,7 +451,13 @@ export function DueNowList({
                         )}
                       >
                         {/* In a person's group: what it was for (its note), or when. */}
-                        {group != null ? expense.notes?.trim() || t("Dette du {date}", { date: whenLabel(expense.startDate, lang, t) }) : localName(expense.name, t)}
+                        {group != null
+                          ? expense.person
+                            ? localName(expense.name, t)
+                            : expense.notes?.trim() || t("Dette du {date}", { date: whenLabel(expense.startDate, lang, t) })
+                          : expense.person
+                            ? `${expense.person} · ${localName(expense.name, t)}`
+                            : localName(expense.name, t)}
                       </span>
                       {rest && (
                         <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-px text-[10px] font-semibold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">

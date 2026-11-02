@@ -13,3 +13,6 @@ export function byPerson<T>(items: T[], nameOf: (item: T) => string): T[][] {
   }
   return [...groups.values()];
 }
+
+/** Whose a debt or a loan is: its person, else (older ones) its name. */
+export const personOf = (item: { name: string; person?: string | null }) => item.person?.trim() || item.name;

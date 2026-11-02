@@ -9,6 +9,7 @@ import { monthLabel } from "@/lib/i18n/dates";
 import { getLang } from "@/lib/i18n/server";
 
 import { loanState } from "@/lib/loans";
+import { personOf } from "@/lib/person-groups";
 import { getDaretState } from "@/lib/daret";
 import { getWallet } from "@/lib/wallet-data";
 import { HomeHeader } from "@/components/home-header";
@@ -41,12 +42,13 @@ export default async function HomePage() {
   const dueRepayments = loans.flatMap((loan) =>
     loanState(loan, currentMonth).due.map((s) => ({
       loanId: loan.id,
-      name: loan.name,
+      name: personOf(loan),
       slot: s.slot,
       expected: s.amount,
       received: s.received,
       monthLabel: monthLabel(s.month, lang),
-      note: loan.note?.trim() || null,
+      // Among the same person's loans: its own name, else its note.
+      note: (loan.person ? loan.name : loan.note)?.trim() || null,
       date: loan.date,
     })),
   );

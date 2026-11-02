@@ -15,12 +15,11 @@ import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput }
 import { errorMessage, keepAboveKeyboard } from "@/components/expense-editor";
 import { DeleteButton } from "@/components/delete-button";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
-import { PersonSuggestions } from "@/components/person-suggestions";
+import { PersonPicker } from "@/components/person-picker";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 
 // « once »: all of it back in one month (the one picked below).
 type Mode = "monthly" | "months" | "once";
@@ -46,7 +45,10 @@ export function LoanEditor({ loan, people = [] }: { loan?: Loan; /** Personnes, 
   const [monthly, setMonthly] = useState(toDecimalInput(loan?.monthly ?? null));
   const [months, setMonths] = useState(loan ? String(loan.months) : "");
   const [start, setStart] = useState(loan ? parseMonthKey(loan.startMonth) : todayMonth());
-  const [note, setNote] = useState(loan?.note ?? "");
+  // Kept as it was (no field for it anymore).
+  const note = loan?.note ?? "";
+  // Whom it was lent to (Personnes).
+  const [person, setPerson] = useState<string | null>(loan?.person ?? null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const money = (n: number) => formatMoney(n);
@@ -79,7 +81,7 @@ export function LoanEditor({ loan, people = [] }: { loan?: Loan; /** Personnes, 
     e.preventDefault();
     setError(null);
     if (!(amountValue > 0)) return setError(t("Indique le montant prêté."));
-    if (!name.trim()) return setError(t("Indique à qui tu as prêté."));
+    if (!name.trim()) return setError(t("Indique un nom."));
     if (!(toRepay > 0)) return setError(t("Le montant déjà rendu doit être inférieur au montant prêté."));
     if (!(monthlyValue > 0)) return setError(t("Indique le montant par mois ou le nombre de mois."));
     if (monthlyValue > toRepay) return setError(t("Le montant par mois ne peut pas dépasser ce qu'il reste à rendre."));
@@ -92,6 +94,7 @@ export function LoanEditor({ loan, people = [] }: { loan?: Loan; /** Personnes, 
       monthly: monthlyValue,
       startMonth: monthKey(start),
       note: note.trim() || null,
+      person,
     };
     startTransition(async () => {
       const res = await mutate({
@@ -129,8 +132,12 @@ export function LoanEditor({ loan, people = [] }: { loan?: Loan; /** Personnes, 
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="name">{t("Nom")}</Label>
-        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("À qui : Karim, Sara, Youssef…")} maxLength={60} />
-        <PersonSuggestions people={people} value={name} onPick={setName} />
+        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("Ex : Téléphone, loyer, voyage…")} maxLength={60} />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label>{t("À qui ?")}</Label>
+        <PersonPicker people={people} value={person} onChange={setPerson} label={t("À qui ?")} />
       </div>
 
       {priorOpen ? (
@@ -312,11 +319,6 @@ export function LoanEditor({ loan, people = [] }: { loan?: Loan; /** Personnes, 
             </button>
           </div>
         </div>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="note">{t("Note (optionnel)")}</Label>
-        <Textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
       </div>
 
       {error && <p className="text-sm text-rose-600">{error}</p>}

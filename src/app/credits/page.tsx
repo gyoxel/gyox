@@ -10,7 +10,7 @@ import { whenLabel } from "@/lib/i18n/dates";
 import { DateDivider, dividersOf, lastDoneFirst } from "@/components/date-divider";
 import { todayMonth } from "@/lib/date";
 import { getI18n } from "@/lib/i18n/server";
-import { byPerson } from "@/lib/person-groups";
+import { byPerson, personOf } from "@/lib/person-groups";
 import { localName } from "@/lib/i18n";
 import { formatMoney } from "@/lib/utils";
 
@@ -42,7 +42,7 @@ export default async function CreditsPage() {
     .sort((a, b) => Number(a.done) - Number(b.done));
   // Several debts to the same person: together (their total, each under
   // it), where the first of them comes; finished once all are.
-  const groups = byPerson(credits, (c) => c.e.name)
+  const groups = byPerson(credits, (c) => personOf(c.e))
     .map((members) => ({ members, done: members.every((m) => m.done), at: members.map((m) => m.at).reduce((a, b) => (b > a ? b : a), "") }))
     .sort((a, b) => Number(a.done) - Number(b.done));
   const dividers = dividersOf(
@@ -83,12 +83,12 @@ export default async function CreditsPage() {
             <div key={members[0].e.id} className="flex flex-col gap-1.5">
               {dividers[i] && <DateDivider as="div" label={dividers[i]} className="px-2 pt-0" />}
               {members.length === 1 ? (
-                card(members[0].e)
+                card(members[0].e, members[0].e.person ? `${members[0].e.person} · ${localName(members[0].e.name, t)}` : undefined)
               ) : (
                 <section className="flex flex-col gap-2 rounded-3xl border border-blue-200 bg-blue-50/50 p-2 dark:border-blue-900/60 dark:bg-blue-950/20">
                   <div className="flex items-center justify-between gap-2 px-2 pt-1">
                     <span className="min-w-0">
-                      <span className="block truncate text-[15px] font-bold text-slate-900 dark:text-white">{localName(members[0].e.name, t)}</span>
+                      <span className="block truncate text-[15px] font-bold text-slate-900 dark:text-white">{localName(personOf(members[0].e), t)}</span>
                       <span className="block text-[11px] text-slate-500 dark:text-slate-400">
                         {t("{n} dettes", { n: members.length })} · {money(members.filter((m) => !m.done).reduce((s, m) => s + m.e.amount, 0))}
                         {t("/mois")}
@@ -101,7 +101,9 @@ export default async function CreditsPage() {
                       <span className="block text-[10px] uppercase tracking-wide text-slate-400">{t("restant en tout")}</span>
                     </span>
                   </div>
-                  {members.map((m) => card(m.e, m.e.notes?.trim() || t("Dette du {date}", { date: whenLabel(m.e.startDate, lang, t) })))}
+                  {members.map((m) =>
+                    card(m.e, m.e.person ? localName(m.e.name, t) : m.e.notes?.trim() || t("Dette du {date}", { date: whenLabel(m.e.startDate, lang, t) })),
+                  )}
                 </section>
               )}
             </div>

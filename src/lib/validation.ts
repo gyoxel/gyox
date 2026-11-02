@@ -26,6 +26,12 @@ export const baseExpenseSchema = z.object({
     .nullable()
     .optional()
     .transform((v) => (v && v.trim() !== "" ? v : null)),
+  person: z
+    .string()
+    .max(60)
+    .nullable()
+    .optional()
+    .transform((v) => (v && v.trim() !== "" ? v.trim() : null)),
   creditInitialAmount: z.coerce
     .number()
     .nonnegative("La dette restante ne peut pas être négative.")

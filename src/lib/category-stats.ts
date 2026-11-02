@@ -4,7 +4,7 @@
 // (Épargne, Darets, Dettes, Argent prêté) rather than lost in "Sans
 // catégorie". Pure (no DB access).
 import { addMonths, dayOf, monthKey, type MonthId } from "./date";
-import { personKey } from "./person-groups";
+import { personKey, personOf } from "./person-groups";
 import { displayIcon } from "./category";
 import { categoryName, msg, type T } from "./i18n";
 import type { Category, DaretWithExpense, Expense, Goal, Loan, Payment, SavingsMove } from "./types";
@@ -83,7 +83,17 @@ export function categoryBreakdown(input: CategoryStatsInput, month: MonthId): Ca
   // Whose a debt or a loan is: the debt's name, the loan's (its expense is
   // "Argent prêté · …").
   const loanOf = new Map(input.loans.filter((l) => l.expenseId).map((l) => [l.expenseId!, l]));
-  const personOf = (e: Expense) => loanOf.get(e.id)?.name ?? e.name;
+  const whose = (e: Expense) => {
+    const loan = loanOf.get(e.id);
+    return loan ? personOf(loan) : personOf(e);
+  };
+  /** A debt / loan among its person's: its own name when it has a person,
+   *  else its note. */
+  const partNote = (e: Expense) => {
+    const loan = loanOf.get(e.id);
+    if (loan) return (loan.person ? loan.name : loan.note)?.trim() || null;
+    return (e.person ? e.name : e.notes)?.trim() || null;
+  };
   const totals = (m: MonthId) => {
     const key = monthKey(m);
     // Paid for the month (a debt's installment: paid during it). Nothing
@@ -106,10 +116,10 @@ export function categoryBreakdown(input: CategoryStatsInput, month: MonthId): Ca
       const loan = loanOf.get(id);
       slot.items.push({
         id,
-        name: group === "debts" || group === "loans" ? personOf(expense) : expense.name,
+        name: group === "debts" || group === "loans" ? whose(expense) : expense.name,
         icon: displayIcon(expense, emojiById),
         amount,
-        parts: [{ id, note: (loan ? loan.note : expense.notes)?.trim() || null, date: loan?.date ?? expense.startDate, amount }],
+        parts: [{ id, note: partNote(expense), date: loan?.date ?? expense.startDate, amount }],
       });
       out.set(group, slot);
     }
@@ -129,7 +139,9 @@ export function categoryBreakdown(input: CategoryStatsInput, month: MonthId): Ca
         } else merged.set(k, { ...item, parts: [...item.parts!] });
       }
       slot.items = [...merged.values()].map((item) =>
-        item.parts!.length > 1 ? { ...item, parts: item.parts!.sort((a, b) => b.date.localeCompare(a.date)) } : { ...item, parts: undefined },
+        item.parts!.length > 1
+          ? { ...item, parts: item.parts!.sort((a, b) => b.date.localeCompare(a.date)) }
+          : { ...item, name: item.parts![0].note ? `${item.name} · ${item.parts![0].note}` : item.name, parts: undefined },
       );
     }
     return out;

@@ -45,6 +45,9 @@ model Expense {
   /// When its amount was last changed (not its name, account…): an edit
   /// dates it only then. Null: unchanged since added.
   amountChangedAt     String?
+  /// A debt's person (whom it was borrowed from): debts of the same person
+  /// show together. Null: the name tells (older debts).
+  person              String?
 
   category       Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   payments       Payment[]
@@ -451,6 +454,9 @@ model Loan {
   /// expects nothing anymore, and what's left stays spent. Null: still
   /// expected.
   writtenOffAt String?
+  /// Whom it was lent to: loans of the same person show together. Null:
+  /// the name tells (older loans).
+  person       String?
 
   expense    Expense?        @relation(fields: [expenseId], references: [id], onDelete: Cascade)
   repayments LoanRepayment[]

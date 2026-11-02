@@ -37,11 +37,13 @@ export function mapLoan(row: {
   expenseId: string | null;
   createdAt: string;
   writtenOffAt?: string | null;
+  person?: string | null;
   repayments: RepaymentRow[];
 }): Loan {
   return {
     ...row,
     writtenOffAt: row.writtenOffAt ?? null,
+    person: row.person ?? null,
     method: row.method === "cash" || row.method === "card" ? row.method : null,
     repayments: row.repayments.map(mapRepayment).sort((a, b) => a.slot - b.slot),
   };
@@ -58,6 +60,8 @@ export interface LoanInput {
   months: number;
   startMonth: string;
   note: string | null;
+  /** Whom it was lent to (null: the name tells). */
+  person: string | null;
 }
 
 const expenseName = (name: string) => `Argent prêté · ${name}`;

@@ -37,7 +37,7 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
   }
 
   const updated = await updateExpense(id, fullParsed.data);
-  if (updated?.type === "credit") await rememberPerson(updated.name);
+  if (updated?.type === "credit" && updated.person) await rememberPerson(updated.person);
   // A new amount: the month the form shows follows it (a one-time expense's
   // own month, else this one) — paid in full, it stays paid in full.
   if (updated && existing.type !== "credit" && Math.abs(updated.amount - existing.amount) > 0.005 && !(await amountLocked(id))) {

@@ -4,7 +4,7 @@ import { monthLabel, monthShortName } from "@/lib/i18n/dates";
 import { getI18n } from "@/lib/i18n/server";
 import { getDaretState } from "@/lib/daret";
 import { findPayment, getCreditDisplayProgress, getCreditRealState, projectCreditSchedule } from "@/lib/engine";
-import { personKey } from "@/lib/person-groups";
+import { personKey, personOf } from "@/lib/person-groups";
 import { cn, formatMoney } from "@/lib/utils";
 import { displayIcon } from "@/lib/category";
 import { CreditStairs, type StairMonth } from "@/components/credit-stairs";
@@ -125,7 +125,7 @@ export async function TimelineSection({
         .filter((p) => p.months.has(key))
         .map((p) => ({
           id: p.expense.id,
-          name: p.expense.name,
+          name: personOf(p.expense),
           icon: p.icon,
           amount: p.months.get(key)!,
           note:
@@ -153,7 +153,7 @@ export async function TimelineSection({
         key: p.last,
         order: 2,
         icon: p.icon,
-        title: p.expense.name,
+        title: personOf(p.expense),
         detail: done ? t("Remboursé ✓") : t("Dernière mensualité"),
         amount: money(p.months.get(p.last)!),
         creditEnd: true,

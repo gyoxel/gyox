@@ -58,11 +58,12 @@ export function PeopleManager({ people }: { people: Row[] }) {
 
   // ---- Hold a row, drag it up or down, let go: the others slide out of its way. ----
   const [draggingId, setDraggingId] = useState<string | null>(null);
-  const press = useRef<{ id: string; startY: number; lastY: number; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const press = useRef<{ id: string; startY: number; lastY: number; grabY: number; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   const dragging = useRef<string | null>(null);
   const justDragged = useRef(false);
   const rowRefs = useRef(new Map<string, HTMLLIElement>());
-  const prevRects = useRef<Map<string, DOMRect> | null>(null);
+  const prevRects = useRef<Map<string, number> | null>(null);
   const idsRef = useRef<string[]>([]);
   const rowIds = rows.map((p) => p.id).join();
   useLayoutEffect(() => {
@@ -78,6 +79,16 @@ export function PeopleManager({ people }: { people: Row[] }) {
     return () => document.removeEventListener("touchmove", block);
   }, []);
 
+  /** The lifted row stays under the finger, wherever its slot now is. */
+  function follow() {
+    const p = press.current;
+    const id = dragging.current;
+    const el = id ? rowRefs.current.get(id) : null;
+    const list = listRef.current;
+    if (!p || !el || !list) return;
+    el.style.transform = `translateY(${p.lastY - p.grabY - (list.getBoundingClientRect().top + el.offsetTop)}px) scale(1.02)`;
+  }
+
   // The rows that moved slide from their old place to the new one.
   useLayoutEffect(() => {
     const before = prevRects.current;
@@ -85,24 +96,27 @@ export function PeopleManager({ people }: { people: Row[] }) {
     if (!before) return;
     for (const [id, el] of rowRefs.current) {
       const old = before.get(id);
-      if (!old || id === dragging.current) continue;
-      const dy = old.top - el.getBoundingClientRect().top;
+      if (old == null || id === dragging.current) continue;
+      const dy = old - el.offsetTop;
       if (Math.abs(dy) >= 1) el.animate([{ translate: `0 ${dy}px` }, { translate: "0 0" }], { duration: 200, easing: "cubic-bezier(0.2, 0, 0, 1)" });
     }
+    follow();
   }, [order]);
+
 
   function onPointerDown(e: React.PointerEvent<HTMLLIElement>, id: string) {
     if ((e.pointerType === "mouse" && e.button !== 0) || editing || pending) return;
     if ((e.target as Element).closest("button:not([data-row]), input")) return;
     justDragged.current = false;
     if (e.pointerType === "mouse") e.currentTarget.setPointerCapture(e.pointerId);
+    const grabY = e.clientY - e.currentTarget.getBoundingClientRect().top;
     const timer = setTimeout(() => {
       if (!press.current) return;
       dragging.current = id;
       setDraggingId(id);
       navigator.vibrate?.(15);
     }, 320);
-    press.current = { id, startY: e.clientY, lastY: e.clientY, timer };
+    press.current = { id, startY: e.clientY, lastY: e.clientY, grabY, timer };
   }
 
   function onPointerMove(e: React.PointerEvent) {
@@ -115,20 +129,24 @@ export function PeopleManager({ people }: { people: Row[] }) {
       return;
     }
     const id = dragging.current;
-    const el = rowRefs.current.get(id);
-    if (el) el.style.translate = "0 0";
-    // The row under the finger (its middle half), by the rows' own places.
+    follow();
+    // The row whose slot (its middle half) is under the finger — by the
+    // rows' layout places, not where they're drawn: one still sliding out
+    // of the way mustn't be swapped straight back.
+    const list = listRef.current;
+    if (!list) return;
+    const top = list.getBoundingClientRect().top;
     let over: string | null = null;
     for (const [rid, r] of rowRefs.current) {
-      const box = r.getBoundingClientRect();
-      if (e.clientY > box.top + box.height * 0.25 && e.clientY < box.bottom - box.height * 0.25) over = rid;
+      const y = top + r.offsetTop;
+      if (e.clientY > y + r.offsetHeight * 0.25 && e.clientY < y + r.offsetHeight * 0.75) over = rid;
     }
     if (!over || over === id) return;
     const ids = [...idsRef.current];
     const from = ids.indexOf(id);
     const to = ids.indexOf(over);
     if (from < 0 || to < 0) return;
-    prevRects.current = new Map([...rowRefs.current].map(([rid, r]) => [rid, r.getBoundingClientRect()]));
+    prevRects.current = new Map([...rowRefs.current].map(([rid, r]) => [rid, r.offsetTop]));
     ids.splice(from, 1);
     ids.splice(to, 0, id);
     idsRef.current = ids;
@@ -143,15 +161,25 @@ export function PeopleManager({ people }: { people: Row[] }) {
     justDragged.current = true;
     dragging.current = null;
     setDraggingId(null);
+    // Dropped: it glides into its slot.
+    const el = rowRefs.current.get(id);
+    if (el) {
+      const from = el.style.transform;
+      el.style.transform = "";
+      if (from) el.animate([{ transform: from }, { transform: "none" }], { duration: 160, easing: "cubic-bezier(0.2, 0, 0, 1)" });
+    }
     const ids = idsRef.current;
     if (ids.join() !== people.map((p) => p.id).join()) run({ method: "PUT", path: "/api/people/order", body: { ids } });
   }
 
   function cancelPress() {
     if (press.current) clearTimeout(press.current.timer);
+    const id = dragging.current;
     press.current = null;
     dragging.current = null;
     setDraggingId(null);
+    const el = id ? rowRefs.current.get(id) : null;
+    if (el) el.style.transform = "";
   }
 
   function saveName() {
@@ -184,7 +212,7 @@ export function PeopleManager({ people }: { people: Row[] }) {
           {t("Personne pour le moment : ajoute quelqu'un, ou il sera ajouté avec ta prochaine dette ou ton prochain prêt.")}
         </p>
       ) : (
-        <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <ul ref={listRef} className="relative rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           {rows.map((p) => (
             <li
               key={p.id}
@@ -199,7 +227,8 @@ export function PeopleManager({ people }: { people: Row[] }) {
               onContextMenu={(e) => e.preventDefault()}
               className={cn(
                 "relative flex select-none items-center gap-1 border-t border-slate-100 bg-white py-1.5 pl-2 pr-1.5 first:border-t-0 [-webkit-touch-callout:none] dark:border-slate-800 dark:bg-slate-900",
-                draggingId === p.id && "z-10 scale-[1.02] rounded-2xl shadow-lg ring-2 ring-[var(--gx-brand-400)]",
+                "first:rounded-t-3xl last:rounded-b-3xl",
+                draggingId === p.id && "z-10 rounded-2xl shadow-lg ring-2 ring-[var(--gx-brand-400)]",
                 draggingId && draggingId !== p.id && "opacity-80",
               )}
             >
@@ -250,7 +279,7 @@ export function PeopleManager({ people }: { people: Row[] }) {
       )}
       {rows.length > 1 && <p className="-mt-2 px-1 text-xs text-slate-500 dark:text-slate-400">{t("Maintiens un nom et glisse-le pour changer l'ordre.")}</p>}
       <p className="px-1 text-xs text-slate-500 dark:text-slate-400">
-        {t("Ces noms sont proposés sous le nom d'une dette ou d'un prêt. Les renommer ou les retirer ne change aucune dette ni aucun prêt.")}
+        {t("Ces personnes sont proposées dans « De qui ? » d'une dette et « À qui ? » d'un prêt. Les renommer ou les retirer ne change aucune dette ni aucun prêt.")}
       </p>
 
       <ConfirmDialog
