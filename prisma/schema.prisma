@@ -45,6 +45,9 @@ model Expense {
   /// When its amount was last changed (not its name, account…): an edit
   /// dates it only then. Null: unchanged since added.
   amountChangedAt     String?
+  /// A debt's person (whom it was borrowed from): debts of the same person
+  /// show together. Null: the name tells (older debts).
+  person              String?
 
   category       Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   payments       Payment[]
@@ -451,6 +454,9 @@ model Loan {
   /// expects nothing anymore, and what's left stays spent. Null: still
   /// expected.
   writtenOffAt String?
+  /// Whom it was lent to: loans of the same person show together. Null:
+  /// the name tells (older loans).
+  person       String?
 
   expense    Expense?        @relation(fields: [expenseId], references: [id], onDelete: Cascade)
   repayments LoanRepayment[]
@@ -491,6 +497,25 @@ model LoanRepayment {
   @@map("loan_repayments")
 }
 
+/// Someone money is lent to or borrowed from: offered under the name of a
+/// debt or a loan. Only a list of names — renaming or removing one changes
+/// no debt or loan.
+model Person {
+  id        String @default(uuid())
+  name      String
+  /// Display order, ascending.
+  position  Int
+  createdAt String
+
+  /// Whose it is (see lib/user-scope.ts: every query is scoped to the
+  /// signed-in user).
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, id])
+  @@map("people")
+}
+
 /// Someone signed in with Google. Everything else belongs to one user.
 model User {
   id          String  @id @default(uuid())
@@ -522,6 +547,7 @@ model User {
   savingsMoves     SavingsMove[]
   loans            Loan[]
   loanRepayments   LoanRepayment[]
+  people           Person[]
 
   @@map("users")
 }

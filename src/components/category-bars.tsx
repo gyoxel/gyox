@@ -7,7 +7,8 @@ import { budgetLevel, budgetPercent } from "@/lib/category-budgets";
 import { LEVEL_TEXT } from "@/components/budget-bar";
 import { sliceLabel } from "@/lib/category-stats";
 import { localName } from "@/lib/i18n";
-import { useT } from "@/lib/i18n/client";
+import { useI18n, useT } from "@/lib/i18n/client";
+import { whenLabel } from "@/lib/i18n/dates";
 import { cn, formatMoney } from "@/lib/utils";
 
 /** Up or down against the month before: more spent reads red, less green
@@ -55,7 +56,7 @@ export function CategoryBars({
   /** Category id → its budget. */
   budgets?: Record<string, number>;
 }) {
-  const t = useT();
+  const { lang, t } = useI18n();
   const [open, setOpen] = useState<string | null>(null);
   const money = (n: number) => formatMoney(n, currency);
   const total = slices.reduce((s, x) => s + x.amount, 0);
@@ -107,10 +108,23 @@ export function CategoryBars({
             {expanded && (
               <ul className="flex flex-col gap-1.5 px-3 pb-3 pt-0.5">
                 {s.items.map((item) => (
-                  <li key={item.id} className="flex items-center gap-2 text-[13px]">
-                    <span className="leading-none">{item.icon}</span>
-                    <span className="min-w-0 flex-1 truncate text-slate-600 dark:text-slate-300">{localName(item.name, t)}</span>
-                    <span className="tabular-nums text-slate-700 dark:text-slate-200">{money(item.amount)}</span>
+                  <li key={item.id} className="flex flex-col gap-1">
+                    <span className="flex items-center gap-2 text-[13px]">
+                      <span className="leading-none">{item.icon}</span>
+                      <span className="min-w-0 flex-1 truncate text-slate-600 dark:text-slate-300">{localName(item.name, t)}</span>
+                      <span className="tabular-nums text-slate-700 dark:text-slate-200">{money(item.amount)}</span>
+                    </span>
+                    {/* The same person's debts / loans, each with what it was for or its day. */}
+                    {item.parts && (
+                      <ul className="ml-6 flex flex-col gap-0.5 border-l border-slate-200 pl-2.5 dark:border-slate-700">
+                        {item.parts.map((part) => (
+                          <li key={part.id} className="flex items-center gap-2 text-[12px] text-slate-500 dark:text-slate-400">
+                            <span className="min-w-0 flex-1 truncate">• {part.note ?? whenLabel(part.date, lang, t)}</span>
+                            <span className="tabular-nums">{money(part.amount)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </li>
                 ))}
               </ul>

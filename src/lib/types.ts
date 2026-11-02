@@ -41,6 +41,8 @@ export interface Expense {
   /** When its amount was last changed: an edit dates it only then (not a
    *  new name, account or category). Null: unchanged since added. */
   amountChangedAt?: string | null;
+  /** A debt's person (whom it was borrowed from); null: its name tells. */
+  person?: string | null;
 }
 
 export interface Category {
@@ -328,5 +330,7 @@ export interface Loan {
   createdAt: string;
   /** Day it was given up on: what's left won't come back (stays spent). */
   writtenOffAt?: string | null;
+  /** Whom it was lent to; null: its name tells. */
+  person?: string | null;
   repayments: LoanRepayment[];
 }

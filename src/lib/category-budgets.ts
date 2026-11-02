@@ -1,9 +1,10 @@
 // Budgets: the most to spend in a category a month (e.g. Alimentation,
-// 2 000 DH). Nothing is taken from the Solde: the month's expenses in the
-// category add up against it, as Dépenses shows them — green, orange from
-// 80%, red once gone past. Pure (no DB access).
+// 2 000 DH). Nothing is taken from the Solde: what was paid for the month's
+// expenses in the category adds up against it (an expense not ticked yet
+// takes nothing) — green, orange from 80%, red once gone past. Pure (no DB
+// access).
 import { monthKey, type MonthId } from "./date";
-import { findPayment, getMonthPaymentStatus, getMonthSummary } from "./engine";
+import { findPayment, getMonthSummary } from "./engine";
 import type { Category, Expense, Payment } from "./types";
 
 /** From this share of its budget on, a category is close to it. */
@@ -19,22 +20,21 @@ export function budgetLevel(spent: number, budget: number): BudgetLevel {
 /** Spent of the budget, in %, rounded (past it: over 100). */
 export const budgetPercent = (spent: number, budget: number) => (budget > 0 ? Math.round((spent / budget) * 100) : 0);
 
-/** What an expense costs in `month`, as Dépenses shows it: paid, what it
- *  really cost; else the month's amount (part of it maybe paid). */
-export function monthCost(expense: Expense, amount: number, month: MonthId, payments: Payment[], current: MonthId): number {
-  const paid = findPayment(payments, expense.id, monthKey(month))?.amountPaid ?? 0;
-  return paid > 0 && getMonthPaymentStatus(expense, month, payments, current) === "paid" ? paid : amount;
+/** What was paid for an expense in `month` (in part, or nothing yet). */
+export function monthPaid(expense: Expense, month: MonthId, payments: Payment[]): number {
+  return Math.max(0, findPayment(payments, expense.id, monthKey(month))?.amountPaid ?? 0);
 }
 
 const round = (n: number) => Math.round(n * 100) / 100;
 
-/** Each category's spending in `month`, credits aside (as in Dépenses). */
-export function spentByCategory(expenses: Expense[], payments: Payment[], month: MonthId, current: MonthId): Map<string, number> {
+/** What each category has paid in `month`, credits aside. */
+export function spentByCategory(expenses: Expense[], payments: Payment[], month: MonthId): Map<string, number> {
   const out = new Map<string, number>();
   for (const o of getMonthSummary(expenses, month, 0).occurrences) {
     const e = o.expense;
     if (e.type === "credit" || !e.categoryId) continue;
-    out.set(e.categoryId, round((out.get(e.categoryId) ?? 0) + monthCost(e, o.amount, month, payments, current)));
+    const paid = monthPaid(e, month, payments);
+    if (paid > 0) out.set(e.categoryId, round((out.get(e.categoryId) ?? 0) + paid));
   }
   return out;
 }
@@ -53,9 +53,8 @@ export function categoryBudgets(
   expenses: Expense[],
   payments: Payment[],
   month: MonthId,
-  current: MonthId,
 ): CategoryBudget[] {
-  const spent = spentByCategory(expenses, payments, month, current);
+  const spent = spentByCategory(expenses, payments, month);
   return categories
     .filter((c) => (c.budget ?? 0) > 0)
     .map((c) => {

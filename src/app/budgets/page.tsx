@@ -32,8 +32,8 @@ export default async function BudgetsPage({ searchParams }: { searchParams: Prom
   const month = monthFromSearchParams(sp.month, current);
   const key = monthKey(month);
   const money = (n: number) => formatMoney(n, settings.currency);
-  const rows = categoryBudgets(categories, expenses, payments, month, current);
-  const spent = spentByCategory(expenses, payments, month, current);
+  const rows = categoryBudgets(categories, expenses, payments, month);
+  const spent = spentByCategory(expenses, payments, month);
   const without = categories.filter((c) => !((c.budget ?? 0) > 0) && (spent.get(c.id) ?? 0) > 0);
   const total = rows.reduce((s, r) => s + r.budget, 0);
   const used = rows.reduce((s, r) => s + r.spent, 0);

@@ -183,7 +183,7 @@ function onLinkClick(router: Router, e: MouseEvent) {
  *  reopened on it, the history lost): the page it's opened from — the pages
  *  of Paramètres back to Paramètres, Admin to Profil, the Menu's own pages
  *  to the Menu. Else Accueil (the bar's tabs too). */
-const MENU_PAGES = ["/incomes", "/solde", "/epargne", "/budgets", "/daret", "/prets", "/goals", "/calendar", "/stats", "/bilan"];
+const MENU_PAGES = ["/incomes", "/solde", "/epargne", "/budgets", "/daret", "/prets", "/goals", "/calendar", "/stats", "/bilan", "/personnes"];
 const PARENTS: Record<string, string> = {
   ...Object.fromEntries(MENU_PAGES.map((p) => [p, "/menu"])),
   "/profil": "/settings",

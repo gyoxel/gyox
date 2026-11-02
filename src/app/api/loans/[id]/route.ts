@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { rememberPerson } from "@/lib/people-repo";
 import { deleteLoan, getLoan, updateLoan } from "@/lib/loans-repo";
 import { loanInputSchema, toLoanInput } from "@/lib/loan-input";
 import { withBalanceGuard } from "@/lib/balance-guard";
@@ -26,6 +27,7 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
       { status: 400 },
     );
   }
+  if (input.person) await rememberPerson(input.person);
   return NextResponse.json(await updateLoan(id, input));
 });
 

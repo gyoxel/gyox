@@ -4,6 +4,7 @@ import { monthLabel, monthShortName } from "@/lib/i18n/dates";
 import { getI18n } from "@/lib/i18n/server";
 import { getDaretState } from "@/lib/daret";
 import { findPayment, getCreditDisplayProgress, getCreditRealState, projectCreditSchedule } from "@/lib/engine";
+import { personKey, personOf } from "@/lib/person-groups";
 import { cn, formatMoney } from "@/lib/utils";
 import { displayIcon } from "@/lib/category";
 import { CreditStairs, type StairMonth } from "@/components/credit-stairs";
@@ -41,6 +42,10 @@ interface Milestone {
   income?: boolean;
   /** A credit's last installment: what's left to pay after it follows. */
   creditEnd?: boolean;
+  /** The credit's installment, to add up the same person's. */
+  value?: number;
+  /** Debts of the same person ending that month. */
+  count?: number;
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -58,12 +63,16 @@ export async function TimelineSection({
   payments,
   currency,
   categoryEmoji,
+  add,
 }: {
   expenses: Expense[];
   darets: DaretWithExpense[];
   payments: Payment[];
   currency: string;
   categoryEmoji: ReadonlyMap<string, string>;
+  /** « Ajouter une dette », between the summary and « Chaque mois » (shown
+   *  alone when there's nothing to show). */
+  add?: React.ReactNode;
 }) {
   const { lang, t } = await getI18n();
   const current = todayMonth();
@@ -97,7 +106,7 @@ export async function TimelineSection({
     .filter((p) => p.months.size > 0);
 
   const daretStates = darets.filter((d) => d.expense.active).map((daret) => ({ daret, state: getDaretState(daret, payments, current) }));
-  if (plans.length === 0 && !daretStates.some(({ state }) => compareMonths(state.end, current) >= 0)) return null;
+  if (plans.length === 0 && !daretStates.some(({ state }) => compareMonths(state.end, current) >= 0)) return add ?? null;
 
   // Month by month, from this one to the last installment.
   const totals = new Map<string, number>();
@@ -120,7 +129,7 @@ export async function TimelineSection({
         .filter((p) => p.months.has(key))
         .map((p) => ({
           id: p.expense.id,
-          name: p.expense.name,
+          name: personOf(p.expense),
           icon: p.icon,
           amount: p.months.get(key)!,
           note:
@@ -148,10 +157,11 @@ export async function TimelineSection({
         key: p.last,
         order: 2,
         icon: p.icon,
-        title: p.expense.name,
+        title: personOf(p.expense),
         detail: done ? t("Remboursé ✓") : t("Dernière mensualité"),
         amount: money(p.months.get(p.last)!),
         creditEnd: true,
+        value: p.months.get(p.last)!,
       });
     }
   }
@@ -182,7 +192,14 @@ export async function TimelineSection({
   const groups: { key: string; items: Milestone[] }[] = [];
   for (const m of milestones) {
     const group = groups.at(-1);
-    if (group?.key === m.key) group.items.push(m);
+    // Debts of the same person ending the same month: one line, their total.
+    const same = group?.key === m.key && m.creditEnd ? group.items.find((o) => o.creditEnd && personKey(o.title) === personKey(m.title)) : undefined;
+    if (same) {
+      same.value = round2((same.value ?? 0) + (m.value ?? 0));
+      same.amount = money(same.value);
+      same.count = (same.count ?? 1) + 1;
+      same.detail = t("{n} dettes · dernières mensualités", { n: same.count });
+    } else if (group?.key === m.key) group.items.push(m);
     else groups.push({ key: m.key, items: [m] });
   }
 
@@ -195,8 +212,6 @@ export async function TimelineSection({
 
   return (
     <section className="flex flex-col gap-2.5">
-      <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Timeline")}</h2>
-
       {freeAt && (
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-500 to-violet-700 px-5 pb-4 pt-5 text-white">
           <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
@@ -225,6 +240,8 @@ export async function TimelineSection({
           </div>
         </div>
       )}
+
+      {add}
 
       {stairs.length > 0 && (
         <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">

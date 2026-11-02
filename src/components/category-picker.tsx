@@ -170,14 +170,14 @@ export function CategoryPicker({
 /** Approximate rendered width (px) of a chip: padding + border + emoji/icon
  *  + gap, plus ~7.2px per character of text-sm. An estimate (not a DOM
  *  measurement) so server and client split the rows identically. */
-function chipWidth(label: string): number {
+export function chipWidth(label: string): number {
   return 52 + label.length * 7.2;
 }
 
 /** Splits the chips, in order (the order set in Réglages), into a top and a
  *  bottom row of about the same WIDTH — not the same count — so both rows
  *  end close to each other. */
-function splitInTwo<T>(items: T[], widthOf: (item: T) => number): [T[], T[]] {
+export function splitInTwo<T>(items: T[], widthOf: (item: T) => number): [T[], T[]] {
   const GAP = 8;
   const widths = items.map(widthOf);
   const total = widths.reduce((s, w) => s + w, 0) + GAP * Math.max(0, items.length - 1);

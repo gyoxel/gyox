@@ -13,11 +13,11 @@ import { monthlyFor } from "@/lib/plan";
 import { mutate, mutateAll } from "@/lib/use-refresh-data";
 import { errorMessage, keepAboveKeyboard, paymentStatusCall, type PaymentStatusInit } from "@/components/expense-editor";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
+import { PersonPicker } from "@/components/person-picker";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 
 const MAX_MONTHS = 600;
 const MONTH_STEPS = [3, 6, 10, 12, 18, 24, 36];
@@ -43,10 +43,13 @@ function schedule(total: number, monthly: number, startDate: string) {
 export function CreditEditor({
   expense,
   paymentStatus,
+  people = [],
 }: {
   /** Present when editing. */
   expense?: Expense;
   paymentStatus?: PaymentStatusInit | null;
+  /** Personnes, offered under the name. */
+  people?: string[];
 }) {
   const isEdit = expense != null;
   const nav = useNavBack();
@@ -70,7 +73,10 @@ export function CreditEditor({
   const [onceMonth, setOnceMonth] = useState<MonthId>(todayMonth());
   const [alreadyPaid, setAlreadyPaid] = useState(isEdit ? (paymentStatus?.paid ?? false) : false);
   const [method, setMethod] = useState<PaymentMethod>(paymentStatus?.method ?? "cash");
-  const [notes, setNotes] = useState(expense?.notes ?? "");
+  // Kept as it was (no field for it anymore).
+  const notes = expense?.notes ?? "";
+  // Whom it was borrowed from (Personnes).
+  const [person, setPerson] = useState<string | null>(expense?.person ?? null);
   // Repaid before the credit was added here (display only, not in the Solde).
   const [priorPaid, setPriorPaid] = useState(toDecimalInput(expense?.creditPriorPaid || null));
   const [priorOpen, setPriorOpen] = useState((expense?.creditPriorPaid ?? 0) > 0);
@@ -170,6 +176,7 @@ export function CreditEditor({
       name: name.trim(),
       amount: monthlyValue,
       notes: notes.trim() || null,
+      person,
       type: "credit",
       frequency: "monthly",
       color: "blue",
@@ -252,7 +259,12 @@ export function CreditEditor({
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="name">{t("Nom")}</Label>
-        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("Ex : Karim, Sara, Youssef…")} />
+        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("Ex : Diesel, vacances, téléphone…")} />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label>{t("De qui ?")}</Label>
+        <PersonPicker people={people} value={person} onChange={setPerson} label={t("De qui ?")} />
       </div>
 
       {/* Already repaid before it was added here */}
@@ -524,11 +536,6 @@ export function CreditEditor({
           </div>
         </div>
       )}
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="notes">{t("Note (optionnel)")}</Label>
-        <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
-      </div>
 
       {error && <p className="text-sm text-rose-600">{error}</p>}
 

@@ -4,7 +4,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { flushPendingRefresh, mutate, trackMutation } from "@/lib/use-refresh-data";
 import Link from "next/link";
-import { ArrowUUpLeft, CaretLeft, CaretRight, Check, Confetti, PencilSimple, Plus } from "@phosphor-icons/react/ssr";
+import { ArrowUUpLeft, CaretDown, CaretLeft, CaretRight, Check, Confetti, PencilSimple, Plus } from "@phosphor-icons/react/ssr";
 import { addMonths, monthKey as toMonthKey, type MonthId } from "@/lib/date";
 import { monthLabel, monthLabelShort, whenLabel } from "@/lib/i18n/dates";
 import { localName, type T } from "@/lib/i18n";
@@ -24,6 +24,7 @@ import { explainPayment, PaymentPartList, PaymentPartSheet } from "@/components/
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { displayIcon } from "@/lib/category";
 import { MethodIcon, MethodLabel } from "@/components/method-icon";
+import { personKey, personOf } from "@/lib/person-groups";
 
 const SWIPE_THRESHOLD_PX = 40;
 
@@ -160,7 +161,7 @@ export function DueNowList({
     // installment paid ahead, in an earlier month: the day it was paid.
     const doneAt = (item: { expense: Expense; paid: boolean }) =>
       expenseActionAt(item.expense, localPayments, key) || (item.paid ? lastPaidAt(item.expense.id, localPayments, key) : "");
-    return getMonthLedgerItems(expenses, localPayments, viewMonth, currentMonth)
+    const list = getMonthLedgerItems(expenses, localPayments, viewMonth, currentMonth)
       .map((item) => ({ ...item, color: getExpenseDisplayColor(item.expense), at: doneAt(item) }))
       .sort(
         (a, b) =>
@@ -169,7 +170,32 @@ export function DueNowList({
           b.at.localeCompare(a.at) ||
           b.expense.createdAt.localeCompare(a.expense.createdAt),
       );
+    // Several debts to the same person on one side (to pay, or paid): one
+    // row (their total), each of them under it — together, where the first
+    // of them comes.
+    const groupKey = (item: (typeof list)[number]) => (item.expense.type === "credit" ? `${personKey(personOf(item.expense))}:${item.paid}` : null);
+    const debtsOf = new Map<string, typeof list>();
+    for (const item of list) {
+      const k = groupKey(item);
+      if (k) debtsOf.set(k, [...(debtsOf.get(k) ?? []), item]);
+    }
+    const out: ((typeof list)[number] & { group: string | null; section: boolean })[] = [];
+    const placed = new Set<string>();
+    for (const item of list) {
+      const k = groupKey(item);
+      const members = k ? debtsOf.get(k) : undefined;
+      if (!k || !members || members.length < 2) {
+        out.push({ ...item, group: null, section: item.paid });
+        continue;
+      }
+      if (placed.has(k)) continue;
+      placed.add(k);
+      for (const m of members) out.push({ ...m, group: k, section: item.paid });
+    }
+    return out;
   }, [expenses, localPayments, viewMonth, currentMonth]);
+  // The person rows opened (their debts shown).
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
 
   function goMonth(next: MonthId) {
     setViewMonth(next);
@@ -262,7 +288,7 @@ export function DueNowList({
   const progress = left + paidTotal > 0 ? paidTotal / (left + paidTotal) : 0;
   // Unpaid first (all of them), then paid (the last ticked few, unless
   // asked): each group opens with its header.
-  const firstPaid = items.findIndex((i) => i.paid);
+  const firstPaid = items.findIndex((i) => i.section);
   const shownItems = allPaid || firstPaid < 0 ? items : items.slice(0, firstPaid + PAID_SHOWN);
   const morePaid = items.length - shownItems.length;
   // The day something was done, over the line above it: once for rows of
@@ -334,13 +360,13 @@ export function DueNowList({
       ) : (
         <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           {shownItems.map((item, index) => {
-            const { expense, amount, paid, rest, color } = item;
+            const { expense, amount, paid, rest, color, group } = item;
             const key = rowKey(item);
             const isPending = pendingIds.has(expense.id);
             const methods = paid ? paidMethods(expense) : [];
             const month = paid || rest ? monthPaid(expense) : null;
             const header =
-              index === 0 && !paid ? (
+              index === 0 && !item.section ? (
                 <GroupHeader key="h-unpaid" tone="unpaid" label={t("À payer")} count={items.length - paidCount} total={formatMoney(left, currency)} />
               ) : index === firstPaid ? (
                 <GroupHeader
@@ -352,18 +378,54 @@ export function DueNowList({
                 />
               ) : null;
             const tint = paid ? "bg-emerald-50/40 dark:bg-emerald-950/10" : rest ? "bg-amber-50/50 dark:bg-amber-950/10" : "bg-white dark:bg-slate-900";
-            const divider = dividers[index];
+            const firstOfGroup = group != null && shownItems[index - 1]?.group !== group;
+            const open = group != null && openGroups.has(group);
+            const divider = group != null && !firstOfGroup ? null : dividers[index];
+            // A person with several debts: their row, then (opened) each debt.
+            const members = group != null && firstOfGroup ? items.filter((i) => i.group === group) : [];
+            const personRow = firstOfGroup ? (
+              <PersonRow
+                key={`p-${group}`}
+                name={localName(personOf(expense), t)}
+                icon={displayIcon(expense, emojiById)}
+                count={members.length}
+                paidCount={members.filter((m) => m.paid).length}
+                left={members.filter((m) => !m.paid).reduce((s, m) => s + m.amount, 0)}
+                total={members.reduce((s, m) => s + m.amount, 0)}
+                currency={currency}
+                open={open}
+                bordered={!divider}
+                onToggle={() =>
+                  setOpenGroups((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(group!)) next.delete(group!);
+                    else next.add(group!);
+                    return next;
+                  })
+                }
+              />
+            ) : null;
+            if (group != null && !open) {
+              return (
+                <Fragment key={key}>
+                  {header}
+                  {divider && <DateDivider label={divider} className={tint} />}
+                  {personRow}
+                </Fragment>
+              );
+            }
             return (
               <Fragment key={key}>
               {header}
               {divider && <DateDivider label={divider} className={tint} />}
+              {personRow}
               <li
                 key={key}
                 ref={(el) => {
                   if (el) rowRefs.current.set(key, el);
                   else rowRefs.current.delete(key);
                 }}
-                className={cn("flex items-center pr-1.5", !divider && "border-t border-slate-100 dark:border-slate-800", tint)}
+                className={cn("flex items-center pr-1.5", !divider && "border-t border-slate-100 dark:border-slate-800", tint, group != null && "pl-5")}
               >
                 {/* Tapping the row opens the edit page; only the round
                     checkbox on the right toggles "payé". */}
@@ -388,7 +450,14 @@ export function DueNowList({
                           paid && "text-slate-400 dark:text-slate-500",
                         )}
                       >
-                        {localName(expense.name, t)}
+                        {/* In a person's group: what it was for (its note), or when. */}
+                        {group != null
+                          ? expense.person
+                            ? localName(expense.name, t)
+                            : expense.notes?.trim() || t("Dette du {date}", { date: whenLabel(expense.startDate, lang, t) })
+                          : expense.person
+                            ? `${expense.person} · ${localName(expense.name, t)}`
+                            : localName(expense.name, t)}
                       </span>
                       {rest && (
                         <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-px text-[10px] font-semibold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
@@ -540,6 +609,55 @@ export function DueNowList({
         {t("Ajouter une dépense")}
       </Link>
     </div>
+  );
+}
+
+/** Several debts to the same person this month: their total (what's left of
+ *  it), how many are paid; tap to show / hide each of them. */
+function PersonRow({
+  name,
+  icon,
+  count,
+  paidCount,
+  left,
+  total,
+  currency,
+  open,
+  bordered,
+  onToggle,
+}: {
+  name: string;
+  icon: string;
+  count: number;
+  paidCount: number;
+  left: number;
+  total: number;
+  currency: string;
+  open: boolean;
+  bordered: boolean;
+  onToggle: () => void;
+}) {
+  const { t } = useI18n();
+  const allPaid = paidCount === count;
+  return (
+    <li className={cn(bordered && "border-t border-slate-100 dark:border-slate-800", allPaid ? "bg-emerald-50/40 dark:bg-emerald-950/10" : "bg-white dark:bg-slate-900")}>
+      <button type="button" onClick={onToggle} aria-expanded={open} className="flex w-full items-center gap-3 py-3 pl-3.5 pr-4 text-left active:opacity-70">
+        <span className="gx-tile relative flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xl">
+          <span className={cn(allPaid && "opacity-60")}>{icon}</span>
+          <span className="absolute -bottom-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[9px] font-bold text-white ring-2 ring-white dark:ring-slate-900">{count}</span>
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className={cn("block truncate text-sm font-semibold text-slate-900 dark:text-white", allPaid && "text-slate-400 dark:text-slate-500")}>{name}</span>
+          <span className={cn("block truncate text-[11px]", allPaid ? "font-medium text-emerald-600 dark:text-emerald-400" : "text-slate-400")}>
+            {t("{n} dettes", { n: count })} · {t("{paid}/{total} payées", { paid: paidCount, total: count })}
+          </span>
+        </span>
+        <span className={cn("shrink-0 text-sm font-bold tabular-nums", allPaid ? "font-semibold text-slate-400 line-through dark:text-slate-500" : "text-rose-600")}>
+          {formatMoney(allPaid ? total : left, currency)}
+        </span>
+        <CaretDown weight="bold" className={cn("h-4 w-4 shrink-0 text-slate-400 transition-transform", open && "rotate-180")} />
+      </button>
+    </li>
   );
 }
 

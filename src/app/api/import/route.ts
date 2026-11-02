@@ -146,6 +146,7 @@ const backupSchema = z.object({
   incomeCategories: z
     .array(z.object({ id: z.string().min(1), name: z.string().min(1), emoji: z.string().min(1), position: z.number().int() }))
     .optional(),
+  people: z.array(z.object({ id: z.string().min(1), name: z.string().min(1), position: z.number().int() })).optional(),
   savingsMoves: z
     .array(
       z.object({
@@ -179,6 +180,7 @@ const backupSchema = z.object({
         expenseId: z.string().nullable(),
         createdAt: z.string(),
         writtenOffAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
+        person: z.string().nullable().default(null),
       }),
     )
     .optional(),

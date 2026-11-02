@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cn, formatMoney } from "@/lib/utils";
 import { useT } from "@/lib/i18n/client";
+import { byPerson } from "@/lib/person-groups";
 
 export interface StairMonth {
   key: string;
@@ -119,7 +120,10 @@ export function CreditStairs({ months, currency }: { months: StairMonth[]; curre
           <p className="mt-1 text-[12.5px] text-slate-500 dark:text-slate-400">{t("Aucune mensualité ce mois-là.")}</p>
         ) : (
           <ul className="mt-2 flex flex-col gap-2">
-            {month.items.map((item) => (
+            {/* The same person's debts: one line, their total. */}
+            {byPerson(month.items, (i) => i.name)
+              .map((g) => (g.length === 1 ? g[0] : { ...g[0], amount: Math.round(g.reduce((s, i) => s + i.amount, 0) * 100) / 100, note: t("{n} dettes", { n: g.length }) }))
+              .map((item) => (
               <li key={item.id} className="flex items-center gap-2.5 text-[13px]">
                 <span className="w-5 text-center text-base leading-none">{item.icon}</span>
                 <span className="min-w-0 flex-1 truncate font-medium text-slate-800 dark:text-slate-100">{item.name}</span>

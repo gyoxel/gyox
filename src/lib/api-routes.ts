@@ -30,6 +30,9 @@ import * as loans from "@/app/api/loans/route";
 import * as loansById from "@/app/api/loans/[id]/route";
 import * as loansByIdRepayments from "@/app/api/loans/[id]/repayments/route";
 import * as loansByIdGiveUp from "@/app/api/loans/[id]/give-up/route";
+import * as people from "@/app/api/people/route";
+import * as peopleById from "@/app/api/people/[id]/route";
+import * as peopleOrder from "@/app/api/people/order/route";
 import * as loansByIdRepaymentsByRepaymentId from "@/app/api/loans/[id]/repayments/[repaymentId]/route";
 import * as salaryAdvances from "@/app/api/salary-advances/route";
 import * as salaryAdvancesById from "@/app/api/salary-advances/[id]/route";
@@ -73,6 +76,9 @@ const ROUTES: [string, RouteModule][] = [
   ["loans/[id]", loansById],
   ["loans/[id]/repayments", loansByIdRepayments],
   ["loans/[id]/give-up", loansByIdGiveUp],
+  ["people", people],
+  ["people/order", peopleOrder],
+  ["people/[id]", peopleById],
   ["loans/[id]/repayments/[repaymentId]", loansByIdRepaymentsByRepaymentId],
   ["salary-advances", salaryAdvances],
   ["salary-advances/[id]", salaryAdvancesById],

@@ -4,6 +4,7 @@
 // (Épargne, Darets, Dettes, Argent prêté) rather than lost in "Sans
 // catégorie". Pure (no DB access).
 import { addMonths, dayOf, monthKey, type MonthId } from "./date";
+import { personKey, personOf } from "./person-groups";
 import { displayIcon } from "./category";
 import { categoryName, msg, type T } from "./i18n";
 import type { Category, DaretWithExpense, Expense, Goal, Loan, Payment, SavingsMove } from "./types";
@@ -20,12 +21,22 @@ export interface CategorySlice {
   /** The same group the month before. */
   previous: number;
   /** What it's made of, the largest first. */
-  items: { id: string; name: string; icon: string; amount: number }[];
+  items: SliceItem[];
 }
 
 /** A slice's name in the device's language (the user's own names as typed). */
 export function sliceLabel(slice: CategorySlice, t: T): string {
   return slice.own ? categoryName(slice.label, t) : t(slice.label);
+}
+
+export interface SliceItem {
+  id: string;
+  name: string;
+  icon: string;
+  amount: number;
+  /** Several debts (or loans) of the same person: each of them — what it
+   *  was for (its note) or the day it began — under their total. */
+  parts?: { id: string; note: string | null; date: string; amount: number }[];
 }
 
 /** What the app makes itself, grouped by what made it (also the Solde's
@@ -69,6 +80,20 @@ export function categoryBreakdown(input: CategoryStatsInput, month: MonthId): Ca
   };
 
   const byId = new Map(input.expenses.map((e) => [e.id, e]));
+  // Whose a debt or a loan is: the debt's name, the loan's (its expense is
+  // "Argent prêté · …").
+  const loanOf = new Map(input.loans.filter((l) => l.expenseId).map((l) => [l.expenseId!, l]));
+  const whose = (e: Expense) => {
+    const loan = loanOf.get(e.id);
+    return loan ? personOf(loan) : personOf(e);
+  };
+  /** A debt / loan among its person's: its own name when it has a person,
+   *  else its note. */
+  const partNote = (e: Expense) => {
+    const loan = loanOf.get(e.id);
+    if (loan) return (loan.person ? loan.name : loan.note)?.trim() || null;
+    return (e.person ? e.name : e.notes)?.trim() || null;
+  };
   const totals = (m: MonthId) => {
     const key = monthKey(m);
     // Paid for the month (a debt's installment: paid during it). Nothing
@@ -88,8 +113,36 @@ export function categoryBreakdown(input: CategoryStatsInput, month: MonthId): Ca
       const group = keyOf(expense);
       const slot = out.get(group) ?? { amount: 0, items: [] };
       slot.amount += amount;
-      slot.items.push({ id, name: expense.name, icon: displayIcon(expense, emojiById), amount });
+      const loan = loanOf.get(id);
+      slot.items.push({
+        id,
+        name: group === "debts" || group === "loans" ? whose(expense) : expense.name,
+        icon: displayIcon(expense, emojiById),
+        amount,
+        parts: [{ id, note: partNote(expense), date: loan?.date ?? expense.startDate, amount }],
+      });
       out.set(group, slot);
+    }
+    // Debts / loans of the same person: one line, their total, each under it.
+    for (const [group, slot] of out) {
+      if (group !== "debts" && group !== "loans") {
+        for (const item of slot.items) delete item.parts;
+        continue;
+      }
+      const merged = new Map<string, SliceItem>();
+      for (const item of slot.items) {
+        const k = personKey(item.name);
+        const into = merged.get(k);
+        if (into) {
+          into.amount = round(into.amount + item.amount);
+          into.parts!.push(...item.parts!);
+        } else merged.set(k, { ...item, parts: [...item.parts!] });
+      }
+      slot.items = [...merged.values()].map((item) =>
+        item.parts!.length > 1
+          ? { ...item, parts: item.parts!.sort((a, b) => b.date.localeCompare(a.date)) }
+          : { ...item, name: item.parts![0].note ? `${item.name} · ${item.parts![0].note}` : item.name, parts: undefined },
+      );
     }
     return out;
   };

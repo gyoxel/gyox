@@ -20,7 +20,7 @@ const ITEMS = [
 ];
 
 // Pages opened from the Menu tab keep it highlighted.
-const MENU_PATHS = ["/menu", "/budgets", "/daret", "/goals", "/calendar", "/stats", "/categories", "/salary", "/incomes", "/solde", "/epargne", "/prets", "/settings", "/profil", "/admin"];
+const MENU_PATHS = ["/menu", "/budgets", "/daret", "/goals", "/calendar", "/stats", "/categories", "/personnes", "/salary", "/incomes", "/solde", "/epargne", "/prets", "/settings", "/profil", "/admin"];
 
 // The + button's menu: everything that can be added, in one panel of
 // glass just above it — each in its colour of meaning. The everyday ones

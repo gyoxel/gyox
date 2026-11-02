@@ -1,7 +1,7 @@
 import Link from "next/link";
 import NotFound from "@/app/not-found";
 import { getAllCategories, getAllExpenses, getAllPayments, getSettings } from "@/lib/page-data";
-import { monthCost, spentByCategory } from "@/lib/category-budgets";
+import { monthPaid, spentByCategory } from "@/lib/category-budgets";
 import { getMonthSummary } from "@/lib/engine";
 import { addMonths, compareMonths, monthFromSearchParams, todayMonth } from "@/lib/date";
 import { monthLabel } from "@/lib/i18n/dates";
@@ -38,8 +38,8 @@ export default async function BudgetPage({ params, searchParams }: { params: Pro
   const money = (n: number) => formatMoney(n, settings.currency);
   const items = getMonthSummary(expenses, month, 0)
     .occurrences.filter((o) => o.expense.categoryId === id && o.expense.type !== "credit")
-    .map((o) => ({ expense: o.expense, amount: monthCost(o.expense, o.amount, month, payments, current) }))
-    .sort((a, b) => b.amount - a.amount);
+    .map((o) => ({ expense: o.expense, planned: o.amount, amount: monthPaid(o.expense, month, payments) }))
+    .sort((a, b) => b.amount - a.amount || b.planned - a.planned);
   const label = compareMonths(month, current) === 0 ? t("Ce mois-ci") : monthLabel(month, lang);
 
   return (
@@ -49,8 +49,8 @@ export default async function BudgetPage({ params, searchParams }: { params: Pro
         <BudgetForm
           categories={categories}
           category={category}
-          spent={Object.fromEntries(spentByCategory(expenses, payments, month, current))}
-          previous={Object.fromEntries(spentByCategory(expenses, payments, previous, current))}
+          spent={Object.fromEntries(spentByCategory(expenses, payments, month))}
+          previous={Object.fromEntries(spentByCategory(expenses, payments, previous))}
           spentLabel={label}
           previousLabel={monthLabel(previous, lang)}
           currency={settings.currency}
@@ -66,12 +66,20 @@ export default async function BudgetPage({ params, searchParams }: { params: Pro
             </p>
           ) : (
             <ul className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              {items.map(({ expense, amount }) => (
+              {items.map(({ expense, planned, amount }) => (
                 <li key={expense.id} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
                   <Link href={`/expenses/${expense.id}`} className="flex items-center gap-3 px-4 py-3 active:bg-slate-50 dark:active:bg-slate-800/60">
                     <span className="text-lg leading-none">{category.emoji}</span>
                     <span className="min-w-0 flex-1 truncate text-sm text-slate-700 dark:text-slate-200">{localName(expense.name, t)}</span>
-                    <span className="text-sm font-semibold tabular-nums text-slate-900 dark:text-white">{money(amount)}</span>
+                    {/* What it took of the budget: what was paid (nothing yet: said so) */}
+                    {amount > 0 ? (
+                      <span className="text-sm font-semibold tabular-nums text-slate-900 dark:text-white">{money(amount)}</span>
+                    ) : (
+                      <span className="text-right text-xs text-slate-400">
+                        {t("Pas encore payé")}
+                        <span className="block tabular-nums">{money(planned)}</span>
+                      </span>
+                    )}
                   </Link>
                 </li>
               ))}

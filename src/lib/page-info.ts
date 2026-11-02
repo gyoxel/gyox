@@ -33,6 +33,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Voir le total qui reste à rembourser et ce que tu paies chaque mois."),
       msg("Suivre la frise mois par mois : combien tu paies, et le mois où chaque dette se termine."),
       msg("Ajouter une dette avec le bouton + : le total, puis le nombre de mois, le montant par mois ou « En une fois » (un mois au choix)."),
+      msg("Plusieurs dettes de la même personne (« De qui ? » : Yassine…) : regroupées, avec ce qui reste en tout ; chacune dessous, avec son nom (diesel, vacances…). Pareil sur l'Accueil et dans les statistiques."),
       msg("Toucher une dette pour payer sa mensualité, la modifier ou la supprimer."),
       msg("Une mensualité payée en partie : le reste s'ajoute à la dernière mensualité."),
     ],
@@ -89,7 +90,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
   budgets: {
     title: msg("Budgets"),
     summary: msg(
-      "Le maximum à dépenser dans une catégorie chaque mois (Alimentation 2 000 DH…). Rien ne sort de ton solde : tes dépenses de la catégorie s'additionnent.",
+      "Le maximum à dépenser dans une catégorie chaque mois (Alimentation 2 000 DH…). Rien ne sort de ton solde : ce que tu as payé dans la catégorie s'additionne (une dépense pas encore cochée ne compte pas).",
     ),
     points: [
       msg("Voir ce qui reste de chaque budget ce mois-ci, ou de combien il est dépassé."),
@@ -118,6 +119,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Confirmer un remboursement reçu (« Reçu ? ») : il revient dans ton solde."),
       msg("Toucher un prêt pour voir chaque mois, corriger un remboursement ou le modifier."),
       msg("Ce qui t'est rendu ne compte pas comme un revenu : il sort de tes dépenses du mois du prêt. Seul ce qui n'est pas encore revenu compte (bilan, statistiques)."),
+      msg("Plusieurs prêts à la même personne (« À qui ? ») : regroupés, avec ce qui reste en tout ; chacun dessous, avec son nom. Pareil sur l'Accueil et dans les statistiques."),
     ],
   },
   pret: {
@@ -224,7 +226,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     summary: msg("Le maximum à dépenser dans une catégorie chaque mois."),
     points: [
       msg("Indiquer le montant et choisir la catégorie."),
-      msg("Voir ce que tu y dépenses ce mois-ci et le mois d'avant, pour choisir le montant."),
+      msg("Voir ce que tu y as payé ce mois-ci et le mois d'avant, pour choisir le montant."),
       msg("Une catégorie qui a déjà un budget : son montant est remplacé."),
     ],
   },
@@ -283,7 +285,7 @@ export const PAGE_INFO: Record<string, PageInfo> = {
   },
   "budget-edit": {
     title: msg("Budget"),
-    summary: msg("Le budget d'une catégorie : son montant, ce qui en est dépensé et les dépenses qui le font."),
+    summary: msg("Le budget d'une catégorie : son montant, ce qui en est payé et ses dépenses (celles pas encore payées ne comptent pas)."),
     points: [
       msg("Changer le montant : il compte pour tous les mois."),
       msg("Toucher une dépense pour l'ouvrir."),
@@ -366,6 +368,18 @@ export const PAGE_INFO: Record<string, PageInfo> = {
       msg("Toucher « Comparaison » : à la même place, ce mois à côté d'un autre, catégorie par catégorie — le plus élevé en rouge, le plus bas en vert, et le total de chaque mois. Les deux mois se changent avec leurs ‹ ›."),
       msg("Changer de mois avec ‹ ›. Il s'ouvre sur le mois en cours."),
       msg("Les premiers jours du mois, ce bilan apparaît aussi sur l'Accueil."),
+    ],
+  },
+  personnes: {
+    title: msg("Personnes"),
+    summary: msg("Les personnes à qui tu prêtes et de qui tu empruntes : proposées dans « De qui ? » d'une dette et « À qui ? » d'un prêt."),
+    points: [
+      msg("Ajouter quelqu'un avec son nom."),
+      msg("Toucher un nom (ou ✎) pour le renommer."),
+      msg("Maintenir un nom et le glisser pour changer l'ordre : c'est l'ordre proposé."),
+      msg("Retirer quelqu'un : il n'est plus proposé."),
+      msg("Renommer ou retirer ne change aucune dette ni aucun prêt."),
+      msg("Quelqu'un ajouté avec « Ajouter » dans une dette ou un prêt s'ajoute ici aussi."),
     ],
   },
   categories: {
