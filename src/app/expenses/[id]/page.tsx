@@ -215,6 +215,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
             expense={expense}
             paymentStatus={paymentStatus}
             people={(await getPeople()).map((p) => p.name)}
+            startLocked={payments.some((p) => p.expenseId === expense.id && p.amountPaid > 0)}
           />
         ) : (
           <ExpenseEditor

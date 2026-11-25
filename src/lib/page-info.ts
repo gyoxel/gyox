@@ -185,7 +185,8 @@ export const PAGE_INFO: Record<string, PageInfo> = {
     summary: msg("Une nouvelle dette : le total à rembourser et comment tu le rembourses chaque mois."),
     points: [
       msg("Indiquer le total de la dette et à qui (banque, une personne…)."),
-      msg("Choisir le nombre de mois, le montant par mois ou « En une fois » (toute la dette dans un mois au choix) : la date de fin est calculée. Rien de choisi : toute la dette sur ce mois."),
+      msg("Choisir le nombre de mois, le montant par mois ou « En une fois » : la date de fin est calculée. Rien de choisi : toute la dette en un mois."),
+      msg("Choisir le premier mois (ou le mois du remboursement) : ce mois-ci, le mois prochain ou plus tard."),
       msg("Ajouter un montant déjà remboursé avant de la noter ici."),
       msg("Si tu viens de recevoir cet argent, l'ajouter à ton solde (espèces ou carte)."),
       msg("Dire si la mensualité de ce mois est déjà payée."),

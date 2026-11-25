@@ -44,12 +44,15 @@ export function CreditEditor({
   expense,
   paymentStatus,
   people = [],
+  startLocked = false,
 }: {
   /** Present when editing. */
   expense?: Expense;
   paymentStatus?: PaymentStatusInit | null;
   /** Personnes, offered under the name. */
   people?: string[];
+  /** Editing a debt already (partly) repaid: its first month stays. */
+  startLocked?: boolean;
 }) {
   const isEdit = expense != null;
   const nav = useNavBack();
@@ -69,8 +72,11 @@ export function CreditEditor({
       ? String(Math.ceil(expense.creditInitialAmount / expense.amount - 1e-9))
       : "";
   const [months, setMonths] = useState(initialMonths);
-  // « En une fois »: the month it's all repaid in (this one, or later).
-  const [onceMonth, setOnceMonth] = useState<MonthId>(todayMonth());
+  // Its first month (« En une fois »: the month it's all repaid in): this
+  // one or later — a debt not repaid yet can move to another.
+  const savedMonth = expense ? monthOfDateStr(expense.startDate) : null;
+  const [firstMonth, setFirstMonth] = useState<MonthId>(savedMonth ?? todayMonth());
+  const canMove = !startLocked;
   const [alreadyPaid, setAlreadyPaid] = useState(isEdit ? (paymentStatus?.paid ?? false) : false);
   const [method, setMethod] = useState<PaymentMethod>(paymentStatus?.method ?? "cash");
   // Kept as it was (no field for it anymore).
@@ -94,11 +100,15 @@ export function CreditEditor({
   // Neither a number of months nor an amount per month: all of it on one
   // month, this one.
   const nothingSet = mode !== "once" && !(mode === "months" ? months : monthly).trim();
-  // Its first month: a debt repaid in one later month starts then (on its
-  // 1st); else today, or as saved.
+  // Its first day: as saved while its month stays; this month, today;
+  // another month, its 1st.
   const startDate =
-    expense?.startDate ??
-    (mode === "once" && compareMonths(onceMonth, monthOfDateStr(today)) > 0 ? `${monthKey(onceMonth)}-01` : today);
+    expense && (!canMove || (savedMonth && compareMonths(firstMonth, savedMonth) === 0))
+      ? expense.startDate
+      : compareMonths(firstMonth, monthOfDateStr(today)) === 0
+        ? today
+        : `${monthKey(firstMonth)}-01`;
+  const minMonth = savedMonth && compareMonths(savedMonth, monthOfDateStr(today)) < 0 ? savedMonth : monthOfDateStr(today);
   // The amount per month actually saved: typed, or derived from the months.
   const monthlyValue = nothingSet || mode === "once"
     ? totalValue
@@ -189,7 +199,7 @@ export function CreditEditor({
       if (isEdit) {
         const payCall = paymentStatus && paymentStatusCall(expense.id, paymentStatus, alreadyPaid, method);
         const [res, pay] = await mutateAll([
-          { method: "PATCH", path: `/api/expenses/${expense.id}`, body: fields },
+          { method: "PATCH", path: `/api/expenses/${expense.id}`, body: canMove ? { ...fields, startDate } : fields },
           ...(payCall ? [payCall] : []),
         ]);
         // All or nothing: a refused payment (e.g. not enough money) leaves
@@ -350,11 +360,13 @@ export function CreditEditor({
             <Stat label={t("Par mois")} value={money(monthlyValue)} highlight={mode === "months"} />
             <Stat label={t("Fin")} value={monthLabelShort(plan.end, lang)} highlight={mode === "once"} />
             {nothingSet && (
-              <p className="col-span-3 text-[11px] text-slate-500 dark:text-slate-400">{t("Ni durée ni montant par mois : toute la dette sur ce mois.")}</p>
+              <p className="col-span-3 text-[11px] text-slate-500 dark:text-slate-400">
+                {t("Ni durée ni montant par mois : toute la dette en {month}.", { month: monthLabel(firstMonth, lang) })}
+              </p>
             )}
             {mode === "once" && (
               <p className="col-span-3 text-[11px] text-slate-500 dark:text-slate-400">
-                {t("Toute la dette en une fois, en {month}.", { month: monthLabel(onceMonth, lang) })}
+                {t("Toute la dette en une fois, en {month}.", { month: monthLabel(firstMonth, lang) })}
               </p>
             )}
             {plan.last !== monthlyValue && (
@@ -377,28 +389,21 @@ export function CreditEditor({
           <p className="text-xs text-slate-400">{t("Indique le total, puis le nombre de mois ou le montant par mois.")}</p>
         )}
 
-        <div role="radiogroup" aria-label={t("Mode de remboursement")} className={cn("grid gap-2", isEdit ? "grid-cols-2" : "grid-cols-3")}>
+        <div role="radiogroup" aria-label={t("Mode de remboursement")} className={cn("grid gap-2", canMove ? "grid-cols-3" : "grid-cols-2")}>
           <ModeButton selected={mode === "months"} onClick={() => switchMode("months")} icon={ClockCountdown}>
             {t("Nombre de mois")}
           </ModeButton>
           <ModeButton selected={mode === "monthly"} onClick={() => switchMode("monthly")} icon={Coins}>
             {t("Par mois")}
           </ModeButton>
-          {!isEdit && (
+          {canMove && (
             <ModeButton selected={mode === "once"} onClick={() => switchMode("once")} icon={CalendarCheck}>
               {t("En une fois")}
             </ModeButton>
           )}
         </div>
 
-        {mode === "once" ? (
-          <MonthPick
-            label={t("Mois du remboursement")}
-            month={onceMonth}
-            onChange={setOnceMonth}
-            min={monthOfDateStr(today)}
-          />
-        ) : mode === "monthly" ? (
+        {mode === "once" ? null : mode === "monthly" ? (
           <div className="flex items-center gap-2">
             <Input
               id="monthly"
@@ -432,6 +437,16 @@ export function CreditEditor({
             />
             <span className="shrink-0 text-sm text-slate-500">{t("mois")}</span>
           </div>
+        )}
+
+        {/* Its first month (« En une fois »: the month it's all repaid in) */}
+        {canMove && (
+          <MonthPick
+            label={mode === "once" || nothingSet ? t("Mois du remboursement") : t("Premier mois")}
+            month={firstMonth}
+            onChange={setFirstMonth}
+            min={minMonth}
+          />
         )}
 
         {/* Suggestions */}
