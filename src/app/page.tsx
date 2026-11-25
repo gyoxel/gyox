@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllLoans, getAllPayments, getAllSalaryAdvances, getAllSavingsMoves, getSettings } from "@/lib/page-data";
+import { getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllIncomes, getAllLoans, getAllPayments, getAllSalaryAdvances, getAllSavingsMoves, getSettings } from "@/lib/page-data";
 import { addMonths, monthKey, todayDateStr, todayMonth } from "@/lib/date";
 import { categoryBreakdown } from "@/lib/category-stats";
 import { budgetPercent, categoryBudgets } from "@/lib/category-budgets";
@@ -110,7 +110,7 @@ async function monthBilan(
   const month = addMonths(todayMonth(), -1);
   const key = monthKey(month);
   if ((await cookies()).get(BILAN_COOKIE)?.value === key) return null;
-  const [wallet, savingsMoves, goals] = await Promise.all([getWallet(month), getAllSavingsMoves(), getAllGoals()]);
-  const slices = categoryBreakdown({ expenses, payments, categories, darets, savingsMoves, goals, loans }, month);
+  const [wallet, savingsMoves, goals, incomes] = await Promise.all([getWallet(month), getAllSavingsMoves(), getAllGoals(), getAllIncomes()]);
+  const slices = categoryBreakdown({ expenses, payments, categories, darets, savingsMoves, goals, loans, incomes }, month);
   return buildMonthBilan(wallet, slices, key, monthLabel(month, lang));
 }

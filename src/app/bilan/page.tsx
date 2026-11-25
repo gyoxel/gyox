@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowDown, ArrowUp, CaretRight } from "@phosphor-icons/react/ssr";
-import { getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllLoans, getAllPayments, getAllSavingsMoves, getSettings } from "@/lib/page-data";
+import { getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllIncomes, getAllLoans, getAllPayments, getAllSavingsMoves, getSettings } from "@/lib/page-data";
 import { addMonths, compareMonths, monthFromSearchParams, monthKey, todayMonth } from "@/lib/date";
 import { budgetsById } from "@/lib/category-budgets";
 import { categoryBreakdown, categoryComparison } from "@/lib/category-stats";
@@ -25,7 +25,7 @@ const NONE = "–";
  * month, Accueil links to the one just over).
  */
 export default async function BilanPage({ searchParams }: { searchParams: Promise<{ month?: string; vs?: string }> }) {
-  const [sp, settings, expenses, payments, categories, darets, savingsMoves, goals, loans, { lang, t }] = await Promise.all([
+  const [sp, settings, expenses, payments, categories, darets, savingsMoves, goals, loans, incomes, { lang, t }] = await Promise.all([
     searchParams,
     getSettings(),
     getAllExpenses(),
@@ -35,6 +35,7 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
     getAllSavingsMoves(),
     getAllGoals(),
     getAllLoans(),
+    getAllIncomes(),
     getI18n(),
   ]);
   const current = todayMonth();
@@ -42,7 +43,7 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
   const previous = addMonths(month, -1);
   const key = monthKey(month);
   const [wallet, previousWallet] = await Promise.all([getWallet(month), getWallet(previous)]);
-  const input = { expenses, payments, categories, darets, savingsMoves, goals, loans };
+  const input = { expenses, payments, categories, darets, savingsMoves, goals, loans, incomes };
   const slices = categoryBreakdown(input, month);
   const vs = monthFromSearchParams(sp.vs, previous);
   const bilan = buildMonthBilan(wallet, slices, key, monthLabel(month, lang));

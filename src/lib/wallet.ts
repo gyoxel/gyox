@@ -317,6 +317,7 @@ export function buildWallet(input: {
       counted: e.kind === "transfer" ? 0 : e.kind === "loan" ? (lentLeft.get(e.id) ?? 0) : e.lines[0].amount,
     }))
     .sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+  netWithinMonth(all);
 
   const balance = { cash: 0, card: 0 };
   const monthIn = { cash: 0, card: 0 };
@@ -339,4 +340,31 @@ export function buildWallet(input: {
     monthOut: r2(monthOut),
     entries: all,
   };
+}
+
+/** Money that came back where it went in the same month isn't money in nor
+ *  out: of the Épargne's and the Dettes' movements of a month, only what
+ *  they come to counts — 3 000 put aside then 2 000 and 1 000 taken back:
+ *  nothing; 3 000 borrowed, 2 000 of it repaid: 1 000 in. Each movement on
+ *  the side that's left counts its share of what's left (in place). */
+export function netWithinMonth(entries: WalletEntry[]): void {
+  const sides = new Map<string, { ins: WalletEntry[]; outs: WalletEntry[]; in: number; out: number }>();
+  for (const e of entries) {
+    if ((e.group.key !== "savings" && e.group.key !== "debts") || e.counted === 0) continue;
+    const key = `${entryMonth(e)}:${e.group.key}`;
+    const side = sides.get(key) ?? sides.set(key, { ins: [], outs: [], in: 0, out: 0 }).get(key)!;
+    if (e.counted > 0) {
+      side.ins.push(e);
+      side.in += e.counted;
+    } else {
+      side.outs.push(e);
+      side.out -= e.counted;
+    }
+  }
+  for (const side of sides.values()) {
+    const matched = Math.min(side.in, side.out);
+    if (!(matched > 0)) continue;
+    for (const e of side.ins) e.counted = round(e.counted * (1 - matched / side.in));
+    for (const e of side.outs) e.counted = round(e.counted * (1 - matched / side.out));
+  }
 }

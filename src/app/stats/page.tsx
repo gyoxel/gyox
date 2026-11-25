@@ -87,7 +87,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
       .sort((a, b) => b.amount - a.amount);
     return { color, label: t(label), amount: Math.round(items.reduce((s, i) => s + i.amount, 0) * 100) / 100, items };
   });
-  const statsInput = { expenses, payments, categories, darets, savingsMoves, goals, loans };
+  const statsInput = { expenses, payments, categories, darets, savingsMoves, goals, loans, incomes };
   const slices = categoryBreakdown(statsInput, viewMonth);
   const vs = monthFromSearchParams(sp.vs, addMonths(viewMonth, -1));
   const forecast = getForecast(expenses, settings.salary, currentMonth, FORECAST_MONTHS);

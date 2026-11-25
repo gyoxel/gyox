@@ -7,7 +7,7 @@ import { addMonths, dayOf, monthKey, type MonthId } from "./date";
 import { personKey, personOf } from "./person-groups";
 import { displayIcon } from "./category";
 import { categoryName, msg, type T } from "./i18n";
-import type { Category, DaretWithExpense, Expense, Goal, Loan, Payment, SavingsMove } from "./types";
+import type { Category, DaretWithExpense, Expense, Goal, Income, Loan, Payment, SavingsMove } from "./types";
 
 export interface CategorySlice {
   /** A category's id, or the group's key ("savings", "debts"…). */
@@ -22,6 +22,10 @@ export interface CategorySlice {
   previous: number;
   /** What it's made of, the largest first. */
   items: SliceItem[];
+  /** Épargne, Dettes: what went in and came back the same month cancel out —
+   *  `amount` is what they come to (below 0: more came back than went), its
+   *  items each movement, signed (− out of the Solde, + back into it). */
+  net?: boolean;
 }
 
 /** A slice's name in the device's language (the user's own names as typed). */
@@ -36,8 +40,14 @@ export interface SliceItem {
   amount: number;
   /** Several debts (or loans) of the same person: each of them — what it
    *  was for (its note) or the day it began — under their total. */
-  parts?: { id: string; note: string | null; date: string; amount: number }[];
+  parts?: { id: string; note: string | null; date: string; amount: number; flow?: Flow }[];
+  /** In a `net` slice: one movement (its day). */
+  flow?: Flow;
+  date?: string;
 }
+
+/** A movement of a `net` slice: put aside / taken back, borrowed / repaid. */
+export type Flow = "saved" | "unsaved" | "borrowed" | "repaid";
 
 /** What the app makes itself, grouped by what made it (also the Solde's
  *  history filter). */
@@ -57,6 +67,9 @@ export interface CategoryStatsInput {
   savingsMoves: SavingsMove[];
   goals: Goal[];
   loans: Loan[];
+  /** Money taken back from the Épargne, money borrowed: they cancel out
+   *  what went the same month. */
+  incomes?: Income[];
 }
 
 const round = (n: number) => Math.round(n * 100) / 100;
@@ -104,8 +117,20 @@ export function categoryBreakdown(input: CategoryStatsInput, month: MonthId): Ca
       if (p.monthKey === key || (p.monthKey == null && dayOf(p.paidAt).startsWith(key))) paid.set(p.expenseId, (paid.get(p.expenseId) ?? 0) + p.amountPaid);
     }
     const out = new Map<string, { amount: number; items: CategorySlice["items"] }>();
+    // Épargne, Dettes: each movement, signed (see CategorySlice.net).
+    const flows: { group: "savings" | "debts"; item: SliceItem; whose?: string }[] = [];
     for (const [id, total] of paid) {
       const expense = byId.get(id)!;
+      const g = keyOf(expense);
+      if (g === "savings" || g === "debts") {
+        const date = input.payments.filter((p) => p.expenseId === id && p.amountPaid > 0).map((p) => dayOf(p.paidAt)).sort().at(-1) ?? expense.startDate;
+        flows.push({
+          group: g,
+          whose: g === "debts" ? whose(expense) : undefined,
+          item: { id, name: g === "debts" ? whose(expense) : expense.name, icon: displayIcon(expense, emojiById), amount: -round(total), flow: g === "debts" ? "repaid" : "saved", date },
+        });
+        continue;
+      }
       // Money lent: only what hasn't come back (its expense's amount, as
       // the Solde counts it).
       const amount = round(made.get(id) === "loans" ? Math.min(total, expense.amount) : total);
@@ -123,9 +148,43 @@ export function categoryBreakdown(input: CategoryStatsInput, month: MonthId): Ca
       });
       out.set(group, slot);
     }
+    for (const m of input.savingsMoves) {
+      if (m.kind !== "out" || !m.date.startsWith(key) || !(m.amount > 0)) continue;
+      flows.push({ group: "savings", item: { id: m.id, name: m.note?.trim() || msg("Repris de l'épargne"), icon: "🐷", amount: round(m.amount), flow: "unsaved", date: m.date } });
+    }
+    for (const i of input.incomes ?? []) {
+      const debt = i.expenseId ? byId.get(i.expenseId) : undefined;
+      if (!(debt?.type === "credit" || (!i.expenseId && i.category === "credit")) || !i.date.startsWith(key) || !(i.amount > 0)) continue;
+      const name = debt ? whose(debt) : i.name;
+      flows.push({ group: "debts", whose: name, item: { id: i.id, name, icon: debt ? displayIcon(debt, emojiById) : "🏦", amount: round(i.amount), flow: "borrowed", date: i.date } });
+    }
+    for (const group of ["savings", "debts"] as const) {
+      const mine = flows.filter((f) => f.group === group);
+      if (mine.length === 0) continue;
+      let items: SliceItem[];
+      if (group === "savings") items = mine.map((f) => f.item).sort((a, b) => b.date!.localeCompare(a.date!));
+      else {
+        // The same person's: one line, what they come to, each movement under it.
+        const byWho = new Map<string, SliceItem>();
+        for (const f of mine) {
+          const k = personKey(f.whose!);
+          const part = { id: f.item.id, note: null, date: f.item.date!, amount: f.item.amount, flow: f.item.flow };
+          const into = byWho.get(k);
+          if (into) {
+            into.amount = round(into.amount + f.item.amount);
+            into.parts!.push(part);
+          } else byWho.set(k, { id: f.item.id, name: f.whose!, icon: f.item.icon, amount: f.item.amount, parts: [part] });
+        }
+        items = [...byWho.values()].map((it) =>
+          it.parts!.length > 1 ? { ...it, parts: it.parts!.sort((a, b) => b.date.localeCompare(a.date)) } : { ...it, flow: it.parts![0].flow, date: it.parts![0].date, parts: undefined },
+        );
+      }
+      out.set(group, { amount: round(-items.reduce((sum, it) => sum + it.amount, 0)) || 0, items });
+    }
     // Debts / loans of the same person: one line, their total, each under it.
     for (const [group, slot] of out) {
-      if (group !== "debts" && group !== "loans") {
+      if (group === "savings" || group === "debts") continue;
+      if (group !== "loans") {
         for (const item of slot.items) delete item.parts;
         continue;
       }
@@ -159,8 +218,8 @@ export function categoryBreakdown(input: CategoryStatsInput, month: MonthId): Ca
         own: category != null,
         emoji: category?.emoji ?? group.emoji,
         amount: round(amount),
-        previous: round(before.get(key)?.amount ?? 0),
-        items: items.sort((a, b) => b.amount - a.amount),
+        previous: round(Math.max(0, before.get(key)?.amount ?? 0)),
+        ...(key === "savings" || key === "debts" ? { net: true, items } : { items: items.sort((a, b) => b.amount - a.amount) }),
       };
     })
     .sort((a, b) => b.amount - a.amount);
@@ -176,13 +235,13 @@ export interface CategoryComparison {
 /** Two months' groups side by side (Bilan / Statistiques → Comparaison). */
 export function categoryComparison(input: CategoryStatsInput, a: MonthId, b: MonthId): CategoryComparison {
   const rows = new Map<string, CategoryComparison["rows"][number]>();
-  for (const s of categoryBreakdown(input, a)) rows.set(s.key, { slice: s, a: s.amount, b: 0 });
+  for (const s of categoryBreakdown(input, a)) rows.set(s.key, { slice: s, a: Math.max(0, s.amount), b: 0 });
   for (const s of categoryBreakdown(input, b)) {
     const row = rows.get(s.key);
-    if (row) row.b = s.amount;
-    else rows.set(s.key, { slice: s, a: 0, b: s.amount });
+    if (row) row.b = Math.max(0, s.amount);
+    else rows.set(s.key, { slice: s, a: 0, b: Math.max(0, s.amount) });
   }
-  const list = [...rows.values()].sort((x, y) => Math.max(y.a, y.b) - Math.max(x.a, x.b));
+  const list = [...rows.values()].filter((r) => r.a > 0 || r.b > 0).sort((x, y) => Math.max(y.a, y.b) - Math.max(x.a, x.b));
   return {
     rows: list,
     totalA: round(list.reduce((sum, r) => sum + r.a, 0)),
