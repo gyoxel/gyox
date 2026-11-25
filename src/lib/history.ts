@@ -7,14 +7,22 @@ import type { WalletEntry } from "./wallet";
 export const HISTORY_SCOPES = ["all", "expenses", "debts", "loans", "savings", "incomes", "darets", "salary"] as const;
 export type HistoryScope = (typeof HISTORY_SCOPES)[number];
 
-export type HistoryStep = Pick<WalletEntry, "id" | "at" | "kind" | "emoji" | "label" | "say" | "lines" | "href">;
+export type HistoryStep = Pick<WalletEntry, "id" | "at" | "kind" | "emoji" | "label" | "say" | "lines" | "href"> & {
+  /** Recorded without money moving (a debt added whose money was already
+   *  had): its amount shown plain, neither + nor −. */
+  neutral?: boolean;
+};
+
+/** What the window is made from: the Solde's movements, and debts added
+ *  without money coming in. */
+export type HistoryEntry = WalletEntry & { neutral?: boolean };
 
 export interface HistoryRow extends HistoryStep {
   /** Its steps, oldest first, when there are several. */
   steps: HistoryStep[];
 }
 
-const IN_SCOPE: Record<HistoryScope, (e: WalletEntry) => boolean> = {
+const IN_SCOPE: Record<HistoryScope, (e: HistoryEntry) => boolean> = {
   all: () => true,
   expenses: (e) => e.kind === "expense" && e.group.key !== "darets" && e.group.key !== "savings",
   debts: (e) => e.kind === "credit" || (e.group.key === "debts" && e.kind === "income"),
@@ -25,10 +33,10 @@ const IN_SCOPE: Record<HistoryScope, (e: WalletEntry) => boolean> = {
   salary: (e) => e.kind === "salary" || e.kind === "advance",
 };
 
-const step = ({ id, at, kind, emoji, label, say, lines, href }: WalletEntry): HistoryStep => ({ id, at, kind, emoji, label, say, lines, href });
+const step = ({ id, at, kind, emoji, label, say, lines, href, neutral }: HistoryEntry): HistoryStep => ({ id, at, kind, emoji, label, say, lines, href, ...(neutral ? { neutral } : {}) });
 
 /** `entries` (newest first) of `scope`, as rows: the newest `limit`. */
-export function historyRows(entries: WalletEntry[], scope: HistoryScope, limit = 60): HistoryRow[] {
+export function historyRows(entries: HistoryEntry[], scope: HistoryScope, limit = 60): HistoryRow[] {
   const rows: HistoryRow[] = [];
   const bySeries = new Map<string, HistoryRow>();
   for (const e of entries) {
@@ -47,4 +55,22 @@ export function historyRows(entries: WalletEntry[], scope: HistoryScope, limit =
   }
   for (const r of rows) if (r.steps.length === 1) r.steps = [];
   return rows;
+}
+
+/** Debts added with no money coming in (it was already had): a line each in
+ *  the window, at the time they were added, `entries` (newest first) kept
+ *  in order. */
+export function withAddedDebts(entries: WalletEntry[], debts: { id: string; name: string; at: string; total: number; emoji: string }[]): HistoryEntry[] {
+  const added: HistoryEntry[] = debts.map((d) => ({
+    id: `debt-${d.id}`,
+    kind: "credit",
+    at: d.at,
+    emoji: d.emoji,
+    label: d.name,
+    lines: [{ account: "cash", amount: d.total }],
+    group: { key: "debts", label: "Dettes", own: false, emoji: "🏦" },
+    counted: 0,
+    neutral: true,
+  }));
+  return [...entries, ...added].sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
 }

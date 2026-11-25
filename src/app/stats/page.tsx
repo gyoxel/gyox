@@ -1,3 +1,5 @@
+import { moneySources } from "@/lib/money-sources";
+import { entryLabel } from "@/lib/entry-label";
 import { getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllIncomes, getAllLoans, getAllPayments, getAllSalaryAdvances, getAllSavingsMoves, getSettings } from "@/lib/page-data";
 import { budgetsById } from "@/lib/category-budgets";
 import { categoryBreakdown, categoryComparison } from "@/lib/category-stats";
@@ -157,6 +159,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           comparison={categoryComparison(statsInput, viewMonth, vs)}
           currency={currency}
           budgets={budgetsById(categories)}
+          incoming={moneySources(wallet.entries, monthKey(viewMonth), monthKey(addMonths(viewMonth, -1)), (e) => entryLabel(e, lang, t))}
         />
 
         {transition && (

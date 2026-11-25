@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowsLeftRight, CaretLeft, CaretRight } from "@phosphor-icons/react/ssr";
+import { ArrowsLeftRight, CaretLeft, CaretRight, Minus, Plus } from "@phosphor-icons/react/ssr";
 import { sliceLabel, type CategoryComparison, type CategorySlice } from "@/lib/category-stats";
 import { addMonths, monthKey, type MonthId } from "@/lib/date";
 import { monthLabel, monthLabelShort } from "@/lib/i18n/dates";
@@ -41,6 +41,7 @@ export function CategorySection({
   comparison,
   currency,
   budgets,
+  incoming,
 }: {
   title: string;
   basePath: string;
@@ -56,15 +57,41 @@ export function CategorySection({
   currency: string;
   /** Category id → its budget. */
   budgets: Record<string, number>;
+  /** Given: « − » (where it went) / « + » (what came in, by source). */
+  incoming?: CategorySlice[];
 }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(comparing);
+  const [side, setSide] = useState<"out" | "in">("out");
+  const showIn = incoming != null && side === "in";
   return (
     <section className="flex flex-col gap-2.5">
       <div className="flex items-center justify-between gap-2 px-1">
-        <h2 className="min-w-0 truncate text-sm font-semibold text-slate-600 dark:text-slate-300">{title}</h2>
+        <h2 className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-600 dark:text-slate-300">{title}</h2>
+        {incoming && (
+          <div role="radiogroup" aria-label={t("Sorties ou entrées")} className="flex shrink-0 gap-0.5 rounded-full bg-slate-100 p-0.5 dark:bg-slate-800">
+            {(["out", "in"] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                role="radio"
+                aria-checked={side === k}
+                aria-label={k === "out" ? t("Sorties") : t("Entrées")}
+                onClick={() => setSide(k)}
+                className={cn(
+                  "flex h-7 w-8 items-center justify-center rounded-full text-slate-500 transition-colors dark:text-slate-400",
+                  side === k && "bg-white shadow-sm dark:bg-slate-950",
+                  side === k && (k === "out" ? "text-rose-600" : "text-emerald-600"),
+                )}
+              >
+                {k === "out" ? <Minus weight="bold" className="h-3.5 w-3.5" /> : <Plus weight="bold" className="h-3.5 w-3.5" />}
+              </button>
+            ))}
+          </div>
+        )}
         <button
           type="button"
+          hidden={showIn}
           onClick={() => setOpen(!open)}
           aria-pressed={open}
           className={cn(
@@ -78,7 +105,12 @@ export function CategorySection({
           {t("Comparaison")}
         </button>
       </div>
-      {open ? (
+      {showIn ? (
+        <>
+          {picker}
+          <CategoryBars key={`in-${monthKey(month)}`} slices={incoming} currency={currency} empty={t("Rien de reçu ce mois-ci.")} />
+        </>
+      ) : open ? (
         <Comparison basePath={basePath} month={month} vs={vs} comparison={comparison} currency={currency} />
       ) : (
         <>

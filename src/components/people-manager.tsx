@@ -8,6 +8,7 @@ import { mutate } from "@/lib/use-refresh-data";
 import { cn } from "@/lib/utils";
 import { errorMessage } from "@/components/expense-editor";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -17,6 +18,8 @@ interface Row {
   /** Debts / loans going by this name. */
   debts: number;
   loans: number;
+  /** A debt or a loan still going: can't be removed. */
+  busy?: boolean;
 }
 
 const ICON = "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 active:bg-slate-100 disabled:opacity-25 dark:active:bg-slate-800";
@@ -32,6 +35,8 @@ export function PeopleManager({ people }: { people: Row[] }) {
   const [adding, setAdding] = useState("");
   const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
   const [removing, setRemoving] = useState<Row | null>(null);
+  // Someone with a debt or a loan still going: told why they stay.
+  const [kept, setKept] = useState<Row | null>(null);
   const [pending, startTransition] = useTransition();
   // A move shows at once; the page's own list takes over once saved.
   const byId = new Map(people.map((p) => [p.id, p]));
@@ -268,7 +273,7 @@ export function PeopleManager({ people }: { people: Row[] }) {
                   <button type="button" onClick={() => setEditing({ id: p.id, name: p.name })} aria-label={t("Renommer {name}", { name: p.name })} className={ICON}>
                     <PencilSimple weight="bold" className="h-4 w-4" />
                   </button>
-                  <button type="button" onClick={() => setRemoving(p)} aria-label={t("Retirer {name}", { name: p.name })} className={`${ICON} hover:text-rose-500`}>
+                  <button type="button" onClick={() => (p.busy ? setKept(p) : setRemoving(p))} aria-label={t("Retirer {name}", { name: p.name })} className={`${ICON} hover:text-rose-500`}>
                     <Trash weight="bold" className="h-4 w-4" />
                   </button>
                 </>
@@ -281,6 +286,20 @@ export function PeopleManager({ people }: { people: Row[] }) {
       <p className="px-1 text-xs text-slate-500 dark:text-slate-400">
         {t("Ces personnes sont proposées dans « De qui ? » d'une dette et « À qui ? » d'un prêt. Les renommer ou les retirer ne change aucune dette ni aucun prêt.")}
       </p>
+
+      <Dialog open={kept != null} onOpenChange={(open) => !open && setKept(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("{name} ne peut pas être retiré", { name: kept?.name ?? "" })}</DialogTitle>
+            <DialogDescription>{t("Une dette ou un prêt est encore en cours avec cette personne. Une fois tout remboursé (ou rendu), tu pourras le retirer.")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" onClick={() => setKept(null)}>
+              {t("Compris")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={removing != null}

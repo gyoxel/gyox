@@ -64,6 +64,12 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
     <>
       <PageHeader title={t("Bilan du mois")} back info="bilan" />
       <main className="flex flex-col gap-5 px-4 py-5">
+        {/* The month: everything below follows it */}
+        <div className="-mb-2 flex flex-col gap-2">
+          <MonthSwitcher month={month} basePath="/bilan" />
+          {timing === 0 && <p className="px-1 text-xs text-slate-500 dark:text-slate-400">{t("Mois en cours : son bilan se complète jusqu'à la fin du mois.")}</p>}
+        </div>
+
         {/* What's left, and what came in / went out against the month before
             (a month with nothing: the same card, « – » for its amounts) */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-500 via-indigo-600 to-indigo-800 px-5 pb-4 pt-5 text-white shadow-lg shadow-indigo-600/20 dark:shadow-none">
@@ -92,19 +98,13 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
           <CategoryBars slices={sources} currency={settings.currency} empty={timing > 0 ? t("Ce mois n'a pas encore commencé.") : t("Rien de reçu ce mois-ci.")} />
         </section>
 
-        {/* Where it went — the month picked under its title — or beside another month */}
+        {/* Where it went — or beside another month */}
         <CategorySection
           title={t("Où est allé ton argent")}
           basePath="/bilan"
           month={month}
           vs={vs}
           comparing={sp.vs != null}
-          picker={
-            <>
-              <MonthSwitcher month={month} basePath="/bilan" />
-              {timing === 0 && <p className="-mt-1 px-1 text-xs text-slate-500 dark:text-slate-400">{t("Mois en cours : son bilan se complète jusqu'à la fin du mois.")}</p>}
-            </>
-          }
           slices={slices}
           empty={bilan ? undefined : timing > 0 ? t("Ce mois n'a pas encore commencé.") : t("Rien d'enregistré pour ce mois.")}
           comparison={categoryComparison(input, month, vs)}

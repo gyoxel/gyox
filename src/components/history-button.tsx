@@ -130,7 +130,7 @@ function Row({ row, currency }: { row: HistoryRow; currency?: string }) {
       <span
         className={cn(
           "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg",
-          row.kind === "transfer" || row.kind === "adjust" ? "bg-indigo-50 dark:bg-indigo-950/50" : amountOf(row) > 0 ? "bg-emerald-50 dark:bg-emerald-950/50" : "bg-rose-50 dark:bg-rose-950/50",
+          row.neutral ? "bg-slate-100 dark:bg-slate-800" : row.kind === "transfer" || row.kind === "adjust" ? "bg-indigo-50 dark:bg-indigo-950/50" : amountOf(row) > 0 ? "bg-emerald-50 dark:bg-emerald-950/50" : "bg-rose-50 dark:bg-rose-950/50",
         )}
       >
         {row.emoji}
@@ -139,7 +139,9 @@ function Row({ row, currency }: { row: HistoryRow; currency?: string }) {
         <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{entryLabel(row, lang, t)}</span>
         <span className="flex items-center gap-1 text-[11px] tabular-nums text-slate-400">
           {time(row.at)} ·{" "}
-          {row.kind === "transfer" ? (
+          {row.neutral ? (
+            t("Dette ajoutée")
+          ) : row.kind === "transfer" ? (
             <>
               <MethodIcon method={row.lines[0].account} /> → <MethodIcon method={row.lines[1].account} />
             </>
@@ -158,7 +160,7 @@ function Row({ row, currency }: { row: HistoryRow; currency?: string }) {
           )}
         </span>
       </span>
-      <Amount value={amountOf(row)} transfer={row.kind === "transfer"} money={money} />
+      <Amount value={amountOf(row)} transfer={row.kind === "transfer"} neutral={row.neutral} money={money} />
     </>
   );
 
@@ -187,10 +189,16 @@ function Row({ row, currency }: { row: HistoryRow; currency?: string }) {
   return <div className="flex items-center gap-3 px-3 py-2.5">{body}</div>;
 }
 
-function Amount({ value, transfer = false, money, small = false }: { value: number; transfer?: boolean; money: (n: number) => string; small?: boolean }) {
+function Amount({ value, transfer = false, neutral = false, money, small = false }: { value: number; transfer?: boolean; neutral?: boolean; money: (n: number) => string; small?: boolean }) {
   return (
-    <span className={cn("shrink-0 font-bold tabular-nums", small ? "text-xs" : "text-sm", transfer ? "text-indigo-600 dark:text-indigo-400" : value > 0 ? "text-emerald-600" : "text-rose-600")}>
-      {transfer ? "" : value > 0 ? "+" : "−"}
+    <span
+      className={cn(
+        "shrink-0 font-bold tabular-nums",
+        small ? "text-xs" : "text-sm",
+        neutral ? "text-slate-900 dark:text-white" : transfer ? "text-indigo-600 dark:text-indigo-400" : value > 0 ? "text-emerald-600" : "text-rose-600",
+      )}
+    >
+      {transfer || neutral ? "" : value > 0 ? "+" : "−"}
       {money(Math.abs(value))}
     </span>
   );
