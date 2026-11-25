@@ -148,7 +148,10 @@ function Row({ row, currency }: { row: HistoryRow; currency?: string }) {
               {accounts.map((a) => (
                 <MethodIcon key={a} method={a} />
               ))}{" "}
-              {t("en {n} fois", { n: row.steps.length })}
+              <span className="flex items-center gap-0.5 font-semibold text-violet-600 dark:text-violet-300">
+                {t("en {n} fois", { n: row.steps.length })}
+                <CaretDown weight="bold" className={cn("h-3 w-3 transition-transform", open && "rotate-180")} />
+              </span>
             </>
           ) : (
             <MethodLabel method={row.lines[0].account} />
@@ -164,7 +167,6 @@ function Row({ row, currency }: { row: HistoryRow; currency?: string }) {
       <>
         <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="flex w-full items-center gap-3 px-3 py-2.5 active:bg-slate-50 dark:active:bg-slate-800/60">
           {body}
-          <CaretDown weight="bold" className={cn("h-4 w-4 shrink-0 text-violet-500 transition-transform", open && "rotate-180")} />
         </button>
         {open && (
           <ol className="mx-3 mb-2.5 flex flex-col gap-0.5 rounded-xl bg-slate-50 px-3 py-1.5 dark:bg-slate-800/60">
