@@ -110,7 +110,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <PageHeader hideSettings title={t("Statistiques")} back info="stats" />
+      <PageHeader title={t("Statistiques")} back info="stats" />
       <main className="flex flex-col gap-5 px-4 py-5">
         {/* This month, for real */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-sky-400 via-blue-600 to-indigo-700 px-5 pb-4 pt-5 text-white shadow-lg shadow-blue-600/20 dark:shadow-none">

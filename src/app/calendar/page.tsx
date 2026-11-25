@@ -220,7 +220,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageHeader hideSettings title={t("Calendrier")} back info="calendar" />
+      <PageHeader title={t("Calendrier")} back info="calendar" />
       <main className="px-4 py-5">
         <CalendarView
           key={key}
