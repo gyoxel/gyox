@@ -19,7 +19,8 @@ export type ActivityKind =
   | "category"
   | "budget"
   | "person"
-  | "salary";
+  | "salary"
+  | "reset";
 
 export type ActivityAction = "add" | "edit" | "delete" | "pay" | "unpay" | "stop" | "giveup" | "undo" | "take" | "payout" | "skip" | "unskip";
 
@@ -90,6 +91,8 @@ export const ACTIVITY_TITLES: Record<string, string> = {
   "person:edit": msg("Personne renommée"),
   "person:delete": msg("Personne retirée"),
   "salary:edit": msg("Salaire modifié"),
+  "reset:delete": msg("Tout réinitialisé"),
+  "reset:edit": msg("Mois réinitialisé"),
   "salary:add": msg("Salaire reçu"),
   "salary:undo": msg("Salaire reçu annulé"),
 };

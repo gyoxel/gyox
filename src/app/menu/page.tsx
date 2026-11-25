@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Bank, CalendarDots, Cardholder, CaretRight, ChartBar, ChartLineUp, ClockCounterClockwise, GearSix, HandCoins, Handshake, Money, PiggyBank, Receipt, Tag, Target, TrendUp, UserCircle, UsersThree, Wallet } from "@phosphor-icons/react/ssr";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/page-header";
+import { ResetLink } from "@/components/reset-link";
 import { msg } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
 
@@ -68,6 +69,8 @@ export default async function MenuPage() {
             </div>
           </section>
         ))}
+        {/* Start again from zero (asked first) */}
+        <ResetLink />
       </main>
     </>
   );
