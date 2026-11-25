@@ -62,7 +62,7 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <PageHeader title={t("Bilan du mois")} back info="bilan" />
+      <PageHeader hideSettings title={t("Bilan du mois")} back info="bilan" />
       <main className="flex flex-col gap-5 px-4 py-5">
         {/* What's left, and what came in / went out against the month before
             (a month with nothing: the same card, « – » for its amounts) */}

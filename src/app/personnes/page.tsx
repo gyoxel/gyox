@@ -20,7 +20,7 @@ export default async function PeoplePage() {
   for (const l of loans) slot(personOf(l)).loans += 1;
   return (
     <>
-      <PageHeader title={t("Personnes")} back info="personnes" />
+      <PageHeader hideSettings title={t("Personnes")} back info="personnes" />
       <main className="flex flex-col gap-5 px-4 py-5">
         <PeopleManager people={people.map((p) => ({ ...p, ...(used.get(fold(p.name)) ?? { debts: 0, loans: 0 }) }))} />
       </main>

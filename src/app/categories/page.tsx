@@ -51,7 +51,7 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
 
   return (
     <>
-      <PageHeader title={t("Catégories")} back info="categories" />
+      <PageHeader hideSettings title={t("Catégories")} back info="categories" />
       <main className="flex flex-col gap-5 px-4 py-5">
         <nav aria-label={t("Type de catégories")} className="flex gap-1 rounded-full bg-slate-100 p-1 dark:bg-slate-800">
           <Link href="/categories" replace scroll={false} aria-current={!income ? "page" : undefined} className={tab(!income)}>
