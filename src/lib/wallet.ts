@@ -59,6 +59,9 @@ export interface WalletEntry {
    *  of one month (or installment) paid in several times, a loan given
    *  back in several times. */
   series?: string;
+  /** The debt it's about (its money borrowed, its repayments): cancelled
+   *  against each other first within a month (netWithinMonth). */
+  ref?: string;
   /** What it counts in the month's money in (+) / out (−), on its account
    *  (lines[0]): all of it, but nothing for a transfer (money only moved)
    *  nor for money lent coming back (not earned), and of money lent only
@@ -219,6 +222,7 @@ export function buildWallet(input: {
       href: source.get(i.id)?.href ?? `/incomes/${i.id}`,
       group: incomeGroup(i),
       series: source.get(i.id)?.kind === "loan" ? `back:${source.get(i.id)!.href}` : undefined,
+      ref: i.expenseId ?? undefined,
     });
   }
   for (const d of input.darets) {
@@ -250,6 +254,7 @@ export function buildWallet(input: {
       href: source.get(e.id)?.href ?? `/expenses/${e.id}`,
       group: expenseGroup(e),
       series: `pay:${e.id}:${p.slotIndex ?? p.monthKey ?? p.id}`,
+      ref: e.type === "credit" ? e.id : undefined,
     });
   }
   for (const l of input.loans ?? []) {
@@ -345,26 +350,37 @@ export function buildWallet(input: {
 /** Money that came back where it went in the same month isn't money in nor
  *  out: of the Épargne's and the Dettes' movements of a month, only what
  *  they come to counts — 3 000 put aside then 2 000 and 1 000 taken back:
- *  nothing; 3 000 borrowed, 2 000 of it repaid: 1 000 in. Each movement on
- *  the side that's left counts its share of what's left (in place). */
+ *  nothing; 3 000 borrowed, 2 000 of it repaid: 1 000 in. Whole movements
+ *  cancel out, never shares of them (no cents appear): a debt's repayments
+ *  first against that same debt's money, then whatever is left of the
+ *  month's, the oldest first (in place). */
 export function netWithinMonth(entries: WalletEntry[]): void {
-  const sides = new Map<string, { ins: WalletEntry[]; outs: WalletEntry[]; in: number; out: number }>();
+  const months = new Map<string, WalletEntry[]>();
   for (const e of entries) {
     if ((e.group.key !== "savings" && e.group.key !== "debts") || e.counted === 0) continue;
     const key = `${entryMonth(e)}:${e.group.key}`;
-    const side = sides.get(key) ?? sides.set(key, { ins: [], outs: [], in: 0, out: 0 }).get(key)!;
-    if (e.counted > 0) {
-      side.ins.push(e);
-      side.in += e.counted;
-    } else {
-      side.outs.push(e);
-      side.out -= e.counted;
-    }
+    (months.get(key) ?? months.set(key, []).get(key)!).push(e);
   }
-  for (const side of sides.values()) {
-    const matched = Math.min(side.in, side.out);
-    if (!(matched > 0)) continue;
-    for (const e of side.ins) e.counted = round(e.counted * (1 - matched / side.in));
-    for (const e of side.outs) e.counted = round(e.counted * (1 - matched / side.out));
+  const oldestFirst = (a: WalletEntry, b: WalletEntry) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0);
+  /** Cancels `ins` against `outs` as far as they go, the oldest first. */
+  const cancel = (ins: WalletEntry[], outs: WalletEntry[]) => {
+    let i = 0;
+    let o = 0;
+    while (i < ins.length && o < outs.length) {
+      const take = Math.min(ins[i].counted, -outs[o].counted);
+      ins[i].counted = round(ins[i].counted - take);
+      outs[o].counted = round(outs[o].counted + take);
+      if (ins[i].counted <= 0.005) i++;
+      if (outs[o].counted >= -0.005) o++;
+    }
+  };
+  for (const list of months.values()) {
+    list.sort(oldestFirst);
+    // The same debt first (its money, its repayments)…
+    const byRef = new Map<string, WalletEntry[]>();
+    for (const e of list) if (e.ref) (byRef.get(e.ref) ?? byRef.set(e.ref, []).get(e.ref)!).push(e);
+    for (const same of byRef.values()) cancel(same.filter((e) => e.counted > 0), same.filter((e) => e.counted < 0));
+    // …then the rest of the month.
+    cancel(list.filter((e) => e.counted > 0), list.filter((e) => e.counted < 0));
   }
 }
