@@ -238,6 +238,16 @@ export function DueNowList({
       .finally(() => settlePending(expense.id, setPendingIds));
   }
 
+  /** « Pas ce mois-ci » undone: the month is to pay again. */
+  function unskip(expense: Expense) {
+    setPendingIds((prev) => new Set(prev).add(expense.id));
+    void mutate({ method: "DELETE", path: `/api/expenses/${expense.id}/skip?monthKey=${toMonthKey(viewMonth)}` })
+      .then(async (res) => {
+        if (!res.ok) toast.error(await errorMessage(res));
+      })
+      .finally(() => settlePending(expense.id, setPendingIds));
+  }
+
   /** Ticks a row 💵 / 💳: pays it all — the month, or what's left of it. */
   function pay(expense: Expense, amount: number, method: PaymentMethod) {
     setChoosingId(null);
@@ -360,7 +370,7 @@ export function DueNowList({
       ) : (
         <ul className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           {shownItems.map((item, index) => {
-            const { expense, amount, paid, rest, color, group } = item;
+            const { expense, amount, paid, rest, color, group, skipped } = item;
             const key = rowKey(item);
             const isPending = pendingIds.has(expense.id);
             const methods = paid ? paidMethods(expense) : [];
@@ -377,7 +387,7 @@ export function DueNowList({
                   total={formatMoney(paidTotal, currency)}
                 />
               ) : null;
-            const tint = paid ? "bg-emerald-50/40 dark:bg-emerald-950/10" : rest ? "bg-amber-50/50 dark:bg-amber-950/10" : "bg-white dark:bg-slate-900";
+            const tint = skipped ? "bg-slate-50/70 dark:bg-slate-800/20" : paid ? "bg-emerald-50/40 dark:bg-emerald-950/10" : rest ? "bg-amber-50/50 dark:bg-amber-950/10" : "bg-white dark:bg-slate-900";
             const firstOfGroup = group != null && shownItems[index - 1]?.group !== group;
             const open = group != null && openGroups.has(group);
             const divider = group != null && !firstOfGroup ? null : dividers[index];
@@ -468,10 +478,14 @@ export function DueNowList({
                     <span
                       className={cn(
                         "block truncate text-[11px]",
-                        paid ? "font-medium text-emerald-600 dark:text-emerald-400" : rest ? "text-amber-700/80 dark:text-amber-300/80" : "text-slate-400",
+                        skipped ? "font-medium text-sky-600 dark:text-sky-300" : paid ? "font-medium text-emerald-600 dark:text-emerald-400" : rest ? "text-amber-700/80 dark:text-amber-300/80" : "text-slate-400",
                       )}
                     >
-                      {paid
+                      {skipped
+                        ? expense.type === "credit"
+                          ? t("Pas ce mois-ci · reportée")
+                          : t("Pas ce mois-ci")
+                        : paid
                         ? paidLine(methods, month, currency, t)
                         : rest && month
                           ? t("{paid} déjà payés sur {due}", { paid: formatMoney(month.paid, currency), due: formatMoney(month.due, currency) })
@@ -483,12 +497,23 @@ export function DueNowList({
                       "shrink-0 text-sm font-bold tabular-nums",
                       rest ? "text-amber-600 dark:text-amber-400" : "text-rose-600",
                       paid && "font-semibold text-slate-400 line-through dark:text-slate-500",
+                      skipped && "no-underline [text-decoration:none]",
                     )}
                   >
                     {formatMoney(amount, currency)}
                   </span>
                 </Link>
-                {choosingId === key && paid ? (
+                {skipped ? (
+                  <button
+                    type="button"
+                    onClick={() => unskip(expense)}
+                    disabled={isPending}
+                    aria-label={t("Rétablir {name} ce mois-ci", { name: localName(expense.name, t) })}
+                    className="mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 shadow-sm transition-transform active:scale-90 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  >
+                    <ArrowUUpLeft weight="bold" className="h-4 w-4" />
+                  </button>
+                ) : choosingId === key && paid ? (
                   <div ref={chooserRef} className="flex shrink-0 items-center gap-1 py-1 pl-1" aria-label={t("Modifier ou annuler ?")}>
                     <button
                       type="button"
@@ -852,6 +877,24 @@ function OtherAmountSheet({
       confirmLabel={(v) => t("Payé {amount}", { amount: money(v) })}
       tone="rose"
       onClose={onClose}
+      zero={
+        already > 0
+          ? undefined
+          : {
+              chip: t("Pas ce mois-ci"),
+              explain:
+                expense.type === "credit"
+                  ? t("Rien à payer en {month} : cette mensualité passe au mois suivant, et la fin de la dette recule d'un mois.", { month: label })
+                  : t("Rien à payer en {month}. Les autres mois ne changent pas.", { month: label }),
+              label: t("Pas ce mois-ci"),
+              onSubmit: async () => {
+                const res = await mutate({ method: "PUT", path: `/api/expenses/${expense.id}/skip`, body: { monthKey: toMonthKey(viewMonth) } });
+                if (!res.ok) return errorMessage(res);
+                toast.success(t("{name} : pas ce mois-ci.", { name: localName(expense.name, t) }));
+                return null;
+              },
+            }
+      }
       onSubmit={async (value, method) => {
         if (balance && value > balance[method] + 0.005) return insufficientMessage(method, balance[method], t);
         const res = await mutate({
