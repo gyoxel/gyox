@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { deletePerson, renamePerson } from "@/lib/people-repo";
+import { isPersonBusy } from "@/lib/people-busy";
 
 type Params = { params: Promise<{ id: string }> };
 const nameSchema = z.object({ name: z.string().trim().min(1, "Indique un nom.").max(60) });
@@ -14,8 +15,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   return person ? NextResponse.json(person) : NextResponse.json({ error: "Introuvable." }, { status: 404 });
 }
 
-/** DELETE: off the list (no debt or loan changes). */
+/** DELETE: off the list (no debt or loan changes) — not while a debt or a
+ *  loan of theirs is still going. */
 export async function DELETE(_req: NextRequest, { params }: Params) {
-  const ok = await deletePerson((await params).id);
+  const id = (await params).id;
+  if (await isPersonBusy(id)) return NextResponse.json({ error: "Une dette ou un prêt est encore en cours avec cette personne." }, { status: 409 });
+  const ok = await deletePerson(id);
   return ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: "Introuvable." }, { status: 404 });
 }

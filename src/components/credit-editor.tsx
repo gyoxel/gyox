@@ -14,6 +14,7 @@ import { mutate, mutateAll } from "@/lib/use-refresh-data";
 import { errorMessage, keepAboveKeyboard, paymentStatusCall, type PaymentStatusInit } from "@/components/expense-editor";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import { PersonPicker } from "@/components/person-picker";
+import type { PickerPerson } from "@/lib/people-busy";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +51,7 @@ export function CreditEditor({
   expense?: Expense;
   paymentStatus?: PaymentStatusInit | null;
   /** Personnes, offered under the name. */
-  people?: string[];
+  people?: PickerPerson[];
   /** Editing a debt already (partly) repaid: its first month stays. */
   startLocked?: boolean;
 }) {

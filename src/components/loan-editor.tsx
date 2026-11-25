@@ -16,6 +16,7 @@ import { errorMessage, keepAboveKeyboard } from "@/components/expense-editor";
 import { DeleteButton } from "@/components/delete-button";
 import { PaymentMethodPicker } from "@/components/payment-method-picker";
 import { PersonPicker } from "@/components/person-picker";
+import type { PickerPerson } from "@/lib/people-busy";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +32,7 @@ const MONTH_STEPS = [1, 2, 3, 4, 6, 10, 12];
  * Dépenses), and how it comes back (per month or in how many months, from
  * which month). Each installment is then confirmed received on its page.
  */
-export function LoanEditor({ loan, people = [] }: { loan?: Loan; /** Personnes, offered under the name. */ people?: string[] }) {
+export function LoanEditor({ loan, people = [] }: { loan?: Loan; /** Personnes, offered under the name. */ people?: PickerPerson[] }) {
   const isEdit = loan != null;
   const nav = useNavBack();
   const { lang, t } = useI18n();
