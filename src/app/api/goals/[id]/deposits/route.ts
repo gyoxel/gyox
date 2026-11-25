@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { z } from "zod";
 import { addGoalDeposit, getAllPayments, getGoalById } from "@/lib/repository";
 import { getAllSavingsMoves } from "@/lib/savings-repo";
@@ -45,5 +46,6 @@ export const POST = withBalanceGuard(async function post(req: NextRequest, { par
     method,
     monthly: monthly && (method === "cash" || method === "card"),
   });
+  if (deposit) await logActivity({ kind: "deposit", action: "add", name: (await getGoalById(id))?.name ?? name ?? "", amount, detail: method });
   return NextResponse.json(deposit, { status: 201 });
 });

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { rememberPerson } from "@/lib/people-repo";
 import { createLoan, getAllLoans } from "@/lib/loans-repo";
 import { loanInputSchema, toLoanInput } from "@/lib/loan-input";
@@ -16,5 +17,7 @@ export const POST = withBalanceGuard(async function post(req: NextRequest) {
   const input = toLoanInput(parsed.data);
   if (typeof input === "string") return NextResponse.json({ error: input }, { status: 400 });
   if (input.person) await rememberPerson(input.person);
-  return NextResponse.json(await createLoan(input), { status: 201 });
+  const loan = await createLoan(input);
+  await logActivity({ kind: "loan", action: "add", name: loan.name, amount: loan.amount, detail: loan.person });
+  return NextResponse.json(loan, { status: 201 });
 });

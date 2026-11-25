@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { getAllPayments } from "@/lib/repository";
 import { deleteSavingsMove, getAllSavingsMoves, getSavingsMove, updateSavingsMove } from "@/lib/savings-repo";
 import { savingsBalance } from "@/lib/savings";
@@ -28,13 +29,16 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
     }
   }
   const updated = await updateSavingsMove(id, { amount, method: parsed.data.method, note: parsed.data.note, date: parsed.data.date ?? move.date });
+  await logActivity({ kind: "savings", action: "edit", name: parsed.data.note || "Épargne", amount, detail: parsed.data.method });
   return NextResponse.json(updated);
 });
 
 export const DELETE = withBalanceGuard(async function remove(_req: NextRequest, { params }: Params) {
   const { id } = await params;
   if ((await getSavingsMove(id))?.kind === "goal") return NextResponse.json({ error: FROM_GOAL }, { status: 409 });
+  const before = await getSavingsMove(id);
   const gone = await deleteSavingsMove(id);
   if (!gone) return NextResponse.json({ error: "Opération introuvable." }, { status: 404 });
+  if (before) await logActivity({ kind: "savings", action: "delete", name: before.note || "Épargne", amount: before.amount, detail: before.method });
   return NextResponse.json({ ok: true, gone });
 });

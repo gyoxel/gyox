@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { z } from "zod";
 import { getAllPayments } from "@/lib/repository";
 import { createSavingsMove, getAllSavingsMoves } from "@/lib/savings-repo";
@@ -36,5 +37,6 @@ export const POST = withBalanceGuard(async function post(req: NextRequest) {
     date: date ?? todayDateStr(),
     monthly: kind === "in" && monthly,
   });
+  if (kind !== "existing") await logActivity({ kind: "savings", action: kind === "out" ? "take" : "add", name: note || "Épargne", amount, detail: method });
   return NextResponse.json(move, { status: 201 });
 });

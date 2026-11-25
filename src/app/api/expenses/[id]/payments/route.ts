@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { monthKey as toMonthKey, todayMonth } from "@/lib/date";
 import { getExpenseById, markMonthUnpaid, setPaymentMethod, undoLastCreditSlot } from "@/lib/repository";
 import { payExpense } from "@/lib/pay-expense";
@@ -27,6 +28,8 @@ export const POST = withBalanceGuard(async function post(req: NextRequest, { par
   if (amount != null && (amount <= 0 || amount > 1e9)) return NextResponse.json({ error: "Montant invalide." }, { status: 400 });
   const result = await payExpense(id, body.monthKey, method, amount);
   if ("error" in result) return NextResponse.json({ error: result.error }, { status: result.status });
+  const paidFor = await getExpenseById(id);
+  if (paidFor) await logActivity({ kind: "payment", action: "pay", name: paidFor.name, amount: result.payment.amountPaid, detail: result.payment.method ?? null });
   return NextResponse.json(result.payment, { status: 201 });
 });
 
@@ -44,12 +47,14 @@ export const DELETE = withBalanceGuard(async function remove(req: NextRequest, {
   if (expense.type === "credit") {
     const ok = await undoLastCreditSlot(expense.id);
     if (!ok) return NextResponse.json({ error: "Aucun paiement à annuler." }, { status: 400 });
+    await logActivity({ kind: "payment", action: "unpay", name: expense.name });
     return NextResponse.json({ ok: true });
   }
 
   const monthKeyValue = req.nextUrl.searchParams.get("monthKey") ?? toMonthKey(todayMonth());
   const ok = await markMonthUnpaid(expense.id, monthKeyValue);
   if (!ok) return NextResponse.json({ error: "Aucun paiement à annuler pour ce mois." }, { status: 400 });
+  await logActivity({ kind: "payment", action: "unpay", name: expense.name });
   return NextResponse.json({ ok: true });
 });
 
@@ -62,5 +67,7 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
   }
   const ok = await setPaymentMethod(id, body.monthKey, body.method);
   if (!ok) return NextResponse.json({ error: "Aucun paiement pour ce mois." }, { status: 404 });
+  const changed = await getExpenseById(id);
+  if (changed) await logActivity({ kind: "payment", action: "edit", name: changed.name, detail: body.method });
   return NextResponse.json({ ok: true });
 });

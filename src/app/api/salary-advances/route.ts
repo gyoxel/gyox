@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { z } from "zod";
 import { createSalaryAdvance, getAllSalaryAdvances } from "@/lib/repository";
 import { withBalanceGuard } from "@/lib/balance-guard";
@@ -18,5 +19,7 @@ export async function GET() {
 export const POST = withBalanceGuard(async function post(req: NextRequest) {
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  return NextResponse.json(await createSalaryAdvance(parsed.data), { status: 201 });
+  const advance = await createSalaryAdvance(parsed.data);
+  await logActivity({ kind: "advance", action: "add", name: "Avance sur salaire", amount: advance.amount, detail: advance.method });
+  return NextResponse.json(advance, { status: 201 });
 });

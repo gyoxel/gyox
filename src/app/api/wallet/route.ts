@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { z } from "zod";
 import { createWalletOp, getAllWalletOps } from "@/lib/repository";
 import { withBalanceGuard } from "@/lib/balance-guard";
@@ -42,5 +43,6 @@ export const POST = withBalanceGuard(async function post(req: NextRequest) {
     amount: Math.round(op.amount * 100) / 100,
     note: op.note || null,
   });
+  await logActivity({ kind: op.kind, action: "add", name: op.note || (op.kind === "transfer" ? (op.toAccount === "card" ? "Versement sur la carte" : "Retrait en espèces") : "Ajustement du solde"), amount: op.amount, detail: op.toAccount });
   return NextResponse.json(created, { status: 201 });
 });

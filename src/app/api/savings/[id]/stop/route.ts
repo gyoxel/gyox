@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { stopSavingsMove } from "@/lib/savings-repo";
 import { withBalanceGuard } from "@/lib/balance-guard";
 
@@ -7,5 +8,6 @@ export const POST = withBalanceGuard(async function post(_req: NextRequest, { pa
   const { id } = await params;
   const stopped = await stopSavingsMove(id);
   if (!stopped) return NextResponse.json({ error: "Opération introuvable." }, { status: 404 });
+  await logActivity({ kind: "savings", action: "stop", name: "Épargne" });
   return NextResponse.json({ ok: true, gone: stopped.gone });
 });

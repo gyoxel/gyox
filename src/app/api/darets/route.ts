@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { createDaret, getAllDarets } from "@/lib/repository";
 import { daretDates, daretInputSchema } from "@/lib/daret-input";
 import { withBalanceGuard } from "@/lib/balance-guard";
@@ -19,5 +20,6 @@ export const POST = withBalanceGuard(async function post(req: NextRequest) {
   }
 
   const daret = await createDaret({ name, amount, members, ...dates, turnMonth });
+  await logActivity({ kind: "daret", action: "add", name, amount });
   return NextResponse.json(daret, { status: 201 });
 });

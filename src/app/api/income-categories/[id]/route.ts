@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { deleteIncomeCategory, updateIncomeCategory } from "@/lib/income-categories-repo";
 import { categoryInputSchema } from "@/lib/validation";
 
@@ -9,6 +10,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const updated = await updateIncomeCategory((await params).id, parsed.data);
   if (!updated) return NextResponse.json({ error: "Catégorie introuvable." }, { status: 404 });
+  if (updated) await logActivity({ kind: "category", action: "edit", name: parsed.data.name ?? "" });
   return NextResponse.json(updated);
 }
 

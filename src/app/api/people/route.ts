@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { z } from "zod";
 import { addPerson, getPeople } from "@/lib/people-repo";
 
@@ -12,5 +13,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const parsed = nameSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  return NextResponse.json(await addPerson(parsed.data.name), { status: 201 });
+  const person = await addPerson(parsed.data.name);
+  await logActivity({ kind: "person", action: "add", name: person.name });
+  return NextResponse.json(person, { status: 201 });
 }

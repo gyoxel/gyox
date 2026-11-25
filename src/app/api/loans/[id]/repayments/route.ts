@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { z } from "zod";
 import { getLoan, receiveRepayment } from "@/lib/loans-repo";
 import { loanState } from "@/lib/loans";
@@ -31,5 +32,7 @@ export const POST = withBalanceGuard(async function post(req: NextRequest, { par
   }
   const repayment = await receiveRepayment(id, parsed.data.slot, parsed.data.method, amount);
   if (!repayment) return NextResponse.json({ error: "Ce mois n'attend plus rien." }, { status: 400 });
+  const lent = await getLoan(id);
+  await logActivity({ kind: "repayment", action: "add", name: lent?.person || lent?.name || "", amount: repayment.amount, detail: repayment.method });
   return NextResponse.json(repayment, { status: 201 });
 });

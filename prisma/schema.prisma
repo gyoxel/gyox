@@ -516,6 +516,31 @@ model Person {
   @@map("people")
 }
 
+/// Historique (Menu): what was done in the app — added, changed, deleted,
+/// paid… — newest first, the last 60 kept (older ones go). A change to
+/// something old is a new line; the line of when it was added stays.
+model Activity {
+  id     String  @default(uuid())
+  /// ISO timestamp.
+  at     String
+  /// What it's about: "expense", "debt", "income", "loan"… (lib/activity.ts).
+  kind   String
+  /// What was done: "add", "edit", "delete", "pay", "unpay"…
+  action String
+  /// Its name as it was then.
+  name   String
+  amount Float?
+  /// A word more (cash / card, a person…).
+  detail String?
+
+  userId String @default("")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, id])
+  @@index([userId, at])
+  @@map("activities")
+}
+
 /// Someone signed in with Google. Everything else belongs to one user.
 model User {
   id          String  @id @default(uuid())
@@ -548,6 +573,7 @@ model User {
   loans            Loan[]
   loanRepayments   LoanRepayment[]
   people           Person[]
+  activities       Activity[]
 
   @@map("users")
 }

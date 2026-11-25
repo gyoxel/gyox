@@ -1,4 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { getGoalById } from "@/lib/repository";
+import { logActivity } from "@/lib/activity";
 import { z } from "zod";
 import { deleteGoalDeposit, getAllPayments, getGoalDeposit, pagesGoneWithExpenses, updateGoalDeposit } from "@/lib/repository";
 import { getAllSavingsMoves } from "@/lib/savings-repo";
@@ -33,6 +35,7 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
   }
   const deposit = await updateGoalDeposit(id, depositId, parsed.data);
   if (!deposit) return NextResponse.json({ error: "Versement introuvable." }, { status: 404 });
+  if (deposit) await logActivity({ kind: "deposit", action: "edit", name: (await getGoalById(id))?.name ?? deposit.name, amount: deposit.amount, detail: deposit.method ?? null });
   return NextResponse.json(deposit);
 });
 
@@ -45,5 +48,6 @@ export const DELETE = withBalanceGuard(async function remove(_req: Request, { pa
   ];
   const ok = await deleteGoalDeposit(id, depositId);
   if (!ok) return NextResponse.json({ error: "Versement introuvable." }, { status: 404 });
+  if (deposit) await logActivity({ kind: "deposit", action: "delete", name: (await getGoalById(id))?.name ?? deposit.name, amount: deposit.amount, detail: deposit.method ?? null });
   return NextResponse.json({ ok: true, gone });
 });
