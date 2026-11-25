@@ -55,6 +55,10 @@ export interface WalletEntry {
   opId?: string;
   /** Its category, to filter the history. */
   group: EntryGroup;
+  /** Steps of one thing, shown together in the history window: the parts
+   *  of one month (or installment) paid in several times, a loan given
+   *  back in several times. */
+  series?: string;
   /** What it counts in the month's money in (+) / out (−), on its account
    *  (lines[0]): all of it, but nothing for a transfer (money only moved)
    *  nor for money lent coming back (not earned), and of money lent only
@@ -214,6 +218,7 @@ export function buildWallet(input: {
       lines: [{ account: i.method, amount: i.amount }],
       href: source.get(i.id)?.href ?? `/incomes/${i.id}`,
       group: incomeGroup(i),
+      series: source.get(i.id)?.kind === "loan" ? `back:${source.get(i.id)!.href}` : undefined,
     });
   }
   for (const d of input.darets) {
@@ -244,6 +249,7 @@ export function buildWallet(input: {
       lines: [{ account: p.method, amount: -p.amountPaid }],
       href: source.get(e.id)?.href ?? `/expenses/${e.id}`,
       group: expenseGroup(e),
+      series: `pay:${e.id}:${p.slotIndex ?? p.monthKey ?? p.id}`,
     });
   }
   for (const l of input.loans ?? []) {

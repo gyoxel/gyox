@@ -34,7 +34,7 @@ export default async function LoanPage({ params }: { params: Promise<{ id: strin
 
   return (
     <>
-      <PageHeader title={loan.name} back info="pret" action={<DeleteButton variant="icon" {...loanDelete(loan, t)} />} />
+      <PageHeader history="loans" title={loan.name} back info="pret" action={<DeleteButton variant="icon" {...loanDelete(loan, t)} />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-amber-700 px-5 pb-4 pt-5 text-white shadow-lg shadow-orange-600/20 dark:shadow-none">
           <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />

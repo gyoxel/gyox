@@ -64,7 +64,7 @@ export default async function CreditsPage() {
 
   return (
     <>
-      <PageHeader title={t("Dettes")} info="credits" action={<HeaderAdd href="/expenses/new?type=credit" label={t("Ajouter une dette")} />} />
+      <PageHeader history="debts" title={t("Dettes")} info="credits" action={<HeaderAdd href="/expenses/new?type=credit" label={t("Ajouter une dette")} />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         <TimelineSection
           expenses={expenses}

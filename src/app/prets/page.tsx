@@ -98,7 +98,7 @@ export default async function LoansPage() {
 
   return (
     <>
-      <PageHeader title={t("Argent prêté")} back info="prets" action={<HeaderAdd href="/prets/new" label={t("Prêter de l'argent")} />} />
+      <PageHeader history="loans" title={t("Argent prêté")} back info="prets" action={<HeaderAdd href="/prets/new" label={t("Prêter de l'argent")} />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-amber-700 px-5 py-4 text-white shadow-lg shadow-orange-600/20 dark:shadow-none">
           <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />

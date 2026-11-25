@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { GearSix } from "@phosphor-icons/react/ssr";
 import { HEADER_BUTTON } from "@/components/header-button";
 import { RefreshLogo } from "@/components/refresh-logo";
+import { HistoryButton } from "@/components/history-button";
 import { formatDate } from "@/lib/i18n/dates";
 import { getI18n } from "@/lib/i18n/server";
 
@@ -10,7 +10,8 @@ const TIME_ZONE = "Africa/Casablanca";
 /**
  * Accueil's own header, on the page itself (nothing floating over it): the
  * GX mark (tap: refresh), Bonjour / Bonsoir and the first name, today's date
- * in a round button (tap: the Calendrier), and settings.
+ * in a round button (tap: the Calendrier), and the history (Paramètres is in
+ * the Menu).
  */
 export async function HomeHeader({ name }: { name: string }) {
   const { lang, t } = await getI18n();
@@ -38,9 +39,7 @@ export async function HomeHeader({ name }: { name: string }) {
           </span>
           <span className="text-[15px] font-bold">{part({ day: "numeric" })}</span>
         </Link>
-        <Link href="/settings" data-nav="section" aria-label={t("Paramètres")} className={HEADER_BUTTON}>
-          <GearSix weight="bold" className="h-[19px] w-[19px]" />
-        </Link>
+        <HistoryButton />
       </div>
     </header>
   );

@@ -33,7 +33,7 @@ export default async function DaretPage() {
 
   return (
     <>
-      <PageHeader title={t("Daret")} back info="daret" action={<HeaderAdd href="/daret/new" label={t("Ajouter une daret")} />} />
+      <PageHeader history="darets" title={t("Daret")} back info="daret" action={<HeaderAdd href="/daret/new" label={t("Ajouter une daret")} />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         {items.length > 0 && (
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-400 via-emerald-500 to-emerald-700 px-5 py-4 text-white shadow-lg shadow-emerald-600/20 dark:shadow-none">

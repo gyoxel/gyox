@@ -93,7 +93,7 @@ export default async function IncomesPage() {
 
   return (
     <>
-      <PageHeader title={t("Revenus")} back info="incomes" action={<HeaderAdd href="/incomes/new" label={t("Ajouter un revenu")} />} />
+      <PageHeader history="incomes" title={t("Revenus")} back info="incomes" action={<HeaderAdd href="/incomes/new" label={t("Ajouter un revenu")} />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         <div className="rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-600 px-5 pb-4 pt-5 text-white shadow-lg shadow-emerald-600/20 dark:shadow-none">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">{t("Revenus en plus ce mois-ci")}</p>

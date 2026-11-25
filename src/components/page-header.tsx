@@ -1,19 +1,18 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import Link from "next/link";
-import { GearSix } from "@phosphor-icons/react/ssr";
 import { BackButton } from "@/components/back-button";
-import { HEADER_BUTTON } from "@/components/header-button";
 import { cn } from "@/lib/utils";
-import { useT } from "@/lib/i18n/client";
 import { PageInfoButton } from "@/components/page-info";
+import { HistoryButton } from "@/components/history-button";
+import type { HistoryScope } from "@/lib/history";
 
 /**
  * Page header, the same on every page: on the page itself while at the top,
  * glass (the page blurred under it) once the page scrolls under it — the
  * browser's bar takes the backdrop's colour, so the app looks full screen —
- * with a bold title and round glass back / settings buttons.
+ * with a bold title and round glass back / history buttons (Paramètres is
+ * in the Menu).
  */
 export function PageHeader({
   title,
@@ -21,16 +20,19 @@ export function PageHeader({
   action,
   hideSettings = false,
   info,
+  history = "all",
 }: {
   title: ReactNode;
   /** Back arrow: previous page, or home when this is the first page opened. */
   back?: boolean;
   action?: ReactNode;
+  /** No history button (Menu, Paramètres, Profil…). */
   hideSettings?: boolean;
+  /** Whose last operations the history button shows. */
+  history?: HistoryScope;
   /** The page's « i »: what it is and what can be done on it (PAGE_INFO). */
   info?: string;
 }) {
-  const t = useT();
   const ref = useScrolledFlag();
   // A long title ("Ajouter une dépense", "Modifier · Makla" beside a
   // delete button) would be cut between the buttons: smaller then.
@@ -51,11 +53,7 @@ export function PageHeader({
           {info && <PageInfoButton page={info} />}
         </div>
         {action}
-        {!hideSettings && (
-          <Link href="/settings" data-nav="section" aria-label={t("Paramètres")} className={HEADER_BUTTON}>
-            <GearSix weight="bold" className="h-[19px] w-[19px]" />
-          </Link>
-        )}
+        {!hideSettings && <HistoryButton scope={history} />}
       </div>
     </header>
   );

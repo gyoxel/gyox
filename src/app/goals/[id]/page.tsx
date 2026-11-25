@@ -48,7 +48,7 @@ export default async function GoalDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <>
-      <PageHeader title={goal.name} back info="goal" action={<DeleteButton variant="icon" {...goalDelete(goal, t)} />} />
+      <PageHeader history="savings" title={goal.name} back info="goal" action={<DeleteButton variant="icon" {...goalDelete(goal, t)} />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         <GoalCard
           goal={goal}
