@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { z } from "zod";
 import { deleteDaret, getDaretById, pagesGoneWithExpenses, setDaretPayout, updateDaret } from "@/lib/repository";
 import { daretDates, daretInputSchema } from "@/lib/daret-input";
@@ -9,6 +10,7 @@ export const DELETE = withBalanceGuard(async function remove(_req: Request, { pa
   const daret = await getDaretById(id);
   const gone = daret ? await pagesGoneWithExpenses([daret.expenseId]) : [];
   const ok = await deleteDaret(id);
+  if (ok && daret) await logActivity({ kind: "daret", action: "delete", name: daret.expense.name, amount: daret.expense.amount });
   if (!ok) return NextResponse.json({ error: "Daret introuvable." }, { status: 404 });
   return NextResponse.json({ ok: true, gone });
 });
@@ -34,11 +36,14 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
     const { name, amount, members, turnMonth } = edit.data;
     const daret = await updateDaret(id, { name, amount, members, ...dates, turnMonth });
     if (!daret) return NextResponse.json({ error: "Daret introuvable." }, { status: 404 });
+    await logActivity({ kind: "daret", action: "edit", name, amount });
     return NextResponse.json(daret);
   }
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const ok = await setDaretPayout(id, parsed.data.payoutMethod);
   if (!ok) return NextResponse.json({ error: "Daret introuvable." }, { status: 404 });
+  const paidOut = await getDaretById(id);
+  if (paidOut && parsed.data.payoutMethod) await logActivity({ kind: "daret", action: "payout", name: paidOut.expense.name, amount: paidOut.expense.amount * paidOut.members, detail: parsed.data.payoutMethod });
   return NextResponse.json({ ok: true });
 });

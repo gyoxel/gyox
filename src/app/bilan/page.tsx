@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { ArrowDown, ArrowUp, CaretRight } from "@phosphor-icons/react/ssr";
-import { getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllLoans, getAllPayments, getAllSavingsMoves, getSettings } from "@/lib/page-data";
+import { getAllCategories, getAllDarets, getAllExpenses, getAllGoals, getAllIncomes, getAllLoans, getAllPayments, getAllSavingsMoves, getSettings } from "@/lib/page-data";
 import { addMonths, compareMonths, monthFromSearchParams, monthKey, todayMonth } from "@/lib/date";
 import { budgetsById } from "@/lib/category-budgets";
 import { categoryBreakdown, categoryComparison } from "@/lib/category-stats";
 import { buildMonthBilan } from "@/lib/month-bilan";
+import { moneySources } from "@/lib/money-sources";
+import { entryLabel } from "@/lib/entry-label";
 import { getWallet } from "@/lib/wallet-data";
 import { monthLabel } from "@/lib/i18n/dates";
 import { getI18n } from "@/lib/i18n/server";
@@ -12,6 +14,7 @@ import { cn, formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { MonthSwitcher } from "@/components/month-switcher";
 import { CategorySection } from "@/components/category-section";
+import { CategoryBars } from "@/components/category-bars";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +28,7 @@ const NONE = "–";
  * month, Accueil links to the one just over).
  */
 export default async function BilanPage({ searchParams }: { searchParams: Promise<{ month?: string; vs?: string }> }) {
-  const [sp, settings, expenses, payments, categories, darets, savingsMoves, goals, loans, { lang, t }] = await Promise.all([
+  const [sp, settings, expenses, payments, categories, darets, savingsMoves, goals, loans, incomes, { lang, t }] = await Promise.all([
     searchParams,
     getSettings(),
     getAllExpenses(),
@@ -35,6 +38,7 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
     getAllSavingsMoves(),
     getAllGoals(),
     getAllLoans(),
+    getAllIncomes(),
     getI18n(),
   ]);
   const current = todayMonth();
@@ -42,8 +46,10 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
   const previous = addMonths(month, -1);
   const key = monthKey(month);
   const [wallet, previousWallet] = await Promise.all([getWallet(month), getWallet(previous)]);
-  const input = { expenses, payments, categories, darets, savingsMoves, goals, loans };
-  const slices = categoryBreakdown(input, month);
+  const input = { expenses, payments, categories, darets, savingsMoves, goals, loans, incomes };
+  // More came in than went (money borrowed this month…): it shows under
+  // « D'où vient ton argent » instead.
+  const slices = categoryBreakdown(input, month).filter((x) => !(x.net && x.amount < 0));
   const vs = monthFromSearchParams(sp.vs, previous);
   const bilan = buildMonthBilan(wallet, slices, key, monthLabel(month, lang));
   const before = buildMonthBilan(previousWallet, [], monthKey(previous), "");
@@ -51,12 +57,19 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
   const label = monthLabel(month, lang);
   const previousLabel = monthLabel(previous, lang);
   const timing = compareMonths(month, current);
+  const sources = moneySources(wallet.entries, key, monthKey(previous), (e) => entryLabel(e, lang, t));
   const left = bilan ? Math.round((bilan.moneyIn - bilan.moneyOut) * 100) / 100 : 0;
 
   return (
     <>
       <PageHeader title={t("Bilan du mois")} back info="bilan" />
       <main className="flex flex-col gap-5 px-4 py-5">
+        {/* The month: everything below follows it */}
+        <div className="-mb-2 flex flex-col gap-2">
+          <MonthSwitcher month={month} basePath="/bilan" />
+          {timing === 0 && <p className="px-1 text-xs text-slate-500 dark:text-slate-400">{t("Mois en cours : son bilan se complète jusqu'à la fin du mois.")}</p>}
+        </div>
+
         {/* What's left, and what came in / went out against the month before
             (a month with nothing: the same card, « – » for its amounts) */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-500 via-indigo-600 to-indigo-800 px-5 pb-4 pt-5 text-white shadow-lg shadow-indigo-600/20 dark:shadow-none">
@@ -79,19 +92,19 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
           </p>
         </div>
 
-        {/* Where it went — the month picked under its title — or beside another month */}
+        {/* Where it came from: the month's Entrées, by source */}
+        <section className="flex flex-col gap-2.5">
+          <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("D'où vient ton argent")}</h2>
+          <CategoryBars slices={sources} currency={settings.currency} empty={timing > 0 ? t("Ce mois n'a pas encore commencé.") : t("Rien de reçu ce mois-ci.")} />
+        </section>
+
+        {/* Where it went — or beside another month */}
         <CategorySection
           title={t("Où est allé ton argent")}
           basePath="/bilan"
           month={month}
           vs={vs}
           comparing={sp.vs != null}
-          picker={
-            <>
-              <MonthSwitcher month={month} basePath="/bilan" />
-              {timing === 0 && <p className="-mt-1 px-1 text-xs text-slate-500 dark:text-slate-400">{t("Mois en cours : son bilan se complète jusqu'à la fin du mois.")}</p>}
-            </>
-          }
           slices={slices}
           empty={bilan ? undefined : timing > 0 ? t("Ce mois n'a pas encore commencé.") : t("Rien d'enregistré pour ce mois.")}
           comparison={categoryComparison(input, month, vs)}

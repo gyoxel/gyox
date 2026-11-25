@@ -6,6 +6,7 @@ import { ArrowDown, ArrowUp, ArrowsLeftRight, CalendarBlank, CaretRight, PencilS
 import { toast } from "sonner";
 import type { PaymentMethod } from "@/lib/types";
 import { entryMonth, type EntryGroup, type WalletEntry, type WalletSummary } from "@/lib/wallet";
+import { entryLabel } from "@/lib/entry-label";
 import { METHOD_META } from "@/lib/payment-method";
 import { mutate } from "@/lib/use-refresh-data";
 import { cleanDecimalInput, cn, formatMoney, parseDecimalInput, toDecimalInput } from "@/lib/utils";
@@ -18,8 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MethodIcon, MethodLabel } from "@/components/method-icon";
-import { categoryName, localName, msg, type Lang, type T } from "@/lib/i18n";
-import { monthLabel, monthLabelShort, whenLabel } from "@/lib/i18n/dates";
+import { categoryName, msg, type T } from "@/lib/i18n";
+import { monthLabel, whenLabel } from "@/lib/i18n/dates";
 import { parseMonthKey } from "@/lib/date";
 import { useI18n } from "@/lib/i18n/client";
 
@@ -63,12 +64,6 @@ const countedOn = (entry: WalletEntry, account: PaymentMethod | "all") =>
 
 /** An entry's name in the device's language (the app's own wording; a
  *  name typed by the user stays as typed). */
-function entryLabel(entry: WalletEntry, lang: Lang, t: T): string {
-  if (!entry.say) return localName(entry.label, t);
-  const { text, vars, period } = entry.say;
-  const month = period ? monthLabelShort(parseMonthKey(period), lang) : null;
-  return t(text, { ...vars, ...(month ? { period: lang === "en" ? month : month.toLowerCase() } : {}) });
-}
 
 /**
  * Solde: total, cash and card (each with this month's in / out), transfer

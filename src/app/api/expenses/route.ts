@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { rememberPerson } from "@/lib/people-repo";
 import { z } from "zod";
 import { createExpense, createIncome, getAllExpenses } from "@/lib/repository";
@@ -40,5 +41,6 @@ export const POST = withBalanceGuard(async function post(req: NextRequest) {
     const result = await payExpense(expense.id, extras.data.paid.monthKey, extras.data.paid.method);
     if ("error" in result) problems.push("paid");
   }
+  await logActivity({ kind: expense.type === "credit" ? "debt" : "expense", action: "add", name: expense.name, amount: expense.type === "credit" ? (expense.creditInitialAmount ?? expense.amount) : expense.amount, detail: expense.person });
   return NextResponse.json({ ...expense, problems }, { status: 201 });
 });

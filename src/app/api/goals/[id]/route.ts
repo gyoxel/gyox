@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { deleteGoal, getGoalById, pagesGoneWithExpenses, updateGoal } from "@/lib/repository";
 import { goalInputSchema } from "@/lib/validation";
 import { withBalanceGuard } from "@/lib/balance-guard";
@@ -25,6 +26,7 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
 
   const goal = await updateGoal(id, sent);
   if (!goal) return NextResponse.json({ error: "Modification impossible." }, { status: 400 });
+  if (goal) await logActivity({ kind: "goal", action: "edit", name: goal.name, amount: goal.targetAmount });
   return NextResponse.json(goal);
 });
 
@@ -35,5 +37,6 @@ export const DELETE = withBalanceGuard(async function remove(_req: NextRequest, 
   const gone = [`/goals/${id}`, ...(await pagesGoneWithExpenses(expenseIds))];
   const ok = await deleteGoal(id);
   if (!ok) return NextResponse.json({ error: "Objectif introuvable." }, { status: 404 });
+  if (goal) await logActivity({ kind: "goal", action: "delete", name: goal.name, amount: goal.targetAmount });
   return NextResponse.json({ ok: true, gone });
 });

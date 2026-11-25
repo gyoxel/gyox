@@ -29,7 +29,7 @@ export default async function EditSavingsPage({ params }: { params: Promise<{ id
     <>
       <PageHeader
         title={`${t("Modifier")} · ${move.kind === "out" ? t("Retrait") : t("Épargne")}`}
-        back
+        back hideSettings
         info="savings-edit"
         action={<DeleteButton variant="icon" {...savingsDelete(move, t)} />}
       />

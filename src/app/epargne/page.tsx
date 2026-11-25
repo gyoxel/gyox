@@ -27,7 +27,7 @@ export default async function EpargnePage() {
   const depositHref = new Map(goals.flatMap((g) => g.deposits.map((d) => [d.id, `/goals/${g.id}/deposits/${d.id}`] as const)));
   return (
     <>
-      <PageHeader title={t("Épargne")} back info="epargne" action={<HeaderAdd label={t("Mettre de côté")} />} />
+      <PageHeader history="savings" title={t("Épargne")} back info="epargne" action={<HeaderAdd label={t("Mettre de côté")} />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         <EpargneView
           moves={moves.map((m) => ({

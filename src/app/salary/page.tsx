@@ -42,7 +42,7 @@ export default async function SalaryPage() {
 
   return (
     <>
-      <PageHeader title={t("Salaire")} back info="salary" />
+      <PageHeader history="salary" title={t("Salaire")} back info="salary" />
       <main className="flex flex-col gap-5 px-4 py-5">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-700 px-5 pb-4 pt-5 text-white shadow-lg shadow-teal-600/20 dark:shadow-none">
           <span aria-hidden className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10" />

@@ -31,11 +31,11 @@ const round = (n: number) => Math.round(n * 100) / 100;
 export function buildMonthBilan(wallet: WalletSummary, slices: CategorySlice[], monthKey: string, monthLabel: string): MonthBilanData | null {
   const moneyIn = round(wallet.monthIn.cash + wallet.monthIn.card);
   const moneyOut = round(wallet.monthOut.cash + wallet.monthOut.card);
+  // What the Épargne's movements of the month come to (taken back the same
+  // month: not put aside).
   let putAside = 0;
-  for (const e of wallet.entries) {
-    if (e.kind !== "savings" || entryMonth(e) !== monthKey) continue;
-    for (const l of e.lines) if (l.amount < 0) putAside -= l.amount;
-  }
+  for (const e of wallet.entries) if (e.group.key === "savings" && entryMonth(e) === monthKey) putAside -= e.counted;
+  putAside = Math.max(0, putAside);
   if (moneyIn === 0 && moneyOut === 0 && slices.length === 0) return null;
-  return { monthKey, monthLabel, moneyIn, moneyOut, putAside: round(putAside), top: slices.slice(0, 3) };
+  return { monthKey, monthLabel, moneyIn, moneyOut, putAside: round(putAside), top: slices.filter((s) => s.amount > 0).slice(0, 3) };
 }

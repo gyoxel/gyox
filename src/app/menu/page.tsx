@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bank, CalendarDots, Cardholder, CaretRight, ChartBar, ChartLineUp, GearSix, HandCoins, Handshake, Money, PiggyBank, Receipt, Tag, Target, TrendUp, UserCircle, UsersThree, Wallet } from "@phosphor-icons/react/ssr";
+import { Bank, CalendarDots, Cardholder, CaretRight, ChartBar, ChartLineUp, ClockCounterClockwise, GearSix, HandCoins, Handshake, Money, PiggyBank, Receipt, Tag, Target, TrendUp, UserCircle, UsersThree, Wallet } from "@phosphor-icons/react/ssr";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/page-header";
 import { msg } from "@/lib/i18n";
@@ -9,6 +9,7 @@ const GROUPS: { title: string; items: { href: string; label: string; hint: strin
   { title: msg("Mon compte"), items: [
     { href: "/profil", label: msg("Profil"), hint: msg("Ton compte Google, déconnexion"), icon: UserCircle },
     { href: "/settings", label: msg("Paramètres"), hint: msg("Thème, sauvegarde"), icon: GearSix },
+    { href: "/historique", label: msg("Historique"), hint: msg("Tout ce que tu as fait : ajouts, modifications, suppressions"), icon: ClockCounterClockwise },
   ] },
   { title: msg("Mon argent"), items: [
     { href: "/salary", label: msg("Salaire"), hint: msg("Montant, jour de paie, avances"), icon: Money },

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ArrowDown, ArrowUp, CaretDown } from "@phosphor-icons/react/ssr";
-import type { CategorySlice } from "@/lib/category-stats";
+import type { CategorySlice, Flow } from "@/lib/category-stats";
 import { budgetLevel, budgetPercent } from "@/lib/category-budgets";
 import { LEVEL_TEXT } from "@/components/budget-bar";
 import { sliceLabel } from "@/lib/category-stats";
@@ -59,8 +59,17 @@ export function CategoryBars({
   const { lang, t } = useI18n();
   const [open, setOpen] = useState<string | null>(null);
   const money = (n: number) => formatMoney(n, currency);
-  const total = slices.reduce((s, x) => s + x.amount, 0);
+  // Épargne / Dettes may come to nothing or less (more came back than went).
+  const total = slices.reduce((s, x) => s + Math.max(0, x.amount), 0);
   const max = Math.max(1, ...slices.map((s) => s.amount));
+  const flowLabel = (flow: Flow | undefined) =>
+    flow === "saved" ? t("Mis de côté") : flow === "unsaved" ? t("Repris") : flow === "borrowed" ? t("Emprunté") : flow === "repaid" ? t("Remboursé") : "";
+  const signed = (n: number) => (
+    <span className={cn("tabular-nums", n > 0 ? "text-emerald-600 dark:text-emerald-400" : n < 0 ? "text-rose-600 dark:text-rose-400" : "text-slate-500")}>
+      {n > 0 ? "+" : n < 0 ? "−" : ""}
+      {money(Math.abs(n))}
+    </span>
+  );
 
   if (slices.length === 0) {
     return (
@@ -74,7 +83,7 @@ export function CategoryBars({
     <div className="flex flex-col gap-1 rounded-3xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       {slices.map((s) => {
         const expanded = open === s.key;
-        const share = total > 0 ? Math.round((s.amount / total) * 100) : 0;
+        const share = total > 0 ? Math.round((Math.max(0, s.amount) / total) * 100) : 0;
         const budget = budgets[s.key];
         return (
           <div key={s.key} className={cn("rounded-2xl transition-colors", expanded && "bg-slate-50 dark:bg-slate-800/50")}>
@@ -87,14 +96,16 @@ export function CategoryBars({
               <span className="flex items-center gap-2 text-sm">
                 <span className="text-base leading-none">{s.emoji}</span>
                 <span className="min-w-0 flex-1 truncate font-medium text-slate-800 dark:text-slate-100">{sliceLabel(s, t)}</span>
-                <span className="font-semibold tabular-nums text-slate-900 dark:text-white">{money(s.amount)}</span>
+                <span className={cn("font-semibold tabular-nums", s.amount < 0 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-900 dark:text-white")}>
+                  {s.amount < 0 ? `+${money(-s.amount)}` : money(s.amount)}
+                </span>
                 <CaretDown weight="bold" className={cn("h-3.5 w-3.5 shrink-0 text-slate-300 transition-transform", expanded && "rotate-180")} />
               </span>
               <span className="flex items-center gap-2">
                 <span className="relative h-2 flex-1 overflow-hidden rounded-[4px] bg-slate-100 dark:bg-slate-800">
                   <span
                     className="absolute inset-y-0 left-0 rounded-r-[4px] bg-[var(--gx-brand-500)]"
-                    style={{ width: `${Math.max(2, (s.amount / max) * 100)}%` }}
+                    style={{ width: `${Math.max(2, (Math.max(0, s.amount) / max) * 100)}%` }}
                   />
                 </span>
                 <span className="w-9 text-right text-[11px] tabular-nums text-slate-400">{share}%</span>
@@ -105,22 +116,36 @@ export function CategoryBars({
                 </span>
               )}
             </button>
+            {expanded && s.net && (
+              <p className="px-3 pb-1 text-[11px] text-slate-400">{t("Ce qui est sorti et revenu le même mois s'annule.")}</p>
+            )}
             {expanded && (
               <ul className="flex flex-col gap-1.5 px-3 pb-3 pt-0.5">
                 {s.items.map((item) => (
                   <li key={item.id} className="flex flex-col gap-1">
                     <span className="flex items-center gap-2 text-[13px]">
                       <span className="leading-none">{item.icon}</span>
-                      <span className="min-w-0 flex-1 truncate text-slate-600 dark:text-slate-300">{localName(item.name, t)}</span>
-                      <span className="tabular-nums text-slate-700 dark:text-slate-200">{money(item.amount)}</span>
+                      <span className="min-w-0 flex-1 truncate text-slate-600 dark:text-slate-300">
+                        {/* Épargne: what it was (put aside / taken back) and its day; a debt: whose, then that */}
+                        {item.flow === "saved" || item.flow === "unsaved" ? flowLabel(item.flow) : localName(item.name, t)}
+                        {item.flow && (
+                          <span className="text-slate-400">
+                            {item.flow === "saved" || item.flow === "unsaved" ? "" : ` · ${flowLabel(item.flow)}`}
+                            {item.date ? ` · ${whenLabel(item.date, lang, t)}` : ""}
+                          </span>
+                        )}
+                      </span>
+                      {s.net ? signed(item.amount) : <span className="tabular-nums text-slate-700 dark:text-slate-200">{money(item.amount)}</span>}
                     </span>
                     {/* The same person's debts / loans, each with what it was for or its day. */}
                     {item.parts && (
                       <ul className="ml-6 flex flex-col gap-0.5 border-l border-slate-200 pl-2.5 dark:border-slate-700">
                         {item.parts.map((part) => (
                           <li key={part.id} className="flex items-center gap-2 text-[12px] text-slate-500 dark:text-slate-400">
-                            <span className="min-w-0 flex-1 truncate">• {part.note ?? whenLabel(part.date, lang, t)}</span>
-                            <span className="tabular-nums">{money(part.amount)}</span>
+                            <span className="min-w-0 flex-1 truncate">
+                              • {part.flow ? `${flowLabel(part.flow)} · ${whenLabel(part.date, lang, t)}` : (part.note ?? whenLabel(part.date, lang, t))}
+                            </span>
+                            {s.net ? signed(part.amount) : <span className="tabular-nums">{money(part.amount)}</span>}
                           </li>
                         ))}
                       </ul>

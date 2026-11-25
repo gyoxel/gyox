@@ -9,7 +9,7 @@ export default async function NewDaretPage() {
   const [settings, { t }] = await Promise.all([getSettings(), getI18n()]);
   return (
     <>
-      <PageHeader title={t("Ajouter une daret")} back info="daret-new" />
+      <PageHeader title={t("Ajouter une daret")} back hideSettings info="daret-new" />
       <main className="px-4 py-5">
         <DaretForm currency={settings.currency} />
       </main>

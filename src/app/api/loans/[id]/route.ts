@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { rememberPerson } from "@/lib/people-repo";
 import { deleteLoan, getLoan, updateLoan } from "@/lib/loans-repo";
 import { loanInputSchema, toLoanInput } from "@/lib/loan-input";
@@ -28,11 +29,15 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
     );
   }
   if (input.person) await rememberPerson(input.person);
-  return NextResponse.json(await updateLoan(id, input));
+  const updated = await updateLoan(id, input);
+  if (updated) await logActivity({ kind: "loan", action: "edit", name: updated.name, amount: updated.amount, detail: updated.person });
+  return NextResponse.json(updated);
 });
 
 export const DELETE = withBalanceGuard(async function remove(_req: NextRequest, { params }: Params) {
+  const before = await getLoan((await params).id);
   const gone = await deleteLoan((await params).id);
   if (!gone) return NextResponse.json({ error: "Introuvable." }, { status: 404 });
+  if (before) await logActivity({ kind: "loan", action: "delete", name: before.name, amount: before.amount, detail: before.person });
   return NextResponse.json({ ok: true, gone });
 });

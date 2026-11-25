@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { deleteIncome, getIncomeById, updateIncome } from "@/lib/repository";
 import { getSavingsMoveOfIncome } from "@/lib/savings-repo";
 import { getLoanOfIncome } from "@/lib/loans-repo";
@@ -11,6 +12,7 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const income = await updateIncome(id, parsed.data);
   if (!income) return NextResponse.json({ error: "Revenu introuvable." }, { status: 404 });
+  if (income) await logActivity({ kind: "income", action: "edit", name: income.name, amount: income.amount, detail: income.method });
   return NextResponse.json(income);
 });
 
@@ -23,5 +25,6 @@ export const DELETE = withBalanceGuard(async function remove(_req: NextRequest, 
   if (loan) return NextResponse.json({ error: "Cet argent prêté t'a été rendu : annule-le depuis « Argent prêté »." }, { status: 409 });
   const ok = await deleteIncome(id);
   if (!ok) return NextResponse.json({ error: "Revenu introuvable." }, { status: 404 });
+  if (income) await logActivity({ kind: "income", action: "delete", name: income.name, amount: income.amount, detail: income.method });
   return NextResponse.json({ ok: true, gone: [`/incomes/${id}`] });
 });

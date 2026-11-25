@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { z } from "zod";
 import { todayMonth } from "@/lib/date";
 import { getCreditRealState } from "@/lib/engine";
@@ -37,13 +38,17 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
 
   const updated = await updatePaymentPart(id, paymentId, { amountPaid: amount, method: parsed.data.method });
   if (!updated) return NextResponse.json({ error: "Paiement introuvable." }, { status: 404 });
+  await logActivity({ kind: "payment", action: "edit", name: expense.name, amount, detail: parsed.data.method });
   return NextResponse.json(updated);
 });
 
 /** Removes one payment of a month (one part of it). */
 export const DELETE = withBalanceGuard(async function remove(_req: NextRequest, { params }: Params) {
   const { id, paymentId } = await params;
+  const [expense, payments] = await Promise.all([getExpenseById(id), getPaymentsForExpense(id)]);
+  const part = payments.find((p) => p.id === paymentId);
   const ok = await deletePaymentPart(id, paymentId);
   if (!ok) return NextResponse.json({ error: "Paiement introuvable." }, { status: 404 });
+  if (expense) await logActivity({ kind: "payment", action: "unpay", name: expense.name, amount: part?.amountPaid ?? null, detail: part?.method ?? null });
   return NextResponse.json({ ok: true });
 });

@@ -43,7 +43,7 @@ export default async function BudgetsPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <PageHeader title={t("Budgets")} back info="budgets" action={<HeaderAdd href="/budgets/new" label={t("Ajouter un budget")} />} />
+      <PageHeader hideSettings title={t("Budgets")} back info="budgets" action={<HeaderAdd href="/budgets/new" label={t("Ajouter un budget")} />} />
       <main className="flex flex-col gap-5 px-4 py-5">
         <MonthSwitcher month={month} basePath="/budgets" />
 

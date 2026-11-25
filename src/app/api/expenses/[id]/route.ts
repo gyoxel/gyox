@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { rememberPerson } from "@/lib/people-repo";
 import { deleteExpense, getDaretOfExpense, pagesGoneWithExpenses, getDepositOfExpense, getExpenseById, paymentFollowsAmount, updateExpense } from "@/lib/repository";
 import { amountLocked } from "@/lib/pay-expense";
@@ -44,6 +45,7 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
     const month = existing.frequency === "one-time" ? monthKey(monthOfDateStr(existing.startDate)) : monthKey(todayMonth());
     await paymentFollowsAmount(id, month, existing.amount, updated.amount);
   }
+  if (updated) await logActivity({ kind: updated.type === "credit" ? "debt" : "expense", action: "edit", name: updated.name, amount: updated.type === "credit" ? (updated.creditInitialAmount ?? updated.amount) : updated.amount, detail: updated.person });
   return NextResponse.json(updated);
 });
 
@@ -61,7 +63,9 @@ export const DELETE = withBalanceGuard(async function remove(_req: NextRequest, 
   if (move) return NextResponse.json({ error: "Cette dépense vient de l'épargne : supprime-la depuis l'épargne." }, { status: 409 });
   if (loan) return NextResponse.json({ error: "Cette dépense est de l'argent prêté : supprime-la depuis « Argent prêté »." }, { status: 409 });
   const gone = await pagesGoneWithExpenses([id]);
+  const before = await getExpenseById(id);
   const ok = await deleteExpense(id);
   if (!ok) return NextResponse.json({ error: "Dépense introuvable." }, { status: 404 });
+  if (before) await logActivity({ kind: before.type === "credit" ? "debt" : "expense", action: "delete", name: before.name, amount: before.type === "credit" ? (before.creditInitialAmount ?? before.amount) : before.amount, detail: before.person });
   return NextResponse.json({ ok: true, gone });
 });

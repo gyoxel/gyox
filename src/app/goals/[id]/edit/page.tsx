@@ -23,7 +23,7 @@ export default async function EditGoalPage({ params }: { params: Promise<{ id: s
   if (!goal) return <NotFound />;
   return (
     <>
-      <PageHeader title={`${t("Modifier")} · ${goal.name}`} back info="goal-edit" action={<DeleteButton variant="icon" {...goalDelete(goal, t)} />} />
+      <PageHeader title={`${t("Modifier")} · ${goal.name}`} back hideSettings info="goal-edit" action={<DeleteButton variant="icon" {...goalDelete(goal, t)} />} />
       <main className="px-4 py-5">
         <GoalForm goal={goal} darets={daretOptions(darets, goals, goal.id)} currency={settings.currency} ideas={ideas} />
       </main>

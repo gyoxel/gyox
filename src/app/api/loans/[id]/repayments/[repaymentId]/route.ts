@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { z } from "zod";
 import { cancelRepayment, getLoan, updateRepayment } from "@/lib/loans-repo";
 import { loanState } from "@/lib/loans";
@@ -24,13 +25,17 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest, { p
     return NextResponse.json({ error: `Il ne reste que ${formatMoney(max)} à te rendre.` }, { status: 400 });
   }
   const repayment = await updateRepayment(id, repaymentId, { amount, method: parsed.data.method });
+  await logActivity({ kind: "repayment", action: "edit", name: loan.person || loan.name, amount, detail: parsed.data.method });
   return NextResponse.json(repayment);
 });
 
 /** Undo a repayment (its income goes with it). */
 export const DELETE = withBalanceGuard(async function remove(_req: NextRequest, { params }: Params) {
   const { id, repaymentId } = await params;
+  const loan = await getLoan(id);
+  const back = loan?.repayments.find((r) => r.id === repaymentId);
   const ok = await cancelRepayment(id, repaymentId);
   if (!ok) return NextResponse.json({ error: "Remboursement introuvable." }, { status: 404 });
+  if (loan) await logActivity({ kind: "repayment", action: "delete", name: loan.person || loan.name, amount: back?.amount ?? null, detail: back?.method ?? null });
   return NextResponse.json({ ok: true });
 });

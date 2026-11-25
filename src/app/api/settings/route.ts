@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { getSettings, syncSalaryReceipts, updateSettings } from "@/lib/repository";
 import { settingsInputSchema } from "@/lib/validation";
 import { withBalanceGuard } from "@/lib/balance-guard";
@@ -20,5 +21,8 @@ export const PATCH = withBalanceGuard(async function patch(req: NextRequest) {
   const settings = await updateSettings(parsed.data);
   // "Salaire reçu" (or its undo): record / remove it in the Solde history.
   await syncSalaryReceipts(before.salaryReceivedMonth, settings.salaryReceivedMonth, settings);
+  if (Math.abs(before.salary - settings.salary) > 0.005) await logActivity({ kind: "salary", action: "edit", name: "Salaire", amount: settings.salary });
+  if (before.salaryReceivedMonth !== settings.salaryReceivedMonth)
+    await logActivity({ kind: "salary", action: (settings.salaryReceivedMonth ?? "") > (before.salaryReceivedMonth ?? "") ? "add" : "undo", name: "Salaire", amount: settings.salary });
   return NextResponse.json(settings);
 });
