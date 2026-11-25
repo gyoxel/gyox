@@ -1303,6 +1303,8 @@ export const DAR: Record<string, string> = {
   "Emprunté": "Tslleft",
   "Remboursé": "Rddit",
   "Ce qui est sorti et revenu le même mois s'annule.": "Li khrej w rj3 f nafs chhar kayt7ssab walou.",
+  "D'où vient ton argent": "Mnin jat flousk",
+  "Rien de reçu ce mois-ci.": "Ma dkhel walou had chhar.",
   "Nouvelle personne": "Chi wa7d jdid",
   "Personne pour le moment : ajoute quelqu'un, ou il sera ajouté avec ta prochaine dette ou ton prochain prêt.": "Mazal ta wa7d: zid chi wa7d, wla ghadi yzad m3a dette wla slef jay.",
   "Renommer {name}": "Beddel smiyat {name}",

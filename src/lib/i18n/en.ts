@@ -1301,6 +1301,8 @@ export const EN: Record<string, string> = {
   "Emprunté": "Borrowed",
   "Remboursé": "Repaid",
   "Ce qui est sorti et revenu le même mois s'annule.": "What went out and came back the same month cancels out.",
+  "D'où vient ton argent": "Where your money came from",
+  "Rien de reçu ce mois-ci.": "Nothing received this month.",
   "Nouvelle personne": "New person",
   "Personne pour le moment : ajoute quelqu'un, ou il sera ajouté avec ta prochaine dette ou ton prochain prêt.": "Nobody yet: add someone, or they'll be added with your next debt or loan.",
   "Renommer {name}": "Rename {name}",

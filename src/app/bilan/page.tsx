@@ -5,6 +5,8 @@ import { addMonths, compareMonths, monthFromSearchParams, monthKey, todayMonth }
 import { budgetsById } from "@/lib/category-budgets";
 import { categoryBreakdown, categoryComparison } from "@/lib/category-stats";
 import { buildMonthBilan } from "@/lib/month-bilan";
+import { moneySources } from "@/lib/money-sources";
+import { entryLabel } from "@/lib/entry-label";
 import { getWallet } from "@/lib/wallet-data";
 import { monthLabel } from "@/lib/i18n/dates";
 import { getI18n } from "@/lib/i18n/server";
@@ -12,6 +14,7 @@ import { cn, formatMoney } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { MonthSwitcher } from "@/components/month-switcher";
 import { CategorySection } from "@/components/category-section";
+import { CategoryBars } from "@/components/category-bars";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +47,9 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
   const key = monthKey(month);
   const [wallet, previousWallet] = await Promise.all([getWallet(month), getWallet(previous)]);
   const input = { expenses, payments, categories, darets, savingsMoves, goals, loans, incomes };
-  const slices = categoryBreakdown(input, month);
+  // More came in than went (money borrowed this month…): it shows under
+  // « D'où vient ton argent » instead.
+  const slices = categoryBreakdown(input, month).filter((x) => !(x.net && x.amount < 0));
   const vs = monthFromSearchParams(sp.vs, previous);
   const bilan = buildMonthBilan(wallet, slices, key, monthLabel(month, lang));
   const before = buildMonthBilan(previousWallet, [], monthKey(previous), "");
@@ -52,6 +57,7 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
   const label = monthLabel(month, lang);
   const previousLabel = monthLabel(previous, lang);
   const timing = compareMonths(month, current);
+  const sources = moneySources(wallet.entries, key, monthKey(previous), (e) => entryLabel(e, lang, t));
   const left = bilan ? Math.round((bilan.moneyIn - bilan.moneyOut) * 100) / 100 : 0;
 
   return (
@@ -79,6 +85,12 @@ export default async function BilanPage({ searchParams }: { searchParams: Promis
             🐷 {t("Dont {amount} mis de côté", { amount: money(bilan?.putAside ?? 0) })}
           </p>
         </div>
+
+        {/* Where it came from: the month's Entrées, by source */}
+        <section className="flex flex-col gap-2.5">
+          <h2 className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{t("D'où vient ton argent")}</h2>
+          <CategoryBars slices={sources} currency={settings.currency} empty={timing > 0 ? t("Ce mois n'a pas encore commencé.") : t("Rien de reçu ce mois-ci.")} />
+        </section>
 
         {/* Where it went — the month picked under its title — or beside another month */}
         <CategorySection
