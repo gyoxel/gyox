@@ -32,6 +32,8 @@ export interface AmountSheetProps {
   onSubmit: (value: number, method: PaymentMethod) => Promise<string | null>;
   /** Editing an existing one: removes it. */
   onDelete?: () => Promise<string | null>;
+  /** 0 DH allowed: « pas ce mois-ci » — its chip, what it does, its button. */
+  zero?: { chip: string; explain: string; label: string; onSubmit: () => Promise<string | null> };
 }
 
 const TONES = {
@@ -55,7 +57,9 @@ export function AmountSheet(props: AmountSheetProps) {
   const typed = value > 0 ? value : 0;
   const total = already + typed;
   const scale = Math.max(expected, total, 1);
-  const explanation = typed > 0 ? props.explain(typed) : null;
+  // 0 typed (or its chip): nothing this month, when allowed.
+  const zero = props.zero && amount.trim() !== "" && value === 0 ? props.zero : null;
+  const explanation = zero ? zero.explain : typed > 0 ? props.explain(typed) : null;
   const colors = TONES[tone];
 
   function run(action: () => Promise<string | null>) {
@@ -78,6 +82,7 @@ export function AmountSheet(props: AmountSheetProps) {
           className="flex flex-col gap-4"
           onSubmit={(e) => {
             e.preventDefault();
+            if (zero) return run(zero.onSubmit);
             if (!(value > 0)) return setError(t("Indique un montant."));
             run(() => props.onSubmit(value, method));
           }}
@@ -97,16 +102,16 @@ export function AmountSheet(props: AmountSheetProps) {
             <span className="text-lg font-semibold text-slate-400">DH</span>
           </div>
 
-          {props.chips.length > 0 && (
+          {(props.chips.length > 0 || props.zero) && (
             <div className="flex flex-wrap justify-center gap-2">
-              {props.chips.map(([label, n]) => (
+              {[...props.chips, ...(props.zero ? ([[props.zero.chip, 0]] as [string, number][]) : [])].map(([label, n]) => (
                 <button
                   key={label}
                   type="button"
-                  onClick={() => setAmount(toDecimalInput(n))}
+                  onClick={() => setAmount(n === 0 ? "0" : toDecimalInput(n))}
                   className={cn(
                     "rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
-                    Math.abs(typed - n) < 0.005 ? colors.chip : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
+                    (n === 0 ? zero != null : Math.abs(typed - n) < 0.005) ? colors.chip : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
                   )}
                 >
                   {label} · {formatMoney(n)}
@@ -151,10 +156,10 @@ export function AmountSheet(props: AmountSheetProps) {
             </p>
           )}
 
-          <PaymentMethodPicker value={method} onChange={setMethod} label={props.methodLabel} />
+          {!zero && <PaymentMethodPicker value={method} onChange={setMethod} label={props.methodLabel} />}
           {error && <p className="text-sm text-rose-600">{error}</p>}
-          <Button type="submit" className={colors.button} disabled={pending || !(value > 0)}>
-            {pending ? t("Enregistrement…") : props.confirmLabel(typed)}
+          <Button type="submit" className={colors.button} disabled={pending || !(value > 0 || zero)}>
+            {pending ? t("Enregistrement…") : zero ? zero.label : props.confirmLabel(typed)}
           </Button>
           {props.onDelete && (
             <Button type="button" variant="outline" className="text-rose-600" disabled={pending} onClick={() => run(props.onDelete!)}>

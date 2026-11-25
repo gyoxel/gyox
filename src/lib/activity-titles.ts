@@ -21,7 +21,7 @@ export type ActivityKind =
   | "person"
   | "salary";
 
-export type ActivityAction = "add" | "edit" | "delete" | "pay" | "unpay" | "stop" | "giveup" | "undo" | "take" | "payout";
+export type ActivityAction = "add" | "edit" | "delete" | "pay" | "unpay" | "stop" | "giveup" | "undo" | "take" | "payout" | "skip" | "unskip";
 
 export interface Activity {
   id: string;
@@ -38,9 +38,13 @@ export const ACTIVITY_TITLES: Record<string, string> = {
   "expense:add": msg("Dépense ajoutée"),
   "expense:edit": msg("Dépense modifiée"),
   "expense:delete": msg("Dépense supprimée"),
+  "expense:skip": msg("Pas ce mois-ci"),
+  "expense:unskip": msg("Ce mois rétabli"),
   "debt:add": msg("Dette ajoutée"),
   "debt:edit": msg("Dette modifiée"),
   "debt:delete": msg("Dette supprimée"),
+  "debt:skip": msg("Mois reporté"),
+  "debt:unskip": msg("Ce mois rétabli"),
   "payment:pay": msg("Paiement"),
   "payment:edit": msg("Paiement modifié"),
   "payment:unpay": msg("Paiement annulé"),

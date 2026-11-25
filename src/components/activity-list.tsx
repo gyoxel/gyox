@@ -22,6 +22,8 @@ const LOOK: Record<ActivityAction, { icon: Icon; tone: string }> = {
   stop: { icon: ArrowCounterClockwise, tone: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" },
   giveup: { icon: ArrowCounterClockwise, tone: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" },
   undo: { icon: ArrowCounterClockwise, tone: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" },
+  skip: { icon: ArrowCounterClockwise, tone: "bg-sky-50 text-sky-600 dark:bg-sky-950/50 dark:text-sky-300" },
+  unskip: { icon: ArrowCounterClockwise, tone: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" },
 };
 
 /** Historique's lines, by day: what was done, to what, when, how much. */

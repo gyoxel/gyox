@@ -80,6 +80,21 @@ export function asMonthAmounts(value: unknown): Record<string, number> | null {
   return entries.length > 0 ? (Object.fromEntries(entries) as Record<string, number>) : null;
 }
 
+/**
+ * « Pas ce mois-ci » on (`skip`) or off for one month of an expense: that
+ * month set to 0 DH, or back to its usual amount. Its other months stay.
+ */
+export async function setMonthSkipped(id: string, key: string, skip: boolean): Promise<Expense | null> {
+  const existing = await getExpenseById(id);
+  if (!existing) return null;
+  const months = { ...(existing.monthAmounts ?? {}) };
+  if (skip) months[key] = 0;
+  else delete months[key];
+  const kept = asMonthAmounts(months);
+  await prisma.expense.updateMany({ where: { id }, data: { monthAmounts: kept ?? Prisma.DbNull, updatedAt: new Date().toISOString() } });
+  return getExpenseById(id);
+}
+
 export async function getAllExpenses(): Promise<Expense[]> {
   const rows = await prisma.expense.findMany({ orderBy: { createdAt: "asc" } });
   return rows.map(mapExpense);

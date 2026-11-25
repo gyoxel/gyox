@@ -33,6 +33,15 @@ function customAmountFor(expense: Expense, key: string): number | null {
   return custom;
 }
 
+/**
+ * « Pas ce mois-ci »: a month set to 0 DH. Any other expense: nothing that
+ * month. A credit: no installment that month — the next ones and its end
+ * move a month later.
+ */
+export function isMonthSkipped(expense: Pick<Expense, "monthAmounts">, key: string): boolean {
+  return expense.monthAmounts?.[key] === 0;
+}
+
 /** What an expense costs in month `key`: that month's own amount, else its usual one. */
 export function getAmountForMonth(expense: Expense, key: string): number {
   return customAmountFor(expense, key) ?? expense.amount;
@@ -92,6 +101,12 @@ function creditInstallmentsFrom(
   let guard = 0;
   while (remaining > 0.005 && guard < SAFETY_MONTHS_CAP) {
     const key = monthKey(m);
+    if (isMonthSkipped(expense, key)) {
+      // Nothing this month: the installment waits for the next one.
+      m = addMonths(m, 1);
+      guard++;
+      continue;
+    }
     const payment = creditInstallment(expense, key, remaining, drift);
     if (customAmountFor(expense, key) != null) drift = round2(drift + payment - expense.amount);
     const remainingAfter = Math.max(0, round2(remaining - payment));
@@ -261,6 +276,21 @@ const MAX_ARREARS_SCAN_MONTHS = 600; // 50 years, safety cap for the scan loop
  * the projected end date) back by one month, which falls out naturally here
  * because `remaining` only decreases on a confirmed payment.
  */
+/** The month a credit's installment number `paidSlots + 1` falls in, from
+ *  `start`, months set to « pas ce mois-ci » skipped. */
+function slotMonth(expense: Expense, start: MonthId, paidSlots: number): MonthId {
+  let m = start;
+  let n = 0;
+  for (let guard = 0; guard < SAFETY_MONTHS_CAP; guard++) {
+    if (!isMonthSkipped(expense, monthKey(m))) {
+      if (n === paidSlots) return m;
+      n++;
+    }
+    m = addMonths(m, 1);
+  }
+  return addMonths(start, paidSlots);
+}
+
 export function getCreditRealState(
   expense: Expense,
   payments: Payment[],
@@ -315,7 +345,8 @@ export function getCreditRealState(
 
   // The calendar month the next installment would naturally fall in, had
   // every prior one been paid exactly on schedule from `start`.
-  const scheduleMonth = addMonths(start, paidSlots);
+  // (Months set to « pas ce mois-ci » hold no installment: skipped.)
+  const scheduleMonth = slotMonth(expense, start, paidSlots);
   // Behind schedule only if we're evaluating a month that's already past
   // where the next installment was due; evaluating a month before that
   // (e.g. paying ahead) is never "overdue".
@@ -507,6 +538,9 @@ export interface LedgerItem {
   /** What's left of a month paid in part, still to pay this month (the
    *  same expense: "X · reste"). */
   rest?: boolean;
+  /** Set to « pas ce mois-ci » (0 DH): nothing to pay that month — a
+   *  credit's installment moved a month later. */
+  skipped?: boolean;
 }
 
 /**
@@ -551,6 +585,10 @@ export function getMonthLedgerItems(
       // installment was already paid ahead (which otherwise falls outside
       // the forward projection's range and disappears).
       const settled = findPayment(payments, expense.id, monthKey(viewMonth));
+      if (!settled && isMonthSkipped(expense, monthKey(viewMonth))) {
+        if (getCreditRealState(expense, payments, viewMonth).status !== "completed") items.push({ expense, amount: 0, paid: true, skipped: true });
+        continue;
+      }
       if (settled) {
         items.push({ expense, amount: settled.amountPaid, paid: true });
         // Paid in part: the rest stays to pay while the month lasts (then
@@ -593,7 +631,13 @@ export function getMonthLedgerItems(
     // Only this month's own occurrence: what's paid of it, and while the
     // month lasts what's left of it (once over, the rest goes with it).
     const occ = getOccurrenceForMonth(expense, viewMonth, byId);
-    if (!occ) continue;
+    if (!occ) {
+      // « Pas ce mois-ci »: still listed (0 DH), so it can be undone.
+      if (isMonthSkipped(expense, monthKey(viewMonth)) && getOccurrenceForMonth({ ...expense, monthAmounts: null }, viewMonth, byId)) {
+        items.push({ expense, amount: 0, paid: true, skipped: true });
+      }
+      continue;
+    }
     const payment = findPayment(payments, expense.id, monthKey(viewMonth));
     const paidAmount = payment?.amountPaid ?? 0;
     if (paidAmount <= 0.005) {
