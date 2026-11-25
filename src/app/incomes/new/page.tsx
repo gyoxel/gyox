@@ -9,7 +9,7 @@ export default async function NewIncomePage() {
   const [categories, { t }] = await Promise.all([getIncomeCategories(), getI18n()]);
   return (
     <>
-      <PageHeader title={t("Ajouter un revenu")} back info="income-new" />
+      <PageHeader title={t("Ajouter un revenu")} back hideSettings info="income-new" />
       <main className="px-4 py-5">
         <IncomeEditor categories={categories} />
       </main>

@@ -64,7 +64,7 @@ export default async function EditIncomePage({ params }: { params: Promise<{ id:
     <>
       <PageHeader
         title={`${t("Modifier")} · ${income.name}`}
-        back
+        back hideSettings
         info="income-edit"
         action={
           credit ? (

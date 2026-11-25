@@ -23,7 +23,7 @@ export default async function NewBudgetPage({ searchParams }: { searchParams: Pr
   const preselected = categories.some((c) => c.id === sp.category) ? sp.category! : null;
   return (
     <>
-      <PageHeader title={t("Ajouter un budget")} back info="budget-new" />
+      <PageHeader title={t("Ajouter un budget")} back hideSettings info="budget-new" />
       <main className="px-4 py-5">
         <BudgetForm
           categories={categories}

@@ -13,7 +13,7 @@ export default async function NewExpensePage({ searchParams }: { searchParams: P
   const people = isCredit ? await getPickerPeople() : [];
   return (
     <>
-      <PageHeader title={isCredit ? t("Ajouter une dette") : t("Ajouter une dépense")} back info={isCredit ? "credit-new" : "expense-new"} />
+      <PageHeader title={isCredit ? t("Ajouter une dette") : t("Ajouter une dépense")} back hideSettings info={isCredit ? "credit-new" : "expense-new"} />
       <main className="px-4 py-5">
         {isCredit ? <CreditEditor key="credit" people={people} /> : <ExpenseEditor key="expense" categories={categories} />}
       </main>

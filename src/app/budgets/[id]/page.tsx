@@ -44,7 +44,7 @@ export default async function BudgetPage({ params, searchParams }: { params: Pro
 
   return (
     <>
-      <PageHeader title={categoryName(category.name, t)} back info="budget-edit" action={<DeleteButton variant="icon" {...budgetDelete(category, t)} />} />
+      <PageHeader title={categoryName(category.name, t)} back hideSettings info="budget-edit" action={<DeleteButton variant="icon" {...budgetDelete(category, t)} />} />
       <main className="flex flex-col gap-6 px-4 py-5">
         <BudgetForm
           categories={categories}

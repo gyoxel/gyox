@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { CaretDown, CaretRight, ClockCounterClockwise } from "@phosphor-icons/react/ssr";
+import { CaretDown, ClockCounterClockwise } from "@phosphor-icons/react/ssr";
 import type { HistoryRow, HistoryScope, HistoryStep } from "@/lib/history";
 import type { PaymentMethod } from "@/lib/types";
 import { cn, formatMoney } from "@/lib/utils";
@@ -19,7 +18,7 @@ const TIME_ZONE = "Africa/Casablanca";
  * The clock at the top of a page: a window with the page's last money
  * movements (all of them on Accueil), newest first, by day — each with its
  * name, time, cash / card and amount. One paid in several times opens with
- * its arrow on each of its steps.
+ * its arrow on each of its steps. Only to look at: nothing opens from here.
  */
 export function HistoryButton({ scope = "all" }: { scope?: HistoryScope }) {
   const { t } = useI18n();
@@ -55,7 +54,7 @@ export function HistoryButton({ scope = "all" }: { scope?: HistoryScope }) {
             ) : data.rows.length === 0 ? (
               <Empty text={t("Aucune opération pour l'instant.")} />
             ) : (
-              <Days rows={data.rows} currency={data.currency} onGo={() => setOpen(false)} />
+              <Days rows={data.rows} currency={data.currency} />
             )}
           </div>
         </DialogContent>
@@ -89,7 +88,7 @@ function Empty({ text }: { text: string }) {
   return <p className="rounded-2xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-400 dark:border-slate-700">{text}</p>;
 }
 
-function Days({ rows, currency, onGo }: { rows: HistoryRow[]; currency?: string; onGo: () => void }) {
+function Days({ rows, currency }: { rows: HistoryRow[]; currency?: string }) {
   const { lang, t } = useI18n();
   const now = new Date();
   const days: { title: string; rows: HistoryRow[] }[] = [];
@@ -106,7 +105,7 @@ function Days({ rows, currency, onGo }: { rows: HistoryRow[]; currency?: string;
           <ul className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
             {d.rows.map((r) => (
               <li key={r.id} className="border-t border-slate-100 first:border-t-0 dark:border-slate-800">
-                <Row row={r} currency={currency} onGo={onGo} />
+                <Row row={r} currency={currency} />
               </li>
             ))}
           </ul>
@@ -118,7 +117,7 @@ function Days({ rows, currency, onGo }: { rows: HistoryRow[]; currency?: string;
 
 const amountOf = (s: Pick<HistoryStep, "kind" | "lines">) => (s.kind === "transfer" ? Math.abs(s.lines[1]?.amount ?? 0) : s.lines[0].amount);
 
-function Row({ row, currency, onGo }: { row: HistoryRow; currency?: string; onGo: () => void }) {
+function Row({ row, currency }: { row: HistoryRow; currency?: string }) {
   const { lang, t } = useI18n();
   const [open, setOpen] = useState(false);
   const money = (n: number) => formatMoney(n, currency);
@@ -179,26 +178,11 @@ function Row({ row, currency, onGo }: { row: HistoryRow; currency?: string; onGo
                 <Amount value={amountOf(s)} money={money} small />
               </li>
             ))}
-            {row.href && (
-              <li className="pt-1">
-                <Link href={row.href} onClick={onGo} className="flex items-center gap-1 text-xs font-semibold text-violet-700 dark:text-violet-300">
-                  {t("Ouvrir")}
-                  <CaretRight weight="bold" className="h-3 w-3" />
-                </Link>
-              </li>
-            )}
           </ol>
         )}
       </>
     );
-  if (row.href)
-    return (
-      <Link href={row.href} onClick={onGo} className="flex items-center gap-3 px-3 py-2.5 active:bg-slate-50 dark:active:bg-slate-800/60">
-        {body}
-        <CaretRight weight="bold" className="h-4 w-4 shrink-0 text-slate-300" />
-      </Link>
-    );
-  return <div className="flex items-center gap-3 px-3 py-2.5 pr-10">{body}</div>;
+  return <div className="flex items-center gap-3 px-3 py-2.5">{body}</div>;
 }
 
 function Amount({ value, transfer = false, money, small = false }: { value: number; transfer?: boolean; money: (n: number) => string; small?: boolean }) {

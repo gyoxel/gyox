@@ -55,7 +55,7 @@ export default async function EditDaretPage({ params }: { params: Promise<{ id: 
     <>
       <PageHeader
         title={`${t("Modifier")} · ${daret.expense.name}`}
-        back
+        back hideSettings
         info="daret-edit"
         action={<DeleteButton variant="icon" {...daretDelete(daret, t)} />}
       />

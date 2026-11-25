@@ -9,7 +9,7 @@ export default async function NewLoanPage() {
   const [{ t }, people] = await Promise.all([getI18n(), getPickerPeople()]);
   return (
     <>
-      <PageHeader title={t("Prêter de l'argent")} back info="pret-new" />
+      <PageHeader title={t("Prêter de l'argent")} back hideSettings info="pret-new" />
       <main className="px-4 py-5">
         <LoanEditor people={people} />
       </main>

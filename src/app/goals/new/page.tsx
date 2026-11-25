@@ -16,7 +16,7 @@ export default async function NewGoalPage() {
   ]);
   return (
     <>
-      <PageHeader title={t("Ajouter un objectif")} back info="goal-new" />
+      <PageHeader title={t("Ajouter un objectif")} back hideSettings info="goal-new" />
       <main className="px-4 py-5">
         <GoalForm darets={daretOptions(darets, goals)} currency={settings.currency} ideas={ideas} />
       </main>

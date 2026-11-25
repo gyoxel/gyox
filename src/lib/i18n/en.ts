@@ -1297,7 +1297,6 @@ export const EN: Record<string, string> = {
   "Chargement…": "Loading…",
   "Aucune opération pour l'instant.": "No operation yet.",
   "en {n} fois": "in {n} times",
-  "Ouvrir": "Open",
   "Nouvelle personne": "New person",
   "Personne pour le moment : ajoute quelqu'un, ou il sera ajouté avec ta prochaine dette ou ton prochain prêt.": "Nobody yet: add someone, or they'll be added with your next debt or loan.",
   "Renommer {name}": "Rename {name}",

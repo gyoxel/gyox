@@ -15,7 +15,7 @@ export default async function EditLoanPage({ params }: { params: Promise<{ id: s
   if (!loan) return <NotFound />;
   return (
     <>
-      <PageHeader title={`${t("Modifier")} · ${loan.name}`} back info="pret-edit" action={<DeleteButton variant="icon" {...loanDelete(loan, t)} />} />
+      <PageHeader title={`${t("Modifier")} · ${loan.name}`} back hideSettings info="pret-edit" action={<DeleteButton variant="icon" {...loanDelete(loan, t)} />} />
       <main className="px-4 py-5">
         <LoanEditor loan={loan} people={people} />
       </main>

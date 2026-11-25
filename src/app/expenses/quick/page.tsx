@@ -26,7 +26,7 @@ export default async function QuickExpensePage() {
   const last = readQuickCookie(jar.get(QUICK_COOKIE)?.value);
   return (
     <>
-      <PageHeader title={t("Dépense rapide")} back info="expense-quick" />
+      <PageHeader title={t("Dépense rapide")} back hideSettings info="expense-quick" />
       <main className="px-4 py-5">
         <QuickExpense
           categories={categories}

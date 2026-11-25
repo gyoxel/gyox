@@ -1299,7 +1299,6 @@ export const DAR: Record<string, string> = {
   "Chargement…": "Kaytchar3ej…",
   "Aucune opération pour l'instant.": "Mazal 7ta 3amaliya.",
   "en {n} fois": "f {n} merrat",
-  "Ouvrir": "7el",
   "Nouvelle personne": "Chi wa7d jdid",
   "Personne pour le moment : ajoute quelqu'un, ou il sera ajouté avec ta prochaine dette ou ton prochain prêt.": "Mazal ta wa7d: zid chi wa7d, wla ghadi yzad m3a dette wla slef jay.",
   "Renommer {name}": "Beddel smiyat {name}",

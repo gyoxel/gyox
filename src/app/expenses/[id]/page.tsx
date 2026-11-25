@@ -77,7 +77,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
       <>
         <PageHeader
           title={localName(expense.name, t)}
-          back
+          back hideSettings
           info="linked"
           action={<LockedDeleteIcon hint={t("Ce versement vient de l'objectif « {goal} » : supprime-le depuis le versement.", { goal: goal.name })} />}
         />
@@ -157,7 +157,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
       <>
         <PageHeader
           title={localName(expense.name, t)}
-          back
+          back hideSettings
           info="linked"
           action={<LockedDeleteIcon hint={t("Cette cotisation vient de la daret « {name} » : supprime-la depuis la daret.", { name: expense.name })} />}
         />
@@ -203,7 +203,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
     <>
       <PageHeader
         title={`${t("Modifier")} · ${expense.name}`}
-        back
+        back hideSettings
         info={expense.type === "credit" ? "credit-edit" : "expense-edit"}
         action={<DeleteButton variant="icon" {...expenseDelete(expense, t)} />}
       />
