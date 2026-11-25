@@ -65,7 +65,8 @@ export function CreditEditor({
   );
   const [name, setName] = useState(expense?.name ?? "");
   // The number of months first; editing, the amount saved (exactly as it is).
-  const [mode, setMode] = useState<Mode>(isEdit ? "monthly" : "months");
+  // New: all of it next month, by default.
+  const [mode, setMode] = useState<Mode>(isEdit ? "monthly" : "once");
   const [monthly, setMonthly] = useState(toDecimalInput(expense?.amount ?? null));
   const initialMonths =
     expense?.creditInitialAmount && expense.amount > 0
@@ -75,7 +76,7 @@ export function CreditEditor({
   // Its first month (« En une fois »: the month it's all repaid in): this
   // one or later — a debt not repaid yet can move to another.
   const savedMonth = expense ? monthOfDateStr(expense.startDate) : null;
-  const [firstMonth, setFirstMonth] = useState<MonthId>(savedMonth ?? todayMonth());
+  const [firstMonth, setFirstMonth] = useState<MonthId>(savedMonth ?? addMonths(todayMonth(), 1));
   const canMove = !startLocked;
   const [alreadyPaid, setAlreadyPaid] = useState(isEdit ? (paymentStatus?.paid ?? false) : false);
   const [method, setMethod] = useState<PaymentMethod>(paymentStatus?.method ?? "cash");

@@ -41,10 +41,11 @@ export function LoanEditor({ loan, people = [] }: { loan?: Loan; /** Personnes, 
   const [prior, setPrior] = useState(toDecimalInput(loan?.priorRepaid || null));
   const [fromSolde, setFromSolde] = useState(isEdit ? loan.method != null : true);
   const [method, setMethod] = useState<PaymentMethod>(loan?.method ?? "cash");
-  const [mode, setMode] = useState<Mode>(isEdit ? "monthly" : "months");
+  // New: all of it next month, by default.
+  const [mode, setMode] = useState<Mode>(isEdit ? "monthly" : "once");
   const [monthly, setMonthly] = useState(toDecimalInput(loan?.monthly ?? null));
   const [months, setMonths] = useState(loan ? String(loan.months) : "");
-  const [start, setStart] = useState(loan ? parseMonthKey(loan.startMonth) : todayMonth());
+  const [start, setStart] = useState(loan ? parseMonthKey(loan.startMonth) : addMonths(todayMonth(), 1));
   // Kept as it was (no field for it anymore).
   const note = loan?.note ?? "";
   // Whom it was lent to (Personnes).
