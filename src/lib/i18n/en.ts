@@ -1379,6 +1379,8 @@ export const EN: Record<string, string> = {
   "Ce mois a été effacé.": "This month was erased.",
   "Tout réinitialisé": "Everything reset",
   "Mois réinitialisé": "Month reset",
+  "Ajouter un paiement": "Add a payment",
+  "Tu ajoutes combien ?": "How much are you adding?",
   "Nouvelle personne": "New person",
   "Personne pour le moment : ajoute quelqu'un, ou il sera ajouté avec ta prochaine dette ou ton prochain prêt.": "Nobody yet: add someone, or they'll be added with your next debt or loan.",
   "Renommer {name}": "Rename {name}",

@@ -19,8 +19,7 @@ import { errorMessage } from "@/components/expense-editor";
 import { insufficientMessage } from "@/lib/balance-message";
 import { formatMoney, cn } from "@/lib/utils";
 import { ColorDot } from "@/components/color-dot";
-import { AmountSheet } from "@/components/amount-sheet";
-import { explainPayment, PaymentPartList, PaymentPartSheet } from "@/components/payment-parts";
+import { PayAmountSheet, PaymentPartList, PaymentPartSheet } from "@/components/payment-parts";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { displayIcon } from "@/lib/category";
 import { MethodIcon, MethodLabel } from "@/components/method-icon";
@@ -615,11 +614,12 @@ export function DueNowList({
       )}
 
       {otherAmount && (
-        <OtherAmountSheet
+        <PayAmountSheet
           expense={otherAmount.expense}
           due={otherAmount.due}
           already={otherAmount.already}
-          viewMonth={viewMonth}
+          monthKey={toMonthKey(viewMonth)}
+          monthLabel={monthLabel(viewMonth, lang)}
           currency={currency}
           balance={balance}
           onClose={() => setOtherAmount(null)}
@@ -796,11 +796,27 @@ function EditPayment({
   balance?: Record<PaymentMethod, number>;
   onClose: () => void;
 }) {
-  const [picked, setPicked] = useState<Payment | null>(parts.length === 1 ? parts[0] : null);
+  const [picked, setPicked] = useState<Payment | null>(null);
+  const [adding, setAdding] = useState(false);
   const { lang, t } = useI18n();
   const money = (n: number) => formatMoney(n, currency);
   const label = monthLabel(viewMonth, lang);
   const paid = round(parts.reduce((s, p) => s + p.amountPaid, 0));
+
+  if (adding) {
+    return (
+      <PayAmountSheet
+        expense={expense}
+        due={due}
+        already={paid}
+        monthKey={toMonthKey(viewMonth)}
+        monthLabel={label}
+        currency={currency}
+        balance={balance}
+        onClose={onClose}
+      />
+    );
+  }
 
   if (picked) {
     return (
@@ -819,93 +835,28 @@ function EditPayment({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+      <DialogContent className="flex max-h-[85dvh] flex-col">
         <DialogHeader>
           <DialogTitle>{t("Quel paiement modifier ?")}</DialogTitle>
           <DialogDescription>
             {expense.icon ?? "🧾"} {localName(expense.name, t)} · {label} · {t("{paid} payés sur {due}", { paid: money(paid), due: money(due) })}
           </DialogDescription>
         </DialogHeader>
-        <PaymentPartList parts={parts} currency={currency} onPick={setPicked} className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800" />
+        {/* Many payments: the list scrolls, the window stays on screen */}
+        <div className="-mx-1 min-h-0 flex-1 overflow-y-auto overscroll-contain px-1">
+          <PaymentPartList parts={parts} currency={currency} onPick={setPicked} className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800" />
+        </div>
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="mt-2 flex items-center justify-center gap-1.5 rounded-2xl border border-dashed border-violet-300 py-2.5 text-sm font-semibold text-violet-700 active:bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:active:bg-violet-950/40"
+        >
+          <Plus weight="bold" className="h-4 w-4" />
+          {t("Ajouter un paiement")}
+        </button>
         <p className="text-center text-[11px] text-slate-400">{t("Touche un paiement pour changer son montant, espèces ou carte, ou le supprimer.")}</p>
       </DialogContent>
     </Dialog>
   );
 }
 
-/**
- * ✏️ "Tu as payé combien ?": part of the month (the rest stays to pay this
- * month: "X · reste"), all of it, or more — or, on a rest, part of what's
- * left. See lib/pay-expense.ts.
- */
-function OtherAmountSheet({
-  expense,
-  due,
-  already,
-  viewMonth,
-  currency,
-  balance,
-  onClose,
-}: {
-  expense: Expense;
-  /** The month's amount (a credit: its installment). */
-  due: number;
-  /** Paid of it already. */
-  already: number;
-  viewMonth: MonthId;
-  currency: string;
-  balance?: Record<PaymentMethod, number>;
-  onClose: () => void;
-}) {
-  const { lang, t } = useI18n();
-  const money = (n: number) => formatMoney(n, currency);
-  const label = monthLabel(viewMonth, lang);
-  const left = round(Math.max(0, due - already));
-  return (
-    <AmountSheet
-      title={already > 0 ? t("Tu paies combien du reste ?") : t("Tu as payé combien ?")}
-      subtitle={`${expense.icon ?? "🧾"} ${localName(expense.name, t)} · ${label} · ${
-        already > 0 ? t("{paid} déjà payés sur {due}", { paid: money(already), due: money(due) }) : t("prévu {amount}", { amount: money(due) })
-      }`}
-      expected={due}
-      already={already}
-      initialAmount={left}
-      initialMethod="cash"
-      chips={left > 0 ? [[already > 0 ? t("Tout le reste") : t("Tout"), left]] : []}
-      explain={(v) => explainPayment(expense, left, v, money, t)}
-      methodLabel={t("Payé en")}
-      confirmLabel={(v) => t("Payé {amount}", { amount: money(v) })}
-      tone="rose"
-      onClose={onClose}
-      zero={
-        already > 0
-          ? undefined
-          : {
-              chip: t("Pas ce mois-ci"),
-              explain:
-                expense.type === "credit"
-                  ? t("Rien à payer en {month} : cette mensualité passe au mois suivant, et la fin de la dette recule d'un mois.", { month: label })
-                  : t("Rien à payer en {month}. Les autres mois ne changent pas.", { month: label }),
-              label: t("Pas ce mois-ci"),
-              onSubmit: async () => {
-                const res = await mutate({ method: "PUT", path: `/api/expenses/${expense.id}/skip`, body: { monthKey: toMonthKey(viewMonth) } });
-                if (!res.ok) return errorMessage(res);
-                toast.success(t("{name} : pas ce mois-ci.", { name: localName(expense.name, t) }));
-                return null;
-              },
-            }
-      }
-      onSubmit={async (value, method) => {
-        if (balance && value > balance[method] + 0.005) return insufficientMessage(method, balance[method], t);
-        const res = await mutate({
-          method: "POST",
-          path: `/api/expenses/${expense.id}/payments`,
-          body: { monthKey: toMonthKey(viewMonth), method, amount: value },
-        });
-        if (!res.ok) return errorMessage(res);
-        toast.success(t("{name} : {amount} payés.", { name: localName(expense.name, t), amount: money(value) }));
-        return null;
-      }}
-    />
-  );
-}

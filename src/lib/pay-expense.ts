@@ -67,7 +67,8 @@ export async function payExpense(
     const paidThisMonth = findPayment(payments.filter((p) => p.slotIndex != null), expense.id, key);
     if (paidThisMonth) {
       const rest = Math.round((paidThisMonth.amountDue - paidThisMonth.amountPaid) * 100) / 100;
-      if (rest <= 0.005) return { error: "Cette mensualité est déjà payée.", status: 400 };
+      // All paid: only one more payment on purpose (an amount given).
+      if (rest <= 0.005 && value == null) return { error: "Cette mensualité est déjà payée.", status: 400 };
       const add = value ?? rest;
       if (add > state.remaining + 0.005) return { error: `Il ne reste que ${formatMoney(state.remaining)} sur cette dette.`, status: 400 };
       const payment = await addPaymentPart(expense.id, key, paidThisMonth.slotIndex, paidThisMonth.amountDue, add, method);
