@@ -241,7 +241,7 @@ function getPaidMonth(expense: Expense, payments: Payment[], current: MonthId, l
     .filter((p) => p.monthKey === key && p.amountPaid > 0 && (expense.type !== "credit" || p.slotIndex != null))
     .sort((a, b) => (a.part ?? 0) - (b.part ?? 0));
   const settled = findPayment(parts, expense.id, key);
-  return settled ? { parts, due: settled.amountDue, monthLabel: monthLabel(month, lang) } : null;
+  return settled ? { parts, due: settled.amountDue, monthKey: key, monthLabel: monthLabel(month, lang) } : null;
 }
 
 /** Which recurrence option the form should open on for this expense. */

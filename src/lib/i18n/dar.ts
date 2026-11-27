@@ -1381,6 +1381,8 @@ export const DAR: Record<string, string> = {
   "Ce mois a été effacé.": "Had chhar tms7.",
   "Tout réinitialisé": "Kolchi rja3 mn zero",
   "Mois réinitialisé": "Chhar rja3 mn zero",
+  "Ajouter un paiement": "Zid khlas",
+  "Tu ajoutes combien ?": "Ch7al ghatzid ?",
   "Nouvelle personne": "Chi wa7d jdid",
   "Personne pour le moment : ajoute quelqu'un, ou il sera ajouté avec ta prochaine dette ou ton prochain prêt.": "Mazal ta wa7d: zid chi wa7d, wla ghadi yzad m3a dette wla slef jay.",
   "Renommer {name}": "Beddel smiyat {name}",

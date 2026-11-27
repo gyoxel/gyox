@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import { PencilSimple } from "@phosphor-icons/react/ssr";
+import { PencilSimple, Plus } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import type { Expense, Payment, PaymentMethod } from "@/lib/types";
 import { insufficientMessage } from "@/lib/balance-message";
@@ -147,6 +147,7 @@ export function MonthPayments({
   expense,
   parts,
   due,
+  monthKey,
   monthLabel,
   currency,
 }: {
@@ -154,10 +155,13 @@ export function MonthPayments({
   /** The month's payments, first one first. */
   parts: Payment[];
   due: number;
+  /** "YYYY-MM" */
+  monthKey: string;
   monthLabel: string;
   currency: string;
 }) {
   const [picked, setPicked] = useState<Payment | null>(null);
+  const [adding, setAdding] = useState(false);
   const { t } = useI18n();
   const money = (n: number) => formatMoney(n, currency);
   const paid = round(parts.reduce((s, p) => s + p.amountPaid, 0));
@@ -183,6 +187,17 @@ export function MonthPayments({
       )}
       <PaymentPartList parts={parts} currency={currency} onPick={setPicked} className="-mx-1 overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-800" />
       <p className="text-[11px] text-slate-400">{t("Touche un paiement pour corriger son montant, espèces ou carte, ou le supprimer.")}</p>
+      <button
+        type="button"
+        onClick={() => setAdding(true)}
+        className="flex items-center justify-center gap-1.5 rounded-2xl border border-dashed border-violet-300 py-2.5 text-sm font-semibold text-violet-700 active:bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:active:bg-violet-950/40"
+      >
+        <Plus weight="bold" className="h-4 w-4" />
+        {t("Ajouter un paiement")}
+      </button>
+      {adding && (
+        <PayAmountSheet expense={expense} due={due} already={paid} monthKey={monthKey} monthLabel={monthLabel} currency={currency} onClose={() => setAdding(false)} />
+      )}
       {picked && (
         <PaymentPartSheet
           expense={expense}
@@ -195,5 +210,84 @@ export function MonthPayments({
         />
       )}
     </section>
+  );
+}
+
+/**
+ * ✏️ "Tu as payé combien ?": part of the month (the rest stays to pay this
+ * month: "X · reste"), all of it, or more — or, on a rest, part of what's
+ * left, or (all paid) one more payment. See lib/pay-expense.ts.
+ */
+export function PayAmountSheet({
+  expense,
+  due,
+  already,
+  monthKey,
+  monthLabel: label,
+  currency,
+  balance,
+  onClose,
+}: {
+  expense: Expense;
+  /** The month's amount (a credit: its installment). */
+  due: number;
+  /** Paid of it already. */
+  already: number;
+  /** "YYYY-MM" */
+  monthKey: string;
+  monthLabel: string;
+  currency: string;
+  balance?: Record<PaymentMethod, number>;
+  onClose: () => void;
+}) {
+  const { t } = useI18n();
+  const money = (n: number) => formatMoney(n, currency);
+  const left = round(Math.max(0, due - already));
+  return (
+    <AmountSheet
+      title={already > 0 && left <= 0.005 ? t("Tu ajoutes combien ?") : already > 0 ? t("Tu paies combien du reste ?") : t("Tu as payé combien ?")}
+      subtitle={`${expense.icon ?? "🧾"} ${localName(expense.name, t)} · ${label} · ${
+        already > 0 ? t("{paid} déjà payés sur {due}", { paid: money(already), due: money(due) }) : t("prévu {amount}", { amount: money(due) })
+      }`}
+      expected={due}
+      already={already}
+      initialAmount={left}
+      initialMethod="cash"
+      chips={left > 0 ? [[already > 0 ? t("Tout le reste") : t("Tout"), left]] : []}
+      explain={(v) => explainPayment(expense, left, v, money, t)}
+      methodLabel={t("Payé en")}
+      confirmLabel={(v) => t("Payé {amount}", { amount: money(v) })}
+      tone="rose"
+      onClose={onClose}
+      zero={
+        already > 0
+          ? undefined
+          : {
+              chip: t("Pas ce mois-ci"),
+              explain:
+                expense.type === "credit"
+                  ? t("Rien à payer en {month} : cette mensualité passe au mois suivant, et la fin de la dette recule d'un mois.", { month: label })
+                  : t("Rien à payer en {month}. Les autres mois ne changent pas.", { month: label }),
+              label: t("Pas ce mois-ci"),
+              onSubmit: async () => {
+                const res = await mutate({ method: "PUT", path: `/api/expenses/${expense.id}/skip`, body: { monthKey: monthKey } });
+                if (!res.ok) return errorMessage(res);
+                toast.success(t("{name} : pas ce mois-ci.", { name: localName(expense.name, t) }));
+                return null;
+              },
+            }
+      }
+      onSubmit={async (value, method) => {
+        if (balance && value > balance[method] + 0.005) return insufficientMessage(method, balance[method], t);
+        const res = await mutate({
+          method: "POST",
+          path: `/api/expenses/${expense.id}/payments`,
+          body: { monthKey: monthKey, method, amount: value },
+        });
+        if (!res.ok) return errorMessage(res);
+        toast.success(t("{name} : {amount} payés.", { name: localName(expense.name, t), amount: money(value) }));
+        return null;
+      }}
+    />
   );
 }
